@@ -13712,7 +13712,10 @@ if(_hasAuth&&_t){
     }).catch(function(){});
   }
 }}
-bootAuth();if(typeof rgBoot==='function')rgBoot();setTimeout(function(){var ld=document.getElementById('sb-load');if(ld){ld.classList.add('hide');setTimeout(function(){if(ld)ld.remove();},400);}},3000);
+/* Safety: remove loading overlay after 2s no matter what */
+setTimeout(function(){var ld=document.getElementById('sb-load');if(ld){ld.classList.add('hide');setTimeout(function(){if(ld)ld.remove();},400);}},2000);
+try{bootAuth();}catch(e){console.warn('bootAuth error:',e);var ld=document.getElementById('sb-load');if(ld){ld.classList.add('hide');setTimeout(function(){if(ld)ld.remove();},400);}}
+if(typeof rgBoot==='function')rgBoot();
 flashBoot();marketsLoad();
 (S.me.props||[]).forEach(pr=>{if(pr.status==='live')createMarketFromProposal(pr,false);});
 seedRooms();checkBadges(true);if(!S.me.missions.some(m=>m.day)){S.me.missions.forEach(m=>m.day=today());}
