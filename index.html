@@ -13632,7 +13632,7 @@ window.marketsLoad=function(){_origMkLoad();sb.from('market_live_state').select(
 
 /* Wrap bootAuth */
 var _origBoot=window.bootAuth;
-window.bootAuth=function(){_origBoot();sb.auth.getSession().then(function(res){if(!res.data||!res.data.session)return;var uid=res.data.session.user.id;sbUid=uid;if(S.me.logged&&!S.auth.demo){sbLoadUser(uid).then(function(){sbStartChat();if(typeof updateHeader==='function')updateHeader();if(typeof checkBadges==='function')checkBadges(true);if(typeof render==='function')render(true);});}}).catch(function(e){console.warn('SB boot error:',e);});};
+window.bootAuth=function(){_origBoot();sb.auth.getSession().then(function(res){if(!res.data||!res.data.session)return;var uid=res.data.session.user.id;sbUid=uid;if(S.me.logged&&!S.auth.demo){sbLoadUser(uid).then(function(){sbStartChat();if(typeof updateHeader==='function')updateHeader();if(typeof checkBadges==='function')checkBadges(true);if(!S.me.onboarded&&location.hash!=='#bienvenue'){location.hash='#bienvenue';}if(typeof render==='function')render(true);});}}).catch(function(e){console.warn('SB boot error:',e);});};
 
 /* Auth state listener */
 sb.auth.onAuthStateChange(function(ev,session){
@@ -13658,7 +13658,7 @@ bootAuth();if(typeof rgBoot==='function')rgBoot();
 flashBoot();marketsLoad();
 (S.me.props||[]).forEach(pr=>{if(pr.status==='live')createMarketFromProposal(pr,false);});
 seedRooms();checkBadges(true);if(!S.me.missions.some(m=>m.day)){S.me.missions.forEach(m=>m.day=today());}
-if(S.me.logged&&!S.me.onboarded&&location.hash!=='#bienvenue')location.replace('#bienvenue');
+/* onboarding redirect handled by async Supabase bootAuth */
 for(let i=0;i<5;i++)pushBig(true);
 i18nStatic(document.body);const md=document.querySelector('meta[name=description]');if(md&&LANG!=='fr'&&I18N[LANG][md.content])md.content=I18N[LANG][md.content];
 if(typeof duelSeed==='function'){duelSeed();duelLinkBoot();}if(typeof clanSeed==='function')clanSeed();if(typeof comboSeed==='function')comboSeed();if(typeof proBoot==='function')proBoot();
