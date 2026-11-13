@@ -3064,7 +3064,7 @@ html.pro-lock,html.pro-lock body{overflow:hidden}
   </div>
  </div>
 </header>
-<div class="sb-loading" id="sb-load"><div class="ld"><div class="ld-w"><span>W</span></div><div class="ld-spin"></div></div></div><main id="view"></main>
+<main id="view"></main>
 <nav class="tabbar" aria-label="Navigation">
  <a href="#accueil" data-nav="accueil marche creer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/></svg>Marchés</a>
  <a href="#eclair" data-nav="eclair blitz serie"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7Z"/></svg>Éclair</a>
@@ -13712,10 +13712,7 @@ if(_hasAuth&&_t){
     }).catch(function(){});
   }
 }}
-/* Safety: remove loading overlay after 2s no matter what */
-setTimeout(function(){var ld=document.getElementById('sb-load');if(ld){ld.classList.add('hide');setTimeout(function(){if(ld)ld.remove();},400);}},2000);
-try{bootAuth();}catch(e){console.warn('bootAuth error:',e);var ld=document.getElementById('sb-load');if(ld){ld.classList.add('hide');setTimeout(function(){if(ld)ld.remove();},400);}}
-if(typeof rgBoot==='function')rgBoot();
+bootAuth();if(typeof rgBoot==='function')rgBoot();
 flashBoot();marketsLoad();
 (S.me.props||[]).forEach(pr=>{if(pr.status==='live')createMarketFromProposal(pr,false);});
 seedRooms();checkBadges(true);if(!S.me.missions.some(m=>m.day)){S.me.missions.forEach(m=>m.day=today());}
