@@ -13654,15 +13654,32 @@ console.log('Wimoro x Supabase: integration loaded.');
 'use strict';
 /* ===================== Démarrage ===================== */
 {const tm=LS.g('wimoro-tmode');if(tm==='bars')S.ui.tmode='bars';}
-/* Handle Supabase auth email callback (confirmation link click) */
-{const h=location.hash||'';if(h.includes('access_token=')&&h.includes('type=')){
-const params=new URLSearchParams(h.substring(1));const type=params.get('type');
-const sb=window.__supabase;if(sb){const access=params.get('access_token'),refresh=params.get('refresh_token');
-if(access&&refresh){sb.auth.setSession({access_token:access,refresh_token:refresh}).then(function(){
-if(type==='signup'||type==='email_change')location.replace('#confirme');
-else if(type==='recovery'||type==='magiclink')location.replace('#nouveau-mdp');
-else location.replace('#accueil');
-});}}else{if(type==='signup')location.replace('#confirme');}}}
+/* Handle Supabase auth email callback (confirmation/recovery/magic link) */
+{const h=location.hash||'',q=location.search||'';
+var authType=null;
+if(h.includes('type=')){var hp=new URLSearchParams(h.substring(h.indexOf('?')>-1?h.indexOf('?')+1:1));authType=hp.get('type');}
+if(q.includes('type=')){var qp=new URLSearchParams(q);authType=authType||qp.get('type');}
+if(h.includes('access_token=')||q.includes('access_token=')||q.includes('token_hash=')){
+var sb=window.__supabase;
+if(sb){
+/* Let Supabase client auto-detect and set session from URL */
+sb.auth.getSession().then(function(){
+  if(authType==='signup'||authType==='email_change')location.replace('#confirme');
+  else if(authType==='recovery'||authType==='magiclink')location.replace('#nouveau-mdp');
+  else if(authType)location.replace('#accueil');
+});
+/* Also listen for the SIGNED_IN event as fallback */
+var _cbDone=false;
+sb.auth.onAuthStateChange(function(ev){
+  if(_cbDone)return;
+  if(ev==='SIGNED_IN'){_cbDone=true;
+    if(authType==='signup'||authType==='email_change')location.replace('#confirme');
+    else if(authType==='recovery'||authType==='magiclink')location.replace('#nouveau-mdp');
+    else location.replace('#accueil');
+  }
+});
+}else{if(authType==='signup')location.replace('#confirme');}
+}}
 bootAuth();if(typeof rgBoot==='function')rgBoot();
 flashBoot();marketsLoad();
 (S.me.props||[]).forEach(pr=>{if(pr.status==='live')createMarketFromProposal(pr,false);});
