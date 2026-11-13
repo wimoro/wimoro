@@ -9,7 +9,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Big+Shoulders+Display:wght@600;700;800&display=swap">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 :root{--bg:#F3F4F6;--w:#fff;--ink:#14161B;--g2:#4A505C;--g3:#7A808C;--g4:#A3A8B2;--rule:#E3E6EB;--soft:#F1F3F5;--soft2:#E9ECF0;--oui:#2448FF;--ouiS:#EBEEFF;--non:#F59A0B;--nonT:#9A5B00;--nonS:#FFF2DE;--sg:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;--bs:'Big Shoulders Display','Geist',system-ui,sans-serif;--shadow:0 12px 32px rgba(20,22,27,.08);--panel:#fff;--glass:rgba(255,255,255,.94);--glass2:rgba(255,255,255,.96);--track:#D5D9E0;--hover:#FAFBFC;--veil:rgba(255,255,255,.86);--be:#12A150;--beS:#E7F6EE;--beT:#0B6B3A}
 html{color-scheme:light}
@@ -13518,110 +13517,6 @@ setInterval(vis(marketsSave),8000);
 if(S.me.logged&&!S.me.welcomed)setTimeout(welcome,700);
 addEventListener('scroll',()=>{NAV.pos[NAV.cur]=window.scrollY;},{passive:true});
 
-</script>
-
-<script>
-/* Wimoro x Supabase — runs AFTER the original site is fully loaded */
-(function(){
-var SB_URL='https://brmwvxncyeypefsgiepf.supabase.co';
-var SB_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJybXd2eG5jeWV5cGVmc2dpZXBmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ1NzYwODAsImV4cCI6MjExMDE1MjA4MH0.-AA2WyzSOyJiK-Nwogbzv-Rowej9A3fWRDpAGSXI3YM';
-if(typeof supabase==='undefined'||!supabase.createClient)return;
-var sb=supabase.createClient(SB_URL,SB_ANON);
-window.__supabase=sb;
-var sbUid=null;
-
-/* Load user data from Supabase and apply to S.me */
-function sbLoadAndApply(uid){
-  return Promise.all([
-    sb.from('user_full_state').select('state').eq('user_id',uid).maybeSingle(),
-    sb.from('users').select('*').eq('id',uid).maybeSingle(),
-    sb.from('user_stats').select('*').eq('user_id',uid).maybeSingle()
-  ]).then(function(r){
-    var blob=r[0].data,user=r[1].data,stats=r[2].data;
-    if(blob&&blob.state&&typeof blob.state==='object'&&blob.state.v)Object.assign(S.me,blob.state);
-    if(user){S.me.n=user.username||S.me.n;S.me.email=user.email||S.me.email;S.me.photo=user.avatar_photo||S.me.photo;S.me.color=user.avatar_color||S.me.color;S.me.bio=user.bio!=null?user.bio:S.me.bio;S.me.kyc=!!user.kyc_verified;}
-    if(stats){S.me.balance=Number(stats.balance);S.me.xp=stats.xp||0;S.me.followers=stats.followers_count||0;S.me.realized=Number(stats.profit_realized)||0;S.me.streak=stats.streak_current||1;S.me.bestStreak=stats.streak_best||1;S.me.played=stats.bets_placed||0;S.me.wins=stats.bets_won||0;S.me.settled=stats.bets_settled||0;S.me.maxBet=Number(stats.bets_max_amount)||0;S.me.followed=stats.followed_bets_count||0;S.me.contraWins=stats.contra_wins||0;S.me.deposits=stats.deposits_count||0;S.me.flashWins=stats.flash_wins||0;S.me.flashStreak=stats.flash_streak_current||0;S.me.flashBest=stats.flash_streak_best||0;S.me.flashProfit=Number(stats.flash_profit_total)||0;S.me.msgsTotal=stats.messages_total||0;S.me.copiers=stats.copiers_count||0;S.me._dbBalance=S.me.balance;}
-    S.me.logged=true;S.me.onboarded=true;
-    if(typeof updateHeader==='function')updateHeader();
-    if(typeof render==='function')render(true);
-  });
-}
-
-/* Save S.me to Supabase */
-function sbSave(){
-  if(!sbUid)return;
-  var clean=Object.assign({},S.me);delete clean._dbBalance;delete clean._dbRank;
-  sb.from('user_full_state').upsert({user_id:sbUid,state:clean}).catch(function(){});
-  sb.from('user_stats').update({balance:S.me.balance||0,xp:S.me.xp||0,bets_placed:S.me.played||0,bets_won:S.me.wins||0,bets_settled:S.me.settled||0,flash_wins:S.me.flashWins||0,messages_total:S.me.msgsTotal||0,profit_realized:S.me.realized||0}).eq('user_id',sbUid).catch(function(){});
-}
-
-/* Check Supabase session and load data */
-sb.auth.getSession().then(function(res){
-  if(!res.data||!res.data.session)return;
-  sbUid=res.data.session.user.id;
-  sbLoadAndApply(sbUid);
-}).catch(function(){});
-
-/* Listen for auth state changes */
-sb.auth.onAuthStateChange(function(ev,session){
-  if(ev==='SIGNED_IN'&&session&&session.user){
-    sbUid=session.user.id;
-    sbLoadAndApply(sbUid);
-  }
-});
-
-/* Realtime: admin changes reflect live */
-sb.auth.getSession().then(function(res){
-  if(!res.data||!res.data.session)return;
-  var uid=res.data.session.user.id;
-  sb.channel('admin-sync').on('postgres_changes',{event:'UPDATE',schema:'public',table:'user_stats',filter:'user_id=eq.'+uid},function(p){
-    var n=p.new;if(!n)return;
-    S.me.balance=Number(n.balance);S.me.xp=n.xp||0;S.me._dbBalance=S.me.balance;
-    if(typeof updateHeader==='function')updateHeader();
-    if(typeof render==='function')render(false);
-  }).subscribe();
-});
-
-/* Periodic save every 15s */
-setInterval(function(){if(sbUid&&S.me.logged)sbSave();},15000);
-
-/* Save on page close */
-addEventListener('pagehide',function(){if(sbUid&&S.me.logged)sbSave();});
-
-/* Wrap createAccount for signup */
-var _origCreate=window.createAccount;
-window.createAccount=function(pseudo,email,pw,extra){
-  var rec=_origCreate(pseudo,email,pw,extra);
-  if(email&&pw){
-    sb.auth.signUp({email:email.toLowerCase(),password:pw,options:{data:{username:pseudo}}}).then(function(res){
-      if(res.error||!res.data.user)return;
-      var uid=res.data.user.id;sbUid=uid;rec.sbId=uid;AUTH.set(rec.key,rec);
-      sb.from('users').insert({id:uid,username:pseudo,email:email.toLowerCase(),avatar_photo:S.me.photo||'',avatar_color:S.me.color||'#2448FF',bio:'',onboarded:true,welcomed:true,is_demo:false}).catch(function(){});
-    }).catch(function(){});
-  }
-  return rec;
-};
-
-/* Wrap logout */
-var _origLogout=window.logout;
-window.logout=function(){sbSave();sbUid=null;sb.auth.signOut().catch(function(){});_origLogout();};
-
-/* Handle auth email callbacks */
-var q=location.search||'',h=location.hash||'';
-var authType=null;
-try{authType=new URLSearchParams(q).get('type')||new URLSearchParams(h.replace(/^#/,'')).get('type');}catch(e){}
-if(authType&&(q.includes('code=')||q.includes('token_hash=')||h.includes('access_token='))){
-  var code=new URLSearchParams(q).get('code');
-  var p=code&&sb.auth.exchangeCodeForSession?sb.auth.exchangeCodeForSession(code):sb.auth.getSession();
-  p.then(function(){
-    if(authType==='signup'||authType==='email_change')location.replace('#confirme');
-    else if(authType==='recovery'||authType==='magiclink')location.replace('#nouveau-mdp');
-    else location.replace('#accueil');
-  }).catch(function(){});
-}
-
-console.log('Wimoro x Supabase: loaded');
-})();
 </script>
 </body>
 </html>
