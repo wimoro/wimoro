@@ -13868,15 +13868,38 @@ FORMS.login=function(f){
   if(!S.me.logged)return;
   sb.auth.signInWithPassword({email:email,password:pw}).then(function(res){
     if(res.error||!res.data||!res.data.user)return;
-    sbUid=res.data.user.id;
+    var uid=res.data.user.id;
+    sbUid=uid;
     var rec=AUTH.get(email);
-    if(rec){rec.sbId=sbUid;AUTH.set(email,rec);}
-    sbLoadFullState().then(function(loaded){
-      if(loaded){
-        S.me.logged=true;
-        if(typeof updateHeader==='function')updateHeader();
-        if(typeof render==='function')render(false);
+    if(rec){rec.sbId=uid;AUTH.set(email,rec);}
+    /* Load structured tables (source of truth) */
+    return Promise.all([
+      sb.from('user_full_state').select('state').eq('user_id',uid).maybeSingle(),
+      sb.from('users').select('*').eq('id',uid).maybeSingle(),
+      sb.from('user_stats').select('*').eq('user_id',uid).maybeSingle()
+    ]).then(function(r){
+      var blob=r[0].data,user=r[1].data,stats=r[2].data;
+      if(blob&&blob.state&&blob.state.v)Object.assign(S.me,blob.state);
+      if(user){
+        S.me.n=user.username||S.me.n;S.me.email=user.email||S.me.email;
+        S.me.photo=user.avatar_photo||S.me.photo;S.me.color=user.avatar_color||S.me.color;
+        S.me.bio=user.bio!=null?user.bio:S.me.bio;S.me.kyc=!!user.kyc_verified;
+        S.me.onboarded=!!user.onboarded;S.me.welcomed=!!user.welcomed;
       }
+      if(stats){
+        S.me.balance=Number(stats.balance);S.me.xp=stats.xp||0;
+        S.me.followers=stats.followers_count||0;S.me.realized=Number(stats.profit_realized)||0;
+        S.me.streak=stats.streak_current||1;S.me.bestStreak=stats.streak_best||1;
+        S.me.played=stats.bets_placed||0;S.me.wins=stats.bets_won||0;S.me.settled=stats.bets_settled||0;
+        S.me.maxBet=Number(stats.bets_max_amount)||0;S.me.followed=stats.followed_bets_count||0;
+        S.me.contraWins=stats.contra_wins||0;S.me.deposits=stats.deposits_count||0;
+        S.me.flashWins=stats.flash_wins||0;S.me.flashStreak=stats.flash_streak_current||0;
+        S.me.flashBest=stats.flash_streak_best||0;S.me.flashProfit=Number(stats.flash_profit_total)||0;
+        S.me.msgsTotal=stats.messages_total||0;S.me.copiers=stats.copiers_count||0;
+      }
+      S.me.logged=true;
+      if(typeof updateHeader==='function')updateHeader();
+      if(typeof render==='function')render(false);
       sbStartChatRealtime();
     });
   }).catch(function(e){console.warn('SB login error:',e);});
@@ -14059,25 +14082,79 @@ window.marketsLoad=function(){
   }).catch(function(e){console.warn('SB marketsLoad error:',e);});
 };
 
-/* Override bootAuth: fully Supabase-based */
+/* Override bootAuth: reads structured tables as source of truth */
 window.bootAuth=function(){
-  /* Start as guest immediately (sync, instant render) */
   S.auth={key:'',demo:false};
   KEY='wimoro-guest';
   S.me=guestMe();
 
-  /* Then check Supabase session (async) */
   sb.auth.getSession().then(function(res){
     if(!res.data||!res.data.session)return;
     var uid=res.data.session.user.id;
     sbUid=uid;
-    /* Load full state from Supabase */
-    return sb.from('user_full_state').select('state').eq('user_id',uid).single().then(function(stRes){
-      if(stRes.data&&stRes.data.state&&typeof stRes.data.state==='object'&&stRes.data.state.n){
-        Object.assign(S.me,stRes.data.state);
-        S.me.logged=true;
-        S.auth={key:S.me.email||uid,demo:false};
+
+    return Promise.all([
+      sb.from('user_full_state').select('state').eq('user_id',uid).maybeSingle(),
+      sb.from('users').select('*').eq('id',uid).maybeSingle(),
+      sb.from('user_stats').select('*').eq('user_id',uid).maybeSingle(),
+      sb.from('user_preferences').select('*').eq('user_id',uid).maybeSingle()
+    ]).then(function(r){
+      var blob=r[0].data,user=r[1].data,stats=r[2].data,prefs=r[3].data;
+
+      /* 1. Base: load blob (has positions, history, missions, notifs, deps, wds, etc.) */
+      if(blob&&blob.state&&typeof blob.state==='object'&&blob.state.v){
+        Object.assign(S.me,blob.state);
       }
+
+      /* 2. Override with users table (source of truth for profile) */
+      if(user){
+        S.me.n=user.username||S.me.n;
+        S.me.email=user.email||S.me.email;
+        S.me.photo=user.avatar_photo||S.me.photo;
+        S.me.color=user.avatar_color||S.me.color;
+        S.me.bio=user.bio!=null?user.bio:S.me.bio;
+        S.me.wallet=user.wallet_address||'';
+        S.me.kyc=!!user.kyc_verified;
+        S.me.onboarded=!!user.onboarded;
+        S.me.welcomed=!!user.welcomed;
+      }
+
+      /* 3. Override with user_stats (source of truth for all numbers) */
+      if(stats){
+        S.me.balance=Number(stats.balance);
+        S.me.xp=stats.xp||0;
+        S.me.followers=stats.followers_count||0;
+        S.me.pos=stats.seasonal_position||S.me.pos;
+        S.me.realized=Number(stats.profit_realized)||0;
+        S.me.streak=stats.streak_current||1;
+        S.me.bestStreak=stats.streak_best||1;
+        S.me.played=stats.bets_placed||0;
+        S.me.wins=stats.bets_won||0;
+        S.me.settled=stats.bets_settled||0;
+        S.me.maxBet=Number(stats.bets_max_amount)||0;
+        S.me.followed=stats.followed_bets_count||0;
+        S.me.contraWins=stats.contra_wins||0;
+        S.me.deposits=stats.deposits_count||0;
+        S.me.flashWins=stats.flash_wins||0;
+        S.me.flashStreak=stats.flash_streak_current||0;
+        S.me.flashBest=stats.flash_streak_best||0;
+        S.me.flashProfit=Number(stats.flash_profit_total)||0;
+        S.me.msgsTotal=stats.messages_total||0;
+        S.me.chatXP=stats.chat_xp_today||0;
+        S.me.copiers=stats.copiers_count||0;
+      }
+
+      /* 4. Preferences */
+      if(prefs){
+        S.me.ctype=prefs.chart_type||S.me.ctype;
+        S.me.fmode=prefs.flash_mode||S.me.fmode;
+        try{if(prefs.market_interest_categories)S.me.interests=JSON.parse(prefs.market_interest_categories);}catch(e){}
+        try{if(prefs.flash_alerts)S.me.falerts=JSON.parse(prefs.flash_alerts);}catch(e){}
+      }
+
+      S.me.logged=true;
+      S.auth={key:S.me.email||uid,demo:false};
+
       sbStartChatRealtime();
       if(typeof updateHeader==='function')updateHeader();
       if(typeof checkBadges==='function')checkBadges(true);
