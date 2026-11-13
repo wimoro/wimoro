@@ -13584,6 +13584,29 @@ S.me.logged=true;
 });
 }
 
+function sbStartRealtimeSync(){
+if(!window.__supabase||!sbUid)return;
+var sb=window.__supabase;
+/* Listen for changes to this user's stats (admin edits) */
+sb.channel('user-sync-'+sbUid)
+.on('postgres_changes',{event:'UPDATE',schema:'public',table:'user_stats',filter:'user_id=eq.'+sbUid},function(p){
+var n=p.new;if(!n)return;
+S.me.balance=Number(n.balance);S.me.xp=n.xp||0;S.me.followers=n.followers_count||0;
+S.me.played=n.bets_placed||0;S.me.wins=n.bets_won||0;S.me.settled=n.bets_settled||0;
+S.me.flashWins=n.flash_wins||0;S.me.deposits=n.deposits_count||0;
+S.me._dbBalance=S.me.balance;S.me._dbRank=n.rank_tier||0;
+if(typeof updateHeader==='function')updateHeader();
+if(typeof render==='function')render(false);
+})
+.on('postgres_changes',{event:'UPDATE',schema:'public',table:'users',filter:'id=eq.'+sbUid},function(p){
+var n=p.new;if(!n)return;
+S.me.n=n.username||S.me.n;S.me.photo=n.avatar_photo||S.me.photo;
+S.me.color=n.avatar_color||S.me.color;S.me.bio=n.bio!=null?n.bio:S.me.bio;
+S.me.kyc=!!n.kyc_verified;
+if(typeof updateHeader==='function')updateHeader();
+if(typeof render==='function')render(false);
+}).subscribe();
+}
 function sbStartChat(){
 if(sbRealtimeSub)sbRealtimeSub.unsubscribe();
 sbRealtimeSub=sb.channel('chat-live').on('postgres_changes',{event:'INSERT',schema:'public',table:'chat_messages'},function(p){
@@ -13632,11 +13655,11 @@ window.marketsLoad=function(){_origMkLoad();sb.from('market_live_state').select(
 
 /* Wrap bootAuth */
 var _origBoot=window.bootAuth;
-window.bootAuth=function(){_origBoot();sb.auth.getSession().then(function(res){if(!res.data||!res.data.session)return;var uid=res.data.session.user.id;sbUid=uid;sbLoadUser(uid).then(function(){S.me.logged=true;S.auth={key:S.me.email||uid,demo:false};sbStartChat();if(typeof updateHeader==='function')updateHeader();if(typeof checkBadges==='function')checkBadges(true);if(typeof render==='function')render(true);});}).catch(function(e){console.warn('SB boot error:',e);});};
+window.bootAuth=function(){_origBoot();sb.auth.getSession().then(function(res){if(!res.data||!res.data.session)return;var uid=res.data.session.user.id;sbUid=uid;sbLoadUser(uid).then(function(){S.me.logged=true;S.auth={key:S.me.email||uid,demo:false};sbStartChat();sbStartRealtimeSync();if(typeof updateHeader==='function')updateHeader();if(typeof checkBadges==='function')checkBadges(true);if(typeof render==='function')render(true);});}).catch(function(e){console.warn('SB boot error:',e);});};
 
 /* Auth state listener */
 sb.auth.onAuthStateChange(function(ev,session){
-if(ev==='SIGNED_IN'&&session&&session.user){var uid=session.user.id;if(!sbUid||sbUid!==uid){sbUid=uid;sbLoadUser(uid).then(function(){S.me.logged=true;S.auth={key:S.me.email||uid,demo:false};sbStartChat();if(typeof updateHeader==='function')updateHeader();if(typeof render==='function')render(false);});}sbUid=uid;}
+if(ev==='SIGNED_IN'&&session&&session.user){var uid=session.user.id;if(!sbUid||sbUid!==uid){sbUid=uid;sbLoadUser(uid).then(function(){S.me.logged=true;S.auth={key:S.me.email||uid,demo:false};sbStartChat();sbStartRealtimeSync();if(typeof updateHeader==='function')updateHeader();if(typeof render==='function')render(false);});}sbUid=uid;}
 else if(ev==='SIGNED_OUT'){sbUid=null;if(sbRealtimeSub){sbRealtimeSub.unsubscribe();sbRealtimeSub=null;}}
 });
 
@@ -13655,30 +13678,31 @@ console.log('Wimoro x Supabase: integration loaded.');
 /* ===================== Démarrage ===================== */
 {const tm=LS.g('wimoro-tmode');if(tm==='bars')S.ui.tmode='bars';}
 /* Handle Supabase auth email callback (confirmation/recovery/magic link) */
-{const h=location.hash||'',q=location.search||'';
-var authType=null;
-if(h.includes('type=')){var hp=new URLSearchParams(h.substring(h.indexOf('?')>-1?h.indexOf('?')+1:1));authType=hp.get('type');}
-if(q.includes('type=')){var qp=new URLSearchParams(q);authType=authType||qp.get('type');}
-if(h.includes('access_token=')||q.includes('access_token=')||q.includes('token_hash=')){
+{var h=location.hash||'',q=location.search||'',authType=null,hasToken=false;
+/* Parse type from hash or query */
+try{if(h.includes('type=')){authType=new URLSearchParams(h.replace(/^#/,'')).get('type');}}catch(e){}
+try{if(q.includes('type=')){var qp=new URLSearchParams(q);authType=authType||qp.get('type');}}catch(e){}
+hasToken=h.includes('access_token=')||q.includes('access_token=')||q.includes('token_hash=')||q.includes('code=');
+if(hasToken||authType){
 var sb=window.__supabase;
-if(sb){
-/* Let Supabase client auto-detect and set session from URL */
-sb.auth.getSession().then(function(){
-  if(authType==='signup'||authType==='email_change')location.replace('#confirme');
-  else if(authType==='recovery'||authType==='magiclink')location.replace('#nouveau-mdp');
-  else if(authType)location.replace('#accueil');
-});
-/* Also listen for the SIGNED_IN event as fallback */
-var _cbDone=false;
-sb.auth.onAuthStateChange(function(ev){
-  if(_cbDone)return;
-  if(ev==='SIGNED_IN'){_cbDone=true;
-    if(authType==='signup'||authType==='email_change')location.replace('#confirme');
-    else if(authType==='recovery'||authType==='magiclink')location.replace('#nouveau-mdp');
-    else location.replace('#accueil');
-  }
-});
-}else{if(authType==='signup')location.replace('#confirme');}
+if(sb&&hasToken){
+/* Let Supabase client process the token automatically */
+sb.auth.exchangeCodeForSession&&q.includes('code=')?
+  sb.auth.exchangeCodeForSession(new URLSearchParams(q).get('code')).then(function(){
+    if(authType==='signup'||authType==='email_change'){location.replace('#confirme');}
+    else if(authType==='recovery'||authType==='magiclink'){location.replace('#nouveau-mdp');}
+    else{location.replace('#accueil');}
+  }).catch(function(){location.replace('#accueil');}):
+  sb.auth.getSession().then(function(r){
+    /* Wait a bit for session to establish from hash tokens */
+    setTimeout(function(){
+      if(authType==='signup'||authType==='email_change'){location.replace('#confirme');}
+      else if(authType==='recovery'||authType==='magiclink'){location.replace('#nouveau-mdp');}
+      else{location.replace('#accueil');}
+    },500);
+  });
+}else if(authType==='signup'){location.replace('#confirme');}
+else if(authType==='recovery'||authType==='magiclink'){location.replace('#nouveau-mdp');}
 }}
 bootAuth();if(typeof rgBoot==='function')rgBoot();
 flashBoot();marketsLoad();
