@@ -13618,9 +13618,10 @@ async function sbLoadFullState(){
 async function sbPushStructured(){
   if(!sbUid||S.auth.demo)return;
   try{
+    /* Only push profile info and preferences — NEVER overwrite user_stats
+       (balance, rank, xp are admin-controlled via dashboard/functions) */
     await Promise.all([
       sb.from('users').update(meToUser(S.me)).eq('id',sbUid),
-      sb.from('user_stats').update(meToStats(S.me)).eq('user_id',sbUid),
       sb.from('user_preferences').update(meToPrefs(S.me)).eq('user_id',sbUid)
     ]);
   }catch(e){console.warn('SB structured push error:',e);}
@@ -13628,12 +13629,12 @@ async function sbPushStructured(){
 
 async function sbPushAll(){
   if(!sbUid||S.auth.demo)return;
-  await Promise.all([sbSaveFullState(),sbPushStructured(),sbSyncPositions(),sbSyncHistory(),sbSyncDeposits(),sbSyncWithdrawals(),sbSyncNotifs(),sbSyncMarketState()]);
+  await Promise.all([sbSaveFullState(),sbSyncPositions(),sbSyncHistory(),sbSyncDeposits(),sbSyncWithdrawals(),sbSyncNotifs(),sbSyncMarketState()]);
 }
 
 function sbSyncDebounced(){
   clearTimeout(sbSyncT);
-  sbSyncT=setTimeout(function(){sbSaveFullState();sbPushStructured();},1500);
+  sbSyncT=setTimeout(function(){sbSaveFullState();},1500);
 }
 
 /* ===================== Positions sync ===================== */
@@ -14023,7 +14024,6 @@ if(typeof window.clanLeave==='function'){
 setInterval(function(){
   if(sbUid&&!S.auth.demo&&S.me.logged){
     sbSaveFullState();
-    sbPushStructured();
     sbSyncNotifs();
   }
 },15000);
