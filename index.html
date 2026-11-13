@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Big+Shoulders+Display:wght@600;700;800&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 :root{--bg:#F3F4F6;--w:#fff;--ink:#14161B;--g2:#4A505C;--g3:#7A808C;--g4:#A3A8B2;--rule:#E3E6EB;--soft:#F1F3F5;--soft2:#E9ECF0;--oui:#2448FF;--ouiS:#EBEEFF;--non:#F59A0B;--nonT:#9A5B00;--nonS:#FFF2DE;--sg:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;--bs:'Big Shoulders Display','Geist',system-ui,sans-serif;--shadow:0 12px 32px rgba(20,22,27,.08);--panel:#fff;--glass:rgba(255,255,255,.94);--glass2:rgba(255,255,255,.96);--track:#D5D9E0;--hover:#FAFBFC;--veil:rgba(255,255,255,.86);--be:#12A150;--beS:#E7F6EE;--beT:#0B6B3A}
 html{color-scheme:light}
@@ -13486,6 +13487,314 @@ function demoRankModal(){if(!isDemoAcc())return;openModal(`<div class="md demo-r
 const demoRankItemH=()=>isDemoAcc()?`<button class="ui" data-a="demo-rank-open">${ic('trophy',16)} ${_t('Changer de rang')}${demoB()}</button>`:'';
 Object.assign(ACT,{'demo-rank':a=>demoRankSet(+a.dataset.t),'demo-rank-reset':()=>demoRankReset(),'demo-rank-open':()=>{const u=$('#umenu');if(u)u.remove();demoRankModal();}});
 
+</script>
+<script>
+/* ===================== Supabase Integration Layer ===================== */
+(function(){
+'use strict';
+
+const SB_URL='https://brmwvxncyeypefsgiepf.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJybXd2eG5jeWV5cGVmc2dpZXBmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ1NzYwODAsImV4cCI6MjExMDE1MjA4MH0.-AA2WyzSOyJiK-Nwogbzv-Rowej9A3fWRDpAGSXI3YM';
+const sb=window.__supabase?window.__supabase:((typeof supabase!=='undefined'&&supabase.createClient)?supabase.createClient(SB_URL,SB_KEY):null);
+window.__supabase=sb;
+if(!sb){console.warn('Supabase client not loaded, running in offline mode.');return;}
+
+let sbUid=null;
+let sbSyncT=null;
+
+function meToUser(me){
+  return {
+    username:me.n||'',email:me.email||'',avatar_photo:me.photo||'',avatar_color:me.color||'#2448FF',
+    bio:me.bio||'',wallet_address:me.wallet||null,kyc_verified:!!me.kyc,
+    onboarded:!!me.onboarded,welcomed:!!me.welcomed,is_demo:!!S.auth.demo,
+    language_preference:typeof LANG!=='undefined'?LANG:'fr',
+    theme_preference:document.documentElement.getAttribute('data-theme')||'auto'
+  };
+}
+
+function meToStats(me){
+  var acc=Math.round((me.wins||0)/Math.max(1,me.settled||0)*100);
+  var rk=(typeof myRank==='function')?myRank():{t:0,d:0};
+  return {
+    balance:me.balance||0,xp:me.xp||0,followers_count:me.followers||0,
+    rank_tier:rk.t||0,rank_division:rk.d||0,seasonal_position:me.pos||null,
+    profit_realized:me.realized||0,streak_current:me.streak||1,streak_best:me.bestStreak||1,
+    bets_placed:me.played||0,bets_won:me.wins||0,bets_settled:me.settled||0,
+    bets_accuracy_pct:acc,bets_max_amount:me.maxBet||0,
+    followed_bets_count:me.followed||0,contra_wins:me.contraWins||0,
+    deposits_count:me.deposits||0,flash_wins:me.flashWins||0,
+    flash_streak_current:me.flashStreak||0,flash_streak_best:me.flashBest||0,
+    flash_profit_total:me.flashProfit||0,messages_total:me.msgsTotal||0,
+    chat_xp_today:me.chatXP||0,copies_count:(me.copies||[]).length,copiers_count:me.copiers||0
+  };
+}
+
+function meToPrefs(me){
+  return {
+    chart_type:me.ctype||'courbe',flash_mode:me.fmode||'free',
+    flash_alerts:JSON.stringify(me.falerts||[]),
+    copy_trading_enabled:!!(me.prefs&&me.prefs.copyEnabled),
+    market_sort:S.ui.sort||'actifs',time_filter:S.ui.tf||'1 j',
+    home_chat_room:S.ui.homeRoom||'general',
+    market_interest_categories:JSON.stringify(me.interests||[])
+  };
+}
+
+function statsToMe(row,me){
+  if(!row)return;
+  me.balance=Number(row.balance)||me.balance;me.xp=row.xp||me.xp;
+  me.followers=row.followers_count||0;me.pos=row.seasonal_position||me.pos;
+  me.realized=Number(row.profit_realized)||0;me.streak=row.streak_current||1;
+  me.bestStreak=row.streak_best||1;me.played=row.bets_placed||0;
+  me.wins=row.bets_won||0;me.settled=row.bets_settled||0;
+  me.maxBet=Number(row.bets_max_amount)||0;me.followed=row.followed_bets_count||0;
+  me.contraWins=row.contra_wins||0;me.deposits=row.deposits_count||0;
+  me.flashWins=row.flash_wins||0;me.flashStreak=row.flash_streak_current||0;
+  me.flashBest=row.flash_streak_best||0;me.flashProfit=Number(row.flash_profit_total)||0;
+  me.msgsTotal=row.messages_total||0;me.chatXP=row.chat_xp_today||0;
+  me.copiers=row.copiers_count||0;
+}
+
+function userToMe(row,me){
+  if(!row)return;
+  me.n=row.username||me.n;me.email=row.email||me.email;
+  me.photo=row.avatar_photo||me.photo;me.color=row.avatar_color||me.color;
+  me.bio=row.bio||'';me.wallet=row.wallet_address||'';
+  me.kyc=!!row.kyc_verified;me.onboarded=!!row.onboarded;me.welcomed=!!row.welcomed;
+}
+
+async function sbSyncPush(){
+  if(!sbUid||S.auth.demo)return;
+  try{
+    await Promise.all([
+      sb.from('users').update(meToUser(S.me)).eq('id',sbUid),
+      sb.from('user_stats').update(meToStats(S.me)).eq('user_id',sbUid),
+      sb.from('user_preferences').update(meToPrefs(S.me)).eq('user_id',sbUid)
+    ]);
+  }catch(e){console.warn('SB push error:',e);}
+}
+
+async function sbSyncPull(){
+  if(!sbUid||S.auth.demo)return;
+  try{
+    var [u,st]=await Promise.all([
+      sb.from('users').select('*').eq('id',sbUid).single(),
+      sb.from('user_stats').select('*').eq('user_id',sbUid).single()
+    ]);
+    if(u.data)userToMe(u.data,S.me);
+    if(st.data)statsToMe(st.data,S.me);
+  }catch(e){console.warn('SB pull error:',e);}
+}
+
+function sbSyncDebounced(){
+  clearTimeout(sbSyncT);
+  sbSyncT=setTimeout(sbSyncPush,2000);
+}
+
+async function sbSyncPositions(){
+  if(!sbUid||S.auth.demo)return;
+  try{
+    var pos=(S.me.positions||[]).filter(function(p){return p&&p.m;});
+    var existing=await sb.from('positions').select('id,market_id,side').eq('user_id',sbUid);
+    var exMap={};
+    (existing.data||[]).forEach(function(r){exMap[r.market_id+'_'+r.side]=r.id;});
+    for(var i=0;i<pos.length;i++){
+      var p=pos[i],key=(p.m||p.market)+'_'+(p.side||'oui');
+      var row={user_id:sbUid,market_id:p.m||p.market||'',side:p.side||'oui',
+        shares:p.shares||p.qty||1,average_price:p.avg||p.price||50};
+      if(exMap[key]){
+        await sb.from('positions').update(row).eq('id',exMap[key]);
+        delete exMap[key];
+      }else{
+        await sb.from('positions').insert(row);
+      }
+    }
+    var staleIds=Object.values(exMap);
+    if(staleIds.length)await sb.from('positions').delete().in('id',staleIds);
+  }catch(e){console.warn('SB positions sync error:',e);}
+}
+
+async function sbSyncHistory(){
+  if(!sbUid||S.auth.demo)return;
+  try{
+    var hist=(S.me.history||[]).slice(0,50);
+    var ex=await sb.from('position_history').select('id').eq('user_id',sbUid).order('settled_at',{ascending:false}).limit(1);
+    var lastId=(ex.data&&ex.data[0])?ex.data[0].id:null;
+    var toInsert=[];
+    for(var i=0;i<hist.length;i++){
+      var h=hist[i];
+      if(h._synced)continue;
+      toInsert.push({user_id:sbUid,kind:h.kind||'res',market_id:h.m||null,
+        question:h.q||'',side:h.side||'oui',was_winner:!!h.won,
+        pnl:h.pnl||0,settled_at:h.at?new Date(h.at).toISOString():new Date().toISOString()});
+      h._synced=true;
+    }
+    if(toInsert.length)await sb.from('position_history').insert(toInsert);
+  }catch(e){console.warn('SB history sync error:',e);}
+}
+
+/* --- Wrap save/load/flushSave --- */
+var _origSave=window.save,_origLoad=window.load,_origFlush=window.flushSave;
+
+window.save=function(){
+  _origSave();
+  sbSyncDebounced();
+};
+window.flushSave=function(){
+  _origFlush();
+  sbSyncPush();
+  sbSyncPositions();
+  sbSyncHistory();
+};
+window.load=function(){
+  _origLoad();
+};
+
+/* --- Wrap createAccount --- */
+var _origCreate=window.createAccount;
+window.createAccount=function(pseudo,email,pw,extra){
+  var rec=_origCreate(pseudo,email,pw,extra);
+  if(!email||!pw){return rec;}
+  sb.auth.signUp({email:email.toLowerCase(),password:pw,options:{data:{username:pseudo}}})
+  .then(function(res){
+    if(res.error){console.warn('SB signup error:',res.error.message);return;}
+    var uid=res.data.user.id;
+    sbUid=uid;
+    rec.sbId=uid;
+    AUTH.set(rec.key,rec);
+    return sb.from('users').insert({
+      id:uid,username:pseudo,email:email.toLowerCase(),
+      avatar_photo:S.me.photo||'',avatar_color:S.me.color||'#2448FF',
+      bio:'',onboarded:false,welcomed:false,is_demo:false
+    }).then(function(){
+      return sb.from('user_stats').insert({user_id:uid,balance:S.me.balance||1000000,xp:0});
+    }).then(function(){
+      return sb.from('user_preferences').insert({user_id:uid});
+    });
+  }).catch(function(e){console.warn('SB create error:',e);});
+  return rec;
+};
+
+/* --- Wrap FORMS.login --- */
+var _origLogin=FORMS.login;
+FORMS.login=function(f){
+  var email=f.email.value.trim().toLowerCase();
+  var pw=f.pw.value;
+  _origLogin(f);
+  if(!S.me.logged)return;
+  var rec=AUTH.get(email);
+  if(rec&&rec.sbId){
+    sbUid=rec.sbId;
+    sb.auth.signInWithPassword({email:email,password:pw}).then(function(){
+      sbSyncPull().then(function(){save();if(typeof render==='function')render(false);});
+    }).catch(function(e){console.warn('SB login error:',e);});
+  }else{
+    sb.auth.signInWithPassword({email:email,password:pw}).then(function(res){
+      if(res.data&&res.data.user){
+        sbUid=res.data.user.id;
+        if(rec){rec.sbId=sbUid;AUTH.set(email,rec);}
+        sbSyncPull().then(function(){save();if(typeof render==='function')render(false);});
+      }
+    }).catch(function(e){console.warn('SB login error:',e);});
+  }
+};
+
+/* --- Wrap FORMS.signup --- */
+var _origSignup=FORMS.signup;
+FORMS.signup=function(f){
+  _origSignup(f);
+};
+
+/* --- Wrap logout --- */
+var _origLogout=window.logout;
+window.logout=function(){
+  sbSyncPush().then(function(){
+    sbUid=null;
+    sb.auth.signOut().catch(function(){});
+  }).catch(function(){});
+  _origLogout();
+};
+
+/* --- Wrap bootAuth --- */
+var _origBoot=window.bootAuth;
+window.bootAuth=function(){
+  _origBoot();
+  sb.auth.getSession().then(function(res){
+    if(!res.data||!res.data.session)return;
+    var uid=res.data.session.user.id;
+    sbUid=uid;
+    var rec=S.auth.key?AUTH.get(S.auth.key):null;
+    if(rec&&!rec.sbId){rec.sbId=uid;AUTH.set(rec.key,rec);}
+    if(S.me.logged&&!S.auth.demo){
+      sbSyncPull().then(function(){
+        if(typeof flushSave==='function')flushSave();
+        if(typeof updateHeader==='function')updateHeader();
+        if(typeof render==='function')render(false);
+      });
+    }
+  }).catch(function(e){console.warn('SB session check error:',e);});
+};
+
+/* --- Wrap enterAccount for wallet login --- */
+var _origEnter=window.enterAccount;
+window.enterAccount=function(rec,fresh,quiet){
+  _origEnter(rec,fresh,quiet);
+  if(rec&&rec.sbId){sbUid=rec.sbId;}
+};
+
+/* --- Markets sync --- */
+var _origMkSave=window.marketsSave;
+window.marketsSave=function(){
+  _origMkSave();
+  if(!sbUid||S.auth.demo)return;
+  var batch=[];
+  for(var id in MK){
+    var m=MK[id];
+    if(m.creator==='me'||!m.ph)continue;
+    batch.push({market_id:id,price:Math.round(m.p*100)/100,
+      timestamp:new Date().toISOString(),sequence:(m.ph?m.ph.length:0)});
+  }
+  if(batch.length>0){
+    sb.from('market_price_history').insert(batch.slice(0,20)).catch(function(e){
+      console.warn('SB market history error:',e);
+    });
+  }
+};
+
+/* --- Notifications sync --- */
+async function sbSyncNotifs(){
+  if(!sbUid||S.auth.demo)return;
+  try{
+    var notifs=(S.me.notifs||[]).filter(function(n){return !n._synced;}).slice(0,10);
+    var rows=notifs.map(function(n){
+      return {user_id:sbUid,icon:n.ic||'info',text:n.text||'',href:n.href||'',is_read:!!n.read};
+    });
+    if(rows.length){
+      await sb.from('notifications').insert(rows);
+      notifs.forEach(function(n){n._synced=true;});
+    }
+  }catch(e){console.warn('SB notifs sync error:',e);}
+}
+
+/* --- Periodic full sync (every 30s) --- */
+setInterval(function(){
+  if(sbUid&&!S.auth.demo&&S.me.logged){
+    sbSyncPush();
+    sbSyncNotifs();
+  }
+},30000);
+
+/* --- Listen for auth state changes --- */
+sb.auth.onAuthStateChange(function(event,session){
+  if(event==='SIGNED_IN'&&session&&session.user){
+    sbUid=session.user.id;
+  }else if(event==='SIGNED_OUT'){
+    sbUid=null;
+  }
+});
+
+console.log('Wimoro × Supabase: integration layer loaded.');
+})();
 </script>
 <script>
 'use strict';
