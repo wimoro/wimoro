@@ -10269,8 +10269,11 @@ Object.assign(ACT,{
  'ob-back':()=>{if(S.ui.ob===3&&S.ui.kycOpen){S.ui.kycOpen=false;render(false);return;}S.ui.ob=Math.max(1,S.ui.ob-1);render(false);},
  'ob-kpick':a=>{S.ui.kycPick=a.dataset.v;$$('.kopt[data-a="ob-kpick"]').forEach(b=>{const on=b===a;b.classList.toggle('on',on);b.setAttribute('aria-checked',on);});const n=$('.ob-acts [data-a="ob-next"]');if(n){n.textContent=obKycLbl(S.ui.kycPick);fixText(n);}},
  'ob-kyc':a=>{S.ui.kycOpen=a.dataset.v==='1';if(S.ui.kycOpen)S.ui.kycd={doc:false};render(false);},
- 'ob-next':(a,e)=>{const me=S.me;if(S.ui.ob===3&&!me.kyc&&!S.ui.kycOpen&&(S.ui.kycPick||'crypto')==='kyc'){S.ui.kycOpen=true;S.ui.kycd={doc:false};render(false);return;}S.ui.kycOpen=false;if(S.ui.ob<5){S.ui.ob++;render(false);return;}if(!(me.xp>=100||me.obBonus)){me.obBonus=true;gainXP(100,e);setTimeout(()=>render(false),900);return;}me.onboarded=true;if(me.interests.length)S.ui.cat='Pour toi';save();if(window.__supabase&&typeof sbUid!=='undefined'&&sbUid)window.__supabase.from('users').update({onboarded:true}).eq('id',sbUid).then(function(){});location.hash='#accueil';},
- 'ob-done':()=>{S.me.onboarded=true;if(S.me.interests.length)S.ui.cat='Pour toi';save();if(window.__supabase&&typeof sbUid!=='undefined'&&sbUid)window.__supabase.from('users').update({onboarded:true}).eq('id',sbUid).then(function(){});}
+ 'ob-next':(a,e)=>{const me=S.me;if(S.ui.ob===3&&!me.kyc&&!S.ui.kycOpen&&(S.ui.kycPick||'crypto')==='kyc'){S.ui.kycOpen=true;S.ui.kycd={doc:false};render(false);return;}S.ui.kycOpen=false;if(S.ui.ob<5){S.ui.ob++;render(false);return;}if(!(me.xp>=100||me.obBonus)){me.obBonus=true;gainXP(100,e);setTimeout(()=>render(false),900);return;}me.onboarded=true;if(me.interests.length)S.ui.cat='Pour toi';save();
+var _sb=window.__supabase;if(_sb){_sb.auth.getSession().then(function(r){var uid=r.data&&r.data.session?r.data.session.user.id:null;if(uid){_sb.from('users').update({onboarded:true}).eq('id',uid);_sb.from('user_full_state').upsert({user_id:uid,state:Object.assign({},S.me,{onboarded:true})});}});}
+location.hash='#accueil';},
+ 'ob-done':()=>{S.me.onboarded=true;if(S.me.interests.length)S.ui.cat='Pour toi';save();
+var _sb=window.__supabase;if(_sb){_sb.auth.getSession().then(function(r){var uid=r.data&&r.data.session?r.data.session.user.id:null;if(uid){_sb.from('users').update({onboarded:true}).eq('id',uid);_sb.from('user_full_state').upsert({user_id:uid,state:Object.assign({},S.me,{onboarded:true})});}});}}
 });
 
 /* ===================== Routes ajoutées ===================== */
