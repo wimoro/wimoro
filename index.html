@@ -2995,7 +2995,7 @@ html.pro-lock,html.pro-lock body{overflow:hidden}
 .psh-tx span{font-size:12px;font-weight:600;color:var(--g3)}
 .psh-tx p{font-size:14px;line-height:1.45;color:var(--ink);overflow-wrap:anywhere}
 .psh-back{align-self:center;font-size:13px;min-height:32px}
-/* ---------- Compte invité : choisir un grade ---------- */
+/* ---------- Compte démo : choisir un grade ---------- */
 .demo-rk .h2{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .demo-rk .sub{margin:4px 0 14px;line-height:1.45}
 .drk-l{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
@@ -3009,29 +3009,6 @@ html.pro-lock,html.pro-lock body{overflow:hidden}
 @media (max-width:1100px){.drk-l{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .ui .demo-b{margin-inline-start:auto}
 /* ===== fin du Mode Pro ===== */
-/* Loading overlay */
-.sb-loading{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;align-items:center;justify-content:center;transition:opacity .3s}
-.sb-loading.hide{opacity:0;pointer-events:none}
-.sb-loading .ld{text-align:center}
-.sb-loading .ld-w{display:inline-block;background:#2448FF;width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
-.sb-loading .ld-w span{color:#fff;font-weight:800;font-size:22px}
-.sb-loading .ld-spin{width:32px;height:32px;border:3px solid var(--rule);border-top-color:#2448FF;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-/* ===== Responsive fixes: tablet 480-600px gap ===== */
-@media (max-width:600px){
- .npanel{width:auto!important;inset-inline-start:8px!important;inset-inline-end:8px!important}
- .toast{width:auto;max-width:calc(100vw - 24px)}
- .lb .lh,.lb .lr{grid-template-columns:40px minmax(0,1fr) auto auto;gap:10px;padding:12px}
- .lb .lr>.c-acc,.lb .lr>.c-bets,.lb .lh>.c-acc,.lb .lh>.c-bets{display:none}
- .pos-t .pr2{grid-template-columns:minmax(0,1fr) auto;gap:8px 10px;padding:12px 14px}
- .btn{min-height:44px}
- .btn.sm{min-height:36px}
- .search input{height:44px}
-}
-@media (max-width:400px){
- .toast{width:calc(100vw - 16px);min-width:0}
-}
 
 </style>
 <script>try{var l=localStorage.getItem("wimoro-lang")||"en";if(!/^(en|fr|he)$/.test(l))l="en";document.documentElement.lang=l;document.documentElement.dir=l==="he"?"rtl":"ltr";if(l==="he"){var hf=document.createElement("link");hf.rel="stylesheet";hf.href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap";document.head.appendChild(hf);}}catch(e){}</script>
@@ -3073,7 +3050,7 @@ html.pro-lock,html.pro-lock body{overflow:hidden}
  <a href="#profil" data-nav="profil rang depot retrait connexion inscription bienvenue modifier amis copie parrainage responsable duels duel combines"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>Profil<span class="dotn hide" data-ndot></span></a>
 </nav>
 <div class="toasts" id="toasts" aria-live="polite"></div>
-<noscript><p style="padding:40px;text-align:center">Active JavaScript pour utiliser Wimoro.</p></noscript>
+<noscript><p style="padding:40px;text-align:center">Active JavaScript pour utiliser la démo Wimoro.</p></noscript>
 <script>
 'use strict';
 /* =====================================================================================
@@ -3244,7 +3221,7 @@ I18N_ADD("en",{
 "<b>Total</b>":"<b>Total</b>",
 "<b>tu mises {0}</b>":"<b>you bet {0}</b>",
 "<b>Volume de la manche</b>":"<b>Round volume</b>",
-"<b>Wimoro Payments</b>":"<b>Wimoro Payments</b>",
+"<b>Wimoro Payments (démo)</b>":"<b>Wimoro Payments (demo)</b>",
 "<b>{0} par {1}</b>":"<b>{0} via {1}</b>",
 "<b>{0} USDC sur {1}</b>":"<b>{0} USDC on {1}</b>",
 "<b>{0}, dont {1} sur Oui</b>":"<b>{0}, including {1} on Yes</b>",
@@ -3264,7 +3241,7 @@ I18N_ADD("en",{
 "Acheter {0} pour {1}":"Buy {0} for {1}",
 "Acheter&nbsp;":"Buy&nbsp;",
 "Active":"Active",
-"Active JavaScript pour utiliser Wimoro.":"Enable JavaScript to use Wimoro.",
+"Active JavaScript pour utiliser la démo Wimoro.":"Enable JavaScript to use the Wimoro demo.",
 "Active « Autoriser la copie de mes paris » sur un profil public pour être copié et toucher une part des frais de tes copieurs.":"Turn on “Allow others to copy my bets” on a public profile to be copied and earn a share of your copiers’ fees.",
 "Activer":"Enable",
 "Activer la protection":"Enable protection",
@@ -3492,8 +3469,8 @@ I18N_ADD("en",{
 "Composition officielle dans une heure, je reste prudent.":"Official line-up in an hour, I’m staying cautious.",
 "Compte":"Account",
 "Compte créé, bienvenue {0} !":"Account created, welcome {0}!",
-"Compte invité":"Guest account",
-"Compte invité":"Guest account",
+"Compte démo":"Demo account",
+"Compte démo : User26":"Demo account: User26",
 "Compte lié à un portefeuille":"Account linked to a wallet",
 "Conditions pour entrer":"Requirements to enter",
 "Conditions remplies":"Requirements met",
@@ -3556,11 +3533,11 @@ I18N_ADD("en",{
 "Crypto le soir, foot le week-end. Je partage mes mises dans le chat.":"Crypto in the evening, football at the weekend. I share my bets in the chat.",
 "Crypto ou paiement classique ?":"Crypto or classic payment?",
 "Crypto uniquement. Je poste toutes mes entrées dans le chat.":"Crypto only. I post all my entries in the chat.",
-"Crédit initial":"Initial credit",
+"Crédit démo":"Demo credit",
 "Crédité sur ton solde":"Credited to your balance",
 "Crédité {0}{1}, {2}":"Credited {0}{1}, {2}",
 "Crédités automatiquement, sans rien faire.":"Credited automatically, nothing to do.",
-"Crée ton compte en une minute.":"Create your account in a minute.",
+"Crée ton compte en une minute, ou utilise le compte démo.":"Create your account in a minute, or use the demo account.",
 "Créer":"Create",
 "Créer mon compte":"Create my account",
 "Créer mon propre compte":"Create my own account",
@@ -3627,11 +3604,11 @@ I18N_ADD("en",{
 "Délai habituel":"Usual delay",
 "Délier":"Unlink",
 "Démarrer la copie":"Start copying",
-"Info":"Info",
-"Démo : aucun e-mail n’est envoyé. Tape 6 chiffres au hasard.":"Enter the code received by email.",
-"Le dépôt passe par les confirmations du réseau {0}, puis il est crédité.":"Demo: no real transfer. The deposit goes through the {0} network confirmations, then it is credited.",
-"Les prix et résultats sont en temps réel.":"Prices and results are live.",
-"Démo : rien n’est envoyé ni conservé.":"",
+"Démo":"Demo",
+"Démo : aucun e-mail n’est envoyé. Tape 6 chiffres au hasard.":"Demo: no email is sent. Type any 6 digits.",
+"Démo : aucun vrai transfert. Le dépôt passe par les confirmations du réseau {0}, puis il est crédité.":"Demo: no real transfer. The deposit goes through the {0} network confirmations, then it is credited.",
+"Démo : les prix, les scores et les résultats sont simulés.":"Demo: prices, scores and results are simulated.",
+"Démo : rien n’est envoyé ni conservé.":"Demo: nothing is sent or stored.",
 "Démo : rien n’est envoyé ni conservé. Une fois vérifié, tu débloques les dépôts et retraits par carte, virement et PayPal.":"Demo: nothing is sent or stored. Once verified, you unlock deposits and withdrawals by card, bank transfer and PayPal.",
 "Démo cliquable : les marchés, les mises et les joueurs sont fictifs, aucun argent réel n’est en jeu. Tout le reste fonctionne : parie, écris dans les chats, joue à l’éclair et monte de rang.":"Clickable demo: markets, bets and players are fictional, no real money is at stake. Everything else works: bet, write in the chats, play Flash and climb the ranks.",
 "Départ : {0}":"Start: {0}",
@@ -3708,7 +3685,7 @@ I18N_ADD("en",{
 "Euro / dollar":"Euro / dollar",
 "Excellent":"Excellent",
 "Exemple : il mise {0}":"Example: they bet {0}",
-"Explorer la plateforme":"Explore the platform",
+"Explorer avec le compte démo":"Explore with the demo account",
 "Expérience":"Experience",
 "Exécuté":"Filled",
 "exécuté":"filled",
@@ -4012,7 +3989,7 @@ I18N_ADD("en",{
 "Masquer la notification":"Hide the notification",
 "Matières":"Commodities",
 "Max":"Max",
-"Maximum : 5 000 $ par dépôt .":"Maximum: $5,000 per deposit .",
+"Maximum : 5 000 $ par dépôt dans cette démo.":"Maximum: $5,000 per deposit in this demo.",
 "mdr tu vas pleurer à la clôture":"lol you’re going to cry at close",
 "Me prévenir":"Notify me",
 "Meilleure série":"Best streak",
@@ -4738,7 +4715,7 @@ I18N_ADD("en",{
 "Vous êtes maintenant amis.":"You are now friends.",
 "Vérification d’identité (KYC)":"Identity verification (KYC)",
 "Vérification en cours…":"Verifying…",
-"Vérification rapide (simulée )":"Quick verification (simulated )",
+"Vérification rapide (simulée dans cette démo)":"Quick verification (simulated in this demo)",
 "Vérifie la liste « Avant d’envoyer ».":"Check the “Before sending” list.",
 "Vérifie tes e-mails":"Check your e-mails",
 "Vérifie ton adresse e-mail.":"Check your e-mail address.",
@@ -4874,7 +4851,7 @@ I18N_ADD("en",{
 "{0} retiré de tes amis":"{0} removed from your friends",
 "{0} Rotation":"{0} Rotation",
 "{0} Règles du chat":"{0} Chat rules",
-"{0} Réinitialiser":"{0} Reset",
+"{0} Réinitialiser la démo":"{0} Reset the demo",
 "{0} Salon VIP":"{0} VIP lounge",
 "{0} Se débloque au rang {1}":"{0} Unlocks at {1}",
 "{0} Se déconnecter":"{0} Log out",
@@ -6067,7 +6044,7 @@ I18N_ADD("en",{
 "Mode Pro : 2 indicateurs en même temps":"Pro mode: 2 indicators at once",
 "Mode Pro : 3 indicateurs en même temps":"Pro mode: 3 indicators at once",
 "Mode Pro : indicateurs illimités, plusieurs fois le même si tu veux":"Pro mode: unlimited indicators, the same one several times if you like",
-"":"Demo mode: this rank’s requirements are now met on your account.",
+"Mode démo : les conditions de ce rang sont remplies sur ton compte.":"Demo mode: this rank’s requirements are now met on your account.",
 "Modifie-la librement : l’original n’est pas modifié.":"Edit it freely: the original is not changed.",
 "Modifier le texte":"Edit text",
 "Molette pour zoomer, glisser pour remonter dans l’historique":"Scroll to zoom, drag to go back in history",
@@ -6272,7 +6249,7 @@ I18N_ADD("he",{
 "<b>Total</b>":"<b>סה״כ</b>",
 "<b>tu mises {0}</b>":"<b>אתה מהמר {0}</b>",
 "<b>Volume de la manche</b>":"<b>נפח הסיבוב</b>",
-"<b>Wimoro Payments</b>":"<b>Wimoro Payments (מידע)</b>",
+"<b>Wimoro Payments (démo)</b>":"<b>Wimoro Payments (הדגמה)</b>",
 "<b>{0} par {1}</b>":"<b>{0} דרך {1}</b>",
 "<b>{0} USDC sur {1}</b>":"<b>{0} USDC על {1}</b>",
 "<b>{0}, dont {1} sur Oui</b>":"<b>{0}, מתוכם {1} על כן</b>",
@@ -6292,7 +6269,7 @@ I18N_ADD("he",{
 "Acheter {0} pour {1}":"קנה {0} ב-{1}",
 "Acheter&nbsp;":"קנה&nbsp;",
 "Active":"פעילה",
-"Active JavaScript pour utiliser Wimoro.":"הפעל JavaScript כדי להשתמש במידע של Wimoro.",
+"Active JavaScript pour utiliser la démo Wimoro.":"הפעל JavaScript כדי להשתמש בהדגמה של Wimoro.",
 "Active « Autoriser la copie de mes paris » sur un profil public pour être copié et toucher une part des frais de tes copieurs.":"הפעל ״לאפשר העתקה של ההימורים שלי״ בפרופיל ציבורי כדי שיעתיקו אותך ותקבל חלק מהעמלות של המעתיקים שלך.",
 "Activer":"הפעלה",
 "Activer la protection":"הפעלת ההגנה",
@@ -6520,8 +6497,8 @@ I18N_ADD("he",{
 "Composition officielle dans une heure, je reste prudent.":"ההרכב הרשמי בעוד שעה, אני נשאר זהיר.",
 "Compte":"חשבון",
 "Compte créé, bienvenue {0} !":"החשבון נוצר, ברוך הבא {0}!",
-"Compte invité":"חשבון מידע",
-"Compte invité":"חשבון מידע: User26",
+"Compte démo":"חשבון הדגמה",
+"Compte démo : User26":"חשבון הדגמה: User26",
 "Compte lié à un portefeuille":"חשבון מקושר לארנק",
 "Conditions pour entrer":"תנאי כניסה",
 "Conditions remplies":"התנאים מולאו",
@@ -6584,11 +6561,11 @@ I18N_ADD("he",{
 "Crypto le soir, foot le week-end. Je partage mes mises dans le chat.":"קריפטו בערב, כדורגל בסוף השבוע. אני משתף את ההימורים שלי בצ׳אט.",
 "Crypto ou paiement classique ?":"קריפטו או תשלום רגיל?",
 "Crypto uniquement. Je poste toutes mes entrées dans le chat.":"קריפטו בלבד. אני מפרסם את כל הכניסות שלי בצ׳אט.",
-"Crédit initial":"זיכוי מידע",
+"Crédit démo":"זיכוי הדגמה",
 "Crédité sur ton solde":"זוכה ביתרה שלך",
 "Crédité {0}{1}, {2}":"זוכה {0}{1}, {2}",
 "Crédités automatiquement, sans rien faire.":"מזוכה אוטומטית, בלי לעשות כלום.",
-"Crée ton compte en une minute.":"צור חשבון תוך דקה, או השתמש בחשבון המידע.",
+"Crée ton compte en une minute, ou utilise le compte démo.":"צור חשבון תוך דקה, או השתמש בחשבון ההדגמה.",
 "Créer":"יצירה",
 "Créer mon compte":"יצירת החשבון שלי",
 "Créer mon propre compte":"יצירת חשבון משלי",
@@ -6634,7 +6611,7 @@ I18N_ADD("he",{
 "Des rangs de Fer à Radiant, qui débloquent les fonctions.":"דרגות מברזל ועד זוהר, שפותחות תכונות.",
 "Des règles d’au moins 30 caractères":"כללים של לפחות 30 תווים",
 "Destination":"יעד",
-"Destination simulée pour la démo : aucune donnée bancaire n’est demandée.":"יעד מדומה למידע: לא נדרשים פרטי בנק.",
+"Destination simulée pour la démo : aucune donnée bancaire n’est demandée.":"יעד מדומה להדגמה: לא נדרשים פרטי בנק.",
 "Devises":"מטבעות",
 "Diamant":"יהלום",
 "Dim.":"א׳",
@@ -6655,13 +6632,13 @@ I18N_ADD("he",{
 "Délai habituel":"זמן טיפול רגיל",
 "Délier":"ניתוק",
 "Démarrer la copie":"התחלת ההעתקה",
-"Info":"מידע",
-"Démo : aucun e-mail n’est envoyé. Tape 6 chiffres au hasard.":"מידע: לא נשלח אימייל. הקלד 6 ספרות כלשהן.",
-"Le dépôt passe par les confirmations du réseau {0}, puis il est crédité.":"מידע: אין העברה אמיתית. ההפקדה עוברת את אישורי רשת {0} ואז מזוכה.",
-"Les prix et résultats sont en temps réel.":"מידע: המחירים, התוצאות והפתרונות מדומים.",
-"Démo : rien n’est envoyé ni conservé.":"מידע: שום דבר לא נשלח או נשמר.",
-"Démo : rien n’est envoyé ni conservé. Une fois vérifié, tu débloques les dépôts et retraits par carte, virement et PayPal.":"מידע: שום דבר לא נשלח או נשמר. אחרי האימות תוכל להפקיד ולמשוך בכרטיס, בהעברה בנקאית וב-PayPal.",
-"Démo cliquable : les marchés, les mises et les joueurs sont fictifs, aucun argent réel n’est en jeu. Tout le reste fonctionne : parie, écris dans les chats, joue à l’éclair et monte de rang.":"מידע אינטראקטיבית: השווקים, ההימורים והשחקנים בדיוניים, אין כסף אמיתי בסיכון. כל השאר עובד: המר, כתוב בצ׳אטים, שחק בבזק ועלה בדרגות.",
+"Démo":"הדגמה",
+"Démo : aucun e-mail n’est envoyé. Tape 6 chiffres au hasard.":"הדגמה: לא נשלח אימייל. הקלד 6 ספרות כלשהן.",
+"Démo : aucun vrai transfert. Le dépôt passe par les confirmations du réseau {0}, puis il est crédité.":"הדגמה: אין העברה אמיתית. ההפקדה עוברת את אישורי רשת {0} ואז מזוכה.",
+"Démo : les prix, les scores et les résultats sont simulés.":"הדגמה: המחירים, התוצאות והפתרונות מדומים.",
+"Démo : rien n’est envoyé ni conservé.":"הדגמה: שום דבר לא נשלח או נשמר.",
+"Démo : rien n’est envoyé ni conservé. Une fois vérifié, tu débloques les dépôts et retraits par carte, virement et PayPal.":"הדגמה: שום דבר לא נשלח או נשמר. אחרי האימות תוכל להפקיד ולמשוך בכרטיס, בהעברה בנקאית וב-PayPal.",
+"Démo cliquable : les marchés, les mises et les joueurs sont fictifs, aucun argent réel n’est en jeu. Tout le reste fonctionne : parie, écris dans les chats, joue à l’éclair et monte de rang.":"הדגמה אינטראקטיבית: השווקים, ההימורים והשחקנים בדיוניים, אין כסף אמיתי בסיכון. כל השאר עובד: המר, כתוב בצ׳אטים, שחק בבזק ועלה בדרגות.",
 "Départ : {0}":"התחלה: {0}",
 "Dépose des fonds pour continuer.":"הפקד כספים כדי להמשיך.",
 "Dépose en crypto, ou par carte, virement et PayPal après vérification d’identité (KYC). Ton dépôt est crédité en dollars sur ton solde.":"הפקד בקריפטו, או בכרטיס, בהעברה בנקאית וב-PayPal אחרי אימות זהות (KYC). ההפקדה מזוכה בדולרים ביתרה שלך.",
@@ -6736,7 +6713,7 @@ I18N_ADD("he",{
 "Euro / dollar":"אירו / דולר",
 "Excellent":"מצוין",
 "Exemple : il mise {0}":"דוגמה: הוא מהמר {0}",
-"Explorer la plateforme":"לחקור עם חשבון המידע",
+"Explorer avec le compte démo":"לחקור עם חשבון ההדגמה",
 "Expérience":"ניסיון",
 "Exécuté":"בוצע",
 "exécuté":"בוצע",
@@ -7040,7 +7017,7 @@ I18N_ADD("he",{
 "Masquer la notification":"הסתרת ההתראה",
 "Matières":"סחורות",
 "Max":"מקס׳",
-"Maximum : 5 000 $ par dépôt .":"מקסימום: $5,000 להפקדה במידע הזו.",
+"Maximum : 5 000 $ par dépôt dans cette démo.":"מקסימום: $5,000 להפקדה בהדגמה הזו.",
 "mdr tu vas pleurer à la clôture":"חחח אתה תבכה בסגירה",
 "Me prévenir":"להתריע לי",
 "Meilleure série":"הרצף הטוב ביותר",
@@ -7711,7 +7688,7 @@ I18N_ADD("he",{
 "USDC max par pari":"מקסימום USDC להימור",
 "Utilise au moins 8 caractères.":"השתמש ב-8 תווים לפחות.",
 "Utilise-le à ta prochaine connexion.":"השתמש בה בהתחברות הבאה שלך.",
-"Utiliser le compte démo (User26, Or II)":"שימוש בחשבון המידע (User26, זהב II)",
+"Utiliser le compte démo (User26, Or II)":"שימוש בחשבון ההדגמה (User26, זהב II)",
 "Utiliser une adresse de test":"שימוש בכתובת בדיקה",
 "Valeur":"שווי",
 "Valeur ($)":"שווי ($)",
@@ -7766,7 +7743,7 @@ I18N_ADD("he",{
 "Vous êtes maintenant amis.":"אתם עכשיו חברים.",
 "Vérification d’identité (KYC)":"אימות זהות (KYC)",
 "Vérification en cours…":"מאמת…",
-"Vérification rapide (simulée )":"אימות מהיר (מדומה במידע הזו)",
+"Vérification rapide (simulée dans cette démo)":"אימות מהיר (מדומה בהדגמה הזו)",
 "Vérifie la liste « Avant d’envoyer ».":"בדוק את רשימת ״לפני השליחה״.",
 "Vérifie tes e-mails":"בדוק את האימייל שלך",
 "Vérifie ton adresse e-mail.":"בדוק את כתובת האימייל שלך.",
@@ -7823,7 +7800,7 @@ I18N_ADD("he",{
 "{0} Copié par {1} joueur{2}. Il touche {3} % des frais de ses copieurs, sans surcoût pour eux.":"{0} מועתק על ידי {1, plural, one{שחקן אחד} two{שני שחקנים} other{# שחקנים}}. הוא מקבל {3}% מעמלות המעתיקים שלו, ללא תוספת עלות עבורם.",
 "{0} Crédité":"{0} זוכה",
 "{0} crédités sur ton solde":"{0} זוכו ליתרה שלך",
-"{0} Dans cette démo, aucun vrai paiement n’est effectué et aucune donnée bancaire n’est demandée.":"{0} במידע הזו לא מתבצע שום תשלום אמיתי ולא נדרשים פרטי בנק.",
+"{0} Dans cette démo, aucun vrai paiement n’est effectué et aucune donnée bancaire n’est demandée.":"{0} בהדגמה הזו לא מתבצע שום תשלום אמיתי ולא נדרשים פרטי בנק.",
 "{0} de parrainage crédités sur ton solde.":"{0} בונוס הפניה זוכו ליתרה שלך.",
 "{0} de parrainage offerts. Encore 5 petites étapes.":"{0} בונוס הפניה במתנה. עוד 5 שלבים קטנים.",
 "{0} depuis {1} · {2} · {3}":"{0} מזה {1} · {2} · {3}",
@@ -7902,7 +7879,7 @@ I18N_ADD("he",{
 "{0} retiré de tes amis":"{0} הוסר מהחברים שלך",
 "{0} Rotation":"{0} רוטציה",
 "{0} Règles du chat":"{0} כללי הצ׳אט",
-"{0} Réinitialiser":"{0} איפוס",
+"{0} Réinitialiser la démo":"{0} איפוס ההדגמה",
 "{0} Salon VIP":"{0} טרקלין VIP",
 "{0} Se débloque au rang {1}":"{0} נפתח בדרגת {1}",
 "{0} Se déconnecter":"{0} התנתקות",
@@ -8831,7 +8808,7 @@ I18N_ADD("he",{
 "classement mondial":"דירוג עולמי",
 "divisions":"דיוויזיות",
 "{0} Encaisse ou continue dans les {1} secondes.":"{0} משוך או המשך תוך {1} שניות.",
-"{0} Simulation démo :":"{0} סימולציית מידע:",
+"{0} Simulation démo :":"{0} סימולציית הדגמה:",
 "{0} Tu es inscrit. À chaque manche, choisis Haut, Bas ou Break even dans les {1} premières secondes.":"{0} אתה רשום. בכל סיבוב, בחר למעלה, למטה או ברייק איבן ב-{1} השניות הראשונות.",
 "{0} [{1}] sur Wimoro : {2}. Rejoins-nous avec le code {3} : {4}":"{0} [{1}] ב-Wimoro: {2}. הצטרפו אלינו עם הקוד {3}: {4}",
 "{0} ajoutés à la cagnotte. Tu reviens en jeu à la manche {1}. C’était ton seul rachat.":"{0} נוספו לקופה. אתה חוזר למשחק בסיבוב {1}. זו הייתה הקנייה מחדש היחידה שלך.",
@@ -8864,7 +8841,7 @@ I18N_ADD("he",{
 "Le dépôt passe par les confirmations du réseau {0}, puis il est crédité sur ton solde.":"ההפקדה עוברת את אישורי רשת {0} ואז מזוכה ליתרה שלך.",
 "Les prix, les scores et les résultats sont simulés.":"המחירים, התוצאות והפתרונות מדומים.",
 "Maximum : {0} par dépôt.":"מקסימום: {0} להפקדה.",
-"Mode démo":"מצב מידע",
+"Mode démo":"מצב הדגמה",
 "Payer {0}":"לשלם {0}",
 "Pièce d’identité ajoutée":"התעודה המזהה נוספה",
 "Pop-up : {0}":"חלונות קופצים: {0}",
@@ -8951,7 +8928,7 @@ I18N_ADD("he",{
 "Pour l’instant : {0} · gain si ça se retourne : {1}":"כרגע: {0} · רווח אם זה יתהפך: {1}",
 "gagnant":"מנצח",
 "perdant":"מפסיד",
-"Wimoro : marchés de prédiction, pari éclair, live chat, clans et duels entre amis, KYC et rangs de Fer à Radiant. Démo cliquable.":"Wimoro: שוקי תחזיות, הימור בזק, צ׳אט חי, קלאנים ודו-קרבות בין חברים, KYC ודרגות מברזל ועד זוהר. מידע לחיצה."
+"Wimoro : marchés de prédiction, pari éclair, live chat, clans et duels entre amis, KYC et rangs de Fer à Radiant. Démo cliquable.":"Wimoro: שוקי תחזיות, הימור בזק, צ׳אט חי, קלאנים ודו-קרבות בין חברים, KYC ודרגות מברזל ועד זוהר. הדגמה לחיצה."
 });
 /* Version 20 (catalogue appliqué) */
 I18N_ADD("he",{
@@ -9094,7 +9071,7 @@ I18N_ADD("he",{
 "Mode Pro : 2 indicateurs en même temps":"מצב Pro: 2 אינדיקטורים בו-זמנית",
 "Mode Pro : 3 indicateurs en même temps":"מצב Pro: 3 אינדיקטורים בו-זמנית",
 "Mode Pro : indicateurs illimités, plusieurs fois le même si tu veux":"מצב Pro: אינדיקטורים ללא הגבלה, גם אותו אינדיקטור כמה פעמים",
-"":"מצב מידע: תנאי הדרגה הזו מולאו בחשבון שלך.",
+"Mode démo : les conditions de ce rang sont remplies sur ton compte.":"מצב הדגמה: תנאי הדרגה הזו מולאו בחשבון שלך.",
 "Modifie-la librement : l’original n’est pas modifié.":"ערוך אותו בחופשיות: המקור אינו משתנה.",
 "Modifier le texte":"עריכת הטקסט",
 "Molette pour zoomer, glisser pour remonter dans l’historique":"גלגל כדי להתקרב, גרור כדי לחזור אחורה בהיסטוריה",
@@ -9173,7 +9150,7 @@ I18N_ADD("he",{
 "Tu affiches déjà le maximum d’indicateurs":"אתה כבר מציג את המספר המרבי של אינדיקטורים",
 "Tu as déjà une analyse sur ce marché":"כבר יש לך ניתוח על השוק הזה",
 "Tu es maintenant {0}":"אתה עכשיו {0}",
-"Un clic sur un rang et ton compte démo y passe tout de suite, avec ses conditions remplies. Sous chaque rang : le nombre d’indicateurs du Mode Pro.":"לחיצה אחת על דרגה וחשבון המידע שלך עובר אליה מיד, עם התנאים שלה ממולאים. מתחת לכל דרגה: מספר האינדיקטורים במצב Pro.",
+"Un clic sur un rang et ton compte démo y passe tout de suite, avec ses conditions remplies. Sous chaque rang : le nombre d’indicateurs du Mode Pro.":"לחיצה אחת על דרגה וחשבון ההדגמה שלך עובר אליה מיד, עם התנאים שלה ממולאים. מתחת לכל דרגה: מספר האינדיקטורים במצב Pro.",
 "Vert":"ירוק",
 "Violet":"סגול",
 "Voir l’analyse":"הצגת הניתוח",
@@ -9329,7 +9306,7 @@ const USER_IDS=Object.keys(USERS);
 
 /* Indice pour le testeur : petite mention toujours identique, jamais dans le libellé principal d'un bouton ou d'un titre. */
 const demoB=()=>`<span class="demo-b">${_t('Mode démo')}</span>`;
-const demoHint=(txt,tag='p')=>'';
+const demoHint=(txt,tag='p')=>`<${tag} class="demo-h">${demoB()}<span>${txt}</span></${tag}>`;
 /* ===================== Dates ===================== */
 /* Un seul formateur par langue ; l'heure est toujours sur 24 h (« 23:59 »). */
 const DAYMS=864e5,isoDate=s=>{const [y,mo,d]=s.split('-').map(Number);return new Date(y,mo-1,d);};
@@ -9401,12 +9378,12 @@ const T0=now();
 function demoMe(){return {v:5,logged:true,onboarded:true,kyc:false,fmode:'free',falerts:[],contraWins:1,n:'User26',email:'user26@exemple.fr',photo:'g:renard',color:'#14161B',interests:[],since:new Date(2026,2,1).toLocaleDateString(LOC,{month:'long',year:'numeric'}),followers:128,xp:1840,balance:1000248.5,credit1m:true,bio:_t("Crypto le soir, foot le week-end. Je partage mes mises dans le chat."),wallet:'',prefs:{},ctype:'courbe',settled:186,wins:119,played:213,flashWins:0,flashStreak:0,flashBest:0,flashProfit:0,followed:18,deposits:1,depDay:'',streak:5,bestStreak:9,pos:1284,msgsTotal:64,chatXP:0,chatDay:'',maxBet:200,realized:1795.94,following:['lea','maxou'],watch:['btc150k'],props:[],voted:{},
  positions:[{m:'btc150k',s:'oui',sh:238.1,avg:54},{m:'clasico',s:'oui',sh:120,avg:50},{m:'eth6000',s:'non',sh:180.5,avg:66},{m:'neige-noel',s:'non',sh:150,avg:85},{m:'ia-olympiades',s:'oui',sh:200,avg:66}],
  history:[{k:'res',q:_t("La BCE baissera-t-elle ses taux en octobre ?"),s:'oui',win:true,pnl:38.2,at:T0-864e5},{k:'res',q:_t("Le PSG gagnera-t-il contre Monaco ?"),s:'non',win:false,pnl:-25,at:T0-1728e5},{k:'res',q:_t("Le Bitcoin finira-t-il octobre au-dessus de 90 000 $ ?"),s:'oui',win:true,pnl:61.4,at:T0-2592e5}],
- deps:[{coin:'USDC',net:'Base',amt:1e6,usd:1e6,at:T0-6e5,conf:12,need:12,label:'Crédit initial'},{coin:'ETH',net:'Arbitrum',amt:.015,usd:52.31,at:T0-8.64e7,conf:12,need:12},{coin:'USDT',net:'Ethereum',amt:100,usd:100,at:T0-4.3e8,conf:12,need:12},{coin:'BTC',net:'Bitcoin',amt:.0021,usd:201.77,at:T0-1.05e9,conf:2,need:2}],
+ deps:[{coin:'USDC',net:'Base',amt:1e6,usd:1e6,at:T0-6e5,conf:12,need:12,label:'Crédit démo'},{coin:'ETH',net:'Arbitrum',amt:.015,usd:52.31,at:T0-8.64e7,conf:12,need:12},{coin:'USDT',net:'Ethereum',amt:100,usd:100,at:T0-4.3e8,conf:12,need:12},{coin:'BTC',net:'Bitcoin',amt:.0021,usd:201.77,at:T0-1.05e9,conf:2,need:2}],
  wds:[],
  notifs:[{id:1,ic:'users',text:_t("lea a suivi ta mise sur le Clásico."),href:'#profil',at:T0-36e5,read:false},{id:2,ic:'trophy',text:_t("Plus que 110 XP pour passer Or III."),href:'#rang',at:T0-72e5,read:false},{id:3,ic:'flame',text:_t("Signal de foule sur Bitcoin à 150 000 $."),href:'#marche-btc150k',at:T0-9e6,read:false}],
  missions:[{id:'bets2',type:'bet',label:_t("Place 2 paris"),goal:2,have:0,xp:40,go:'#accueil',claimed:false},{id:'chatm1',type:'chatm',label:_t("Écris dans le chat d’un marché"),goal:1,have:0,xp:30,go:'#marche-btc150k',claimed:false},{id:'flash1',type:'flashwin',label:_t("Gagne une manche au marché éclair"),goal:1,have:0,xp:60,go:'#eclair',claimed:false}],
  badges:[],copies:[],copiers:0,welcomed:false,blockedShown:''};}
-function newMe(n,email){return {v:5,logged:true,onboarded:true,kyc:false,fmode:'free',falerts:[],contraWins:0,n,email,photo:'g:'+AV_GALLERY[hash(n||'')%AV_GALLERY.length].id,color:'#2448FF',interests:[],since:_t("aujourd’hui"),followers:0,xp:0,balance:0,credit1m:true,bio:'',wallet:'',prefs:{},ctype:'courbe',settled:0,wins:0,played:0,flashWins:0,flashStreak:0,flashBest:0,flashProfit:0,followed:0,deposits:0,depDay:'',streak:1,bestStreak:1,pos:38901,msgsTotal:0,chatXP:0,chatDay:'',maxBet:0,realized:0,following:[],watch:[],props:[],voted:{},positions:[],history:[],deps:[],wds:[],
+function newMe(n,email){return {v:5,logged:true,onboarded:false,kyc:false,fmode:'free',falerts:[],contraWins:0,n,email,photo:'g:'+AV_GALLERY[hash(n||'')%AV_GALLERY.length].id,color:'#2448FF',interests:[],since:_t("aujourd’hui"),followers:0,xp:0,balance:1e6,credit1m:true,bio:'',wallet:'',prefs:{},ctype:'courbe',settled:0,wins:0,played:0,flashWins:0,flashStreak:0,flashBest:0,flashProfit:0,followed:0,deposits:0,depDay:'',streak:1,bestStreak:1,pos:38901,msgsTotal:0,chatXP:0,chatDay:'',maxBet:0,realized:0,following:[],watch:[],props:[],voted:{},positions:[],history:[],deps:[{coin:'USDC',net:'Base',amt:1e6,usd:1e6,at:now(),conf:12,need:12,label:'Crédit démo'}],wds:[],
  notifs:[{id:1,ic:'gift',text:_t("Bienvenue sur Wimoro ! Tes 100 XP de bienvenue t’attendent."),href:'#bienvenue',at:now(),read:false}],
  missions:[{id:'dep1',type:'dep',label:_t("Fais ton premier dépôt"),goal:1,have:0,xp:100,go:'#depot',claimed:false},{id:'fb1',type:'flashbet',label:_t("Joue une manche au marché éclair"),goal:1,have:0,xp:50,go:'#eclair',claimed:false},{id:'chat1',type:'chat',label:_t("Écris ton premier message"),goal:1,have:0,xp:20,go:'#chat',claimed:false}],
  badges:[],copies:[],copiers:0,welcomed:true,blockedShown:''};}
@@ -9952,7 +9929,7 @@ function posTable(){const L=S.me.positions;if(!L.length)return `<div class="empt
 function ptabH(t){if(t==='positions')return posTable()+ordersTableH();if(t==='mine')return myBetsH();
  if(t==='history')return `<div style="padding:4px 20px 12px">${S.me.history.length?S.me.history.map(h=>`<div class="act"><span><span class="sidechip ${h.s}" style="margin-inline-end:8px">${h.k==='flash'?(h.eq?_t("Égalité"):h.s==='oui'?_t("Haut"):_t("Bas")):(h.s==='oui'?_t("Oui"):_t("Non"))}</span>${esc(h.m&&MK[h.m]?MK[h.m].q:h.q)}<small style="display:block;margin-top:3px">${histKind(h)}, ${ago(h.at)}</small></span><span class="hpnl"><b class="num ${plc(h.pnl)}" style="font-size:20px;white-space:nowrap">${F.signed(h.pnl)}</b>${h.pnl>0.004?shareBtnH('win',{q:h.m&&MK[h.m]?MK[h.m].q:h.q,s:h.s,pnl:h.pnl}):''}</span></div>`).join(''):`<div class="empty">${_t("Pas encore d’historique.")} <a class="link" href="#accueil">${_t("Parier sur un marché")}</a></div>`}</div>`;
  if(t==='badges')return `<div style="padding:8px 20px 16px">${BADGES.map(b=>{const on=S.me.badges.includes(b.id);return `<div class="act"><span style="display:flex;gap:12px;align-items:center"><span class="pi" style="width:40px;height:40px;border-radius:10px;display:grid;place-items:center;background:${on?'var(--ouiS)':'var(--soft)'}">${ic(on?b.ic:'lock',18,on?'#2448FF':'#A3A8B2')}</span><span><b style="color:var(--ink)">${b.n}</b><small style="display:block;margin-top:2px">${b.how}</small></span></span>${on?`<span class="xpc">${_t('Obtenu')}</span>`:''}</div>`;}).join('')}</div>`;
- return `<form class="col" style="padding:20px;gap:16px;max-width:520px" data-form="settings"><div class="field"><label for="pseudo">${_t("Pseudo")}</label><input id="pseudo" name="pseudo" value="${esc(S.me.n)}" maxlength="20" pattern="[A-Za-z0-9._]{3,20}" required><span class="sub">${_t("3 à 20 caractères : lettres, chiffres, point ou tiret bas.")}</span></div><button class="btn b-ink" type="submit" style="align-self:flex-start">${_t("Enregistrer")}</button><hr><div><div class="h2" style="font-size:15px">${_t("Compte")}</div><p class="sub" style="margin-top:4px">${S.auth.demo?_t("Compte invité"):esc((accountOfMe()||{}).email||_t("Compte lié à un portefeuille"))}</p><div class="kycrow">${S.me.kyc?`<span class="kyc-badge ok">${_t("{0} KYC vérifié",[ic('check',13,'#2448FF',2.6)])}</span>`:`<span class="kyc-badge">${_t("{0} KYC non fait : crypto uniquement",[ic('lock',13)])}</span><button class="btn b-ink sm" type="button" data-a="kyc">${_t("Faire le KYC")}</button>`}</div></div><hr><div class="swrow"><div><div class="h2" style="font-size:15px">${_t("Mode sombre")}</div><p class="sub" style="margin-top:4px">${_t("Bascule entre le thème clair et le thème sombre. Le bouton lune/soleil de l’en-tête fait la même chose.")}</p></div><button type="button" class="sw${isDark()?' on':''}" role="switch" aria-checked="${isDark()}" aria-label="${_t("Mode sombre")}" data-a="theme"><i></i></button></div>${settingsExtraH()}<hr><div><div class="h2" style="font-size:15px">${_t("Info")}</div><p class="sub" style="margin-top:4px">${_t("Tes progrès sont gardés dans ce navigateur. Tu peux repartir de zéro à tout moment.")}</p><div class="hbtns" style="margin-top:12px"><button class="btn b-ink" type="button" data-a="logout">${_t("{0} Se déconnecter",[ic('out',16,'#fff')])}</button></div></div></form>`;}
+ return `<form class="col" style="padding:20px;gap:16px;max-width:520px" data-form="settings"><div class="field"><label for="pseudo">${_t("Pseudo")}</label><input id="pseudo" name="pseudo" value="${esc(S.me.n)}" maxlength="20" pattern="[A-Za-z0-9._]{3,20}" required><span class="sub">${_t("3 à 20 caractères : lettres, chiffres, point ou tiret bas.")}</span></div><button class="btn b-ink" type="submit" style="align-self:flex-start">${_t("Enregistrer")}</button><hr><div><div class="h2" style="font-size:15px">${_t("Compte")}</div><p class="sub" style="margin-top:4px">${S.auth.demo?_t("Compte démo"):esc((accountOfMe()||{}).email||_t("Compte lié à un portefeuille"))}</p><div class="kycrow">${S.me.kyc?`<span class="kyc-badge ok">${_t("{0} KYC vérifié",[ic('check',13,'#2448FF',2.6)])}</span>`:`<span class="kyc-badge">${_t("{0} KYC non fait : crypto uniquement",[ic('lock',13)])}</span><button class="btn b-ink sm" type="button" data-a="kyc">${_t("Faire le KYC")}</button>`}</div></div><hr><div class="swrow"><div><div class="h2" style="font-size:15px">${_t("Mode sombre")}</div><p class="sub" style="margin-top:4px">${_t("Bascule entre le thème clair et le thème sombre. Le bouton lune/soleil de l’en-tête fait la même chose.")}</p></div><button type="button" class="sw${isDark()?' on':''}" role="switch" aria-checked="${isDark()}" aria-label="${_t("Mode sombre")}" data-a="theme"><i></i></button></div>${settingsExtraH()}<hr><div><div class="h2" style="font-size:15px">${_t("Démo")}</div><p class="sub" style="margin-top:4px">${_t("Tes progrès sont gardés dans ce navigateur. Tu peux repartir de zéro à tout moment.")}</p><div class="hbtns" style="margin-top:12px"><button class="btn b-ghost" type="button" data-a="reset">${_t("{0} Réinitialiser la démo",[ic('refresh',16)])}</button><button class="btn b-ink" type="button" data-a="logout">${_t("{0} Se déconnecter",[ic('out',16,'#fff')])}</button></div></div></form>`;}
 function vProfile(){const r=myRank(),st=stats(),pf=portfolio(),pg=progress(),t=S.ui.ptab;
  return `<div class="wrap"><section class="pn" style="overflow:hidden"><div class="pf-top"><div class="pf-id"><span class="av t-me${avClass('me')}" style="background:${S.me.color}">${avInner('me',88)}</span><div><h1>${esc(S.me.n)} ${tagH('me')}</h1>${S.me.bio?`<p class="pf-bio">${esc(S.me.bio)}</p>`:''}<div class="pf-meta"><a href="#rang">${rk(r.t,r.d)}</a><span>${_t("Membre depuis {0}",[esc(S.me.since||_t("aujourd’hui"))])}</span><span>${_t("{0} abonné{1}",[F.int(S.me.followers||0),(S.me.followers||0)>1?'s':''])}</span><span>${_t("{0} abonnements",[S.me.following.length])}</span>${visMetaH()}</div></div></div><div class="hbtns own"><a class="btn b-white" href="#amis">${_t("{0} Amis",[ic('users',16)])} <span class="cnt2">${friendsOf().length}</span></a><a class="btn b-white" href="#copie">${ic('copy',16)} <span class="lg-only">${_t("Copy trading")}</span><span class="sm-only">${_t("Copies")}</span>${copiesLive().length?` <span class="cnt2">${copiesLive().length}</span>`:''}</a><button class="btn b-white" data-a="copylink" data-v="#profil">${ic('share',16)} <span>${_t("Partager")}<span class="lg-only"> ${_t("le profil")}</span></span></button><a class="btn b-ink" href="#modifier">${_t("{0} Modifier le profil",[ic('user',16,'#fff')])}</a></div></div>
  <div class="pf-stats"><div><small>${_t("Profit total")}</small><b class="num ${plc(pf.profit)}" data-live="profit">${F.signed(pf.profit)}</b></div><div><small>${_t("Précision")}</small><b class="num">${F.pct(st.acc)}</b></div><div><small>${_t("Paris joués")}</small><b class="num">${F.int(S.me.played)}</b></div><div><small>${_t("Série en cours")}</small><b class="num">${_t("{0} jours",[S.me.streak])}</b></div><div><small>${_t("Valeur des positions")}</small><b class="num" data-live="pvalue">${F.usd(pf.value)}</b></div></div></section>
@@ -9973,7 +9950,7 @@ function vPlayer(u){const U=USERS[u];if(!U)return vBoard();if(!canSeeProfile(u))
 /* ===================== Dépôt et retrait ===================== */
 const fmtCoin=(v,c)=>NB(new Intl.NumberFormat(LOC,{maximumFractionDigits:COINS[c].dec}).format(v))+' '+c;
 /* libellé d'un dépôt enregistré dans une autre langue : réaffiché dans la langue courante */
-const depLabel=l=>(l==='Crédit initial'||l===I18N.en['Crédit initial']||l===I18N.he['Crédit initial'])?_t('Crédit initial'):l;
+const depLabel=l=>(l==='Crédit démo'||l===I18N.en['Crédit démo']||l===I18N.he['Crédit démo'])?_t('Crédit démo'):l;
 function depsH(){const L=S.me.deps.slice(0,6);return L.map(d=>{const ok=d.conf>=d.need;if(d.method)return fiatDepRow(d,ok);return `<div class="dep"><span class="tk">${d.coin}</span><span class="dd"><b>${d.label?F.kv(esc(depLabel(d.label)),fmtCoin(d.amt,d.coin)):`${_t("{0} sur {1}",[fmtCoin(d.amt,d.coin),d.net])}`}</b><small>${d.coin==='USDC'?'':`${_t("Converti en {0},",[F.usd(d.usd)])} `}${ago(d.at)}</small></span>${ok?`<span class="st-ok">${_t("{0} Crédité",[ic('check',13,'#2448FF',2.6)])}</span>`:`<span class="st-wait">${_t("{0} / {1} confirmations",[d.conf,d.need])}<span class="bar"><i style="width:${d.conf/d.need*100}%"></i></span></span>`}</div>`;}).join('');}
 function vDeposit(){const st=S.ui.dep,C=COINS[st.coin];if(!C.nets.includes(st.net))st.net=REC_NET[st.coin];const N=NETS[st.net],addr=addrFor(st.coin,st.net),pf=portfolio();const pend=S.me.deps.filter(d=>d.conf<d.need).reduce((a,d)=>a+d.usd,0);
  return `<div class="wrap"><div class="pagehead"><div><h1 class="ptitle">${_t("Déposer des fonds")}</h1><p class="plead">${_t("Dépose en crypto, ou par carte, virement et PayPal après vérification d’identité (KYC). Ton dépôt est crédité en dollars sur ton solde.")}</p></div><div class="seg"><button class="on">${_t("Déposer")}</button><a href="#retrait" style="padding:6px 12px;border-radius:6px;font-size:13px;font-weight:500;color:var(--g3)">${_t("Retirer")}</a></div></div>
@@ -10027,7 +10004,7 @@ document.addEventListener('click',e=>{const a=e.target.closest?e.target.closest(
 function toggleNotifs(){let p=$('#npanel');if(p){p.remove();return;}p=document.createElement('div');p.id='npanel';p.className='npanel';p.innerHTML=`<div class="nh">${_t("<b>Notifications</b>")}<span class="nh-r">${S.me.notifs.length?`<button class="link" data-a="np-clear">${_t("Tout effacer")}</button>`:''}<button class="x" data-a="npanel-close" aria-label="${_t("Fermer")}">${ic('x',16)}</button></span></div>${npModeH()}${S.me.notifs.length?S.me.notifs.map((n,i)=>`<div class="nitem${n.read?'':' unread'}"><a class="nlink" href="${n.href||'#accueil'}" data-a="npanel-close"><span class="ni">${ic(n.ic||'info',16)}</span><span>${esc(n.text)}<small>${ago(n.at)}</small></span></a><button class="nx" data-a="np-del" data-i="${i}" aria-label="${_t('Effacer cette notification')}" title="${_t('Effacer')}">${ic('x',14)}</button></div>`).join(''):`<div class="empty">${_t("Rien de neuf pour l’instant.")}</div>`}`;document.body.appendChild(p);fixText(p);S.me.notifs.forEach(n=>n.read=true);updateBell();save();}
 
 /* ===================== Modales diverses ===================== */
-function welcome(){const r=myRank(),pg=progress();openModal(`<div class="md lockm">${LOGO(48)}<div><h3 style="font-size:24px;font-weight:700">${_t("Bienvenue sur Wimoro")}</h3><p class="muted" style="margin-top:8px;line-height:1.55">${_t("Démo cliquable : les marchés, les mises et les joueurs sont fictifs, aucun argent réel n’est en jeu. Tout le reste fonctionne : parie, écris dans les chats, joue à l’éclair et monte de rang.")}</p></div><a class="lockrow" href="#rang" data-a="close" style="width:100%">${rk(r.t,r.d)}<span style="font-size:13px;font-weight:600">${pg.nx?`${_t("Plus que {0} pour {1}",[F.xp(pg.left),rankName(pg.nx.t,pg.nx.d)])}`:''}</span></a><div class="md-acts" style="width:100%"><a class="btn b-oui lg full" href="#eclair" data-a="close">${_t("{0} Gagner mes premiers XP",[ic('bolt',16,'#fff')])}</a><a class="btn b-white lg full" href="#inscription" data-a="close">${_t("Créer mon propre compte")}</a><button class="btn b-ghost lg full" data-a="close">${_t("Explorer la plateforme")}</button></div></div>`);S.me.welcomed=true;save();}
+function welcome(){const r=myRank(),pg=progress();openModal(`<div class="md lockm">${LOGO(48)}<div><h3 style="font-size:24px;font-weight:700">${_t("Bienvenue sur Wimoro")}</h3><p class="muted" style="margin-top:8px;line-height:1.55">${_t("Démo cliquable : les marchés, les mises et les joueurs sont fictifs, aucun argent réel n’est en jeu. Tout le reste fonctionne : parie, écris dans les chats, joue à l’éclair et monte de rang.")}</p></div><a class="lockrow" href="#rang" data-a="close" style="width:100%">${rk(r.t,r.d)}<span style="font-size:13px;font-weight:600">${pg.nx?`${_t("Plus que {0} pour {1}",[F.xp(pg.left),rankName(pg.nx.t,pg.nx.d)])}`:''}</span></a><div class="md-acts" style="width:100%"><a class="btn b-oui lg full" href="#eclair" data-a="close">${_t("{0} Gagner mes premiers XP",[ic('bolt',16,'#fff')])}</a><a class="btn b-white lg full" href="#inscription" data-a="close">${_t("Créer mon propre compte")}</a><button class="btn b-ghost lg full" data-a="close">${_t("Explorer avec le compte démo")}</button></div></div>`);S.me.welcomed=true;save();}
 function citeModal(rid){openModal(`<div class="md"><div class="md-h"><div><h3>${_t("Citer un marché")}</h3><p>${_t("Le marché s’affichera avec sa cote en direct dans ton message.")}</p></div><button class="x" data-a="close" aria-label="${_t("Fermer")}">${ic('x')}</button></div><div class="pickl">${MARKETS.map(m=>`<button data-a="cite-pick" data-m="${m.id}" data-room="${rid}"><span>${esc(m.short)}</span><b class="num up">${F.pct(m.p)}</b></button>`).join('')}</div></div>`);}
 function shareModal(rid){const L=S.me.positions;if(!L.length){toast({icon:'info',title:_t("Aucune mise à partager"),text:_t("Place un pari pour pouvoir le partager."),href:'#accueil'});return;}openModal(`<div class="md"><div class="md-h"><div><h3>${_t("Partager une mise")}</h3><p>${_t("+5 XP, puis +20 XP chaque fois qu’un joueur la suit.")}</p></div><button class="x" data-a="close" aria-label="${_t("Fermer")}">${ic('x')}</button></div><div class="pickl">${L.map((p,i)=>`<button data-a="share-pick" data-i="${i}" data-room="${rid}"><span><b>${esc(MK[p.m].short)}</b><small class="muted" style="display:block">${_t("{0}, {1} parts à {2}",[p.s==='oui'?_t("Oui"):_t("Non"),F.d1(p.sh),F.c(p.avg)])}</small></span><b class="num">${F.usd0(p.sh*p.avg/100)}</b></button>`).join('')}</div></div>`);}
 function statsLinesH(m){const big=m.bets.filter(b=>b.a>.6),o=m.bets.filter(b=>b.s).length;return `<div class="line"><span>${_t("Mises enregistrées")}</span><b>${F.int(m.bets.length)}</b></div><div class="line"><span>${_t("Part des mises sur Oui")}</span><b>${F.pct(o/Math.max(1,m.bets.length)*100)}</b></div><div class="line"><span>${_t("Grosses mises")}</span>${_t("<b>{0}, dont {1} sur Oui</b>",[F.int(big.length),F.pct(big.filter(b=>b.s).length/Math.max(1,big.length)*100)])}</div><div class="line"><span>${_t("Volume total")}</span><b>${F.compact(m.vol)}</b></div>`;}
@@ -10077,7 +10054,7 @@ function copyText(t,label){const done=()=>toast({icon:'copy',title:label||_t("Co
 
 const AUTH_ACT=new Set(['bet','buy','sell','tside','preset','flash-bet','fmode','falert','kyc','dmethod','wmethod','fiat-dep','fiat-wd','share','share-pick','cite','react','follow-bet','follow-pbet','follow-user','dm','claim','propose','watch','sim-dep','withdraw','vote','cr-submit','cb-add','cb-place','cb-cash']);
 const AUTH_MSG={bet:_t("Connecte-toi pour parier."),buy:_t("Connecte-toi pour parier."),'flash-bet':_t("Connecte-toi pour jouer au pari éclair."),react:_t("Connecte-toi pour réagir."),share:_t("Connecte-toi pour partager une mise."),'follow-bet':_t("Connecte-toi pour suivre cette mise."),vote:_t("Connecte-toi pour voter."),'cb-add':_t("Connecte-toi pour créer un combiné.")};
-function needLogin(msg){S.ui.after=location.hash||'#accueil';S.ui.authNote=msg;toast({tone:'amber',icon:'lock',title:msg,text:_t("Crée ton compte en une minute."),href:'#connexion'});location.hash='#connexion';}
+function needLogin(msg){S.ui.after=location.hash||'#accueil';S.ui.authNote=msg;toast({tone:'amber',icon:'lock',title:msg,text:_t("Crée ton compte en une minute, ou utilise le compte démo."),href:'#connexion'});location.hash='#connexion';}
 const ACT={
  bet:a=>openBet(a.dataset.m,a.dataset.s,25),
  tside:a=>{const ctx=a.dataset.ctx,st=tState(ctx);st.side=a.dataset.v;st.lp='';const box=$(`[data-ticket="${ctx}"]`);if(box){box.innerHTML=ticketInner(ctx);fixText(box);}},
@@ -10106,8 +10083,8 @@ const ACT={
  lbp:a=>{S.ui.lbp=a.dataset.v;if(['Semaine','Mois','Saison'].includes(a.dataset.v))S.ui.lbper=a.dataset.v;render(false);},ptab:a=>{S.ui.ptab=a.dataset.v;if((S.ui.route||'')!=='profil'){location.hash='#profil';return;}render(false);},
  watch:a=>{const id=a.dataset.m,L=S.me.watch,i=L.indexOf(id);if(i>=0)L.splice(i,1);else{L.push(id);toast({icon:'star',title:_t("Marché suivi"),text:_t("Tu seras prévenu à chaque signal de foule.")});}$$(`[data-watch="${id}"]`).forEach(e=>{e.innerHTML=watchTxt(L.includes(id));const b=e.closest('button');if(b)b.setAttribute('aria-pressed',L.includes(id));});save();},
  copylink:a=>copyText(SITE_URL+'/'+a.dataset.v,_t("Lien copié")),'search-open':()=>searchOpen(),'search-close':()=>searchClose(),copy:a=>copyText(a.dataset.v,_t("Adresse copiée")),
- coin:a=>{S.ui.dep.coin=a.dataset.v;S.ui.dep.net=REC_NET[a.dataset.v];render(false);},net:a=>{S.ui.dep.net=a.dataset.v;render(false);},'sim-dep':()=>{toast({icon:'info',title:'D\u00e9p\u00f4t',text:'Les d\u00e9p\u00f4ts arrivent bient\u00f4t.'})},
- wnet:a=>{S.ui.wd.net=a.dataset.v;render(false);},'wd-test':()=>{},
+ coin:a=>{S.ui.dep.coin=a.dataset.v;S.ui.dep.net=REC_NET[a.dataset.v];render(false);},net:a=>{S.ui.dep.net=a.dataset.v;render(false);},'sim-dep':()=>simDepModal(),
+ wnet:a=>{S.ui.wd.net=a.dataset.v;render(false);},'wd-test':()=>{const w=S.ui.wd;w.addr=addrFor('USDC',w.net==='Solana'?'Solana':'Ethereum').replace(/^0x/,'0x');if(NETS[w.net].fmt==='evm')w.addr=addrFor('ETH','Base');render(false);},
  'wd-max':()=>{S.ui.wd.amt=F.inp(Math.floor(S.me.balance*100)/100);render(false);},
  withdraw:()=>{const c=wdCheck(),w=S.ui.wd;if(!c.ok)return;S.me.balance-=c.amt;const x={net:w.net,addr:w.addr.trim(),amt:c.amt,fee:c.fee,at:now(),st:'pending'};S.me.wds.unshift(x);w.amt='';updateHeader();toast({icon:'out',title:_t("Retrait en cours"),text:`${_t("{0} USDC vers {1}…{2}",[F.d2(c.recv),x.addr.slice(0,6),x.addr.slice(-4)])}`});render(false);save();const ep=S.epoch;setTimeout(()=>{if(ep!==S.epoch)return;x.st='sent';notif('out',`${_t("Retrait envoyé : {0} USDC sur {1}.",[F.d2(c.recv),x.net])}`,'#retrait');toast({tone:'blue',icon:'check',title:_t("Retrait envoyé"),text:`${_t("{0} USDC sur {1}",[F.d2(c.recv),x.net])}`});const el=$('[data-wds]');if(el){el.innerHTML=wdsH();fixText(el);}save();},4500);},
  notifs:()=>toggleNotifs(),'npanel-close':()=>{const p=$('#npanel');if(p)p.remove();},
@@ -10185,14 +10162,14 @@ Object.assign(ACT,{
 const EMAIL_RE=/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 function authSide(){return `<aside class="auth-side"><div class="as-in"><div class="h2" style="font-size:22px;color:#fff">${_t("Le marché qui se joue à plusieurs")}</div><div class="as-l">${[['chat',_t("Un chat pour chaque pari, et un chat global.")],['bolt',_t("Un pari éclair toutes les 45 secondes, en rotation ou en parallèle.")],['trophy',_t("Des rangs de Fer à Radiant, qui débloquent les fonctions.")],['wallet',_t("Dépôts en crypto, ou par carte, virement et PayPal avec le KYC.")]].map(([i,t])=>`<div class="as-r"><span>${ic(i,18,'#fff')}</span>${t}</div>`).join('')}</div><div class="as-emb">${[0,2,3,5,6,8].map(t=>emb(t,t===8?0:2)).join('')}</div></div></aside>`;}
 function authShell(inner){return `<div class="wrap"><div class="auth"><div class="auth-main">${inner}${langRowH()}</div>${authSide()}</div></div>`;}
-function authRedirect(){if(S.me.logged&&/^(connexion|inscription)$/.test(S.ui.route||'')){setTimeout(()=>location.replace('#accueil'),0);return true;}return false;}
+function authRedirect(){if(S.me.logged&&/^(connexion|inscription)$/.test(S.ui.route||'')){setTimeout(()=>location.replace(S.me.onboarded?'#accueil':'#bienvenue'),0);return true;}return false;}
 function authThemeBtn(){return `<button class="thm au-thm" data-a="theme" aria-label="${_t("Changer de thème")}">${ic(isDark()?'sun':'moon',18)}</button>`;}
 function vLogin(){if(authRedirect())return '';const m=S.ui.authMode,note=S.ui.authNote;S.ui.authNote='';
  return authShell(`<div class="auth-card"><h1>${_t("Connexion")}</h1><p class="sub" style="font-size:15px">${_t("Content de te revoir.")}</p>${note?`<div class="limit over" style="margin-top:16px">${esc(note)}</div>`:''}
  <div class="seg" style="width:100%;margin-top:20px"><button style="flex:1" class="${m==='mail'?'on':''}" data-a="auth-mode" data-v="mail">${_t("E-mail")}</button><button style="flex:1" class="${m==='wallet'?'on':''}" data-a="auth-mode" data-v="wallet">${_t("Portefeuille crypto")}</button></div>
- ${m==='mail'?`<form class="col" data-form="login" style="gap:14px;margin-top:18px" novalidate><div class="field"><label for="le">${_t("E-mail ou pseudo")}</label><input id="le" name="email" type="text" autocomplete="username" value="${esc(S.ui.authEmail||'')}" placeholder="${_t("toi@exemple.fr ou ton.pseudo")}"></div><div class="field"><label for="lp">${_t("Mot de passe")}</label><div class="pw"><input id="lp" name="pw" type="password" autocomplete="current-password" placeholder="${_t("8 caractères minimum")}"><button type="button" class="link" data-a="pw-toggle" data-for="lp">${_t("Afficher")}</button></div></div><button class="link" type="button" data-a="forgot" style="align-self:flex-start;font-size:13px">${_t("Mot de passe oublié ?")}</button><p class="err" data-autherr></p><button class="btn b-oui lg full" type="submit">${_t("Se connecter")}</button></form>`
+ ${m==='mail'?`<form class="col" data-form="login" style="gap:14px;margin-top:18px" novalidate><div class="field"><label for="le">${_t("E-mail")}</label><input id="le" name="email" type="email" autocomplete="email" value="${esc(S.ui.authEmail||'')}" placeholder="${_t("toi@exemple.fr")}"></div><div class="field"><label for="lp">${_t("Mot de passe")}</label><div class="pw"><input id="lp" name="pw" type="password" autocomplete="current-password" placeholder="${_t("8 caractères minimum")}"><button type="button" class="link" data-a="pw-toggle" data-for="lp">${_t("Afficher")}</button></div></div><button class="link" type="button" data-a="forgot" style="align-self:flex-start;font-size:13px">${_t("Mot de passe oublié ?")}</button><p class="err" data-autherr></p><button class="btn b-oui lg full" type="submit">${_t("Se connecter")}</button></form>`
  :`<div class="pickl" style="margin-top:18px">${[[_t("Portefeuille Ethereum du navigateur"),_t("Ethereum, Base, Arbitrum")],[_t("Portefeuille Solana"),'Solana'],[_t("Application mobile"),_t("Scanne un QR code avec ton portefeuille")]].map(([t,s2])=>`<button data-a="wallet" data-v="${t}" data-new=""><span><b>${t}</b><small class="muted" style="display:block">${s2}</small></span>${ic('right',18)}</button>`).join('')}</div><p class="sub" style="margin-top:12px">${_t("Tu signes un message pour prouver que l’adresse t’appartient. Aucune transaction, aucun frais.")}</p>`}
- <p class="sub" style="text-align:center;margin-top:18px;font-size:14px">${_t("Pas encore de compte ?")} <a class="link" href="#inscription">${_t("Créer un compte")}</a></p></div>`);}
+ <div class="orl"><span>${_t("ou")}</span></div><button class="btn b-ghost lg full" data-a="demo-login">${_t("Utiliser le compte démo (User26, Or II)")}</button><p class="sub" style="text-align:center;margin-top:10px">${_t("Les comptes créés ici restent dans ce navigateur : tu peux te déconnecter et revenir avec ton e-mail et ton mot de passe.")}</p><p class="sub" style="text-align:center;margin-top:18px;font-size:14px">${_t("Pas encore de compte ?")} <a class="link" href="#inscription">${_t("Créer un compte")}</a></p></div>`);}
 function walletModal(){openModal(`<div class="md"><div class="md-h"><div><h3>${_t("S’inscrire avec un portefeuille")}</h3><p>${_t("Tu signes un message pour prouver que l’adresse t’appartient. Aucune transaction, aucun frais.")}</p></div><button class="x" data-a="close" aria-label="${_t("Fermer")}">${ic('x')}</button></div><div class="pickl">${[[_t("Portefeuille Ethereum du navigateur"),_t("Ethereum, Base, Arbitrum")],[_t("Portefeuille Solana"),'Solana'],[_t("Application mobile"),_t("Scanne un QR code avec ton portefeuille")]].map(([t,s2])=>`<button data-a="wallet" data-v="${t}" data-new="1"><span><b>${t}</b><small class="muted" style="display:block">${s2}</small></span>${ic('right',18)}</button>`).join('')}</div><p class="sub" style="margin-top:12px">${_t("En continuant, tu confirmes avoir 18 ans ou plus et accepter les conditions d’utilisation.")}</p></div>`);}
 function pwScore(p){let s=0;if(p.length>=8)s++;if(/[A-Z]/.test(p)&&/[a-z]/.test(p))s++;if(/\d/.test(p))s++;if(/[^A-Za-z0-9]/.test(p)||p.length>=12)s++;return s;}
 const PW_L=[_t("Trop court"),_t("Faible"),_t("Moyen"),_t("Bon"),_t("Excellent")];
@@ -10210,50 +10187,21 @@ document.addEventListener('input',e=>{const k=e.target.dataset&&e.target.dataset
  if(k==='pseudo'){const [st,msg]=pseudoMsg(v.trim());const el=$('[data-sun]');if(el){el.textContent=msg;el.style.color=st==='bad'?'var(--nonT)':st==='ok'?'var(--oui)':'';}}
  if(k==='email'){const el=$('[data-sue]');if(el){el.textContent=v&&!EMAIL_RE.test(v)?_t("Adresse e-mail invalide."):'';el.style.color='var(--nonT)';}}
  if(k==='pw'){const sc=v?pwScore(v):0;$$('[data-sus] i').forEach((i,n)=>{i.style.background=n<sc?(sc<=1?'#F59A0B':sc===2?'#F7C35B':'#2448FF'):'';});const l=$('[data-sul]');if(l)l.textContent=v?(v.length<8?_t("Trop court : 8 caractères minimum."):_t("Sécurité : ")+PW_L[sc].toLowerCase()+'.'):_t("Utilise au moins 8 caractères.");}});
-function doLogin(msg){if(typeof rgLoginBlocked==='function'&&rgLoginBlocked())return;S.me.logged=true;save();if(typeof duelSeed==='function')duelSeed();if(typeof clanSeed==='function')clanSeed();if(typeof comboSeed==='function')comboSeed();const to=S.ui.after&&!/connexion|inscription|bienvenue/.test(S.ui.after)?S.ui.after:'#accueil';S.ui.after='';updateHeader();toast({tone:'blue',icon:'check',title:msg||`${_t("Content de te revoir, {0}",[S.me.n])}`,text:`${_t("{0}, solde {1}",[rankName(myRank().t,myRank().d),F.usd(S.me.balance)])}`});if(location.hash===to)render(true);else location.hash=to;}
-FORMS.login=f=>{const raw=f.email.value.trim(),p=f.pw.value,err=f.querySelector('[data-autherr]');const isEmail=EMAIL_RE.test(raw);const e=raw.toLowerCase();if(!e||e.length<3){err.textContent=_t("Entre ton e-mail ou ton pseudo.");return;}if(p.length<8){err.textContent=_t("Le mot de passe fait au moins 8 caractères.");return;}
-let rec=AUTH.get(e);if(!rec){const all=AUTH.all();for(const k in all){if(all[k].pseudo&&all[k].pseudo.toLowerCase()===e){rec=all[k];break;}}}
-if(rec){const legacy=rec.ph===hash(p+'|'+(rec.key||e));if(rec.ph!==pwHash(p,rec.key||e)&&!legacy){err.textContent=_t("Mot de passe incorrect.");return;}if(legacy){rec.ph=pwHash(p,rec.key||e);AUTH.set(rec.key||e,rec);}err.textContent='';enterAccount(rec);doLogin();return;}
-err.textContent=_t("Connexion en cours...");
-const sb=window.__supabase;if(!sb){err.textContent=_t("Aucun compte trouvé.");return;}
-(isEmail?Promise.resolve(e):sb.from('users').select('email').eq('username',e).maybeSingle().then(function(r){return r.data?r.data.email:null;}))
-.then(function(resolvedEmail){
-if(!resolvedEmail){err.textContent=_t("Aucun compte avec ce pseudo.");return;}
-return sb.auth.signInWithPassword({email:resolvedEmail,password:p}).then(function(res){
-if(res.error){err.textContent=res.error.message==='Invalid login credentials'?_t("Mot de passe incorrect."):res.error.message;return;}
-var uid=res.data.user.id;
-var localRec={id:uid.slice(0,12),key:resolvedEmail,email:resolvedEmail,pseudo:raw,sbId:uid,ph:pwHash(p,resolvedEmail)};
-AUTH.set(resolvedEmail,localRec);enterAccount(localRec);err.textContent='';doLogin();
-});
-}).catch(function(ex){err.textContent=_t("Erreur de connexion.");console.warn('Login error:',ex);});
-};
+function doLogin(msg){if(typeof rgLoginBlocked==='function'&&rgLoginBlocked())return;S.me.logged=true;save();if(typeof duelSeed==='function')duelSeed();if(typeof clanSeed==='function')clanSeed();if(typeof comboSeed==='function')comboSeed();const to=!S.me.onboarded?'#bienvenue':S.ui.after&&!/connexion|inscription/.test(S.ui.after)?S.ui.after:'#accueil';S.ui.after='';updateHeader();toast({tone:'blue',icon:'check',title:msg||`${_t("Content de te revoir, {0}",[S.me.n])}`,text:`${_t("{0}, solde {1}",[rankName(myRank().t,myRank().d),F.usd(S.me.balance)])}`});if(location.hash===to)render(true);else location.hash=to;}
+FORMS.login=f=>{const e=f.email.value.trim().toLowerCase(),p=f.pw.value,err=f.querySelector('[data-autherr]');if(!EMAIL_RE.test(e)){err.textContent=_t("Entre une adresse e-mail valide.");return;}if(p.length<8){err.textContent=_t("Le mot de passe fait au moins 8 caractères.");return;}const rec=AUTH.get(e);const legacy=rec&&rec.ph===hash(p+'|'+e);if(!rec||(rec.ph!==pwHash(p,e)&&!legacy)){err.textContent=rec?_t("Mot de passe incorrect."):_t("Aucun compte avec cet e-mail. Crée ton compte en une minute.");return;}if(legacy){rec.ph=pwHash(p,e);AUTH.set(e,rec);}err.textContent='';enterAccount(rec);doLogin();};
 FORMS.signup=f=>{const n=f.pseudo.value.trim(),e=f.email.value.trim(),p=f.pw.value,err=f.querySelector('[data-signerr]');const [st,msg]=pseudoMsg(n);
  if(st!=='ok'){err.textContent=msg;return;}if(!EMAIL_RE.test(e)){err.textContent=_t("Entre une adresse e-mail valide.");return;}if(p.length<8){err.textContent=_t("Le mot de passe doit faire au moins 8 caractères.");return;}if(!f.age.checked){err.textContent=_t("Wimoro est réservé aux personnes majeures.");return;}if(!f.cgu.checked){err.textContent=_t("Accepte les conditions pour continuer.");return;}
- if(AUTH.get(e.toLowerCase())){err.textContent=_t("Un compte existe déjà avec cet e-mail. Connecte-toi.");return;}
-err.textContent=_t("Création du compte...");var btn=f.querySelector('[type=submit]');if(btn)btn.disabled=true;
-var sb=window.__supabase;
-if(sb){sb.auth.signUp({email:e.toLowerCase(),password:p,options:{data:{username:n}}}).then(function(res){
-if(res.error){err.textContent=res.error.message;if(btn)btn.disabled=false;return;}
-var uid=res.data.user.id;
-sb.from('users').insert({id:uid,username:n,email:e.toLowerCase(),avatar_photo:'',avatar_color:'#2448FF',bio:'',onboarded:false,welcomed:false,is_demo:false}).then(function(){
-openModal('<div class="md"><div style="padding:36px 32px;text-align:center">'+ic('mail',48,'#2448FF')+'<h3 style="margin:16px 0 8px">'+_t("Vérifie tes e-mails")+'</h3><p style="color:var(--g2);line-height:1.5">'+_t("On a envoyé un lien de confirmation à <b>{0}</b>. Clique dessus pour activer ton compte.",[esc(e)])+'</p><p style="color:var(--g3);font-size:13px;margin-top:16px">'+_t("Tu ne trouves pas l\'e-mail ? Vérifie tes spams.")+'</p><button class="btn b-oui lg full" style="margin-top:20px" data-a="close">'+_t("Compris")+'</button></div></div>');
-});
-}).catch(function(ex){err.textContent=_t("Erreur. Réessaie.");if(btn)btn.disabled=false;console.warn(ex);});
-}else{createAccount(n,e,p);const refOk=typeof refApplyAtSignup==='function'&&refApplyAtSignup(f.ref?f.ref.value:'');S.ui.ob=1;toast({tone:'blue',icon:'check',title:_t("Compte créé, bienvenue {0} !",[n]),text:_t("Encore 5 petites étapes.")});location.hash='#bienvenue';}};
-FORMS.forgot=f=>{var err=f.querySelector('[data-ferr]');var em=f.email.value.trim();if(!EMAIL_RE.test(em)){err.textContent=_t("Entre une adresse e-mail valide.");return;}
-err.textContent=_t("Envoi en cours...");var btn=f.querySelector('[type=submit]');if(btn)btn.disabled=true;
-var sb=window.__supabase;if(!sb){err.textContent=_t("Erreur.");return;}
-sb.auth.signInWithOtp({email:em,options:{shouldCreateUser:false,emailRedirectTo:location.origin+'/#nouveau-mdp'}}).then(function(res){if(res.error){err.textContent=res.error.message==='Signups not allowed for otp'?_t("Aucun compte avec cet e-mail."):res.error.message;if(btn)btn.disabled=false;return;}
-closeModal();toast({tone:'blue',icon:'mail',title:_t("E-mail envoy\u00e9"),text:_t("Clique sur le lien re\u00e7u par e-mail pour changer ton mot de passe.")});
-}).catch(function(){err.textContent=_t("Erreur. R\u00e9essaie.");if(btn)btn.disabled=false;});};
-function forgotModal(){openModal('<div class="md"><div class="md-h"><div><h3>'+_t("Mot de passe oubli\u00e9")+'</h3><p>'+_t("Entre ton e-mail, on t\u2019envoie un lien pour changer ton mot de passe.")+'</p></div><button class="x" data-a="close" aria-label="'+_t("Fermer")+'">'+ic('x')+'</button></div><form class="col" style="gap:14px" data-form="forgot" novalidate><div class="field"><label for="fe">'+_t("E-mail")+'</label><input id="fe" name="email" type="email" autofocus placeholder="'+_t("toi@exemple.fr")+'"></div><p class="err" data-ferr></p><button class="btn b-ink lg full" type="submit">'+_t("Envoyer le lien")+'</button></form></div>');}
+ if(AUTH.get(e.toLowerCase())){err.textContent=_t("Un compte existe déjà avec cet e-mail. Connecte-toi.");return;}createAccount(n,e,p);const refOk=typeof refApplyAtSignup==='function'&&refApplyAtSignup(f.ref?f.ref.value:'');S.ui.ob=1;S.ui.cat='Tout';toast({tone:'blue',icon:'check',title:`${_t("Compte créé, bienvenue {0} !",[n])}`,text:refOk?`${_t("{0} de parrainage offerts. Encore 5 petites étapes.",[F.usd0(REF.BONUS)])}`:_t("Encore 5 petites étapes.")});location.hash='#bienvenue';};
+FORMS.forgot=f=>{const st=f.dataset.step||'1',err=f.querySelector('[data-ferr]');if(st==='1'){if(!EMAIL_RE.test(f.email.value.trim())){err.textContent=_t("Entre une adresse e-mail valide.");return;}forgotModal(2,f.email.value.trim());return;}
+ if(!/^\d{6}$/.test(f.code.value.trim())){err.textContent=_t("Le code contient 6 chiffres.");return;}if(f.pw.value.length<8){err.textContent=_t("8 caractères minimum.");return;}const em=(f.dataset.email||'').toLowerCase(),rec=AUTH.get(em);if(!rec){err.textContent=_t("Aucun compte avec cet e-mail.");return;}rec.ph=pwHash(f.pw.value,em);AUTH.set(em,rec);closeModal();S.ui.authEmail=f.dataset.email||'';const le=$('#le');if(le&&S.ui.authEmail)le.value=S.ui.authEmail;toast({tone:'blue',icon:'check',title:_t("Mot de passe mis à jour"),text:_t("Tu peux te connecter avec ton nouveau mot de passe.")});};
+function forgotModal(step=1,email=''){openModal(`<div class="md"><div class="md-h"><div><h3>${step===1?_t("Mot de passe oublié"):_t("Vérifie tes e-mails")}</h3><p>${step===1?_t("On t’envoie un code pour choisir un nouveau mot de passe."):_t('Entre le code à 6 chiffres reçu par e-mail.')}</p>${step===1?'':demoHint(_t('Tape 6 chiffres au hasard.'))}</div><button class="x" data-a="close" aria-label="${_t("Fermer")}">${ic('x')}</button></div><form class="col" style="gap:14px" data-form="forgot" data-step="${step}" data-email="${esc(email)}" novalidate>${step===1?`<div class="field"><label for="fe">${_t("E-mail")}</label><input id="fe" name="email" type="email" autofocus value="${esc(email)}"></div>`:`<div class="field"><label for="fc">${_t("Code reçu à {0}",[esc(email)])}</label><input id="fc" name="code" inputmode="numeric" maxlength="6" autofocus placeholder="123456"></div><div class="field"><label for="fp">${_t("Nouveau mot de passe")}</label><input id="fp" name="pw" type="password" placeholder="${_t("8 caractères minimum")}"></div>`}<p class="err" data-ferr></p><button class="btn b-ink lg full" type="submit">${step===1?_t("Envoyer le code"):_t("Changer mon mot de passe")}</button></form></div>`);}
 Object.assign(ACT,{
  'auth-mode':a=>{S.ui.authMode=a.dataset.v;if(a.dataset.go&&location.hash!==a.dataset.go){location.hash=a.dataset.go;return;}render(false);},
  'pw-toggle':a=>{const i=$('#'+a.dataset.for);if(!i)return;const show=i.type==='password';i.type=show?'text':'password';a.textContent=show?_t("Masquer"):_t("Afficher");},
  forgot:()=>forgotModal(1),
  wallet:a=>{const isNew=!!a.dataset.new;toast({icon:'wallet',title:_t("Signature demandée"),text:`${_t("Confirme dans « {0} ».",[a.dataset.v])}`,dur:1800});$$('[data-a="wallet"]').forEach(b=>b.disabled=true);a.classList.add('busy');setTimeout(()=>{closeModal();const all=AUTH.all(),wk=Object.keys(all).find(k=>k.startsWith('w:'));if(isNew||!wk){createAccount('joueur'+Math.floor(R()*9000+1000),'',null,{wallet:true});if(typeof refApplyAtSignup==='function')refApplyAtSignup(pendingRef());S.ui.ob=1;toast({tone:'blue',icon:'check',title:_t("Portefeuille connecté"),text:_t("Ton compte est créé. Encore 5 petites étapes.")});location.hash='#bienvenue';}else{enterAccount(all[wk]);doLogin(_t("Portefeuille connecté"));}},1600);},
  'wallet-modal':()=>walletModal(),
- 
+ 'demo-login':()=>{enterAccount(DEMO_ACC);S.me.welcomed=true;doLogin(_t("Compte démo : User26"));},
  logout:()=>logout()
 });
 
@@ -10274,18 +10222,12 @@ Object.assign(ACT,{
  'ob-back':()=>{if(S.ui.ob===3&&S.ui.kycOpen){S.ui.kycOpen=false;render(false);return;}S.ui.ob=Math.max(1,S.ui.ob-1);render(false);},
  'ob-kpick':a=>{S.ui.kycPick=a.dataset.v;$$('.kopt[data-a="ob-kpick"]').forEach(b=>{const on=b===a;b.classList.toggle('on',on);b.setAttribute('aria-checked',on);});const n=$('.ob-acts [data-a="ob-next"]');if(n){n.textContent=obKycLbl(S.ui.kycPick);fixText(n);}},
  'ob-kyc':a=>{S.ui.kycOpen=a.dataset.v==='1';if(S.ui.kycOpen)S.ui.kycd={doc:false};render(false);},
- 'ob-next':(a,e)=>{const me=S.me;if(S.ui.ob===3&&!me.kyc&&!S.ui.kycOpen&&(S.ui.kycPick||'crypto')==='kyc'){S.ui.kycOpen=true;S.ui.kycd={doc:false};render(false);return;}S.ui.kycOpen=false;if(S.ui.ob<5){S.ui.ob++;render(false);return;}if(!(me.xp>=100||me.obBonus)){me.obBonus=true;gainXP(100,e);setTimeout(()=>render(false),900);return;}me.onboarded=true;if(me.interests.length)S.ui.cat='Pour toi';save();
-var _sb=window.__supabase;if(_sb){_sb.auth.getSession().then(function(r){var uid=r.data&&r.data.session?r.data.session.user.id:null;if(uid){_sb.from('users').update({onboarded:true}).eq('id',uid);_sb.from('user_full_state').upsert({user_id:uid,state:Object.assign({},S.me,{onboarded:true})});}});}
-location.hash='#accueil';},
- 'ob-done':()=>{S.me.onboarded=true;if(S.me.interests.length)S.ui.cat='Pour toi';save();
-var _sb=window.__supabase;if(_sb){_sb.auth.getSession().then(function(r){var uid=r.data&&r.data.session?r.data.session.user.id:null;if(uid){_sb.from('users').update({onboarded:true}).eq('id',uid);_sb.from('user_full_state').upsert({user_id:uid,state:Object.assign({},S.me,{onboarded:true})});}});}}
+ 'ob-next':(a,e)=>{const me=S.me;if(S.ui.ob===3&&!me.kyc&&!S.ui.kycOpen&&(S.ui.kycPick||'crypto')==='kyc'){S.ui.kycOpen=true;S.ui.kycd={doc:false};render(false);return;}S.ui.kycOpen=false;if(S.ui.ob<5){S.ui.ob++;render(false);return;}if(!(me.xp>=100||me.obBonus)){me.obBonus=true;gainXP(100,e);setTimeout(()=>render(false),900);return;}me.onboarded=true;if(me.interests.length)S.ui.cat='Pour toi';save();location.hash='#accueil';},
+ 'ob-done':()=>{S.me.onboarded=true;if(S.me.interests.length)S.ui.cat='Pour toi';save();}
 });
 
 /* ===================== Routes ajoutées ===================== */
-function vConfirmed(){return '<div class="ob"><div class="pn ob-card" style="text-align:center;padding:48px 32px"><div style="width:80px;height:80px;background:#E7F6EE;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 24px">'+ic('check',40,'#12A150',3)+'</div><h1 style="font-size:26px;margin:0 0 12px">'+_t("Compte confirm\u00e9 !")+'</h1><p class="sub" style="font-size:16px;line-height:1.6;margin:0 0 32px;color:var(--g2)">'+_t("Ton adresse e-mail est v\u00e9rifi\u00e9e. Tu peux maintenant te connecter et commencer \u00e0 parier.")+'</p><a class="btn b-oui lg" href="#connexion" style="min-width:220px">'+_t("Se connecter")+'</a></div></div>';}
-function vNewPassword(){return '<div class="ob"><div class="pn ob-card" style="text-align:center;padding:48px 32px"><div style="width:80px;height:80px;background:#EBEEFF;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 24px">'+ic('lock',40,'#2448FF',3)+'</div><h1 style="font-size:24px;margin:0 0 8px">'+_t("Nouveau mot de passe")+'</h1><p class="sub" style="font-size:15px;line-height:1.5;margin:0 0 24px;color:var(--g2)">'+_t("Choisis ton nouveau mot de passe.")+'</p><form class="col" style="gap:14px;text-align:left" data-form="newpw" novalidate><div class="field"><label for="np">'+_t("Nouveau mot de passe")+'</label><div class="pw"><input id="np" name="pw" type="password" autocomplete="new-password" placeholder="'+_t("8 caract\u00e8res minimum")+'"><button type="button" class="link" data-a="pw-toggle" data-for="np">'+_t("Afficher")+'</button></div></div><div class="field"><label for="np2">'+_t("Confirmer le mot de passe")+'</label><input id="np2" name="pw2" type="password" autocomplete="new-password" placeholder="'+_t("Retape ton mot de passe")+'"></div><p class="err" data-nperr></p><button class="btn b-oui lg full" type="submit">'+_t("Changer mon mot de passe")+'</button></form></div></div>';}
-FORMS['newpw']=function(f){var pw=f.pw.value,pw2=f.pw2.value,err=f.querySelector('[data-nperr]');if(pw.length<8){err.textContent=_t("8 caract\u00e8res minimum.");return;}if(pw!==pw2){err.textContent=_t("Les mots de passe ne correspondent pas.");return;}err.textContent=_t("Mise \u00e0 jour...");var btn=f.querySelector('[type=submit]');if(btn)btn.disabled=true;var sb=window.__supabase;if(sb){sb.auth.updateUser({password:pw}).then(function(res){if(res.error){err.textContent=res.error.message;if(btn)btn.disabled=false;return;}toast({tone:'blue',icon:'check',title:_t("Mot de passe mis \u00e0 jour"),text:_t("Tu peux maintenant te connecter.")});location.hash='#connexion';}).catch(function(){err.textContent=_t("Erreur. R\u00e9essaie.");if(btn)btn.disabled=false;});}else{err.textContent=_t("Session expir\u00e9e. Redemande un lien.");if(btn)btn.disabled=false;}};
-Object.assign(VIEWS,{creer:vCreate,connexion:vLogin,inscription:vSignup,bienvenue:vOnboarding,confirme:vConfirmed,'nouveau-mdp':vNewPassword});
+Object.assign(VIEWS,{creer:vCreate,connexion:vLogin,inscription:vSignup,bienvenue:vOnboarding});
 
 /* ===================== Gains en vert, pertes en rouge ===================== */
 const plc=v=>v>0.004?'pl-up':v<-0.004?'pl-dn':'';
@@ -10384,7 +10326,7 @@ function vEditProfile(){if(!S.ui.pe)peInit();const p=S.ui.pe,[st,msg]=peNameMsg(
  <section class="pn pad step"><div class="step-h"><h3>${_t("Notifications")}</h3></div><div class="tgls">${tg(PREFS)}</div>${npModeH()}</section>
  <section class="pn pad step"><div class="step-h"><h3>${_t("Apparence")}</h3></div><div class="swrow"><div>${_t("<b>Mode sombre</b>")}<p class="sub" style="margin-top:4px">${_t("Bascule entre le thème clair et le thème sombre.")}</p></div><button type="button" class="sw${isDark()?' on':''}" role="switch" aria-checked="${isDark()}" aria-label="${_t("Mode sombre")}" data-a="theme"><i></i></button></div></section>
  ${privSectionH()}
- <section class="pn pad step"><div class="step-h"><h3>${_t("Session")}</h3></div><div class="hbtns sess"><button type="button" class="btn b-white" data-a="logout">${_t("{0} Se déconnecter",[ic('out',16)])}</button></div></section>
+ <section class="pn pad step"><div class="step-h"><h3>${_t("Session")}</h3></div><div class="hbtns sess"><button type="button" class="btn b-white" data-a="logout">${_t("{0} Se déconnecter",[ic('out',16)])}</button><button type="button" class="btn b-ghost" data-a="reset">${_t("{0} Réinitialiser la démo",[ic('refresh',16)])}</button></div></section>
  <div class="savebar"><span data-pedirty>${peDirty()?_t("Modifications non enregistrées"):_t("Aucune modification")}</span><div class="hbtns"><a class="btn b-white" href="#profil">${_t("Annuler")}</a><button class="btn b-ink" type="submit">${_t("Enregistrer")}</button></div></div>
  </form>
  <aside class="col"><section class="pn pad pe-prev"><div class="sub" style="margin:0 0 14px">${_t("Aperçu de ton profil")}</div><div data-peprev>${pePrevH()}</div></section></aside></div></div>`;}
@@ -10434,7 +10376,7 @@ function bigsH(){return S.bigs.map(b=>{const m=MK[b.m];if(!m)return '';return `<
 function pushBig(seed){const u=pickUser(),m=pick(MARKETS),s=R()<m.p/100?'oui':'non',amt=Math.round((300+Math.pow(R(),2)*6200)/10)*10;S.bigs.unshift({u,m:m.id,s,amt,at:seed?now()-Math.round(R()*9e5):now()});if(seed)S.bigs.sort((a,b)=>b.at-a.at);S.bigs=S.bigs.slice(0,6);
  if(!seed){const el=$('[data-bigs]');if(el){el.innerHTML=bigsH();fixText(el);const f=el.firstElementChild;if(f)f.classList.add('new');}}}
 /* carte « rang » d'un visiteur : même emplacement, mais une invitation à entrer */
-function guestRankH(){return `<section class="pn pad hs-rank hs-guest"><div class="hr-top">${emb(0,0,'e44')}<span><span class="sub" style="margin:0;display:block">${_t("Ton rang")}</span><b>${_t('Tu commences au rang {0}',[rankName(0,0)])}</b></span></div><p class="sub" style="margin:12px 0 0">${_t("Chaque pari rapporte de l’XP et te fait monter, de Fer à Radiant.")}</p><div class="hg-btns"><button class="btn b-oui full" onclick="location.hash='#accueil'">${_t("Explorer la plateforme")}</button><a class="btn b-white full" href="#inscription">${_t("Créer un compte")}</a></div></section>`;}
+function guestRankH(){return `<section class="pn pad hs-rank hs-guest"><div class="hr-top">${emb(0,0,'e44')}<span><span class="sub" style="margin:0;display:block">${_t("Ton rang")}</span><b>${_t('Tu commences au rang {0}',[rankName(0,0)])}</b></span></div><p class="sub" style="margin:12px 0 0">${_t("Chaque pari rapporte de l’XP et te fait monter, de Fer à Radiant.")}</p><div class="hg-btns"><button class="btn b-oui full" data-a="demo-login">${_t("Explorer avec le compte démo")}</button><a class="btn b-white full" href="#inscription">${_t("Créer un compte")}</a></div></section>`;}
 function homeSideH(){const r=myRank(),pg=progress(),done=S.me.missions.filter(m=>m.have>=m.goal).length,top=lbRows('Semaine').slice(0,5);
  return `${S.me.logged?`<section class="pn pad hs-rank"><a class="hr-top" href="#rang">${emb(r.t,r.d,'e44')}<span><span class="sub" style="margin:0;display:block">${_t("Ton rang")}</span><b>${rankName(r.t,r.d)}</b></span>${ic('right',18,'#A3A8B2')}</a><div class="xpbar sm" style="margin-top:14px"><i style="width:${pg.pct}%"></i></div><div class="hr-meta"><span>${pg.nx?`${_t("Plus que <b>{0}</b> pour {1}",[F.xp(pg.left),rankName(pg.nx.t,pg.nx.d)])}`:_t("Rang maximal")}</span><a class="link" href="#rang">${_t("Missions {0} / {1}",[done,S.me.missions.length])}</a></div></section>`:guestRankH()}
  <section class="pn pad"><div class="ph" style="margin-bottom:8px"><div><div class="h2"><i class="live" aria-hidden="true"></i>${_t("Grosses mises en direct")}</div><div class="sub">${_t("Les plus gros paris de la dernière heure")}</div></div></div><div class="bigs" data-bigs>${bigsH()}</div></section>
@@ -10663,7 +10605,7 @@ const guestMe=()=>Object.assign(newMe('',''),{logged:false,onboarded:true,welcom
 S.auth={key:'',demo:false};S.epoch=0;
 function accKey(rec){if(rec.demo)return 'wimoro-demo';const k='wimoro-acc:'+rec.id,old='wimoro-demo:'+rec.id;return (LS.g(k)===null&&LS.g(old)!==null)?old:k;}
 function enterAccount(rec,fresh,quiet){S.epoch++;KEY=accKey(rec);S.me=rec.demo?demoMe():(fresh||newMe(rec.pseudo,rec.email||''));if(!fresh)load();S.me.logged=true;
- /* Credit demo disabled */
+ if(!S.me.credit1m){S.me.balance+=1e6;S.me.credit1m=true;(S.me.deps=S.me.deps||[]).unshift({coin:'USDC',net:'Base',amt:1e6,usd:1e6,at:now(),conf:12,need:12,label:'Crédit démo'});}
  S.auth={key:rec.key,demo:!!rec.demo};LS.s(SESK,rec.key);
  if(!S.me.missions.some(m=>m.day))S.me.missions.forEach(m=>m.day=today());
  S.ui.dep.method='crypto';S.ui.wd.method='crypto';S.ui.fiat={dep:'50',wd:''};S.ui.kycd={doc:false};S.ui.ptab='positions';S.ui.pe=null;
@@ -10718,8 +10660,8 @@ function setTheme(dark){document.documentElement.setAttribute('data-theme',dark?
 const TM_LABEL={all:_t("toutes"),imp:_t("importantes"),none:_t("aucune")};
 const tmTxt=()=>_t('Pop-up : {0}',[TM_LABEL[S.me.tmode||'imp']]);
 /* liens du compte : menu de l'avatar (ordinateur) et section « Mon compte » du profil (mobile, où l'avatar n'est pas affiché) */
-function umenuItemsH(page){const fr=friendsOf().length,inq=fIn().length;return `${page?'':`<a class="ui" href="#profil" data-a="uclose">${_t("{0} Mon profil",[ic('user',16)])}</a>`}<a class="ui" href="#amis" data-a="uclose">${_t("{0} Mes amis{1}",[ic('users',16),inq?`<span class="ubadge">${inq>1?_t('{0} demandes',[inq]):_t('1 demande')}</span>`:''])}</a><a class="ui" href="#clans" data-a="uclose">${ic('shield',16)} ${typeof myClan==='function'&&myClan()?_t('Mon clan'):_t('Clans')}</a><a class="ui" href="#duels" data-a="uclose">${_t("{0} Mes duels{1}",[ic('swords',16),duelIncoming().length?`<span class="ubadge">${duelIncoming().length}</span>`:''])}</a><a class="ui" href="#combines" data-a="uclose">${_t("{0} Mes combinés{1}",[ic('layers',16),typeof combosAll==='function'&&combosAll().some(c=>c.status==='open')?`<span class="ubadge">${combosAll().filter(c=>c.status==='open').length}</span>`:''])}</a><a class="ui" href="#depot" data-a="uclose">${_t("{0} Déposer",[ic('wallet',16)])}</a><a class="ui" href="#retrait" data-a="uclose">${_t("{0} Retirer",[ic('out',16)])}</a>${S.me.kyc?'':`<button class="ui" data-a="kyc">${_t("{0} Faire le KYC",[ic('shield',16)])}</button>`}${typeof demoRankItemH==='function'?demoRankItemH():''}<button class="ui" data-a="lang-pick">${_t("{0} Langue : {1}",[ic('globe',16),LANGS[LANG].n])}</button><button class="ui" data-a="theme">${_t("{0} Thème : {1}",[ic(isDark()?'sun':'moon',16),isDark()?_t("sombre"):_t("clair")])}</button><button class="ui" data-a="tm-cycle">${ic((S.me.tmode||'imp')==='none'?'bellOff':'bell',16)} ${tmTxt()}</button><a class="ui" href="#modifier" data-a="uclose">${_t("{0} Modifier le profil",[ic('user',16)])}</a>`;}
-function umenuH(){return `<div class="uh"><span class="av t-me${avClass('me')}" style="background:${S.me.color}">${avInner('me',36)}</span><div><b>${esc(S.me.n)}</b><small>${S.me.kyc?_t("KYC vérifié"):_t("KYC non fait")}</small></div></div>${umenuItemsH()}<button class="ui out" data-a="logout" style="margin-top:8px;border-top:1px solid var(--rule);padding-top:12px">${_t("{0} Se d\u00e9connecter",[ic('logout',16)])}</button>`;}
+function umenuItemsH(page){const fr=friendsOf().length,inq=fIn().length;return `${page?'':`<a class="ui" href="#profil" data-a="uclose">${_t("{0} Mon profil",[ic('user',16)])}</a>`}<a class="ui" href="#amis" data-a="uclose">${_t("{0} Mes amis{1}",[ic('users',16),inq?`<span class="ubadge">${inq>1?_t('{0} demandes',[inq]):_t('1 demande')}</span>`:''])}</a><a class="ui" href="#clans" data-a="uclose">${ic('shield',16)} ${typeof myClan==='function'&&myClan()?_t('Mon clan'):_t('Clans')}</a><a class="ui" href="#duels" data-a="uclose">${_t("{0} Mes duels{1}",[ic('swords',16),duelIncoming().length?`<span class="ubadge">${duelIncoming().length}</span>`:''])}</a><a class="ui" href="#combines" data-a="uclose">${_t("{0} Mes combinés{1}",[ic('layers',16),typeof combosAll==='function'&&combosAll().some(c=>c.status==='open')?`<span class="ubadge">${combosAll().filter(c=>c.status==='open').length}</span>`:''])}</a><a class="ui" href="#depot" data-a="uclose">${_t("{0} Déposer",[ic('wallet',16)])}</a><a class="ui" href="#retrait" data-a="uclose">${_t("{0} Retirer",[ic('out',16)])}</a>${S.me.kyc?'':`<button class="ui" data-a="kyc">${_t("{0} Faire le KYC",[ic('shield',16)])}</button>`}${typeof demoRankItemH==='function'?demoRankItemH():''}<button class="ui" data-a="lang-pick">${_t("{0} Langue : {1}",[ic('globe',16),LANGS[LANG].n])}</button><button class="ui" data-a="theme">${_t("{0} Thème : {1}",[ic(isDark()?'sun':'moon',16),isDark()?_t("sombre"):_t("clair")])}</button><button class="ui" data-a="tm-cycle">${ic((S.me.tmode||'imp')==='none'?'bellOff':'bell',16)} ${tmTxt()}</button><a class="ui" href="#modifier" data-a="uclose">${_t("{0} Modifier le profil",[ic('user',16)])}</a><button class="ui out" data-a="logout">${_t("{0} Se déconnecter",[ic('logout',16)])}</button>`;}
+function umenuH(){return `<div class="uh"><span class="av t-me${avClass('me')}" style="background:${S.me.color}">${avInner('me',36)}</span><div><b>${esc(S.me.n)}</b><small>${S.me.kyc?_t("KYC vérifié"):_t("KYC non fait")}</small></div></div>${umenuItemsH()}`;}
 function acctH(){return `<section class="pn pad acct" data-acct><div class="h2">${_t("Mon compte")}</div><div class="acct-l">${umenuItemsH(true)}</div></section>`;}
 Object.assign(ACT,{
  umenu:(a,e)=>{e.preventDefault();if(!S.me.logged){location.hash='#connexion';return;}let p=$('#umenu');if(p){p.remove();return;}const np=$('#npanel');if(np)np.remove();p=document.createElement('div');p.id='umenu';p.className='npanel umenu';p.innerHTML=umenuH();document.body.appendChild(p);fixText(p);},
@@ -10730,7 +10672,7 @@ Object.assign(ACT,{
  'tm-cycle':a=>{const o=['all','imp','none'],m=S.me.tmode||'imp';S.me.tmode=o[(o.indexOf(m)+1)%3];save();a.innerHTML=ic(S.me.tmode==='none'?'bellOff':'bell',16)+' '+tmTxt();toast({icon:'info',force:true,title:tmTxt(),dur:1800});},
  cmode:a=>{S.ui.tmode=a.dataset.v==='bars'?'bars':'line';LS.s('wimoro-tmode',S.ui.tmode);render(false);},
  dmethod:a=>{S.ui.dep.method=a.dataset.v;render(false);},wmethod:a=>{S.ui.wd.method=a.dataset.v;render(false);},
- 'fiat-q':a=>{S.ui.fiat[a.dataset.k]=a.dataset.v;render(false);},'fiat-dep':()=>{toast({icon:'info',title:'Bient\u00f4t',text:'Les paiements fiat arrivent bient\u00f4t.'})},'fiat-wd':()=>{toast({icon:'info',title:'Bient\u00f4t',text:'Les retraits fiat arrivent bient\u00f4t.'})},
+ 'fiat-q':a=>{S.ui.fiat[a.dataset.k]=a.dataset.v;render(false);},'fiat-dep':()=>startFiatDeposit(),'fiat-wd':()=>startFiatWd(),
  'fiat-max':()=>{S.ui.fiat.wd=F.inp(Math.floor(S.me.balance*100)/100);render(false);}
 });
 document.addEventListener('input',e=>{const t=e.target;if(t.dataset&&t.dataset.fiat){const k=t.dataset.fiat;S.ui.fiat[k]=t.value;const cx=$(`[data-ficalc="${k}"]`);if(cx){cx.innerHTML=fiatCalcH(k);fixText(cx);}}});
@@ -13215,7 +13157,7 @@ function proIndPanH(){const st=PV.st,max=proSlots(),n=st.inds.length,full=n>=max
   ${lock}${act?`<div class="pp-l">${act}</div>`:`<p class="pp-emp">${_t('Aucun indicateur affiché. Choisis-en un ci-dessous : il est calculé sur les données du graphique.')}</p>`}
   <div class="pp-ct">${full?_t('Remplacer par un autre indicateur'):_t('Ajouter un indicateur')}</div><div class="pp-cat">${cat}</div>
   <p class="pp-note">${max===Infinity?_t('Rang Radiant : ajoute autant d’indicateurs que tu veux, y compris plusieurs fois le même. Chaque ajout prend d’autres réglages, que tu peux modifier.'):_t('Les outils de dessin ne comptent pas dans cette limite : lignes, zones, flèches et textes sont illimités.')}</p>
-  `;}
+  ${S.auth&&S.auth.demo?`<button class="pp-demo" data-a="demo-rank-open">${demoB()}<span>${_t('Changer de rang pour tester')}</span></button>`:''}`;}
 function proObjPanH(){const st=PV.st,L=st.dr;
  return `<div class="pp-h"><div><h3>${_t('Mes tracés')}</h3><p>${_t('{0, plural, =0{Aucun tracé sur ce marché} one{# tracé sur ce marché} other{# tracés sur ce marché}}',[L.length])}. ${_t('Enregistrés automatiquement.')}</p></div><button class="x" data-a="pro-panel" data-v="" aria-label="${esc(_t('Fermer'))}">${ic('x')}</button></div>
   ${L.length?`<div class="pp-l">${L.slice().reverse().map(d=>`<div class="pp-obj${PV.sel===d?' on':''}${d.h?' off':''}"><button class="pp-os" data-a="pro-obj-sel" data-id="${d.id}"><i style="color:${proHex(d.c)}">${ic(PTIC[d.k],17)}</i><span><b>${esc(pdrawLab(d.k))}</b><small>${esc(proDrDesc(d))}</small></span></button><button class="pp-b" data-a="pro-obj-eye" data-id="${d.id}" aria-pressed="${!!d.h}" aria-label="${esc(_t('Masquer ou afficher ce tracé'))}">${ic(d.h?'eyeOff':'eye',16)}</button><button class="pp-b" data-a="pro-obj-del" data-id="${d.id}" aria-label="${esc(_t('Supprimer ce tracé'))}">${ic('trash',16)}</button></div>`).join('')}</div>
@@ -13519,7 +13461,7 @@ function proBoot(){PRO_UP=true;proRooms();proSeedBots();setInterval(()=>{if(!doc
 let PRO_UP=false;
 
 /* =====================================================================================
- *  Compte invité : passer au grade voulu en un clic
+ *  Compte démo : passer au grade voulu en un clic
  *  Les valeurs d'origine du compte sont gardées (S.me.rank0) : « Revenir à mon grade d'origine » les rétablit.
  *  Le grade n'est pas forcé : l'XP et les conditions du grade choisi sont réellement remplies, donc toutes les pages restent cohérentes.
  * ===================================================================================== */
@@ -13527,196 +13469,34 @@ const DEMO_RK=['xp','settled','wins','deposits','flashWins','followed','pos'];
 const isDemoAcc=()=>!!(S.auth&&S.auth.demo&&S.me.logged);
 function demoRankAfter(){const me=S.me;me.blockedShown='';checkBadges(true);save();updateHeader();const r=myRank();closeModal();
  if(PV.open&&!PV.snap){proEnforce(PV.st,true);proBars();proRefresh();}render(false);
- toast({tone:'blue',icon:'trophy',title:_t('Tu es maintenant {0}',[rankName(r.t,r.d)]),text:_t('')});}
-function demoRankSet(t){return;}
+ toast({tone:'blue',icon:'trophy',title:_t('Tu es maintenant {0}',[rankName(r.t,r.d)]),text:_t('Mode démo : les conditions de ce rang sont remplies sur ton compte.')});}
+function demoRankSet(t){if(!isDemoAcc()||!TIERS[t])return;const me=S.me;if(!me.rank0){me.rank0={badges:(me.badges||[]).slice()};DEMO_RK.forEach(k=>me.rank0[k]=me[k]);}
+ const b=me.rank0;DEMO_RK.forEach(k=>me[k]=b[k]);me.badges=b.badges.slice();
+ if(rankFrom(stats()).t===t){delete me.rank0;demoRankAfter();return;}
+ const need={settled:0,acc:0,deposits:0,flashWins:0,followed:0};for(let i=1;i<=t;i++){const c=TIERS[i].cond;for(const k in need)if(c[k])need[k]=Math.max(need[k],c[k]);}
+ me.xp=t===8?Math.max(DIV_XP[8][0],b.xp):DIV_XP[t][0];me.settled=Math.max(b.settled,need.settled);me.wins=Math.min(me.settled,Math.max(b.wins,Math.ceil((need.acc+.5)/100*me.settled)));
+ me.deposits=Math.max(b.deposits,need.deposits);me.flashWins=Math.max(b.flashWins,need.flashWins);me.followed=Math.max(b.followed,need.followed);if(t===8)me.pos=Math.min(b.pos,87);
+ demoRankAfter();}
 function demoRankReset(){if(!isDemoAcc()||!S.me.rank0)return;const me=S.me,b=me.rank0;DEMO_RK.forEach(k=>me[k]=b[k]);me.badges=b.badges.slice();delete me.rank0;demoRankAfter();}
 function demoRankListH(){const r=myRank();return `<div class="drk-l" role="group" aria-label="${esc(_t('Choisir un rang'))}">${TIERS.map((T,i)=>`<button class="drk${i===r.t?' on':''}" data-a="demo-rank" data-t="${i}" aria-pressed="${i===r.t}">${emb(i,i===r.t?r.d:0)}<b>${T.name}</b><small>${PRO_SLOTS[i]===Infinity?_t('Illimités'):_t('{0, plural, one{# indicateur} other{# indicateurs}}',[PRO_SLOTS[i]])}</small></button>`).join('')}</div>${S.me.rank0?`<button class="link drk-r" data-a="demo-rank-reset">${_t('Revenir à mon rang d’origine')}</button>`:''}`;}
 const DEMO_RK_SUB=()=>_t('Un clic sur un rang et ton compte démo y passe tout de suite, avec ses conditions remplies. Sous chaque rang : le nombre d’indicateurs du Mode Pro.');
 /* bloc de la page « Ton rang » (compte démo seulement) */
-function demoRankH(){return '';}
-function demoRankModal(){return;}
+function demoRankH(){if(!isDemoAcc())return '';return `<section class="pn pad demo-rk"><div class="h2">${demoB()} ${_t('Changer de rang')}</div><div class="sub">${DEMO_RK_SUB()}</div>${demoRankListH()}</section>`;}
+function demoRankModal(){if(!isDemoAcc())return;openModal(`<div class="md demo-rk"><div class="md-h"><div><h3>${_t('Changer de rang')}</h3><p>${DEMO_RK_SUB()}</p></div><button class="x" data-a="close" aria-label="${esc(_t('Fermer'))}">${ic('x')}</button></div>${demoRankListH()}</div>`,'wide');}
 /* entrée du menu du compte et de « Mon compte » (compte démo seulement) */
-const demoRankItemH=()=>'';
-Object.assign(ACT,{'demo-rank':()=>{},'demo-rank-reset':()=>{},'demo-rank-open':()=>{}});
-
-</script>
-<script>
-/* ===================== Supabase Integration ===================== */
-(function(){
-var SB_URL='https://brmwvxncyeypefsgiepf.supabase.co';
-var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJybXd2eG5jeWV5cGVmc2dpZXBmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ1NzYwODAsImV4cCI6MjExMDE1MjA4MH0.-AA2WyzSOyJiK-Nwogbzv-Rowej9A3fWRDpAGSXI3YM';
-var sb=(typeof supabase!=='undefined'&&supabase.createClient)?supabase.createClient(SB_URL,SB_KEY):null;
-window.__supabase=sb;
-if(!sb)return;
-
-var sbUid=null,sbSyncT=null,sbRealtimeSub=null;
-
-function meToUser(me){return {username:me.n||'',email:me.email||'',avatar_photo:me.photo||'',avatar_color:me.color||'#2448FF',bio:me.bio||'',wallet_address:me.wallet||null,kyc_verified:!!me.kyc,onboarded:!!me.onboarded,welcomed:!!me.welcomed,is_demo:!!S.auth.demo,language_preference:typeof LANG!=='undefined'?LANG:'fr',theme_preference:document.documentElement.getAttribute('data-theme')||'auto'};}
-
-function meToStats(me){var acc=Math.round((me.wins||0)/Math.max(1,me.settled||0)*100);var rk=(typeof myRank==='function')?myRank():{t:0,d:0};return {balance:me.balance||0,xp:me.xp||0,followers_count:me.followers||0,rank_tier:rk.t||0,rank_division:rk.d||0,seasonal_position:me.pos||null,profit_realized:me.realized||0,streak_current:me.streak||1,streak_best:me.bestStreak||1,bets_placed:me.played||0,bets_won:me.wins||0,bets_settled:me.settled||0,bets_accuracy_pct:acc,bets_max_amount:me.maxBet||0,followed_bets_count:me.followed||0,contra_wins:me.contraWins||0,deposits_count:me.deposits||0,flash_wins:me.flashWins||0,flash_streak_current:me.flashStreak||0,flash_streak_best:me.flashBest||0,flash_profit_total:me.flashProfit||0,messages_total:me.msgsTotal||0,chat_xp_today:me.chatXP||0,copies_count:(me.copies||[]).length,copiers_count:me.copiers||0};}
-
-function meToPrefs(me){return {chart_type:me.ctype||'courbe',flash_mode:me.fmode||'free'};}
-
-function cleanMe(me){var c=Object.assign({},me);delete c._synced;delete c._dbBalance;delete c._dbRank;return c;}
-
-function sbSaveBlob(){if(!sbUid||S.auth.demo)return Promise.resolve();return sb.from('user_full_state').upsert({user_id:sbUid,state:cleanMe(S.me)}).then(function(){}).catch(function(e){console.warn('SB blob error:',e);});}
-
-function sbPushStructured(){
-if(!sbUid||S.auth.demo)return Promise.resolve();
-return sb.from('user_stats').select('balance,rank_tier').eq('user_id',sbUid).maybeSingle().then(function(cur){
-if(cur.data){
-if(typeof S.me._dbBalance==='number'&&Number(cur.data.balance)!==S.me._dbBalance){S.me.balance=Number(cur.data.balance);S.me._dbBalance=S.me.balance;}
-if(typeof S.me._dbRank==='number'&&cur.data.rank_tier!==S.me._dbRank){/* admin changed rank */}
-}
-return Promise.all([
-sb.from('users').update(meToUser(S.me)).eq('id',sbUid),
-sb.from('user_stats').update(meToStats(S.me)).eq('user_id',sbUid),
-sb.from('user_preferences').update(meToPrefs(S.me)).eq('user_id',sbUid)
-]);
-}).then(function(){S.me._dbBalance=S.me.balance;}).catch(function(e){console.warn('SB push error:',e);});
-}
-
-function sbSyncDebounced(){clearTimeout(sbSyncT);sbSyncT=setTimeout(function(){sbSaveBlob();sbPushStructured();},1500);}
-
-function sbLoadUser(uid){
-return Promise.all([
-sb.from('user_full_state').select('state').eq('user_id',uid).maybeSingle(),
-sb.from('users').select('*').eq('id',uid).maybeSingle(),
-sb.from('user_stats').select('*').eq('user_id',uid).maybeSingle()
-]).then(function(r){
-var blob=r[0].data,user=r[1].data,stats=r[2].data;
-if(blob&&blob.state&&typeof blob.state==='object'&&blob.state.v)Object.assign(S.me,blob.state);
-if(user){S.me.n=user.username||S.me.n;S.me.email=user.email||S.me.email;S.me.photo=user.avatar_photo||S.me.photo;S.me.color=user.avatar_color||S.me.color;S.me.bio=user.bio!=null?user.bio:S.me.bio;S.me.wallet=user.wallet_address||'';S.me.kyc=!!user.kyc_verified;S.me.onboarded=!!user.onboarded;S.me.welcomed=!!user.welcomed;}
-if(stats){S.me.balance=Number(stats.balance);S.me._dbBalance=S.me.balance;S.me.xp=stats.xp||0;S.me._dbRank=stats.rank_tier||0;S.me.followers=stats.followers_count||0;S.me.pos=stats.seasonal_position||S.me.pos;S.me.realized=Number(stats.profit_realized)||0;S.me.streak=stats.streak_current||1;S.me.bestStreak=stats.streak_best||1;S.me.played=stats.bets_placed||0;S.me.wins=stats.bets_won||0;S.me.settled=stats.bets_settled||0;S.me.maxBet=Number(stats.bets_max_amount)||0;S.me.followed=stats.followed_bets_count||0;S.me.contraWins=stats.contra_wins||0;S.me.deposits=stats.deposits_count||0;S.me.flashWins=stats.flash_wins||0;S.me.flashStreak=stats.flash_streak_current||0;S.me.flashBest=stats.flash_streak_best||0;S.me.flashProfit=Number(stats.flash_profit_total)||0;S.me.msgsTotal=stats.messages_total||0;S.me.copiers=stats.copiers_count||0;}
-S.me.logged=true;
-});
-}
-
-function sbStartRealtimeSync(){
-if(!window.__supabase||!sbUid)return;
-var sb=window.__supabase;
-/* Listen for changes to this user's stats (admin edits) */
-sb.channel('user-sync-'+sbUid)
-.on('postgres_changes',{event:'UPDATE',schema:'public',table:'user_stats',filter:'user_id=eq.'+sbUid},function(p){
-var n=p.new;if(!n)return;
-S.me.balance=Number(n.balance);S.me.xp=n.xp||0;S.me.followers=n.followers_count||0;
-S.me.played=n.bets_placed||0;S.me.wins=n.bets_won||0;S.me.settled=n.bets_settled||0;
-S.me.flashWins=n.flash_wins||0;S.me.deposits=n.deposits_count||0;
-S.me._dbBalance=S.me.balance;S.me._dbRank=n.rank_tier||0;
-if(typeof updateHeader==='function')updateHeader();
-if(typeof render==='function')render(false);
-})
-.on('postgres_changes',{event:'UPDATE',schema:'public',table:'users',filter:'id=eq.'+sbUid},function(p){
-var n=p.new;if(!n)return;
-S.me.n=n.username||S.me.n;S.me.photo=n.avatar_photo||S.me.photo;
-S.me.color=n.avatar_color||S.me.color;S.me.bio=n.bio!=null?n.bio:S.me.bio;
-S.me.kyc=!!n.kyc_verified;
-if(typeof updateHeader==='function')updateHeader();
-if(typeof render==='function')render(false);
-}).subscribe();
-}
-function sbStartChat(){
-if(sbRealtimeSub)sbRealtimeSub.unsubscribe();
-sbRealtimeSub=sb.channel('chat-live').on('postgres_changes',{event:'INSERT',schema:'public',table:'chat_messages'},function(p){
-var msg=p.new;if(!msg||msg.user_id===sbUid)return;
-if(typeof room==='function'&&typeof addMsg==='function')addMsg(msg.room_id,{u:msg.user_id,k:msg.message_type||'msg',text:msg.text_content||''});
-}).subscribe();
-}
-
-/* Wrap save/load */
-var _origSave=window.save,_origFlush=window.flushSave;
-window.save=function(){_origSave();sbSyncDebounced();};
-window.flushSave=function(){_origFlush();sbSaveBlob();sbPushStructured();};
-window.load=function(){};
-
-/* Wrap createAccount */
-var _origCreate=window.createAccount;
-window.createAccount=function(pseudo,email,pw,extra){
-var rec=_origCreate(pseudo,email,pw,extra);
-if(!email||!pw)return rec;
-sb.auth.signUp({email:email.toLowerCase(),password:pw,options:{data:{username:pseudo}}}).then(function(res){
-if(res.error)return;var uid=res.data.user.id;sbUid=uid;rec.sbId=uid;AUTH.set(rec.key,rec);
-return sb.from('users').insert({id:uid,username:pseudo,email:email.toLowerCase(),avatar_photo:S.me.photo||'',avatar_color:S.me.color||'#2448FF',bio:'',onboarded:false,welcomed:false,is_demo:false}).then(function(){sbSaveBlob();sbStartChat();});
-}).catch(function(e){console.warn('SB create error:',e);});
-return rec;
-};
-
-/* Wrap logout */
-var _origLogout=window.logout;
-window.logout=function(){sbSaveBlob().then(function(){sbUid=null;if(sbRealtimeSub){sbRealtimeSub.unsubscribe();sbRealtimeSub=null;}sb.auth.signOut().catch(function(){});}).catch(function(){});_origLogout();};
-
-/* Wrap enterAccount */
-var _origEnter=window.enterAccount;
-window.enterAccount=function(rec,fresh,quiet){_origEnter(rec,fresh,quiet);if(rec&&rec.sbId)sbUid=rec.sbId;};
-
-/* Wrap sendMsg */
-var _origSendMsg=window.sendMsg;
-window.sendMsg=function(rid){var inp=document.querySelector('[data-in="'+CSS.escape(rid)+'"]');var text=inp?inp.value.trim():'';_origSendMsg(rid);if(text&&sbUid)sb.from('chat_messages').insert({room_id:rid,user_id:sbUid,message_type:'msg',text_content:text}).catch(function(){});};
-
-/* Wrap marketsSave */
-var _origMkSave=window.marketsSave;
-window.marketsSave=function(){_origMkSave();if(!sbUid)return;var updates=[];for(var id in MK){var m=MK[id];if(!m||m.creator==='me')continue;updates.push({market_id:id,current_probability:Math.round(m.p*100)/100,anchor_probability:Math.round((m.anchor||m.p)*100)/100,volume_total:Math.round(m.vol||0),participants_count:m.people||0,messages_count:m.msgs||0,heat_level:Math.round((m.heat||0)*10)/10,online_users_count:m.online||0});}if(updates.length)sb.from('market_live_state').upsert(updates).catch(function(){});};
-
-/* Wrap marketsLoad */
-var _origMkLoad=window.marketsLoad;
-window.marketsLoad=function(){_origMkLoad();sb.from('market_live_state').select('*').then(function(res){if(!res.data)return;res.data.forEach(function(row){var m=MK[row.market_id];if(!m)return;if(row.current_probability)m.p=Number(row.current_probability);if(row.anchor_probability)m.anchor=Number(row.anchor_probability);if(row.volume_total>m.vol)m.vol=Number(row.volume_total);if(row.participants_count>m.people)m.people=row.participants_count;});}).catch(function(){});};
-
-/* Wrap bootAuth */
-var _origBoot=window.bootAuth;
-window.bootAuth=function(){_origBoot();sb.auth.getSession().then(function(res){
-var ld=document.getElementById('sb-load');
-if(!res.data||!res.data.session){if(ld)ld.classList.add('hide');setTimeout(function(){if(ld)ld.remove();},400);return;}
-var uid=res.data.session.user.id;sbUid=uid;
-sbLoadUser(uid).then(function(){
-S.me.logged=true;S.auth={key:S.me.email||uid,demo:false};
-sbStartChat();sbStartRealtimeSync();
-if(typeof updateHeader==='function')updateHeader();
-if(typeof checkBadges==='function')checkBadges(true);
-if(typeof render==='function')render(true);
-if(ld)ld.classList.add('hide');setTimeout(function(){if(ld)ld.remove();},400);
-}).catch(function(){if(ld)ld.classList.add('hide');setTimeout(function(){if(ld)ld.remove();},400);});
-}).catch(function(e){console.warn('SB boot error:',e);var ld=document.getElementById('sb-load');if(ld)ld.classList.add('hide');setTimeout(function(){if(ld)ld.remove();},400);});};
-
-/* Auth state listener */
-sb.auth.onAuthStateChange(function(ev,session){
-if(ev==='SIGNED_IN'&&session&&session.user){var uid=session.user.id;if(!sbUid||sbUid!==uid){sbUid=uid;sbLoadUser(uid).then(function(){S.me.logged=true;S.auth={key:S.me.email||uid,demo:false};sbStartChat();sbStartRealtimeSync();if(typeof updateHeader==='function')updateHeader();if(typeof render==='function')render(false);});}sbUid=uid;}
-else if(ev==='SIGNED_OUT'){sbUid=null;if(sbRealtimeSub){sbRealtimeSub.unsubscribe();sbRealtimeSub=null;}}
-});
-
-/* Periodic sync */
-setInterval(function(){if(sbUid&&!S.auth.demo&&S.me.logged){sbSaveBlob();sbPushStructured();}},15000);
-
-/* Page close */
-addEventListener('pagehide',function(){if(sbUid&&!S.auth.demo&&navigator.sendBeacon){navigator.sendBeacon(SB_URL+'/rest/v1/user_full_state?user_id=eq.'+sbUid,new Blob([JSON.stringify({state:cleanMe(S.me)})],{type:'application/json'}));}});
-
-console.log('Wimoro x Supabase: integration loaded.');
-})();
+const demoRankItemH=()=>isDemoAcc()?`<button class="ui" data-a="demo-rank-open">${ic('trophy',16)} ${_t('Changer de rang')}${demoB()}</button>`:'';
+Object.assign(ACT,{'demo-rank':a=>demoRankSet(+a.dataset.t),'demo-rank-reset':()=>demoRankReset(),'demo-rank-open':()=>{const u=$('#umenu');if(u)u.remove();demoRankModal();}});
 
 </script>
 <script>
 'use strict';
 /* ===================== Démarrage ===================== */
 {const tm=LS.g('wimoro-tmode');if(tm==='bars')S.ui.tmode='bars';}
-/* Handle Supabase auth email callback */
-{var _q=location.search||'',_h=location.hash||'',_t=null;
-try{_t=new URLSearchParams(_q).get('type')||new URLSearchParams(_h.replace(/^#/,'')).get('type');}catch(e){}
-var _hasAuth=_q.includes('code=')||_q.includes('token_hash=')||_h.includes('access_token=');
-if(_hasAuth&&_t){
-  var _sb=window.__supabase;
-  if(_sb){
-    var _code=new URLSearchParams(_q).get('code');
-    var _p=_code&&_sb.auth.exchangeCodeForSession?_sb.auth.exchangeCodeForSession(_code):_sb.auth.getSession();
-    _p.then(function(){
-      var dest=(_t==='signup'||_t==='email_change')?'#confirme':(_t==='recovery'||_t==='magiclink')?'#nouveau-mdp':'#accueil';
-      history.replaceState(null,'',location.pathname+dest);location.hash=dest;
-    }).catch(function(){});
-  }
-}}
 bootAuth();if(typeof rgBoot==='function')rgBoot();
 flashBoot();marketsLoad();
 (S.me.props||[]).forEach(pr=>{if(pr.status==='live')createMarketFromProposal(pr,false);});
 seedRooms();checkBadges(true);if(!S.me.missions.some(m=>m.day)){S.me.missions.forEach(m=>m.day=today());}
-/* onboarding redirect handled by async Supabase bootAuth */
+if(S.me.logged&&!S.me.onboarded&&location.hash!=='#bienvenue')location.replace('#bienvenue');
 for(let i=0;i<5;i++)pushBig(true);
 i18nStatic(document.body);const md=document.querySelector('meta[name=description]');if(md&&LANG!=='fr'&&I18N[LANG][md.content])md.content=I18N[LANG][md.content];
 if(typeof duelSeed==='function'){duelSeed();duelLinkBoot();}if(typeof clanSeed==='function')clanSeed();if(typeof comboSeed==='function')comboSeed();if(typeof proBoot==='function')proBoot();
@@ -13738,6 +13518,110 @@ setInterval(vis(marketsSave),8000);
 if(S.me.logged&&!S.me.welcomed)setTimeout(welcome,700);
 addEventListener('scroll',()=>{NAV.pos[NAV.cur]=window.scrollY;},{passive:true});
 
+</script>
+
+<script>
+/* Wimoro x Supabase — runs AFTER the original site is fully loaded */
+(function(){
+var SB_URL='https://brmwvxncyeypefsgiepf.supabase.co';
+var SB_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJybXd2eG5jeWV5cGVmc2dpZXBmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ1NzYwODAsImV4cCI6MjExMDE1MjA4MH0.-AA2WyzSOyJiK-Nwogbzv-Rowej9A3fWRDpAGSXI3YM';
+if(typeof supabase==='undefined'||!supabase.createClient)return;
+var sb=supabase.createClient(SB_URL,SB_ANON);
+window.__supabase=sb;
+var sbUid=null;
+
+/* Load user data from Supabase and apply to S.me */
+function sbLoadAndApply(uid){
+  return Promise.all([
+    sb.from('user_full_state').select('state').eq('user_id',uid).maybeSingle(),
+    sb.from('users').select('*').eq('id',uid).maybeSingle(),
+    sb.from('user_stats').select('*').eq('user_id',uid).maybeSingle()
+  ]).then(function(r){
+    var blob=r[0].data,user=r[1].data,stats=r[2].data;
+    if(blob&&blob.state&&typeof blob.state==='object'&&blob.state.v)Object.assign(S.me,blob.state);
+    if(user){S.me.n=user.username||S.me.n;S.me.email=user.email||S.me.email;S.me.photo=user.avatar_photo||S.me.photo;S.me.color=user.avatar_color||S.me.color;S.me.bio=user.bio!=null?user.bio:S.me.bio;S.me.kyc=!!user.kyc_verified;}
+    if(stats){S.me.balance=Number(stats.balance);S.me.xp=stats.xp||0;S.me.followers=stats.followers_count||0;S.me.realized=Number(stats.profit_realized)||0;S.me.streak=stats.streak_current||1;S.me.bestStreak=stats.streak_best||1;S.me.played=stats.bets_placed||0;S.me.wins=stats.bets_won||0;S.me.settled=stats.bets_settled||0;S.me.maxBet=Number(stats.bets_max_amount)||0;S.me.followed=stats.followed_bets_count||0;S.me.contraWins=stats.contra_wins||0;S.me.deposits=stats.deposits_count||0;S.me.flashWins=stats.flash_wins||0;S.me.flashStreak=stats.flash_streak_current||0;S.me.flashBest=stats.flash_streak_best||0;S.me.flashProfit=Number(stats.flash_profit_total)||0;S.me.msgsTotal=stats.messages_total||0;S.me.copiers=stats.copiers_count||0;S.me._dbBalance=S.me.balance;}
+    S.me.logged=true;S.me.onboarded=true;
+    if(typeof updateHeader==='function')updateHeader();
+    if(typeof render==='function')render(true);
+  });
+}
+
+/* Save S.me to Supabase */
+function sbSave(){
+  if(!sbUid)return;
+  var clean=Object.assign({},S.me);delete clean._dbBalance;delete clean._dbRank;
+  sb.from('user_full_state').upsert({user_id:sbUid,state:clean}).catch(function(){});
+  sb.from('user_stats').update({balance:S.me.balance||0,xp:S.me.xp||0,bets_placed:S.me.played||0,bets_won:S.me.wins||0,bets_settled:S.me.settled||0,flash_wins:S.me.flashWins||0,messages_total:S.me.msgsTotal||0,profit_realized:S.me.realized||0}).eq('user_id',sbUid).catch(function(){});
+}
+
+/* Check Supabase session and load data */
+sb.auth.getSession().then(function(res){
+  if(!res.data||!res.data.session)return;
+  sbUid=res.data.session.user.id;
+  sbLoadAndApply(sbUid);
+}).catch(function(){});
+
+/* Listen for auth state changes */
+sb.auth.onAuthStateChange(function(ev,session){
+  if(ev==='SIGNED_IN'&&session&&session.user){
+    sbUid=session.user.id;
+    sbLoadAndApply(sbUid);
+  }
+});
+
+/* Realtime: admin changes reflect live */
+sb.auth.getSession().then(function(res){
+  if(!res.data||!res.data.session)return;
+  var uid=res.data.session.user.id;
+  sb.channel('admin-sync').on('postgres_changes',{event:'UPDATE',schema:'public',table:'user_stats',filter:'user_id=eq.'+uid},function(p){
+    var n=p.new;if(!n)return;
+    S.me.balance=Number(n.balance);S.me.xp=n.xp||0;S.me._dbBalance=S.me.balance;
+    if(typeof updateHeader==='function')updateHeader();
+    if(typeof render==='function')render(false);
+  }).subscribe();
+});
+
+/* Periodic save every 15s */
+setInterval(function(){if(sbUid&&S.me.logged)sbSave();},15000);
+
+/* Save on page close */
+addEventListener('pagehide',function(){if(sbUid&&S.me.logged)sbSave();});
+
+/* Wrap createAccount for signup */
+var _origCreate=window.createAccount;
+window.createAccount=function(pseudo,email,pw,extra){
+  var rec=_origCreate(pseudo,email,pw,extra);
+  if(email&&pw){
+    sb.auth.signUp({email:email.toLowerCase(),password:pw,options:{data:{username:pseudo}}}).then(function(res){
+      if(res.error||!res.data.user)return;
+      var uid=res.data.user.id;sbUid=uid;rec.sbId=uid;AUTH.set(rec.key,rec);
+      sb.from('users').insert({id:uid,username:pseudo,email:email.toLowerCase(),avatar_photo:S.me.photo||'',avatar_color:S.me.color||'#2448FF',bio:'',onboarded:true,welcomed:true,is_demo:false}).catch(function(){});
+    }).catch(function(){});
+  }
+  return rec;
+};
+
+/* Wrap logout */
+var _origLogout=window.logout;
+window.logout=function(){sbSave();sbUid=null;sb.auth.signOut().catch(function(){});_origLogout();};
+
+/* Handle auth email callbacks */
+var q=location.search||'',h=location.hash||'';
+var authType=null;
+try{authType=new URLSearchParams(q).get('type')||new URLSearchParams(h.replace(/^#/,'')).get('type');}catch(e){}
+if(authType&&(q.includes('code=')||q.includes('token_hash=')||h.includes('access_token='))){
+  var code=new URLSearchParams(q).get('code');
+  var p=code&&sb.auth.exchangeCodeForSession?sb.auth.exchangeCodeForSession(code):sb.auth.getSession();
+  p.then(function(){
+    if(authType==='signup'||authType==='email_change')location.replace('#confirme');
+    else if(authType==='recovery'||authType==='magiclink')location.replace('#nouveau-mdp');
+    else location.replace('#accueil');
+  }).catch(function(){});
+}
+
+console.log('Wimoro x Supabase: loaded');
+})();
 </script>
 </body>
 </html>
