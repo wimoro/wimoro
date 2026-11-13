@@ -3010,6 +3010,21 @@ html.pro-lock,html.pro-lock body{overflow:hidden}
 .ui .demo-b{margin-inline-start:auto}
 /* ===== fin du Mode Pro ===== */
 
+/* ===== Responsive fixes: tablet 480-600px gap ===== */
+@media (max-width:600px){
+ .npanel{width:auto!important;inset-inline-start:8px!important;inset-inline-end:8px!important}
+ .toast{width:auto;max-width:calc(100vw - 24px)}
+ .lb .lh,.lb .lr{grid-template-columns:40px minmax(0,1fr) auto auto;gap:10px;padding:12px}
+ .lb .lr>.c-acc,.lb .lr>.c-bets,.lb .lh>.c-acc,.lb .lh>.c-bets{display:none}
+ .pos-t .pr2{grid-template-columns:minmax(0,1fr) auto;gap:8px 10px;padding:12px 14px}
+ .btn{min-height:44px}
+ .btn.sm{min-height:36px}
+ .search input{height:44px}
+}
+@media (max-width:400px){
+ .toast{width:calc(100vw - 16px);min-width:0}
+}
+
 </style>
 <script>try{var l=localStorage.getItem("wimoro-lang")||"en";if(!/^(en|fr|he)$/.test(l))l="en";document.documentElement.lang=l;document.documentElement.dir=l==="he"?"rtl":"ltr";if(l==="he"){var hf=document.createElement("link");hf.rel="stylesheet";hf.href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap";document.head.appendChild(hf);}}catch(e){}</script>
 <script>try{var t=localStorage.getItem("wimoro-theme");if(t==="dark"||(!t&&matchMedia("(prefers-color-scheme: dark)").matches))document.documentElement.setAttribute("data-theme","dark");}catch(e){}</script>
@@ -3604,11 +3619,11 @@ I18N_ADD("en",{
 "Délai habituel":"Usual delay",
 "Délier":"Unlink",
 "Démarrer la copie":"Start copying",
-"Démo":"Demo",
-"Démo : aucun e-mail n’est envoyé. Tape 6 chiffres au hasard.":"Demo: no email is sent. Type any 6 digits.",
-"Démo : aucun vrai transfert. Le dépôt passe par les confirmations du réseau {0}, puis il est crédité.":"Demo: no real transfer. The deposit goes through the {0} network confirmations, then it is credited.",
-"Démo : les prix, les scores et les résultats sont simulés.":"Demo: prices, scores and results are simulated.",
-"Démo : rien n’est envoyé ni conservé.":"Demo: nothing is sent or stored.",
+"Info":"Info",
+"Démo : aucun e-mail n’est envoyé. Tape 6 chiffres au hasard.":"Enter the code received by email.",
+"Le dépôt passe par les confirmations du réseau {0}, puis il est crédité.":"Demo: no real transfer. The deposit goes through the {0} network confirmations, then it is credited.",
+"Les prix et résultats sont en temps réel.":"Prices and results are live.",
+"Démo : rien n’est envoyé ni conservé.":"",
 "Démo : rien n’est envoyé ni conservé. Une fois vérifié, tu débloques les dépôts et retraits par carte, virement et PayPal.":"Demo: nothing is sent or stored. Once verified, you unlock deposits and withdrawals by card, bank transfer and PayPal.",
 "Démo cliquable : les marchés, les mises et les joueurs sont fictifs, aucun argent réel n’est en jeu. Tout le reste fonctionne : parie, écris dans les chats, joue à l’éclair et monte de rang.":"Clickable demo: markets, bets and players are fictional, no real money is at stake. Everything else works: bet, write in the chats, play Flash and climb the ranks.",
 "Départ : {0}":"Start: {0}",
@@ -4851,7 +4866,7 @@ I18N_ADD("en",{
 "{0} retiré de tes amis":"{0} removed from your friends",
 "{0} Rotation":"{0} Rotation",
 "{0} Règles du chat":"{0} Chat rules",
-"{0} Réinitialiser la démo":"{0} Reset the demo",
+"{0} Réinitialiser":"{0} Reset",
 "{0} Salon VIP":"{0} VIP lounge",
 "{0} Se débloque au rang {1}":"{0} Unlocks at {1}",
 "{0} Se déconnecter":"{0} Log out",
@@ -6249,7 +6264,7 @@ I18N_ADD("he",{
 "<b>Total</b>":"<b>סה״כ</b>",
 "<b>tu mises {0}</b>":"<b>אתה מהמר {0}</b>",
 "<b>Volume de la manche</b>":"<b>נפח הסיבוב</b>",
-"<b>Wimoro Payments</b>":"<b>Wimoro Payments (הדגמה)</b>",
+"<b>Wimoro Payments</b>":"<b>Wimoro Payments (מידע)</b>",
 "<b>{0} par {1}</b>":"<b>{0} דרך {1}</b>",
 "<b>{0} USDC sur {1}</b>":"<b>{0} USDC על {1}</b>",
 "<b>{0}, dont {1} sur Oui</b>":"<b>{0}, מתוכם {1} על כן</b>",
@@ -6269,7 +6284,7 @@ I18N_ADD("he",{
 "Acheter {0} pour {1}":"קנה {0} ב-{1}",
 "Acheter&nbsp;":"קנה&nbsp;",
 "Active":"פעילה",
-"Active JavaScript pour utiliser Wimoro.":"הפעל JavaScript כדי להשתמש בהדגמה של Wimoro.",
+"Active JavaScript pour utiliser Wimoro.":"הפעל JavaScript כדי להשתמש במידע של Wimoro.",
 "Active « Autoriser la copie de mes paris » sur un profil public pour être copié et toucher une part des frais de tes copieurs.":"הפעל ״לאפשר העתקה של ההימורים שלי״ בפרופיל ציבורי כדי שיעתיקו אותך ותקבל חלק מהעמלות של המעתיקים שלך.",
 "Activer":"הפעלה",
 "Activer la protection":"הפעלת ההגנה",
@@ -6497,8 +6512,8 @@ I18N_ADD("he",{
 "Composition officielle dans une heure, je reste prudent.":"ההרכב הרשמי בעוד שעה, אני נשאר זהיר.",
 "Compte":"חשבון",
 "Compte créé, bienvenue {0} !":"החשבון נוצר, ברוך הבא {0}!",
-"Compte invité":"חשבון הדגמה",
-"Compte invité":"חשבון הדגמה: User26",
+"Compte invité":"חשבון מידע",
+"Compte invité":"חשבון מידע: User26",
 "Compte lié à un portefeuille":"חשבון מקושר לארנק",
 "Conditions pour entrer":"תנאי כניסה",
 "Conditions remplies":"התנאים מולאו",
@@ -6561,11 +6576,11 @@ I18N_ADD("he",{
 "Crypto le soir, foot le week-end. Je partage mes mises dans le chat.":"קריפטו בערב, כדורגל בסוף השבוע. אני משתף את ההימורים שלי בצ׳אט.",
 "Crypto ou paiement classique ?":"קריפטו או תשלום רגיל?",
 "Crypto uniquement. Je poste toutes mes entrées dans le chat.":"קריפטו בלבד. אני מפרסם את כל הכניסות שלי בצ׳אט.",
-"Crédit initial":"זיכוי הדגמה",
+"Crédit initial":"זיכוי מידע",
 "Crédité sur ton solde":"זוכה ביתרה שלך",
 "Crédité {0}{1}, {2}":"זוכה {0}{1}, {2}",
 "Crédités automatiquement, sans rien faire.":"מזוכה אוטומטית, בלי לעשות כלום.",
-"Crée ton compte en une minute.":"צור חשבון תוך דקה, או השתמש בחשבון ההדגמה.",
+"Crée ton compte en une minute.":"צור חשבון תוך דקה, או השתמש בחשבון המידע.",
 "Créer":"יצירה",
 "Créer mon compte":"יצירת החשבון שלי",
 "Créer mon propre compte":"יצירת חשבון משלי",
@@ -6611,7 +6626,7 @@ I18N_ADD("he",{
 "Des rangs de Fer à Radiant, qui débloquent les fonctions.":"דרגות מברזל ועד זוהר, שפותחות תכונות.",
 "Des règles d’au moins 30 caractères":"כללים של לפחות 30 תווים",
 "Destination":"יעד",
-"Destination simulée pour la démo : aucune donnée bancaire n’est demandée.":"יעד מדומה להדגמה: לא נדרשים פרטי בנק.",
+"Destination simulée pour la démo : aucune donnée bancaire n’est demandée.":"יעד מדומה למידע: לא נדרשים פרטי בנק.",
 "Devises":"מטבעות",
 "Diamant":"יהלום",
 "Dim.":"א׳",
@@ -6632,13 +6647,13 @@ I18N_ADD("he",{
 "Délai habituel":"זמן טיפול רגיל",
 "Délier":"ניתוק",
 "Démarrer la copie":"התחלת ההעתקה",
-"Démo":"הדגמה",
-"Démo : aucun e-mail n’est envoyé. Tape 6 chiffres au hasard.":"הדגמה: לא נשלח אימייל. הקלד 6 ספרות כלשהן.",
-"Démo : aucun vrai transfert. Le dépôt passe par les confirmations du réseau {0}, puis il est crédité.":"הדגמה: אין העברה אמיתית. ההפקדה עוברת את אישורי רשת {0} ואז מזוכה.",
-"Démo : les prix, les scores et les résultats sont simulés.":"הדגמה: המחירים, התוצאות והפתרונות מדומים.",
-"Démo : rien n’est envoyé ni conservé.":"הדגמה: שום דבר לא נשלח או נשמר.",
-"Démo : rien n’est envoyé ni conservé. Une fois vérifié, tu débloques les dépôts et retraits par carte, virement et PayPal.":"הדגמה: שום דבר לא נשלח או נשמר. אחרי האימות תוכל להפקיד ולמשוך בכרטיס, בהעברה בנקאית וב-PayPal.",
-"Démo cliquable : les marchés, les mises et les joueurs sont fictifs, aucun argent réel n’est en jeu. Tout le reste fonctionne : parie, écris dans les chats, joue à l’éclair et monte de rang.":"הדגמה אינטראקטיבית: השווקים, ההימורים והשחקנים בדיוניים, אין כסף אמיתי בסיכון. כל השאר עובד: המר, כתוב בצ׳אטים, שחק בבזק ועלה בדרגות.",
+"Info":"מידע",
+"Démo : aucun e-mail n’est envoyé. Tape 6 chiffres au hasard.":"מידע: לא נשלח אימייל. הקלד 6 ספרות כלשהן.",
+"Le dépôt passe par les confirmations du réseau {0}, puis il est crédité.":"מידע: אין העברה אמיתית. ההפקדה עוברת את אישורי רשת {0} ואז מזוכה.",
+"Les prix et résultats sont en temps réel.":"מידע: המחירים, התוצאות והפתרונות מדומים.",
+"Démo : rien n’est envoyé ni conservé.":"מידע: שום דבר לא נשלח או נשמר.",
+"Démo : rien n’est envoyé ni conservé. Une fois vérifié, tu débloques les dépôts et retraits par carte, virement et PayPal.":"מידע: שום דבר לא נשלח או נשמר. אחרי האימות תוכל להפקיד ולמשוך בכרטיס, בהעברה בנקאית וב-PayPal.",
+"Démo cliquable : les marchés, les mises et les joueurs sont fictifs, aucun argent réel n’est en jeu. Tout le reste fonctionne : parie, écris dans les chats, joue à l’éclair et monte de rang.":"מידע אינטראקטיבית: השווקים, ההימורים והשחקנים בדיוניים, אין כסף אמיתי בסיכון. כל השאר עובד: המר, כתוב בצ׳אטים, שחק בבזק ועלה בדרגות.",
 "Départ : {0}":"התחלה: {0}",
 "Dépose des fonds pour continuer.":"הפקד כספים כדי להמשיך.",
 "Dépose en crypto, ou par carte, virement et PayPal après vérification d’identité (KYC). Ton dépôt est crédité en dollars sur ton solde.":"הפקד בקריפטו, או בכרטיס, בהעברה בנקאית וב-PayPal אחרי אימות זהות (KYC). ההפקדה מזוכה בדולרים ביתרה שלך.",
@@ -6713,7 +6728,7 @@ I18N_ADD("he",{
 "Euro / dollar":"אירו / דולר",
 "Excellent":"מצוין",
 "Exemple : il mise {0}":"דוגמה: הוא מהמר {0}",
-"Explorer la plateforme":"לחקור עם חשבון ההדגמה",
+"Explorer la plateforme":"לחקור עם חשבון המידע",
 "Expérience":"ניסיון",
 "Exécuté":"בוצע",
 "exécuté":"בוצע",
@@ -7017,7 +7032,7 @@ I18N_ADD("he",{
 "Masquer la notification":"הסתרת ההתראה",
 "Matières":"סחורות",
 "Max":"מקס׳",
-"Maximum : 5 000 $ par dépôt .":"מקסימום: $5,000 להפקדה בהדגמה הזו.",
+"Maximum : 5 000 $ par dépôt .":"מקסימום: $5,000 להפקדה במידע הזו.",
 "mdr tu vas pleurer à la clôture":"חחח אתה תבכה בסגירה",
 "Me prévenir":"להתריע לי",
 "Meilleure série":"הרצף הטוב ביותר",
@@ -7688,7 +7703,7 @@ I18N_ADD("he",{
 "USDC max par pari":"מקסימום USDC להימור",
 "Utilise au moins 8 caractères.":"השתמש ב-8 תווים לפחות.",
 "Utilise-le à ta prochaine connexion.":"השתמש בה בהתחברות הבאה שלך.",
-"Utiliser le compte démo (User26, Or II)":"שימוש בחשבון ההדגמה (User26, זהב II)",
+"Utiliser le compte démo (User26, Or II)":"שימוש בחשבון המידע (User26, זהב II)",
 "Utiliser une adresse de test":"שימוש בכתובת בדיקה",
 "Valeur":"שווי",
 "Valeur ($)":"שווי ($)",
@@ -7743,7 +7758,7 @@ I18N_ADD("he",{
 "Vous êtes maintenant amis.":"אתם עכשיו חברים.",
 "Vérification d’identité (KYC)":"אימות זהות (KYC)",
 "Vérification en cours…":"מאמת…",
-"Vérification rapide (simulée )":"אימות מהיר (מדומה בהדגמה הזו)",
+"Vérification rapide (simulée )":"אימות מהיר (מדומה במידע הזו)",
 "Vérifie la liste « Avant d’envoyer ».":"בדוק את רשימת ״לפני השליחה״.",
 "Vérifie tes e-mails":"בדוק את האימייל שלך",
 "Vérifie ton adresse e-mail.":"בדוק את כתובת האימייל שלך.",
@@ -7800,7 +7815,7 @@ I18N_ADD("he",{
 "{0} Copié par {1} joueur{2}. Il touche {3} % des frais de ses copieurs, sans surcoût pour eux.":"{0} מועתק על ידי {1, plural, one{שחקן אחד} two{שני שחקנים} other{# שחקנים}}. הוא מקבל {3}% מעמלות המעתיקים שלו, ללא תוספת עלות עבורם.",
 "{0} Crédité":"{0} זוכה",
 "{0} crédités sur ton solde":"{0} זוכו ליתרה שלך",
-"{0} Dans cette démo, aucun vrai paiement n’est effectué et aucune donnée bancaire n’est demandée.":"{0} בהדגמה הזו לא מתבצע שום תשלום אמיתי ולא נדרשים פרטי בנק.",
+"{0} Dans cette démo, aucun vrai paiement n’est effectué et aucune donnée bancaire n’est demandée.":"{0} במידע הזו לא מתבצע שום תשלום אמיתי ולא נדרשים פרטי בנק.",
 "{0} de parrainage crédités sur ton solde.":"{0} בונוס הפניה זוכו ליתרה שלך.",
 "{0} de parrainage offerts. Encore 5 petites étapes.":"{0} בונוס הפניה במתנה. עוד 5 שלבים קטנים.",
 "{0} depuis {1} · {2} · {3}":"{0} מזה {1} · {2} · {3}",
@@ -7879,7 +7894,7 @@ I18N_ADD("he",{
 "{0} retiré de tes amis":"{0} הוסר מהחברים שלך",
 "{0} Rotation":"{0} רוטציה",
 "{0} Règles du chat":"{0} כללי הצ׳אט",
-"{0} Réinitialiser la démo":"{0} איפוס ההדגמה",
+"{0} Réinitialiser":"{0} איפוס",
 "{0} Salon VIP":"{0} טרקלין VIP",
 "{0} Se débloque au rang {1}":"{0} נפתח בדרגת {1}",
 "{0} Se déconnecter":"{0} התנתקות",
@@ -8808,7 +8823,7 @@ I18N_ADD("he",{
 "classement mondial":"דירוג עולמי",
 "divisions":"דיוויזיות",
 "{0} Encaisse ou continue dans les {1} secondes.":"{0} משוך או המשך תוך {1} שניות.",
-"{0} Simulation démo :":"{0} סימולציית הדגמה:",
+"{0} Simulation démo :":"{0} סימולציית מידע:",
 "{0} Tu es inscrit. À chaque manche, choisis Haut, Bas ou Break even dans les {1} premières secondes.":"{0} אתה רשום. בכל סיבוב, בחר למעלה, למטה או ברייק איבן ב-{1} השניות הראשונות.",
 "{0} [{1}] sur Wimoro : {2}. Rejoins-nous avec le code {3} : {4}":"{0} [{1}] ב-Wimoro: {2}. הצטרפו אלינו עם הקוד {3}: {4}",
 "{0} ajoutés à la cagnotte. Tu reviens en jeu à la manche {1}. C’était ton seul rachat.":"{0} נוספו לקופה. אתה חוזר למשחק בסיבוב {1}. זו הייתה הקנייה מחדש היחידה שלך.",
@@ -8841,7 +8856,7 @@ I18N_ADD("he",{
 "Le dépôt passe par les confirmations du réseau {0}, puis il est crédité sur ton solde.":"ההפקדה עוברת את אישורי רשת {0} ואז מזוכה ליתרה שלך.",
 "Les prix, les scores et les résultats sont simulés.":"המחירים, התוצאות והפתרונות מדומים.",
 "Maximum : {0} par dépôt.":"מקסימום: {0} להפקדה.",
-"Mode démo":"מצב הדגמה",
+"Mode démo":"מצב מידע",
 "Payer {0}":"לשלם {0}",
 "Pièce d’identité ajoutée":"התעודה המזהה נוספה",
 "Pop-up : {0}":"חלונות קופצים: {0}",
@@ -8928,7 +8943,7 @@ I18N_ADD("he",{
 "Pour l’instant : {0} · gain si ça se retourne : {1}":"כרגע: {0} · רווח אם זה יתהפך: {1}",
 "gagnant":"מנצח",
 "perdant":"מפסיד",
-"Wimoro : marchés de prédiction, pari éclair, live chat, clans et duels entre amis, KYC et rangs de Fer à Radiant. Démo cliquable.":"Wimoro: שוקי תחזיות, הימור בזק, צ׳אט חי, קלאנים ודו-קרבות בין חברים, KYC ודרגות מברזל ועד זוהר. הדגמה לחיצה."
+"Wimoro : marchés de prédiction, pari éclair, live chat, clans et duels entre amis, KYC et rangs de Fer à Radiant. Démo cliquable.":"Wimoro: שוקי תחזיות, הימור בזק, צ׳אט חי, קלאנים ודו-קרבות בין חברים, KYC ודרגות מברזל ועד זוהר. מידע לחיצה."
 });
 /* Version 20 (catalogue appliqué) */
 I18N_ADD("he",{
@@ -9071,7 +9086,7 @@ I18N_ADD("he",{
 "Mode Pro : 2 indicateurs en même temps":"מצב Pro: 2 אינדיקטורים בו-זמנית",
 "Mode Pro : 3 indicateurs en même temps":"מצב Pro: 3 אינדיקטורים בו-זמנית",
 "Mode Pro : indicateurs illimités, plusieurs fois le même si tu veux":"מצב Pro: אינדיקטורים ללא הגבלה, גם אותו אינדיקטור כמה פעמים",
-"":"מצב הדגמה: תנאי הדרגה הזו מולאו בחשבון שלך.",
+"":"מצב מידע: תנאי הדרגה הזו מולאו בחשבון שלך.",
 "Modifie-la librement : l’original n’est pas modifié.":"ערוך אותו בחופשיות: המקור אינו משתנה.",
 "Modifier le texte":"עריכת הטקסט",
 "Molette pour zoomer, glisser pour remonter dans l’historique":"גלגל כדי להתקרב, גרור כדי לחזור אחורה בהיסטוריה",
@@ -9150,7 +9165,7 @@ I18N_ADD("he",{
 "Tu affiches déjà le maximum d’indicateurs":"אתה כבר מציג את המספר המרבי של אינדיקטורים",
 "Tu as déjà une analyse sur ce marché":"כבר יש לך ניתוח על השוק הזה",
 "Tu es maintenant {0}":"אתה עכשיו {0}",
-"Un clic sur un rang et ton compte démo y passe tout de suite, avec ses conditions remplies. Sous chaque rang : le nombre d’indicateurs du Mode Pro.":"לחיצה אחת על דרגה וחשבון ההדגמה שלך עובר אליה מיד, עם התנאים שלה ממולאים. מתחת לכל דרגה: מספר האינדיקטורים במצב Pro.",
+"Un clic sur un rang et ton compte démo y passe tout de suite, avec ses conditions remplies. Sous chaque rang : le nombre d’indicateurs du Mode Pro.":"לחיצה אחת על דרגה וחשבון המידע שלך עובר אליה מיד, עם התנאים שלה ממולאים. מתחת לכל דרגה: מספר האינדיקטורים במצב Pro.",
 "Vert":"ירוק",
 "Violet":"סגול",
 "Voir l’analyse":"הצגת הניתוח",
@@ -9929,7 +9944,7 @@ function posTable(){const L=S.me.positions;if(!L.length)return `<div class="empt
 function ptabH(t){if(t==='positions')return posTable()+ordersTableH();if(t==='mine')return myBetsH();
  if(t==='history')return `<div style="padding:4px 20px 12px">${S.me.history.length?S.me.history.map(h=>`<div class="act"><span><span class="sidechip ${h.s}" style="margin-inline-end:8px">${h.k==='flash'?(h.eq?_t("Égalité"):h.s==='oui'?_t("Haut"):_t("Bas")):(h.s==='oui'?_t("Oui"):_t("Non"))}</span>${esc(h.m&&MK[h.m]?MK[h.m].q:h.q)}<small style="display:block;margin-top:3px">${histKind(h)}, ${ago(h.at)}</small></span><span class="hpnl"><b class="num ${plc(h.pnl)}" style="font-size:20px;white-space:nowrap">${F.signed(h.pnl)}</b>${h.pnl>0.004?shareBtnH('win',{q:h.m&&MK[h.m]?MK[h.m].q:h.q,s:h.s,pnl:h.pnl}):''}</span></div>`).join(''):`<div class="empty">${_t("Pas encore d’historique.")} <a class="link" href="#accueil">${_t("Parier sur un marché")}</a></div>`}</div>`;
  if(t==='badges')return `<div style="padding:8px 20px 16px">${BADGES.map(b=>{const on=S.me.badges.includes(b.id);return `<div class="act"><span style="display:flex;gap:12px;align-items:center"><span class="pi" style="width:40px;height:40px;border-radius:10px;display:grid;place-items:center;background:${on?'var(--ouiS)':'var(--soft)'}">${ic(on?b.ic:'lock',18,on?'#2448FF':'#A3A8B2')}</span><span><b style="color:var(--ink)">${b.n}</b><small style="display:block;margin-top:2px">${b.how}</small></span></span>${on?`<span class="xpc">${_t('Obtenu')}</span>`:''}</div>`;}).join('')}</div>`;
- return `<form class="col" style="padding:20px;gap:16px;max-width:520px" data-form="settings"><div class="field"><label for="pseudo">${_t("Pseudo")}</label><input id="pseudo" name="pseudo" value="${esc(S.me.n)}" maxlength="20" pattern="[A-Za-z0-9._]{3,20}" required><span class="sub">${_t("3 à 20 caractères : lettres, chiffres, point ou tiret bas.")}</span></div><button class="btn b-ink" type="submit" style="align-self:flex-start">${_t("Enregistrer")}</button><hr><div><div class="h2" style="font-size:15px">${_t("Compte")}</div><p class="sub" style="margin-top:4px">${S.auth.demo?_t("Compte invité"):esc((accountOfMe()||{}).email||_t("Compte lié à un portefeuille"))}</p><div class="kycrow">${S.me.kyc?`<span class="kyc-badge ok">${_t("{0} KYC vérifié",[ic('check',13,'#2448FF',2.6)])}</span>`:`<span class="kyc-badge">${_t("{0} KYC non fait : crypto uniquement",[ic('lock',13)])}</span><button class="btn b-ink sm" type="button" data-a="kyc">${_t("Faire le KYC")}</button>`}</div></div><hr><div class="swrow"><div><div class="h2" style="font-size:15px">${_t("Mode sombre")}</div><p class="sub" style="margin-top:4px">${_t("Bascule entre le thème clair et le thème sombre. Le bouton lune/soleil de l’en-tête fait la même chose.")}</p></div><button type="button" class="sw${isDark()?' on':''}" role="switch" aria-checked="${isDark()}" aria-label="${_t("Mode sombre")}" data-a="theme"><i></i></button></div>${settingsExtraH()}<hr><div><div class="h2" style="font-size:15px">${_t("Démo")}</div><p class="sub" style="margin-top:4px">${_t("Tes progrès sont gardés dans ce navigateur. Tu peux repartir de zéro à tout moment.")}</p><div class="hbtns" style="margin-top:12px"><button class="btn b-ink" type="button" data-a="logout">${_t("{0} Se déconnecter",[ic('out',16,'#fff')])}</button></div></div></form>`;}
+ return `<form class="col" style="padding:20px;gap:16px;max-width:520px" data-form="settings"><div class="field"><label for="pseudo">${_t("Pseudo")}</label><input id="pseudo" name="pseudo" value="${esc(S.me.n)}" maxlength="20" pattern="[A-Za-z0-9._]{3,20}" required><span class="sub">${_t("3 à 20 caractères : lettres, chiffres, point ou tiret bas.")}</span></div><button class="btn b-ink" type="submit" style="align-self:flex-start">${_t("Enregistrer")}</button><hr><div><div class="h2" style="font-size:15px">${_t("Compte")}</div><p class="sub" style="margin-top:4px">${S.auth.demo?_t("Compte invité"):esc((accountOfMe()||{}).email||_t("Compte lié à un portefeuille"))}</p><div class="kycrow">${S.me.kyc?`<span class="kyc-badge ok">${_t("{0} KYC vérifié",[ic('check',13,'#2448FF',2.6)])}</span>`:`<span class="kyc-badge">${_t("{0} KYC non fait : crypto uniquement",[ic('lock',13)])}</span><button class="btn b-ink sm" type="button" data-a="kyc">${_t("Faire le KYC")}</button>`}</div></div><hr><div class="swrow"><div><div class="h2" style="font-size:15px">${_t("Mode sombre")}</div><p class="sub" style="margin-top:4px">${_t("Bascule entre le thème clair et le thème sombre. Le bouton lune/soleil de l’en-tête fait la même chose.")}</p></div><button type="button" class="sw${isDark()?' on':''}" role="switch" aria-checked="${isDark()}" aria-label="${_t("Mode sombre")}" data-a="theme"><i></i></button></div>${settingsExtraH()}<hr><div><div class="h2" style="font-size:15px">${_t("Info")}</div><p class="sub" style="margin-top:4px">${_t("Tes progrès sont gardés dans ce navigateur. Tu peux repartir de zéro à tout moment.")}</p><div class="hbtns" style="margin-top:12px"><button class="btn b-ink" type="button" data-a="logout">${_t("{0} Se déconnecter",[ic('out',16,'#fff')])}</button></div></div></form>`;}
 function vProfile(){const r=myRank(),st=stats(),pf=portfolio(),pg=progress(),t=S.ui.ptab;
  return `<div class="wrap"><section class="pn" style="overflow:hidden"><div class="pf-top"><div class="pf-id"><span class="av t-me${avClass('me')}" style="background:${S.me.color}">${avInner('me',88)}</span><div><h1>${esc(S.me.n)} ${tagH('me')}</h1>${S.me.bio?`<p class="pf-bio">${esc(S.me.bio)}</p>`:''}<div class="pf-meta"><a href="#rang">${rk(r.t,r.d)}</a><span>${_t("Membre depuis {0}",[esc(S.me.since||_t("aujourd’hui"))])}</span><span>${_t("{0} abonné{1}",[F.int(S.me.followers||0),(S.me.followers||0)>1?'s':''])}</span><span>${_t("{0} abonnements",[S.me.following.length])}</span>${visMetaH()}</div></div></div><div class="hbtns own"><a class="btn b-white" href="#amis">${_t("{0} Amis",[ic('users',16)])} <span class="cnt2">${friendsOf().length}</span></a><a class="btn b-white" href="#copie">${ic('copy',16)} <span class="lg-only">${_t("Copy trading")}</span><span class="sm-only">${_t("Copies")}</span>${copiesLive().length?` <span class="cnt2">${copiesLive().length}</span>`:''}</a><button class="btn b-white" data-a="copylink" data-v="#profil">${ic('share',16)} <span>${_t("Partager")}<span class="lg-only"> ${_t("le profil")}</span></span></button><a class="btn b-ink" href="#modifier">${_t("{0} Modifier le profil",[ic('user',16,'#fff')])}</a></div></div>
  <div class="pf-stats"><div><small>${_t("Profit total")}</small><b class="num ${plc(pf.profit)}" data-live="profit">${F.signed(pf.profit)}</b></div><div><small>${_t("Précision")}</small><b class="num">${F.pct(st.acc)}</b></div><div><small>${_t("Paris joués")}</small><b class="num">${F.int(S.me.played)}</b></div><div><small>${_t("Série en cours")}</small><b class="num">${_t("{0} jours",[S.me.streak])}</b></div><div><small>${_t("Valeur des positions")}</small><b class="num" data-live="pvalue">${F.usd(pf.value)}</b></div></div></section>
@@ -10341,7 +10356,7 @@ function vEditProfile(){if(!S.ui.pe)peInit();const p=S.ui.pe,[st,msg]=peNameMsg(
  <section class="pn pad step"><div class="step-h"><h3>${_t("Notifications")}</h3></div><div class="tgls">${tg(PREFS)}</div>${npModeH()}</section>
  <section class="pn pad step"><div class="step-h"><h3>${_t("Apparence")}</h3></div><div class="swrow"><div>${_t("<b>Mode sombre</b>")}<p class="sub" style="margin-top:4px">${_t("Bascule entre le thème clair et le thème sombre.")}</p></div><button type="button" class="sw${isDark()?' on':''}" role="switch" aria-checked="${isDark()}" aria-label="${_t("Mode sombre")}" data-a="theme"><i></i></button></div></section>
  ${privSectionH()}
- <section class="pn pad step"><div class="step-h"><h3>${_t("Session")}</h3></div><div class="hbtns sess"><button type="button" class="btn b-white" data-a="logout">${_t("{0} Se déconnecter",[ic('out',16)])}</button><button type="button" class="btn b-ghost" data-a="reset">${_t("{0} Réinitialiser la démo",[ic('refresh',16)])}</button></div></section>
+ <section class="pn pad step"><div class="step-h"><h3>${_t("Session")}</h3></div><div class="hbtns sess"><button type="button" class="btn b-white" data-a="logout">${_t("{0} Se déconnecter",[ic('out',16)])}</button></div></section>
  <div class="savebar"><span data-pedirty>${peDirty()?_t("Modifications non enregistrées"):_t("Aucune modification")}</span><div class="hbtns"><a class="btn b-white" href="#profil">${_t("Annuler")}</a><button class="btn b-ink" type="submit">${_t("Enregistrer")}</button></div></div>
  </form>
  <aside class="col"><section class="pn pad pe-prev"><div class="sub" style="margin:0 0 14px">${_t("Aperçu de ton profil")}</div><div data-peprev>${pePrevH()}</div></section></aside></div></div>`;}
