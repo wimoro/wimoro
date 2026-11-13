@@ -13486,12 +13486,6 @@ function demoRankAfter(){const me=S.me;me.blockedShown='';checkBadges(true);save
  if(PV.open&&!PV.snap){proEnforce(PV.st,true);proBars();proRefresh();}render(false);
  toast({tone:'blue',icon:'trophy',title:_t('Tu es maintenant {0}',[rankName(r.t,r.d)]),text:_t('Mode démo : les conditions de ce rang sont remplies sur ton compte.')});}
 function demoRankSet(t){return;}
- const b=me.rank0;DEMO_RK.forEach(k=>me[k]=b[k]);me.badges=b.badges.slice();
- if(rankFrom(stats()).t===t){delete me.rank0;demoRankAfter();return;}
- const need={settled:0,acc:0,deposits:0,flashWins:0,followed:0};for(let i=1;i<=t;i++){const c=TIERS[i].cond;for(const k in need)if(c[k])need[k]=Math.max(need[k],c[k]);}
- me.xp=t===8?Math.max(DIV_XP[8][0],b.xp):DIV_XP[t][0];me.settled=Math.max(b.settled,need.settled);me.wins=Math.min(me.settled,Math.max(b.wins,Math.ceil((need.acc+.5)/100*me.settled)));
- me.deposits=Math.max(b.deposits,need.deposits);me.flashWins=Math.max(b.flashWins,need.flashWins);me.followed=Math.max(b.followed,need.followed);if(t===8)me.pos=Math.min(b.pos,87);
- demoRankAfter();}
 function demoRankReset(){if(!isDemoAcc()||!S.me.rank0)return;const me=S.me,b=me.rank0;DEMO_RK.forEach(k=>me[k]=b[k]);me.badges=b.badges.slice();delete me.rank0;demoRankAfter();}
 function demoRankListH(){const r=myRank();return `<div class="drk-l" role="group" aria-label="${esc(_t('Choisir un rang'))}">${TIERS.map((T,i)=>`<button class="drk${i===r.t?' on':''}" data-a="demo-rank" data-t="${i}" aria-pressed="${i===r.t}">${emb(i,i===r.t?r.d:0)}<b>${T.name}</b><small>${PRO_SLOTS[i]===Infinity?_t('Illimités'):_t('{0, plural, one{# indicateur} other{# indicateurs}}',[PRO_SLOTS[i]])}</small></button>`).join('')}</div>${S.me.rank0?`<button class="link drk-r" data-a="demo-rank-reset">${_t('Revenir à mon rang d’origine')}</button>`:''}`;}
 const DEMO_RK_SUB=()=>_t('Un clic sur un rang et ton compte démo y passe tout de suite, avec ses conditions remplies. Sous chaque rang : le nombre d’indicateurs du Mode Pro.');
