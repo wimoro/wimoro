@@ -13172,7 +13172,7 @@ function proIndPanH(){const st=PV.st,max=proSlots(),n=st.inds.length,full=n>=max
   ${lock}${act?`<div class="pp-l">${act}</div>`:`<p class="pp-emp">${_t('Aucun indicateur affiché. Choisis-en un ci-dessous : il est calculé sur les données du graphique.')}</p>`}
   <div class="pp-ct">${full?_t('Remplacer par un autre indicateur'):_t('Ajouter un indicateur')}</div><div class="pp-cat">${cat}</div>
   <p class="pp-note">${max===Infinity?_t('Rang Radiant : ajoute autant d’indicateurs que tu veux, y compris plusieurs fois le même. Chaque ajout prend d’autres réglages, que tu peux modifier.'):_t('Les outils de dessin ne comptent pas dans cette limite : lignes, zones, flèches et textes sont illimités.')}</p>
-  ${S.auth&&S.auth.demo?`<button class="pp-demo" data-a="demo-rank-open">${demoB()}<span>${_t('Changer de rang pour tester')}</span></button>`:''}`;}
+  `;}
 function proObjPanH(){const st=PV.st,L=st.dr;
  return `<div class="pp-h"><div><h3>${_t('Mes tracés')}</h3><p>${_t('{0, plural, =0{Aucun tracé sur ce marché} one{# tracé sur ce marché} other{# tracés sur ce marché}}',[L.length])}. ${_t('Enregistrés automatiquement.')}</p></div><button class="x" data-a="pro-panel" data-v="" aria-label="${esc(_t('Fermer'))}">${ic('x')}</button></div>
   ${L.length?`<div class="pp-l">${L.slice().reverse().map(d=>`<div class="pp-obj${PV.sel===d?' on':''}${d.h?' off':''}"><button class="pp-os" data-a="pro-obj-sel" data-id="${d.id}"><i style="color:${proHex(d.c)}">${ic(PTIC[d.k],17)}</i><span><b>${esc(pdrawLab(d.k))}</b><small>${esc(proDrDesc(d))}</small></span></button><button class="pp-b" data-a="pro-obj-eye" data-id="${d.id}" aria-pressed="${!!d.h}" aria-label="${esc(_t('Masquer ou afficher ce tracé'))}">${ic(d.h?'eyeOff':'eye',16)}</button><button class="pp-b" data-a="pro-obj-del" data-id="${d.id}" aria-label="${esc(_t('Supprimer ce tracé'))}">${ic('trash',16)}</button></div>`).join('')}</div>
@@ -13485,7 +13485,7 @@ const isDemoAcc=()=>!!(S.auth&&S.auth.demo&&S.me.logged);
 function demoRankAfter(){const me=S.me;me.blockedShown='';checkBadges(true);save();updateHeader();const r=myRank();closeModal();
  if(PV.open&&!PV.snap){proEnforce(PV.st,true);proBars();proRefresh();}render(false);
  toast({tone:'blue',icon:'trophy',title:_t('Tu es maintenant {0}',[rankName(r.t,r.d)]),text:_t('Mode démo : les conditions de ce rang sont remplies sur ton compte.')});}
-function demoRankSet(t){if(!isDemoAcc()||!TIERS[t])return;const me=S.me;if(!me.rank0){me.rank0={badges:(me.badges||[]).slice()};DEMO_RK.forEach(k=>me.rank0[k]=me[k]);}
+function demoRankSet(t){return;}
  const b=me.rank0;DEMO_RK.forEach(k=>me[k]=b[k]);me.badges=b.badges.slice();
  if(rankFrom(stats()).t===t){delete me.rank0;demoRankAfter();return;}
  const need={settled:0,acc:0,deposits:0,flashWins:0,followed:0};for(let i=1;i<=t;i++){const c=TIERS[i].cond;for(const k in need)if(c[k])need[k]=Math.max(need[k],c[k]);}
@@ -13496,11 +13496,11 @@ function demoRankReset(){if(!isDemoAcc()||!S.me.rank0)return;const me=S.me,b=me.
 function demoRankListH(){const r=myRank();return `<div class="drk-l" role="group" aria-label="${esc(_t('Choisir un rang'))}">${TIERS.map((T,i)=>`<button class="drk${i===r.t?' on':''}" data-a="demo-rank" data-t="${i}" aria-pressed="${i===r.t}">${emb(i,i===r.t?r.d:0)}<b>${T.name}</b><small>${PRO_SLOTS[i]===Infinity?_t('Illimités'):_t('{0, plural, one{# indicateur} other{# indicateurs}}',[PRO_SLOTS[i]])}</small></button>`).join('')}</div>${S.me.rank0?`<button class="link drk-r" data-a="demo-rank-reset">${_t('Revenir à mon rang d’origine')}</button>`:''}`;}
 const DEMO_RK_SUB=()=>_t('Un clic sur un rang et ton compte démo y passe tout de suite, avec ses conditions remplies. Sous chaque rang : le nombre d’indicateurs du Mode Pro.');
 /* bloc de la page « Ton rang » (compte démo seulement) */
-function demoRankH(){if(!isDemoAcc())return '';return `<section class="pn pad demo-rk"><div class="h2">${demoB()} ${_t('Changer de rang')}</div><div class="sub">${DEMO_RK_SUB()}</div>${demoRankListH()}</section>`;}
-function demoRankModal(){if(!isDemoAcc())return;openModal(`<div class="md demo-rk"><div class="md-h"><div><h3>${_t('Changer de rang')}</h3><p>${DEMO_RK_SUB()}</p></div><button class="x" data-a="close" aria-label="${esc(_t('Fermer'))}">${ic('x')}</button></div>${demoRankListH()}</div>`,'wide');}
+function demoRankH(){return '';}
+function demoRankModal(){return;}
 /* entrée du menu du compte et de « Mon compte » (compte démo seulement) */
 const demoRankItemH=()=>'';
-Object.assign(ACT,{'demo-rank':a=>demoRankSet(+a.dataset.t),'demo-rank-reset':()=>demoRankReset(),'demo-rank-open':()=>{const u=$('#umenu');if(u)u.remove();demoRankModal();}});
+Object.assign(ACT,{'demo-rank':()=>{},'demo-rank-reset':()=>{},'demo-rank-open':()=>{}});
 
 </script>
 <script>
