@@ -13489,7 +13489,7 @@ Object.assign(ACT,{'demo-rank':a=>demoRankSet(+a.dataset.t),'demo-rank-reset':()
 
 </script>
 <script>
-/* ===================== Supabase Integration Layer ===================== */
+/* ===================== Supabase Integration Layer v2 — Full DB, no localStorage ===================== */
 (function(){
 'use strict';
 
@@ -13501,6 +13501,9 @@ if(!sb){console.warn('Supabase client not loaded, running in offline mode.');ret
 
 let sbUid=null;
 let sbSyncT=null;
+let sbRealtimeSub=null;
+
+/* ===================== Helpers: S.me ↔ DB mapping ===================== */
 
 function meToUser(me){
   return {
@@ -13540,6 +13543,14 @@ function meToPrefs(me){
   };
 }
 
+function userToMe(row,me){
+  if(!row)return;
+  me.n=row.username||me.n;me.email=row.email||me.email;
+  me.photo=row.avatar_photo||me.photo;me.color=row.avatar_color||me.color;
+  me.bio=row.bio||'';me.wallet=row.wallet_address||'';
+  me.kyc=!!row.kyc_verified;me.onboarded=!!row.onboarded;me.welcomed=!!row.welcomed;
+}
+
 function statsToMe(row,me){
   if(!row)return;
   me.balance=Number(row.balance)||me.balance;me.xp=row.xp||me.xp;
@@ -13555,15 +13566,38 @@ function statsToMe(row,me){
   me.copiers=row.copiers_count||0;
 }
 
-function userToMe(row,me){
-  if(!row)return;
-  me.n=row.username||me.n;me.email=row.email||me.email;
-  me.photo=row.avatar_photo||me.photo;me.color=row.avatar_color||me.color;
-  me.bio=row.bio||'';me.wallet=row.wallet_address||'';
-  me.kyc=!!row.kyc_verified;me.onboarded=!!row.onboarded;me.welcomed=!!row.welcomed;
+/* ===================== Full state save/load (JSON blob) ===================== */
+
+function cleanMeForStorage(me){
+  var c=Object.assign({},me);
+  delete c._synced;
+  if(c.notifs)c.notifs=c.notifs.map(function(n){var x=Object.assign({},n);delete x._synced;return x;});
+  if(c.history)c.history=c.history.map(function(h){var x=Object.assign({},h);delete x._synced;return x;});
+  return c;
 }
 
-async function sbSyncPush(){
+async function sbSaveFullState(){
+  if(!sbUid||S.auth.demo)return;
+  try{
+    await sb.from('user_full_state').upsert({user_id:sbUid,state:cleanMeForStorage(S.me)});
+  }catch(e){console.warn('SB full state save error:',e);}
+}
+
+async function sbLoadFullState(){
+  if(!sbUid||S.auth.demo)return false;
+  try{
+    var res=await sb.from('user_full_state').select('state').eq('user_id',sbUid).single();
+    if(res.data&&res.data.state&&typeof res.data.state==='object'&&res.data.state.v){
+      Object.assign(S.me,res.data.state);
+      return true;
+    }
+  }catch(e){console.warn('SB full state load error:',e);}
+  return false;
+}
+
+/* ===================== Structured data sync ===================== */
+
+async function sbPushStructured(){
   if(!sbUid||S.auth.demo)return;
   try{
     await Promise.all([
@@ -13571,25 +13605,20 @@ async function sbSyncPush(){
       sb.from('user_stats').update(meToStats(S.me)).eq('user_id',sbUid),
       sb.from('user_preferences').update(meToPrefs(S.me)).eq('user_id',sbUid)
     ]);
-  }catch(e){console.warn('SB push error:',e);}
+  }catch(e){console.warn('SB structured push error:',e);}
 }
 
-async function sbSyncPull(){
+async function sbPushAll(){
   if(!sbUid||S.auth.demo)return;
-  try{
-    var [u,st]=await Promise.all([
-      sb.from('users').select('*').eq('id',sbUid).single(),
-      sb.from('user_stats').select('*').eq('user_id',sbUid).single()
-    ]);
-    if(u.data)userToMe(u.data,S.me);
-    if(st.data)statsToMe(st.data,S.me);
-  }catch(e){console.warn('SB pull error:',e);}
+  await Promise.all([sbSaveFullState(),sbPushStructured(),sbSyncPositions(),sbSyncHistory(),sbSyncDeposits(),sbSyncWithdrawals(),sbSyncNotifs(),sbSyncMarketState()]);
 }
 
 function sbSyncDebounced(){
   clearTimeout(sbSyncT);
-  sbSyncT=setTimeout(sbSyncPush,2000);
+  sbSyncT=setTimeout(function(){sbSaveFullState();sbPushStructured();},1500);
 }
+
+/* ===================== Positions sync ===================== */
 
 async function sbSyncPositions(){
   if(!sbUid||S.auth.demo)return;
@@ -13602,24 +13631,20 @@ async function sbSyncPositions(){
       var p=pos[i],key=(p.m||p.market)+'_'+(p.side||'oui');
       var row={user_id:sbUid,market_id:p.m||p.market||'',side:p.side||'oui',
         shares:p.shares||p.qty||1,average_price:p.avg||p.price||50};
-      if(exMap[key]){
-        await sb.from('positions').update(row).eq('id',exMap[key]);
-        delete exMap[key];
-      }else{
-        await sb.from('positions').insert(row);
-      }
+      if(exMap[key]){await sb.from('positions').update(row).eq('id',exMap[key]);delete exMap[key];}
+      else{await sb.from('positions').insert(row);}
     }
     var staleIds=Object.values(exMap);
     if(staleIds.length)await sb.from('positions').delete().in('id',staleIds);
-  }catch(e){console.warn('SB positions sync error:',e);}
+  }catch(e){console.warn('SB positions error:',e);}
 }
+
+/* ===================== History sync ===================== */
 
 async function sbSyncHistory(){
   if(!sbUid||S.auth.demo)return;
   try{
-    var hist=(S.me.history||[]).slice(0,50);
-    var ex=await sb.from('position_history').select('id').eq('user_id',sbUid).order('settled_at',{ascending:false}).limit(1);
-    var lastId=(ex.data&&ex.data[0])?ex.data[0].id:null;
+    var hist=(S.me.history||[]).slice(0,100);
     var toInsert=[];
     for(var i=0;i<hist.length;i++){
       var h=hist[i];
@@ -13630,92 +13655,245 @@ async function sbSyncHistory(){
       h._synced=true;
     }
     if(toInsert.length)await sb.from('position_history').insert(toInsert);
-  }catch(e){console.warn('SB history sync error:',e);}
+  }catch(e){console.warn('SB history error:',e);}
 }
 
-/* --- Wrap save/load/flushSave --- */
-var _origSave=window.save,_origLoad=window.load,_origFlush=window.flushSave;
+/* ===================== Deposits sync ===================== */
+
+async function sbSyncDeposits(){
+  if(!sbUid||S.auth.demo)return;
+  try{
+    var deps=(S.me.deps||[]).filter(function(d){return !d._synced&&d.coin;});
+    var rows=deps.map(function(d){
+      return {user_id:sbUid,coin:d.coin||'USDC',network:d.net||'Base',
+        coin_amount:d.amt||0,usd_equivalent:d.usd||0,
+        confirmations_received:d.conf||0,confirmations_required:d.need||1,
+        label:d.label||'',tx_hash:d.tx||null,
+        status:d.conf>=d.need?'completed':'pending'};
+    });
+    if(rows.length){
+      await sb.from('deposits').insert(rows);
+      deps.forEach(function(d){d._synced=true;});
+    }
+  }catch(e){console.warn('SB deposits error:',e);}
+}
+
+/* ===================== Withdrawals sync ===================== */
+
+async function sbSyncWithdrawals(){
+  if(!sbUid||S.auth.demo)return;
+  try{
+    var wds=(S.me.wds||[]).filter(function(w){return !w._synced;});
+    var rows=wds.map(function(w){
+      return {user_id:sbUid,network:w.net||'Base',destination_address:w.addr||'',
+        amount_usd:w.amt||0,status:w.st==='sent'?'completed':'pending'};
+    });
+    if(rows.length){
+      await sb.from('withdrawals').insert(rows);
+      wds.forEach(function(w){w._synced=true;});
+    }
+  }catch(e){console.warn('SB withdrawals error:',e);}
+}
+
+/* ===================== Notifications sync ===================== */
+
+async function sbSyncNotifs(){
+  if(!sbUid||S.auth.demo)return;
+  try{
+    var notifs=(S.me.notifs||[]).filter(function(n){return !n._synced;}).slice(0,20);
+    var rows=notifs.map(function(n){
+      return {user_id:sbUid,icon:n.ic||'info',text:n.text||'',href:n.href||'',is_read:!!n.read};
+    });
+    if(rows.length){
+      await sb.from('notifications').insert(rows);
+      notifs.forEach(function(n){n._synced=true;});
+    }
+  }catch(e){console.warn('SB notifs error:',e);}
+}
+
+/* ===================== Market state sync ===================== */
+
+async function sbSyncMarketState(){
+  if(!sbUid)return;
+  try{
+    var updates=[];
+    for(var id in MK){
+      var m=MK[id];
+      if(!m||m.creator==='me')continue;
+      updates.push({market_id:id,current_probability:Math.round(m.p*100)/100,
+        anchor_probability:Math.round((m.anchor||m.p)*100)/100,
+        volume_total:Math.round(m.vol||0),participants_count:m.people||0,
+        messages_count:m.msgs||0,heat_level:Math.round((m.heat||0)*10)/10,
+        online_users_count:m.online||0});
+    }
+    if(updates.length){
+      await sb.from('market_live_state').upsert(updates);
+    }
+  }catch(e){console.warn('SB market state error:',e);}
+}
+
+/* ===================== Chat sync ===================== */
+
+async function sbSendChat(rid,text,kind,extra){
+  if(!sbUid)return;
+  try{
+    var row={room_id:rid,user_id:sbUid,message_type:kind||'msg',text_content:text};
+    if(extra)row.bet_ref=extra;
+    await sb.from('chat_messages').insert(row);
+  }catch(e){console.warn('SB chat send error:',e);}
+}
+
+function sbStartChatRealtime(){
+  if(sbRealtimeSub)sbRealtimeSub.unsubscribe();
+  sbRealtimeSub=sb.channel('chat-realtime')
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'chat_messages'},function(payload){
+      var msg=payload.new;
+      if(!msg||msg.user_id===sbUid)return;
+      var rid=msg.room_id;
+      if(typeof room==='function'&&typeof addMsg==='function'){
+        var r=room(rid);
+        addMsg(rid,{u:msg.user_id,k:msg.message_type||'msg',text:msg.text_content||''});
+      }
+    }).subscribe();
+}
+
+/* ===================== Flash bets sync ===================== */
+
+async function sbSyncFlashBet(gameId,side,amount,roundNum){
+  if(!sbUid||S.auth.demo)return;
+  try{
+    var roundRes=await sb.from('flash_rounds').select('id').eq('game_id',gameId).eq('round_number',roundNum).single();
+    var roundId=roundRes.data?roundRes.data.id:null;
+    if(!roundId){
+      var ins=await sb.from('flash_rounds').insert({game_id:gameId,round_number:roundNum,round_start_time:new Date().toISOString()}).select('id').single();
+      roundId=ins.data?ins.data.id:null;
+    }
+    if(roundId){
+      await sb.from('flash_bets').insert({user_id:sbUid,round_id:roundId,game_id:gameId,side:side,amount_wager:amount});
+    }
+  }catch(e){console.warn('SB flash bet error:',e);}
+}
+
+/* ===================== Clan sync ===================== */
+
+async function sbSyncClanCreate(clan){
+  if(!sbUid||S.auth.demo)return;
+  try{
+    await sb.from('clans').insert({name:clan.name,founder_user_id:sbUid,
+      description:clan.desc||'',emblem_color:clan.col||'#2448FF',emblem_icon:clan.ic||'shield'});
+    await sb.from('clan_members').insert({clan_id:clan.id,user_id:sbUid,role:'founder'});
+  }catch(e){console.warn('SB clan create error:',e);}
+}
+
+async function sbSyncClanJoin(clanId){
+  if(!sbUid||S.auth.demo)return;
+  try{
+    await sb.from('clan_members').insert({clan_id:clanId,user_id:sbUid,role:'member'});
+    await sb.from('clans').update({member_count:sb.rpc?undefined:1}).eq('id',clanId);
+  }catch(e){console.warn('SB clan join error:',e);}
+}
+
+async function sbSyncClanLeave(clanId){
+  if(!sbUid||S.auth.demo)return;
+  try{
+    await sb.from('clan_members').delete().eq('clan_id',clanId).eq('user_id',sbUid);
+  }catch(e){console.warn('SB clan leave error:',e);}
+}
+
+/* ===================== Copy trading sync ===================== */
+
+async function sbSyncCopyStart(targetUsername){
+  if(!sbUid||S.auth.demo)return;
+  try{
+    var target=await sb.from('users').select('id').eq('username',targetUsername).single();
+    if(target.data){
+      await sb.from('copy_following').insert({copy_follower_id:sbUid,copy_target_user_id:target.data.id});
+    }
+  }catch(e){console.warn('SB copy start error:',e);}
+}
+
+async function sbSyncCopyStop(targetUsername){
+  if(!sbUid||S.auth.demo)return;
+  try{
+    var target=await sb.from('users').select('id').eq('username',targetUsername).single();
+    if(target.data){
+      await sb.from('copy_following').delete().eq('copy_follower_id',sbUid).eq('copy_target_user_id',target.data.id);
+    }
+  }catch(e){console.warn('SB copy stop error:',e);}
+}
+
+/* ===================== Wrap core functions ===================== */
+
+/* --- save / load / flushSave --- */
+var _origSave=window.save,_origFlush=window.flushSave;
 
 window.save=function(){
   _origSave();
   sbSyncDebounced();
 };
+
 window.flushSave=function(){
   _origFlush();
-  sbSyncPush();
-  sbSyncPositions();
-  sbSyncHistory();
-};
-window.load=function(){
-  _origLoad();
+  sbPushAll();
 };
 
-/* --- Wrap createAccount --- */
+/* --- createAccount --- */
 var _origCreate=window.createAccount;
 window.createAccount=function(pseudo,email,pw,extra){
   var rec=_origCreate(pseudo,email,pw,extra);
-  if(!email||!pw){return rec;}
+  if(!email||!pw)return rec;
   sb.auth.signUp({email:email.toLowerCase(),password:pw,options:{data:{username:pseudo}}})
   .then(function(res){
     if(res.error){console.warn('SB signup error:',res.error.message);return;}
     var uid=res.data.user.id;
-    sbUid=uid;
-    rec.sbId=uid;
-    AUTH.set(rec.key,rec);
+    sbUid=uid;rec.sbId=uid;AUTH.set(rec.key,rec);
     return sb.from('users').insert({
       id:uid,username:pseudo,email:email.toLowerCase(),
       avatar_photo:S.me.photo||'',avatar_color:S.me.color||'#2448FF',
       bio:'',onboarded:false,welcomed:false,is_demo:false
     }).then(function(){
-      return sb.from('user_stats').insert({user_id:uid,balance:S.me.balance||1000000,xp:0});
-    }).then(function(){
-      return sb.from('user_preferences').insert({user_id:uid});
+      sbSaveFullState();
+      sbStartChatRealtime();
     });
   }).catch(function(e){console.warn('SB create error:',e);});
   return rec;
 };
 
-/* --- Wrap FORMS.login --- */
+/* --- FORMS.login --- */
 var _origLogin=FORMS.login;
 FORMS.login=function(f){
   var email=f.email.value.trim().toLowerCase();
   var pw=f.pw.value;
   _origLogin(f);
   if(!S.me.logged)return;
-  var rec=AUTH.get(email);
-  if(rec&&rec.sbId){
-    sbUid=rec.sbId;
-    sb.auth.signInWithPassword({email:email,password:pw}).then(function(){
-      sbSyncPull().then(function(){save();if(typeof render==='function')render(false);});
-    }).catch(function(e){console.warn('SB login error:',e);});
-  }else{
-    sb.auth.signInWithPassword({email:email,password:pw}).then(function(res){
-      if(res.data&&res.data.user){
-        sbUid=res.data.user.id;
-        if(rec){rec.sbId=sbUid;AUTH.set(email,rec);}
-        sbSyncPull().then(function(){save();if(typeof render==='function')render(false);});
+  sb.auth.signInWithPassword({email:email,password:pw}).then(function(res){
+    if(res.error||!res.data||!res.data.user)return;
+    sbUid=res.data.user.id;
+    var rec=AUTH.get(email);
+    if(rec){rec.sbId=sbUid;AUTH.set(email,rec);}
+    sbLoadFullState().then(function(loaded){
+      if(loaded){
+        S.me.logged=true;
+        if(typeof updateHeader==='function')updateHeader();
+        if(typeof render==='function')render(false);
       }
-    }).catch(function(e){console.warn('SB login error:',e);});
-  }
+      sbStartChatRealtime();
+    });
+  }).catch(function(e){console.warn('SB login error:',e);});
 };
 
-/* --- Wrap FORMS.signup --- */
-var _origSignup=FORMS.signup;
-FORMS.signup=function(f){
-  _origSignup(f);
-};
-
-/* --- Wrap logout --- */
+/* --- logout --- */
 var _origLogout=window.logout;
 window.logout=function(){
-  sbSyncPush().then(function(){
+  sbPushAll().then(function(){
     sbUid=null;
+    if(sbRealtimeSub){sbRealtimeSub.unsubscribe();sbRealtimeSub=null;}
     sb.auth.signOut().catch(function(){});
   }).catch(function(){});
   _origLogout();
 };
 
-/* --- Wrap bootAuth --- */
+/* --- bootAuth --- */
 var _origBoot=window.bootAuth;
 window.bootAuth=function(){
   _origBoot();
@@ -13726,74 +13904,116 @@ window.bootAuth=function(){
     var rec=S.auth.key?AUTH.get(S.auth.key):null;
     if(rec&&!rec.sbId){rec.sbId=uid;AUTH.set(rec.key,rec);}
     if(S.me.logged&&!S.auth.demo){
-      sbSyncPull().then(function(){
-        if(typeof flushSave==='function')flushSave();
-        if(typeof updateHeader==='function')updateHeader();
-        if(typeof render==='function')render(false);
+      sbLoadFullState().then(function(loaded){
+        if(loaded){
+          S.me.logged=true;
+          if(typeof updateHeader==='function')updateHeader();
+          if(typeof render==='function')render(false);
+        }
+        sbStartChatRealtime();
       });
     }
   }).catch(function(e){console.warn('SB session check error:',e);});
 };
 
-/* --- Wrap enterAccount for wallet login --- */
+/* --- enterAccount --- */
 var _origEnter=window.enterAccount;
 window.enterAccount=function(rec,fresh,quiet){
   _origEnter(rec,fresh,quiet);
   if(rec&&rec.sbId){sbUid=rec.sbId;}
 };
 
-/* --- Markets sync --- */
+/* --- sendMsg (chat) --- */
+var _origSendMsg=window.sendMsg;
+window.sendMsg=function(rid){
+  var inp=document.querySelector('[data-in="'+CSS.escape(rid)+'"]');
+  var text=inp?inp.value.trim():'';
+  _origSendMsg(rid);
+  if(text&&sbUid)sbSendChat(rid,text,'msg');
+};
+
+/* --- marketsSave --- */
 var _origMkSave=window.marketsSave;
 window.marketsSave=function(){
   _origMkSave();
-  if(!sbUid||S.auth.demo)return;
-  var batch=[];
-  for(var id in MK){
-    var m=MK[id];
-    if(m.creator==='me'||!m.ph)continue;
-    batch.push({market_id:id,price:Math.round(m.p*100)/100,
-      timestamp:new Date().toISOString(),sequence:(m.ph?m.ph.length:0)});
-  }
-  if(batch.length>0){
-    sb.from('market_price_history').insert(batch.slice(0,20)).catch(function(e){
-      console.warn('SB market history error:',e);
-    });
-  }
+  sbSyncMarketState();
 };
 
-/* --- Notifications sync --- */
-async function sbSyncNotifs(){
-  if(!sbUid||S.auth.demo)return;
-  try{
-    var notifs=(S.me.notifs||[]).filter(function(n){return !n._synced;}).slice(0,10);
-    var rows=notifs.map(function(n){
-      return {user_id:sbUid,icon:n.ic||'info',text:n.text||'',href:n.href||'',is_read:!!n.read};
-    });
-    if(rows.length){
-      await sb.from('notifications').insert(rows);
-      notifs.forEach(function(n){n._synced=true;});
+/* --- Wrap flash bet if action handler exists --- */
+var origFlashBetHandler=null;
+if(typeof ACT!=='undefined'&&ACT['flash-bet']){
+  origFlashBetHandler=ACT['flash-bet'];
+  ACT['flash-bet']=function(a){
+    origFlashBetHandler(a);
+    if(sbUid&&!S.auth.demo&&typeof S.flash!=='undefined'){
+      var gid=S.ui.fgame||'btc';
+      var g=(typeof G==='function')?G(gid):null;
+      if(g&&g.my){
+        sbSyncFlashBet(gid,g.my.dir||'a',g.my.amt||10,S.flash.round||0);
+      }
     }
-  }catch(e){console.warn('SB notifs sync error:',e);}
+  };
 }
 
-/* --- Periodic full sync (every 30s) --- */
+/* --- Wrap clan functions if they exist --- */
+if(typeof window.clanCreate==='function'){
+  var _origClanCreate=window.clanCreate;
+  window.clanCreate=function(opts){
+    var c=_origClanCreate(opts);
+    if(c)sbSyncClanCreate(c);
+    return c;
+  };
+}
+if(typeof window.clanJoin==='function'){
+  var _origClanJoin=window.clanJoin;
+  window.clanJoin=function(c,silent,nav){
+    var r=_origClanJoin(c,silent,nav);
+    if(r&&c&&c.id)sbSyncClanJoin(c.id);
+    return r;
+  };
+}
+if(typeof window.clanLeave==='function'){
+  var _origClanLeave=window.clanLeave;
+  window.clanLeave=function(){
+    var cid=S.me.clan?S.me.clan.id:null;
+    var r=_origClanLeave();
+    if(cid)sbSyncClanLeave(cid);
+    return r;
+  };
+}
+
+/* ===================== Periodic full sync ===================== */
+
 setInterval(function(){
   if(sbUid&&!S.auth.demo&&S.me.logged){
-    sbSyncPush();
+    sbSaveFullState();
+    sbPushStructured();
     sbSyncNotifs();
   }
-},30000);
+},15000);
 
-/* --- Listen for auth state changes --- */
+/* ===================== Auth state listener ===================== */
+
 sb.auth.onAuthStateChange(function(event,session){
   if(event==='SIGNED_IN'&&session&&session.user){
     sbUid=session.user.id;
   }else if(event==='SIGNED_OUT'){
     sbUid=null;
+    if(sbRealtimeSub){sbRealtimeSub.unsubscribe();sbRealtimeSub=null;}
   }
 });
 
-console.log('Wimoro × Supabase: integration layer loaded.');
+/* ===================== Page close: push everything ===================== */
+
+addEventListener('pagehide',function(){
+  if(sbUid&&!S.auth.demo&&S.me.logged&&navigator.sendBeacon){
+    var body=JSON.stringify({state:cleanMeForStorage(S.me)});
+    navigator.sendBeacon(SB_URL+'/rest/v1/user_full_state?user_id=eq.'+sbUid,
+      new Blob([body],{type:'application/json'}));
+  }
+});
+
+console.log('Wimoro × Supabase v2: full DB integration loaded.');
 })();
 </script>
 <script>
