@@ -10277,7 +10277,8 @@ var _sb=window.__supabase;if(_sb){_sb.auth.getSession().then(function(r){var uid
 });
 
 /* ===================== Routes ajoutées ===================== */
-Object.assign(VIEWS,{creer:vCreate,connexion:vLogin,inscription:vSignup,bienvenue:vOnboarding});
+function vConfirmed(){return '<div class="ob"><div class="pn ob-card" style="text-align:center;padding:48px 32px"><div style="width:80px;height:80px;background:#E7F6EE;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 24px">'+ic('check',40,'#12A150',3)+'</div><h1 style="font-size:26px;margin:0 0 12px">'+_t("Compte confirm\u00e9 !")+'</h1><p class="sub" style="font-size:16px;line-height:1.6;margin:0 0 32px;color:var(--g2)">'+_t("Ton adresse e-mail est v\u00e9rifi\u00e9e. Tu peux maintenant te connecter et commencer \u00e0 parier.")+'</p><a class="btn b-oui lg" href="#connexion" style="min-width:220px">'+_t("Se connecter")+'</a></div></div>';}
+Object.assign(VIEWS,{creer:vCreate,connexion:vLogin,inscription:vSignup,bienvenue:vOnboarding,confirme:vConfirmed});
 
 /* ===================== Gains en vert, pertes en rouge ===================== */
 const plc=v=>v>0.004?'pl-up':v<-0.004?'pl-dn':'';
@@ -13654,6 +13655,15 @@ console.log('Wimoro x Supabase: integration loaded.');
 'use strict';
 /* ===================== Démarrage ===================== */
 {const tm=LS.g('wimoro-tmode');if(tm==='bars')S.ui.tmode='bars';}
+/* Handle Supabase auth email callback (confirmation link click) */
+{const h=location.hash||'';if(h.includes('access_token=')&&h.includes('type=')){
+const params=new URLSearchParams(h.substring(1));const type=params.get('type');
+const sb=window.__supabase;if(sb){const access=params.get('access_token'),refresh=params.get('refresh_token');
+if(access&&refresh){sb.auth.setSession({access_token:access,refresh_token:refresh}).then(function(){
+if(type==='signup'||type==='email_change')location.replace('#confirme');
+else if(type==='recovery')location.replace('#connexion');
+else location.replace('#accueil');
+});}}else{if(type==='signup')location.replace('#confirme');}}}
 bootAuth();if(typeof rgBoot==='function')rgBoot();
 flashBoot();marketsLoad();
 (S.me.props||[]).forEach(pr=>{if(pr.status==='live')createMarketFromProposal(pr,false);});
