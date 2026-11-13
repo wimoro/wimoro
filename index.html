@@ -3009,6 +3009,14 @@ html.pro-lock,html.pro-lock body{overflow:hidden}
 @media (max-width:1100px){.drk-l{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .ui .demo-b{margin-inline-start:auto}
 /* ===== fin du Mode Pro ===== */
+/* Loading overlay */
+.sb-loading{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;align-items:center;justify-content:center;transition:opacity .3s}
+.sb-loading.hide{opacity:0;pointer-events:none}
+.sb-loading .ld{text-align:center}
+.sb-loading .ld-w{display:inline-block;background:#2448FF;width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.sb-loading .ld-w span{color:#fff;font-weight:800;font-size:22px}
+.sb-loading .ld-spin{width:32px;height:32px;border:3px solid var(--rule);border-top-color:#2448FF;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto}
+@keyframes spin{to{transform:rotate(360deg)}}
 
 /* ===== Responsive fixes: tablet 480-600px gap ===== */
 @media (max-width:600px){
@@ -3056,7 +3064,7 @@ html.pro-lock,html.pro-lock body{overflow:hidden}
   </div>
  </div>
 </header>
-<main id="view"></main>
+<div class="sb-loading" id="sb-load"><div class="ld"><div class="ld-w"><span>W</span></div><div class="ld-spin"></div></div></div><main id="view"></main>
 <nav class="tabbar" aria-label="Navigation">
  <a href="#accueil" data-nav="accueil marche creer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/></svg>Marchés</a>
  <a href="#eclair" data-nav="eclair blitz serie"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7Z"/></svg>Éclair</a>
@@ -10276,7 +10284,7 @@ var _sb=window.__supabase;if(_sb){_sb.auth.getSession().then(function(r){var uid
 /* ===================== Routes ajoutées ===================== */
 function vConfirmed(){return '<div class="ob"><div class="pn ob-card" style="text-align:center;padding:48px 32px"><div style="width:80px;height:80px;background:#E7F6EE;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 24px">'+ic('check',40,'#12A150',3)+'</div><h1 style="font-size:26px;margin:0 0 12px">'+_t("Compte confirm\u00e9 !")+'</h1><p class="sub" style="font-size:16px;line-height:1.6;margin:0 0 32px;color:var(--g2)">'+_t("Ton adresse e-mail est v\u00e9rifi\u00e9e. Tu peux maintenant te connecter et commencer \u00e0 parier.")+'</p><a class="btn b-oui lg" href="#connexion" style="min-width:220px">'+_t("Se connecter")+'</a></div></div>';}
 function vNewPassword(){return '<div class="ob"><div class="pn ob-card" style="text-align:center;padding:48px 32px"><div style="width:80px;height:80px;background:#EBEEFF;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 24px">'+ic('lock',40,'#2448FF',3)+'</div><h1 style="font-size:24px;margin:0 0 8px">'+_t("Nouveau mot de passe")+'</h1><p class="sub" style="font-size:15px;line-height:1.5;margin:0 0 24px;color:var(--g2)">'+_t("Choisis ton nouveau mot de passe.")+'</p><form class="col" style="gap:14px;text-align:left" data-form="newpw" novalidate><div class="field"><label for="np">'+_t("Nouveau mot de passe")+'</label><div class="pw"><input id="np" name="pw" type="password" autocomplete="new-password" placeholder="'+_t("8 caract\u00e8res minimum")+'"><button type="button" class="link" data-a="pw-toggle" data-for="np">'+_t("Afficher")+'</button></div></div><div class="field"><label for="np2">'+_t("Confirmer le mot de passe")+'</label><input id="np2" name="pw2" type="password" autocomplete="new-password" placeholder="'+_t("Retape ton mot de passe")+'"></div><p class="err" data-nperr></p><button class="btn b-oui lg full" type="submit">'+_t("Changer mon mot de passe")+'</button></form></div></div>';}
-FORMS['newpw']=function(f){var pw=f.pw.value,pw2=f.pw2.value,err=f.querySelector('[data-nperr]');if(pw.length<8){err.textContent=_t("8 caract\u00e8res minimum.");return;}if(pw!==pw2){err.textContent=_t("Les mots de passe ne correspondent pas.");return;}err.textContent=_t("Mise \u00e0 jour...");var btn=f.querySelector('[type=submit]');if(btn)btn.disabled=true;var sb=window.__supabase;if(sb){sb.auth.updateUser({password:pw}).then(function(res){if(res.error){err.textContent=res.error.message;if(btn)btn.disabled=false;return;}toast({tone:'blue',icon:'check',title:_t("Mot de passe mis \u00e0 jour"),text:_t("Tu peux maintenant te connecter.")});location.hash='#connexion';}).catch(function(){err.textContent=_t("Erreur. R\u00e9essaie.");if(btn)btn.disabled=false;});}};
+FORMS['newpw']=function(f){var pw=f.pw.value,pw2=f.pw2.value,err=f.querySelector('[data-nperr]');if(pw.length<8){err.textContent=_t("8 caract\u00e8res minimum.");return;}if(pw!==pw2){err.textContent=_t("Les mots de passe ne correspondent pas.");return;}err.textContent=_t("Mise \u00e0 jour...");var btn=f.querySelector('[type=submit]');if(btn)btn.disabled=true;var sb=window.__supabase;if(sb){sb.auth.updateUser({password:pw}).then(function(res){if(res.error){err.textContent=res.error.message;if(btn)btn.disabled=false;return;}toast({tone:'blue',icon:'check',title:_t("Mot de passe mis \u00e0 jour"),text:_t("Tu peux maintenant te connecter.")});location.hash='#connexion';}).catch(function(){err.textContent=_t("Erreur. R\u00e9essaie.");if(btn)btn.disabled=false;});}else{err.textContent=_t("Session expir\u00e9e. Redemande un lien.");if(btn)btn.disabled=false;}};
 Object.assign(VIEWS,{creer:vCreate,connexion:vLogin,inscription:vSignup,bienvenue:vOnboarding,confirme:vConfirmed,'nouveau-mdp':vNewPassword});
 
 /* ===================== Gains en vert, pertes en rouge ===================== */
@@ -10426,7 +10434,7 @@ function bigsH(){return S.bigs.map(b=>{const m=MK[b.m];if(!m)return '';return `<
 function pushBig(seed){const u=pickUser(),m=pick(MARKETS),s=R()<m.p/100?'oui':'non',amt=Math.round((300+Math.pow(R(),2)*6200)/10)*10;S.bigs.unshift({u,m:m.id,s,amt,at:seed?now()-Math.round(R()*9e5):now()});if(seed)S.bigs.sort((a,b)=>b.at-a.at);S.bigs=S.bigs.slice(0,6);
  if(!seed){const el=$('[data-bigs]');if(el){el.innerHTML=bigsH();fixText(el);const f=el.firstElementChild;if(f)f.classList.add('new');}}}
 /* carte « rang » d'un visiteur : même emplacement, mais une invitation à entrer */
-function guestRankH(){return `<section class="pn pad hs-rank hs-guest"><div class="hr-top">${emb(0,0,'e44')}<span><span class="sub" style="margin:0;display:block">${_t("Ton rang")}</span><b>${_t('Tu commences au rang {0}',[rankName(0,0)])}</b></span></div><p class="sub" style="margin:12px 0 0">${_t("Chaque pari rapporte de l’XP et te fait monter, de Fer à Radiant.")}</p><div class="hg-btns"><button class="btn b-oui full" data-a="demo-login">${_t("Explorer la plateforme")}</button><a class="btn b-white full" href="#inscription">${_t("Créer un compte")}</a></div></section>`;}
+function guestRankH(){return `<section class="pn pad hs-rank hs-guest"><div class="hr-top">${emb(0,0,'e44')}<span><span class="sub" style="margin:0;display:block">${_t("Ton rang")}</span><b>${_t('Tu commences au rang {0}',[rankName(0,0)])}</b></span></div><p class="sub" style="margin:12px 0 0">${_t("Chaque pari rapporte de l’XP et te fait monter, de Fer à Radiant.")}</p><div class="hg-btns"><button class="btn b-oui full" onclick="location.hash='#accueil'">${_t("Explorer la plateforme")}</button><a class="btn b-white full" href="#inscription">${_t("Créer un compte")}</a></div></section>`;}
 function homeSideH(){const r=myRank(),pg=progress(),done=S.me.missions.filter(m=>m.have>=m.goal).length,top=lbRows('Semaine').slice(0,5);
  return `${S.me.logged?`<section class="pn pad hs-rank"><a class="hr-top" href="#rang">${emb(r.t,r.d,'e44')}<span><span class="sub" style="margin:0;display:block">${_t("Ton rang")}</span><b>${rankName(r.t,r.d)}</b></span>${ic('right',18,'#A3A8B2')}</a><div class="xpbar sm" style="margin-top:14px"><i style="width:${pg.pct}%"></i></div><div class="hr-meta"><span>${pg.nx?`${_t("Plus que <b>{0}</b> pour {1}",[F.xp(pg.left),rankName(pg.nx.t,pg.nx.d)])}`:_t("Rang maximal")}</span><a class="link" href="#rang">${_t("Missions {0} / {1}",[done,S.me.missions.length])}</a></div></section>`:guestRankH()}
  <section class="pn pad"><div class="ph" style="margin-bottom:8px"><div><div class="h2"><i class="live" aria-hidden="true"></i>${_t("Grosses mises en direct")}</div><div class="sub">${_t("Les plus gros paris de la dernière heure")}</div></div></div><div class="bigs" data-bigs>${bigsH()}</div></section>
@@ -13655,7 +13663,19 @@ window.marketsLoad=function(){_origMkLoad();sb.from('market_live_state').select(
 
 /* Wrap bootAuth */
 var _origBoot=window.bootAuth;
-window.bootAuth=function(){_origBoot();sb.auth.getSession().then(function(res){if(!res.data||!res.data.session)return;var uid=res.data.session.user.id;sbUid=uid;sbLoadUser(uid).then(function(){S.me.logged=true;S.auth={key:S.me.email||uid,demo:false};sbStartChat();sbStartRealtimeSync();if(typeof updateHeader==='function')updateHeader();if(typeof checkBadges==='function')checkBadges(true);if(typeof render==='function')render(true);});}).catch(function(e){console.warn('SB boot error:',e);});};
+window.bootAuth=function(){_origBoot();sb.auth.getSession().then(function(res){
+var ld=document.getElementById('sb-load');
+if(!res.data||!res.data.session){if(ld)ld.classList.add('hide');setTimeout(function(){if(ld)ld.remove();},400);return;}
+var uid=res.data.session.user.id;sbUid=uid;
+sbLoadUser(uid).then(function(){
+S.me.logged=true;S.auth={key:S.me.email||uid,demo:false};
+sbStartChat();sbStartRealtimeSync();
+if(typeof updateHeader==='function')updateHeader();
+if(typeof checkBadges==='function')checkBadges(true);
+if(typeof render==='function')render(true);
+if(ld)ld.classList.add('hide');setTimeout(function(){if(ld)ld.remove();},400);
+}).catch(function(){if(ld)ld.classList.add('hide');setTimeout(function(){if(ld)ld.remove();},400);});
+}).catch(function(e){console.warn('SB boot error:',e);var ld=document.getElementById('sb-load');if(ld)ld.classList.add('hide');setTimeout(function(){if(ld)ld.remove();},400);});};
 
 /* Auth state listener */
 sb.auth.onAuthStateChange(function(ev,session){
@@ -13677,34 +13697,22 @@ console.log('Wimoro x Supabase: integration loaded.');
 'use strict';
 /* ===================== Démarrage ===================== */
 {const tm=LS.g('wimoro-tmode');if(tm==='bars')S.ui.tmode='bars';}
-/* Handle Supabase auth email callback (confirmation/recovery/magic link) */
-{var h=location.hash||'',q=location.search||'',authType=null,hasToken=false;
-/* Parse type from hash or query */
-try{if(h.includes('type=')){authType=new URLSearchParams(h.replace(/^#/,'')).get('type');}}catch(e){}
-try{if(q.includes('type=')){var qp=new URLSearchParams(q);authType=authType||qp.get('type');}}catch(e){}
-hasToken=h.includes('access_token=')||q.includes('access_token=')||q.includes('token_hash=')||q.includes('code=');
-if(hasToken||authType){
-var sb=window.__supabase;
-if(sb&&hasToken){
-/* Let Supabase client process the token automatically */
-sb.auth.exchangeCodeForSession&&q.includes('code=')?
-  sb.auth.exchangeCodeForSession(new URLSearchParams(q).get('code')).then(function(){
-    if(authType==='signup'||authType==='email_change'){location.replace('#confirme');}
-    else if(authType==='recovery'||authType==='magiclink'){location.replace('#nouveau-mdp');}
-    else{location.replace('#accueil');}
-  }).catch(function(){location.replace('#accueil');}):
-  sb.auth.getSession().then(function(r){
-    /* Wait a bit for session to establish from hash tokens */
-    setTimeout(function(){
-      if(authType==='signup'||authType==='email_change'){location.replace('#confirme');}
-      else if(authType==='recovery'||authType==='magiclink'){location.replace('#nouveau-mdp');}
-      else{location.replace('#accueil');}
-    },500);
-  });
-}else if(authType==='signup'){location.replace('#confirme');}
-else if(authType==='recovery'||authType==='magiclink'){location.replace('#nouveau-mdp');}
+/* Handle Supabase auth email callback */
+{var _q=location.search||'',_h=location.hash||'',_t=null;
+try{_t=new URLSearchParams(_q).get('type')||new URLSearchParams(_h.replace(/^#/,'')).get('type');}catch(e){}
+var _hasAuth=_q.includes('code=')||_q.includes('token_hash=')||_h.includes('access_token=');
+if(_hasAuth&&_t){
+  var _sb=window.__supabase;
+  if(_sb){
+    var _code=new URLSearchParams(_q).get('code');
+    var _p=_code&&_sb.auth.exchangeCodeForSession?_sb.auth.exchangeCodeForSession(_code):_sb.auth.getSession();
+    _p.then(function(){
+      var dest=(_t==='signup'||_t==='email_change')?'#confirme':(_t==='recovery'||_t==='magiclink')?'#nouveau-mdp':'#accueil';
+      history.replaceState(null,'',location.pathname+dest);location.hash=dest;
+    }).catch(function(){});
+  }
 }}
-bootAuth();if(typeof rgBoot==='function')rgBoot();
+bootAuth();if(typeof rgBoot==='function')rgBoot();setTimeout(function(){var ld=document.getElementById('sb-load');if(ld){ld.classList.add('hide');setTimeout(function(){if(ld)ld.remove();},400);}},3000);
 flashBoot();marketsLoad();
 (S.me.props||[]).forEach(pr=>{if(pr.status==='live')createMarketFromProposal(pr,false);});
 seedRooms();checkBadges(true);if(!S.me.missions.some(m=>m.day)){S.me.missions.forEach(m=>m.day=today());}
