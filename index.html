@@ -14014,6 +14014,78 @@ addEventListener('pagehide',function(){
 });
 
 console.log('Wimoro × Supabase v2: full DB integration loaded.');
+
+/* ===================== v3: Kill localStorage for user data ===================== */
+
+/* Only allow these keys in localStorage (UI prefs that must load synchronously) */
+var LS_ALLOWED={'wimoro-theme':1,'wimoro-lang':1,'wimoro-tmode':1};
+var _lsSet=LS.s,_lsGet=LS.g,_lsRm=LS.r;
+LS.s=function(k,v){if(LS_ALLOWED[k]){_lsSet(k,v);}else{MEMLS[k]=v;}};
+LS.g=function(k){if(LS_ALLOWED[k])return _lsGet(k);return MEMLS[k]??null;};
+LS.r=function(k){if(LS_ALLOWED[k]){_lsRm(k);}else{delete MEMLS[k];}};
+
+/* Override save: no localStorage, only Supabase */
+window.save=function(){
+  clearTimeout(saveT);
+  sbSyncDebounced();
+};
+window.flushSave=function(){
+  clearTimeout(saveT);
+  sbPushAll();
+};
+
+/* Override load: no-op, data comes from Supabase */
+window.load=function(){};
+
+/* Override marketsSave: Supabase only */
+window.marketsSave=function(){
+  sbSyncMarketState();
+};
+
+/* Override marketsLoad: fetch live state from Supabase */
+window.marketsLoad=function(){
+  if(!sb)return;
+  sb.from('market_live_state').select('*').then(function(res){
+    if(!res.data)return;
+    res.data.forEach(function(row){
+      var m=MK[row.market_id];
+      if(!m)return;
+      if(row.current_probability)m.p=Number(row.current_probability);
+      if(row.anchor_probability)m.anchor=Number(row.anchor_probability);
+      if(row.volume_total>m.vol)m.vol=Number(row.volume_total);
+      if(row.participants_count>m.people)m.people=row.participants_count;
+      if(row.messages_count>m.msgs)m.msgs=row.messages_count;
+    });
+  }).catch(function(e){console.warn('SB marketsLoad error:',e);});
+};
+
+/* Override bootAuth: fully Supabase-based */
+window.bootAuth=function(){
+  /* Start as guest immediately (sync, instant render) */
+  S.auth={key:'',demo:false};
+  KEY='wimoro-guest';
+  S.me=guestMe();
+
+  /* Then check Supabase session (async) */
+  sb.auth.getSession().then(function(res){
+    if(!res.data||!res.data.session)return;
+    var uid=res.data.session.user.id;
+    sbUid=uid;
+    /* Load full state from Supabase */
+    return sb.from('user_full_state').select('state').eq('user_id',uid).single().then(function(stRes){
+      if(stRes.data&&stRes.data.state&&typeof stRes.data.state==='object'&&stRes.data.state.n){
+        Object.assign(S.me,stRes.data.state);
+        S.me.logged=true;
+        S.auth={key:S.me.email||uid,demo:false};
+      }
+      sbStartChatRealtime();
+      if(typeof updateHeader==='function')updateHeader();
+      if(typeof checkBadges==='function')checkBadges(true);
+      if(typeof render==='function')render(true);
+    });
+  }).catch(function(e){console.warn('SB boot error:',e);});
+};
+
 })();
 </script>
 <script>
