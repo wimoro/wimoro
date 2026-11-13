@@ -13632,7 +13632,7 @@ window.marketsLoad=function(){_origMkLoad();sb.from('market_live_state').select(
 
 /* Wrap bootAuth */
 var _origBoot=window.bootAuth;
-window.bootAuth=function(){_origBoot();sb.auth.getSession().then(function(res){if(!res.data||!res.data.session)return;var uid=res.data.session.user.id;sbUid=uid;if(S.me.logged&&!S.auth.demo){sbLoadUser(uid).then(function(){sbStartChat();if(typeof updateHeader==='function')updateHeader();if(typeof checkBadges==='function')checkBadges(true);if(!S.me.onboarded&&location.hash!=='#bienvenue'){location.hash='#bienvenue';}if(typeof render==='function')render(true);});}}).catch(function(e){console.warn('SB boot error:',e);});};
+window.bootAuth=function(){_origBoot();sb.auth.getSession().then(function(res){if(!res.data||!res.data.session)return;var uid=res.data.session.user.id;sbUid=uid;if(S.me.logged&&!S.auth.demo){sbLoadUser(uid).then(function(){sbStartChat();if(typeof updateHeader==='function')updateHeader();if(typeof checkBadges==='function')checkBadges(true);/* onboarding check removed - handled by signup flow only */if(typeof render==='function')render(true);});}}).catch(function(e){console.warn('SB boot error:',e);});};
 
 /* Auth state listener */
 sb.auth.onAuthStateChange(function(ev,session){
