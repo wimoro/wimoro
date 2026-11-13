@@ -13531,6 +13531,7 @@ function sync(){
 if(!uid||!S.me.logged)return;
 var c=Object.assign({},S.me);
 sb.from('user_full_state').upsert({user_id:uid,state:c}).catch(function(){});
+sb.from('users').update({username:S.me.n||'',avatar_photo:S.me.photo||'',avatar_color:S.me.color||'#2448FF',bio:S.me.bio||'',kyc_verified:!!S.me.kyc}).eq('id',uid).catch(function(){});
 sb.from('user_stats').update({balance:S.me.balance||0,xp:S.me.xp||0,bets_placed:S.me.played||0,bets_won:S.me.wins||0,bets_settled:S.me.settled||0,flash_wins:S.me.flashWins||0,messages_total:S.me.msgsTotal||0,profit_realized:S.me.realized||0}).eq('user_id',uid).catch(function(){});
 }
 
@@ -13538,10 +13539,12 @@ function load(){
 if(!uid)return;
 Promise.all([
 sb.from('user_full_state').select('state').eq('user_id',uid).maybeSingle(),
+sb.from('users').select('*').eq('id',uid).maybeSingle(),
 sb.from('user_stats').select('*').eq('user_id',uid).maybeSingle()
 ]).then(function(r){
-var blob=r[0].data,stats=r[1].data;
+var blob=r[0].data,user=r[1].data,stats=r[2].data;
 if(blob&&blob.state&&blob.state.v)Object.assign(S.me,blob.state);
+if(user){if(user.username)S.me.n=user.username;S.me.email=user.email||S.me.email;S.me.photo=user.avatar_photo||S.me.photo;S.me.color=user.avatar_color||S.me.color;S.me.kyc=!!user.kyc_verified;}
 if(stats){S.me.balance=Number(stats.balance);S.me.xp=stats.xp||0;S.me.followers=stats.followers_count||0;S.me.played=stats.bets_placed||0;S.me.wins=stats.bets_won||0;S.me.settled=stats.bets_settled||0;S.me.flashWins=stats.flash_wins||0;S.me.msgsTotal=stats.messages_total||0;S.me.realized=Number(stats.profit_realized)||0;}
 S.me.logged=true;S.me.onboarded=true;
 if(typeof updateHeader==='function')updateHeader();
