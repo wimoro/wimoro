@@ -13519,5 +13519,60 @@ if(S.me.logged&&!S.me.welcomed)setTimeout(welcome,700);
 addEventListener('scroll',()=>{NAV.pos[NAV.cur]=window.scrollY;},{passive:true});
 
 </script>
+<script>
+/* Supabase sync — runs after site is fully loaded */
+(function(){
+if(typeof supabase==='undefined'||!supabase.createClient)return;
+var sb=supabase.createClient('https://brmwvxncyeypefsgiepf.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJybXd2eG5jeWV5cGVmc2dpZXBmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ1NzYwODAsImV4cCI6MjExMDE1MjA4MH0.-AA2WyzSOyJiK-Nwogbzv-Rowej9A3fWRDpAGSXI3YM');
+window.__supabase=sb;
+var uid=null;
+
+function sync(){
+if(!uid||!S.me.logged)return;
+var c=Object.assign({},S.me);
+sb.from('user_full_state').upsert({user_id:uid,state:c}).catch(function(){});
+sb.from('user_stats').update({balance:S.me.balance||0,xp:S.me.xp||0,bets_placed:S.me.played||0,bets_won:S.me.wins||0,bets_settled:S.me.settled||0,flash_wins:S.me.flashWins||0,messages_total:S.me.msgsTotal||0,profit_realized:S.me.realized||0}).eq('user_id',uid).catch(function(){});
+}
+
+function load(){
+if(!uid)return;
+Promise.all([
+sb.from('user_full_state').select('state').eq('user_id',uid).maybeSingle(),
+sb.from('user_stats').select('*').eq('user_id',uid).maybeSingle()
+]).then(function(r){
+var blob=r[0].data,stats=r[1].data;
+if(blob&&blob.state&&blob.state.v)Object.assign(S.me,blob.state);
+if(stats){S.me.balance=Number(stats.balance);S.me.xp=stats.xp||0;S.me.followers=stats.followers_count||0;S.me.played=stats.bets_placed||0;S.me.wins=stats.bets_won||0;S.me.settled=stats.bets_settled||0;S.me.flashWins=stats.flash_wins||0;S.me.msgsTotal=stats.messages_total||0;S.me.realized=Number(stats.profit_realized)||0;}
+S.me.logged=true;S.me.onboarded=true;
+if(typeof updateHeader==='function')updateHeader();
+if(typeof render==='function')render(false);
+}).catch(function(){});
+}
+
+sb.auth.getSession().then(function(r){
+if(r.data&&r.data.session){uid=r.data.session.user.id;load();}
+}).catch(function(){});
+
+sb.auth.onAuthStateChange(function(e,s){
+if(e==='SIGNED_IN'&&s&&s.user){uid=s.user.id;load();}
+if(e==='SIGNED_OUT'){uid=null;}
+});
+
+var oc=window.createAccount;
+if(oc)window.createAccount=function(n,e,p,x){
+var rec=oc(n,e,p,x);
+if(e&&p)sb.auth.signUp({email:e.toLowerCase(),password:p}).then(function(r){
+if(r.data&&r.data.user){uid=r.data.user.id;rec.sbId=uid;
+sb.from('users').insert({id:uid,username:n,email:e.toLowerCase(),avatar_photo:'',avatar_color:'#2448FF',bio:'',onboarded:true,welcomed:true,is_demo:false}).catch(function(){});}
+}).catch(function(){});
+return rec;};
+
+var ol=window.logout;
+if(ol)window.logout=function(){sync();uid=null;sb.auth.signOut().catch(function(){});ol();};
+
+setInterval(function(){if(uid&&S.me.logged)sync();},15000);
+addEventListener('pagehide',function(){if(uid&&S.me.logged)sync();});
+})();
+</script>
 </body>
 </html>
