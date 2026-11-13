@@ -13563,10 +13563,11 @@ if(typeof room==='function'&&typeof addMsg==='function')addMsg(msg.room_id,{u:ms
 }).subscribe();
 }
 
-/* Wrap save */
+/* Wrap save/load */
 var _origSave=window.save,_origFlush=window.flushSave;
 window.save=function(){_origSave();sbSyncDebounced();};
 window.flushSave=function(){_origFlush();sbSaveBlob();sbPushStructured();};
+window.load=function(){};
 
 /* Wrap createAccount */
 var _origCreate=window.createAccount;
