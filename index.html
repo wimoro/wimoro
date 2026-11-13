@@ -13632,11 +13632,11 @@ window.marketsLoad=function(){_origMkLoad();sb.from('market_live_state').select(
 
 /* Wrap bootAuth */
 var _origBoot=window.bootAuth;
-window.bootAuth=function(){_origBoot();sb.auth.getSession().then(function(res){if(!res.data||!res.data.session)return;var uid=res.data.session.user.id;sbUid=uid;if(S.me.logged&&!S.auth.demo){sbLoadUser(uid).then(function(){sbStartChat();if(typeof updateHeader==='function')updateHeader();if(typeof checkBadges==='function')checkBadges(true);/* onboarding check removed - handled by signup flow only */if(typeof render==='function')render(true);});}}).catch(function(e){console.warn('SB boot error:',e);});};
+window.bootAuth=function(){_origBoot();sb.auth.getSession().then(function(res){if(!res.data||!res.data.session)return;var uid=res.data.session.user.id;sbUid=uid;sbLoadUser(uid).then(function(){S.me.logged=true;S.auth={key:S.me.email||uid,demo:false};sbStartChat();if(typeof updateHeader==='function')updateHeader();if(typeof checkBadges==='function')checkBadges(true);if(typeof render==='function')render(true);});}).catch(function(e){console.warn('SB boot error:',e);});};
 
 /* Auth state listener */
 sb.auth.onAuthStateChange(function(ev,session){
-if(ev==='SIGNED_IN'&&session&&session.user){var uid=session.user.id;if(!sbUid||sbUid!==uid){sbUid=uid;sbLoadUser(uid).then(function(){sbStartChat();if(typeof updateHeader==='function')updateHeader();if(typeof render==='function')render(false);});}sbUid=uid;}
+if(ev==='SIGNED_IN'&&session&&session.user){var uid=session.user.id;if(!sbUid||sbUid!==uid){sbUid=uid;sbLoadUser(uid).then(function(){S.me.logged=true;S.auth={key:S.me.email||uid,demo:false};sbStartChat();if(typeof updateHeader==='function')updateHeader();if(typeof render==='function')render(false);});}sbUid=uid;}
 else if(ev==='SIGNED_OUT'){sbUid=null;if(sbRealtimeSub){sbRealtimeSub.unsubscribe();sbRealtimeSub=null;}}
 });
 
