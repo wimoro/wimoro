@@ -9383,7 +9383,7 @@ function demoMe(){return {v:5,logged:true,onboarded:true,kyc:false,fmode:'free',
  notifs:[{id:1,ic:'users',text:_t("lea a suivi ta mise sur le Clásico."),href:'#profil',at:T0-36e5,read:false},{id:2,ic:'trophy',text:_t("Plus que 110 XP pour passer Or III."),href:'#rang',at:T0-72e5,read:false},{id:3,ic:'flame',text:_t("Signal de foule sur Bitcoin à 150 000 $."),href:'#marche-btc150k',at:T0-9e6,read:false}],
  missions:[{id:'bets2',type:'bet',label:_t("Place 2 paris"),goal:2,have:0,xp:40,go:'#accueil',claimed:false},{id:'chatm1',type:'chatm',label:_t("Écris dans le chat d’un marché"),goal:1,have:0,xp:30,go:'#marche-btc150k',claimed:false},{id:'flash1',type:'flashwin',label:_t("Gagne une manche au marché éclair"),goal:1,have:0,xp:60,go:'#eclair',claimed:false}],
  badges:[],copies:[],copiers:0,welcomed:false,blockedShown:''};}
-function newMe(n,email){return {v:5,logged:true,onboarded:false,kyc:false,fmode:'free',falerts:[],contraWins:0,n,email,photo:'g:'+AV_GALLERY[hash(n||'')%AV_GALLERY.length].id,color:'#2448FF',interests:[],since:_t("aujourd’hui"),followers:0,xp:0,balance:1e6,credit1m:true,bio:'',wallet:'',prefs:{},ctype:'courbe',settled:0,wins:0,played:0,flashWins:0,flashStreak:0,flashBest:0,flashProfit:0,followed:0,deposits:0,depDay:'',streak:1,bestStreak:1,pos:38901,msgsTotal:0,chatXP:0,chatDay:'',maxBet:0,realized:0,following:[],watch:[],props:[],voted:{},positions:[],history:[],deps:[{coin:'USDC',net:'Base',amt:1e6,usd:1e6,at:now(),conf:12,need:12,label:'Crédit démo'}],wds:[],
+function newMe(n,email){return {v:5,logged:true,onboarded:false,kyc:false,fmode:’free’,falerts:[],contraWins:0,n,email,photo:’g:’+AV_GALLERY[hash(n||’’)%AV_GALLERY.length].id,color:’#2448FF’,interests:[],since:_t("aujourd’hui"),followers:0,xp:0,balance:0,credit1m:true,bio:’’,wallet:’’,prefs:{},ctype:’courbe’,settled:0,wins:0,played:0,flashWins:0,flashStreak:0,flashBest:0,flashProfit:0,followed:0,deposits:0,depDay:’’,streak:1,bestStreak:1,pos:38901,msgsTotal:0,chatXP:0,chatDay:’’,maxBet:0,realized:0,following:[],watch:[],props:[],voted:{},positions:[],history:[],deps:[],wds:[],
  notifs:[{id:1,ic:'gift',text:_t("Bienvenue sur Wimoro ! Tes 100 XP de bienvenue t’attendent."),href:'#bienvenue',at:now(),read:false}],
  missions:[{id:'dep1',type:'dep',label:_t("Fais ton premier dépôt"),goal:1,have:0,xp:100,go:'#depot',claimed:false},{id:'fb1',type:'flashbet',label:_t("Joue une manche au marché éclair"),goal:1,have:0,xp:50,go:'#eclair',claimed:false},{id:'chat1',type:'chat',label:_t("Écris ton premier message"),goal:1,have:0,xp:20,go:'#chat',claimed:false}],
  badges:[],copies:[],copiers:0,welcomed:true,blockedShown:''};}
@@ -10167,7 +10167,7 @@ function authThemeBtn(){return `<button class="thm au-thm" data-a="theme" aria-l
 function vLogin(){if(authRedirect())return '';const m=S.ui.authMode,note=S.ui.authNote;S.ui.authNote='';
  return authShell(`<div class="auth-card"><h1>${_t("Connexion")}</h1><p class="sub" style="font-size:15px">${_t("Content de te revoir.")}</p>${note?`<div class="limit over" style="margin-top:16px">${esc(note)}</div>`:''}
  <div class="seg" style="width:100%;margin-top:20px"><button style="flex:1" class="${m==='mail'?'on':''}" data-a="auth-mode" data-v="mail">${_t("E-mail")}</button><button style="flex:1" class="${m==='wallet'?'on':''}" data-a="auth-mode" data-v="wallet">${_t("Portefeuille crypto")}</button></div>
- ${m==='mail'?`<form class="col" data-form="login" style="gap:14px;margin-top:18px" novalidate><div class="field"><label for="le">${_t("E-mail")}</label><input id="le" name="email" type="email" autocomplete="email" value="${esc(S.ui.authEmail||'')}" placeholder="${_t("toi@exemple.fr")}"></div><div class="field"><label for="lp">${_t("Mot de passe")}</label><div class="pw"><input id="lp" name="pw" type="password" autocomplete="current-password" placeholder="${_t("8 caractères minimum")}"><button type="button" class="link" data-a="pw-toggle" data-for="lp">${_t("Afficher")}</button></div></div><button class="link" type="button" data-a="forgot" style="align-self:flex-start;font-size:13px">${_t("Mot de passe oublié ?")}</button><p class="err" data-autherr></p><button class="btn b-oui lg full" type="submit">${_t("Se connecter")}</button></form>`
+ ${m==='mail'?`<form class="col" data-form="login" style="gap:14px;margin-top:18px" novalidate><div class="field"><label for="le">${_t("E-mail ou pseudo")}</label><input id="le" name="email" type="text" autocomplete="username" value="${esc(S.ui.authEmail||'')}" placeholder="${_t("toi@exemple.fr ou ton.pseudo")}"></div><div class="field"><label for="lp">${_t("Mot de passe")}</label><div class="pw"><input id="lp" name="pw" type="password" autocomplete="current-password" placeholder="${_t("8 caractères minimum")}"><button type="button" class="link" data-a="pw-toggle" data-for="lp">${_t("Afficher")}</button></div></div><button class="link" type="button" data-a="forgot" style="align-self:flex-start;font-size:13px">${_t("Mot de passe oublié ?")}</button><p class="err" data-autherr></p><button class="btn b-oui lg full" type="submit">${_t("Se connecter")}</button></form>`
  :`<div class="pickl" style="margin-top:18px">${[[_t("Portefeuille Ethereum du navigateur"),_t("Ethereum, Base, Arbitrum")],[_t("Portefeuille Solana"),'Solana'],[_t("Application mobile"),_t("Scanne un QR code avec ton portefeuille")]].map(([t,s2])=>`<button data-a="wallet" data-v="${t}" data-new=""><span><b>${t}</b><small class="muted" style="display:block">${s2}</small></span>${ic('right',18)}</button>`).join('')}</div><p class="sub" style="margin-top:12px">${_t("Tu signes un message pour prouver que l’adresse t’appartient. Aucune transaction, aucun frais.")}</p>`}
  <div class="orl"><span>${_t("ou")}</span></div><button class="btn b-ghost lg full" data-a="demo-login">${_t("Utiliser le compte démo (User26, Or II)")}</button><p class="sub" style="text-align:center;margin-top:10px">${_t("Les comptes créés ici restent dans ce navigateur : tu peux te déconnecter et revenir avec ton e-mail et ton mot de passe.")}</p><p class="sub" style="text-align:center;margin-top:18px;font-size:14px">${_t("Pas encore de compte ?")} <a class="link" href="#inscription">${_t("Créer un compte")}</a></p></div>`);}
 function walletModal(){openModal(`<div class="md"><div class="md-h"><div><h3>${_t("S’inscrire avec un portefeuille")}</h3><p>${_t("Tu signes un message pour prouver que l’adresse t’appartient. Aucune transaction, aucun frais.")}</p></div><button class="x" data-a="close" aria-label="${_t("Fermer")}">${ic('x')}</button></div><div class="pickl">${[[_t("Portefeuille Ethereum du navigateur"),_t("Ethereum, Base, Arbitrum")],[_t("Portefeuille Solana"),'Solana'],[_t("Application mobile"),_t("Scanne un QR code avec ton portefeuille")]].map(([t,s2])=>`<button data-a="wallet" data-v="${t}" data-new="1"><span><b>${t}</b><small class="muted" style="display:block">${s2}</small></span>${ic('right',18)}</button>`).join('')}</div><p class="sub" style="margin-top:12px">${_t("En continuant, tu confirmes avoir 18 ans ou plus et accepter les conditions d’utilisation.")}</p></div>`);}
@@ -10188,7 +10188,25 @@ document.addEventListener('input',e=>{const k=e.target.dataset&&e.target.dataset
  if(k==='email'){const el=$('[data-sue]');if(el){el.textContent=v&&!EMAIL_RE.test(v)?_t("Adresse e-mail invalide."):'';el.style.color='var(--nonT)';}}
  if(k==='pw'){const sc=v?pwScore(v):0;$$('[data-sus] i').forEach((i,n)=>{i.style.background=n<sc?(sc<=1?'#F59A0B':sc===2?'#F7C35B':'#2448FF'):'';});const l=$('[data-sul]');if(l)l.textContent=v?(v.length<8?_t("Trop court : 8 caractères minimum."):_t("Sécurité : ")+PW_L[sc].toLowerCase()+'.'):_t("Utilise au moins 8 caractères.");}});
 function doLogin(msg){if(typeof rgLoginBlocked==='function'&&rgLoginBlocked())return;S.me.logged=true;save();if(typeof duelSeed==='function')duelSeed();if(typeof clanSeed==='function')clanSeed();if(typeof comboSeed==='function')comboSeed();const to=!S.me.onboarded?'#bienvenue':S.ui.after&&!/connexion|inscription/.test(S.ui.after)?S.ui.after:'#accueil';S.ui.after='';updateHeader();toast({tone:'blue',icon:'check',title:msg||`${_t("Content de te revoir, {0}",[S.me.n])}`,text:`${_t("{0}, solde {1}",[rankName(myRank().t,myRank().d),F.usd(S.me.balance)])}`});if(location.hash===to)render(true);else location.hash=to;}
-FORMS.login=f=>{const e=f.email.value.trim().toLowerCase(),p=f.pw.value,err=f.querySelector('[data-autherr]');if(!EMAIL_RE.test(e)){err.textContent=_t("Entre une adresse e-mail valide.");return;}if(p.length<8){err.textContent=_t("Le mot de passe fait au moins 8 caractères.");return;}const rec=AUTH.get(e);const legacy=rec&&rec.ph===hash(p+'|'+e);if(!rec||(rec.ph!==pwHash(p,e)&&!legacy)){err.textContent=rec?_t("Mot de passe incorrect."):_t("Aucun compte avec cet e-mail. Crée ton compte en une minute.");return;}if(legacy){rec.ph=pwHash(p,e);AUTH.set(e,rec);}err.textContent='';enterAccount(rec);doLogin();};
+FORMS.login=f=>{const raw=f.email.value.trim(),p=f.pw.value,err=f.querySelector('[data-autherr]');const isEmail=EMAIL_RE.test(raw);const e=raw.toLowerCase();if(!e||e.length<3){err.textContent=_t("Entre ton e-mail ou ton pseudo.");return;}if(p.length<8){err.textContent=_t("Le mot de passe fait au moins 8 caractères.");return;}
+ /* Try local AUTH first (email or pseudo as key) */
+ let rec=AUTH.get(e);if(!rec){const all=AUTH.all();for(const k in all){if(all[k].pseudo&&all[k].pseudo.toLowerCase()===e){rec=all[k];break;}}}
+ if(rec){const legacy=rec.ph===hash(p+'|'+(rec.key||e));if(rec.ph!==pwHash(p,rec.key||e)&&!legacy){err.textContent=_t("Mot de passe incorrect.");return;}if(legacy){rec.ph=pwHash(p,rec.key||e);AUTH.set(rec.key||e,rec);}err.textContent='';enterAccount(rec);doLogin();return;}
+ /* Not found locally — try Supabase directly */
+ err.textContent=_t("Connexion en cours…");
+ const sb=window.__supabase;if(!sb){err.textContent=_t("Aucun compte trouvé.");return;}
+ (isEmail?Promise.resolve(e):sb.from('users').select('email').eq('username',e).maybeSingle().then(function(r){return r.data?r.data.email:null;}))
+ .then(function(resolvedEmail){
+   if(!resolvedEmail){err.textContent=_t("Aucun compte avec ce pseudo.");return;}
+   return sb.auth.signInWithPassword({email:resolvedEmail,password:p}).then(function(res){
+     if(res.error){err.textContent=res.error.message==='Invalid login credentials'?_t("Mot de passe incorrect."):res.error.message;return;}
+     /* Create local record so enterAccount works */
+     var uid=res.data.user.id;
+     var localRec={id:uid.slice(0,12),key:resolvedEmail,email:resolvedEmail,pseudo:raw,sbId:uid,ph:pwHash(p,resolvedEmail)};
+     AUTH.set(resolvedEmail,localRec);enterAccount(localRec);err.textContent='';doLogin();
+   });
+ }).catch(function(ex){err.textContent=_t("Erreur de connexion.");console.warn('Login error:',ex);});
+};
 FORMS.signup=f=>{const n=f.pseudo.value.trim(),e=f.email.value.trim(),p=f.pw.value,err=f.querySelector('[data-signerr]');const [st,msg]=pseudoMsg(n);
  if(st!=='ok'){err.textContent=msg;return;}if(!EMAIL_RE.test(e)){err.textContent=_t("Entre une adresse e-mail valide.");return;}if(p.length<8){err.textContent=_t("Le mot de passe doit faire au moins 8 caractères.");return;}if(!f.age.checked){err.textContent=_t("Wimoro est réservé aux personnes majeures.");return;}if(!f.cgu.checked){err.textContent=_t("Accepte les conditions pour continuer.");return;}
  if(AUTH.get(e.toLowerCase())){err.textContent=_t("Un compte existe déjà avec cet e-mail. Connecte-toi.");return;}createAccount(n,e,p);const refOk=typeof refApplyAtSignup==='function'&&refApplyAtSignup(f.ref?f.ref.value:'');S.ui.ob=1;S.ui.cat='Tout';toast({tone:'blue',icon:'check',title:`${_t("Compte créé, bienvenue {0} !",[n])}`,text:refOk?`${_t("{0} de parrainage offerts. Encore 5 petites étapes.",[F.usd0(REF.BONUS)])}`:_t("Encore 5 petites étapes.")});location.hash='#bienvenue';};
@@ -10605,7 +10623,7 @@ const guestMe=()=>Object.assign(newMe('',''),{logged:false,onboarded:true,welcom
 S.auth={key:'',demo:false};S.epoch=0;
 function accKey(rec){if(rec.demo)return 'wimoro-demo';const k='wimoro-acc:'+rec.id,old='wimoro-demo:'+rec.id;return (LS.g(k)===null&&LS.g(old)!==null)?old:k;}
 function enterAccount(rec,fresh,quiet){S.epoch++;KEY=accKey(rec);S.me=rec.demo?demoMe():(fresh||newMe(rec.pseudo,rec.email||''));if(!fresh)load();S.me.logged=true;
- if(!S.me.credit1m){S.me.balance+=1e6;S.me.credit1m=true;(S.me.deps=S.me.deps||[]).unshift({coin:'USDC',net:'Base',amt:1e6,usd:1e6,at:now(),conf:12,need:12,label:'Crédit démo'});}
+ /* Credit demo disabled — real accounts start at 0 */
  S.auth={key:rec.key,demo:!!rec.demo};LS.s(SESK,rec.key);
  if(!S.me.missions.some(m=>m.day))S.me.missions.forEach(m=>m.day=today());
  S.ui.dep.method='crypto';S.ui.wd.method='crypto';S.ui.fiat={dep:'50',wd:''};S.ui.kycd={doc:false};S.ui.ptab='positions';S.ui.pe=null;
@@ -13859,51 +13877,46 @@ window.createAccount=function(pseudo,email,pw,extra){
   return rec;
 };
 
-/* --- FORMS.login --- */
+/* --- FORMS.login wrapper: the original handler now does Supabase auth directly,
+   so we just hook into auth state changes to load structured data --- */
 var _origLogin=FORMS.login;
 FORMS.login=function(f){
-  var email=f.email.value.trim().toLowerCase();
-  var pw=f.pw.value;
   _origLogin(f);
-  if(!S.me.logged)return;
-  sb.auth.signInWithPassword({email:email,password:pw}).then(function(res){
-    if(res.error||!res.data||!res.data.user)return;
-    var uid=res.data.user.id;
-    sbUid=uid;
-    var rec=AUTH.get(email);
-    if(rec){rec.sbId=uid;AUTH.set(email,rec);}
-    /* Load structured tables (source of truth) */
-    return Promise.all([
-      sb.from('user_full_state').select('state').eq('user_id',uid).maybeSingle(),
-      sb.from('users').select('*').eq('id',uid).maybeSingle(),
-      sb.from('user_stats').select('*').eq('user_id',uid).maybeSingle()
-    ]).then(function(r){
-      var blob=r[0].data,user=r[1].data,stats=r[2].data;
-      if(blob&&blob.state&&blob.state.v)Object.assign(S.me,blob.state);
-      if(user){
-        S.me.n=user.username||S.me.n;S.me.email=user.email||S.me.email;
-        S.me.photo=user.avatar_photo||S.me.photo;S.me.color=user.avatar_color||S.me.color;
-        S.me.bio=user.bio!=null?user.bio:S.me.bio;S.me.kyc=!!user.kyc_verified;
-        S.me.onboarded=!!user.onboarded;S.me.welcomed=!!user.welcomed;
-      }
-      if(stats){
-        S.me.balance=Number(stats.balance);S.me.xp=stats.xp||0;
-        S.me.followers=stats.followers_count||0;S.me.realized=Number(stats.profit_realized)||0;
-        S.me.streak=stats.streak_current||1;S.me.bestStreak=stats.streak_best||1;
-        S.me.played=stats.bets_placed||0;S.me.wins=stats.bets_won||0;S.me.settled=stats.bets_settled||0;
-        S.me.maxBet=Number(stats.bets_max_amount)||0;S.me.followed=stats.followed_bets_count||0;
-        S.me.contraWins=stats.contra_wins||0;S.me.deposits=stats.deposits_count||0;
-        S.me.flashWins=stats.flash_wins||0;S.me.flashStreak=stats.flash_streak_current||0;
-        S.me.flashBest=stats.flash_streak_best||0;S.me.flashProfit=Number(stats.flash_profit_total)||0;
-        S.me.msgsTotal=stats.messages_total||0;S.me.copiers=stats.copiers_count||0;
-      }
-      S.me.logged=true;
-      if(typeof updateHeader==='function')updateHeader();
-      if(typeof render==='function')render(false);
-      sbStartChatRealtime();
-    });
-  }).catch(function(e){console.warn('SB login error:',e);});
 };
+
+/* When Supabase auth fires SIGNED_IN, load structured data */
+function sbPostLogin(uid){
+  sbUid=uid;
+  Promise.all([
+    sb.from('user_full_state').select('state').eq('user_id',uid).maybeSingle(),
+    sb.from('users').select('*').eq('id',uid).maybeSingle(),
+    sb.from('user_stats').select('*').eq('user_id',uid).maybeSingle()
+  ]).then(function(r){
+    var blob=r[0].data,user=r[1].data,stats=r[2].data;
+    if(blob&&blob.state&&blob.state.v)Object.assign(S.me,blob.state);
+    if(user){
+      S.me.n=user.username||S.me.n;S.me.email=user.email||S.me.email;
+      S.me.photo=user.avatar_photo||S.me.photo;S.me.color=user.avatar_color||S.me.color;
+      S.me.bio=user.bio!=null?user.bio:S.me.bio;S.me.kyc=!!user.kyc_verified;
+      S.me.onboarded=!!user.onboarded;S.me.welcomed=!!user.welcomed;
+    }
+    if(stats){
+      S.me.balance=Number(stats.balance);S.me.xp=stats.xp||0;
+      S.me.followers=stats.followers_count||0;S.me.realized=Number(stats.profit_realized)||0;
+      S.me.streak=stats.streak_current||1;S.me.bestStreak=stats.streak_best||1;
+      S.me.played=stats.bets_placed||0;S.me.wins=stats.bets_won||0;S.me.settled=stats.bets_settled||0;
+      S.me.maxBet=Number(stats.bets_max_amount)||0;S.me.followed=stats.followed_bets_count||0;
+      S.me.contraWins=stats.contra_wins||0;S.me.deposits=stats.deposits_count||0;
+      S.me.flashWins=stats.flash_wins||0;S.me.flashStreak=stats.flash_streak_current||0;
+      S.me.flashBest=stats.flash_streak_best||0;S.me.flashProfit=Number(stats.flash_profit_total)||0;
+      S.me.msgsTotal=stats.messages_total||0;S.me.copiers=stats.copiers_count||0;
+    }
+    S.me.logged=true;
+    if(typeof updateHeader==='function')updateHeader();
+    if(typeof render==='function')render(false);
+    sbStartChatRealtime();
+  }).catch(function(e){console.warn('SB post-login error:',e);});
+}
 
 /* --- logout --- */
 var _origLogout=window.logout;
@@ -14019,6 +14032,9 @@ setInterval(function(){
 
 sb.auth.onAuthStateChange(function(event,session){
   if(event==='SIGNED_IN'&&session&&session.user){
+    if(!sbUid||sbUid!==session.user.id){
+      sbPostLogin(session.user.id);
+    }
     sbUid=session.user.id;
   }else if(event==='SIGNED_OUT'){
     sbUid=null;
