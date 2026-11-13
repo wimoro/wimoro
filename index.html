@@ -9383,7 +9383,7 @@ function demoMe(){return {v:5,logged:true,onboarded:true,kyc:false,fmode:'free',
  notifs:[{id:1,ic:'users',text:_t("lea a suivi ta mise sur le Clásico."),href:'#profil',at:T0-36e5,read:false},{id:2,ic:'trophy',text:_t("Plus que 110 XP pour passer Or III."),href:'#rang',at:T0-72e5,read:false},{id:3,ic:'flame',text:_t("Signal de foule sur Bitcoin à 150 000 $."),href:'#marche-btc150k',at:T0-9e6,read:false}],
  missions:[{id:'bets2',type:'bet',label:_t("Place 2 paris"),goal:2,have:0,xp:40,go:'#accueil',claimed:false},{id:'chatm1',type:'chatm',label:_t("Écris dans le chat d’un marché"),goal:1,have:0,xp:30,go:'#marche-btc150k',claimed:false},{id:'flash1',type:'flashwin',label:_t("Gagne une manche au marché éclair"),goal:1,have:0,xp:60,go:'#eclair',claimed:false}],
  badges:[],copies:[],copiers:0,welcomed:false,blockedShown:''};}
-function newMe(n,email){return {v:5,logged:true,onboarded:false,kyc:false,fmode:’free’,falerts:[],contraWins:0,n,email,photo:’g:’+AV_GALLERY[hash(n||’’)%AV_GALLERY.length].id,color:’#2448FF’,interests:[],since:_t("aujourd’hui"),followers:0,xp:0,balance:0,credit1m:true,bio:’’,wallet:’’,prefs:{},ctype:’courbe’,settled:0,wins:0,played:0,flashWins:0,flashStreak:0,flashBest:0,flashProfit:0,followed:0,deposits:0,depDay:’’,streak:1,bestStreak:1,pos:38901,msgsTotal:0,chatXP:0,chatDay:’’,maxBet:0,realized:0,following:[],watch:[],props:[],voted:{},positions:[],history:[],deps:[],wds:[],
+function newMe(n,email){return {v:5,logged:true,onboarded:false,kyc:false,fmode:'free',falerts:[],contraWins:0,n,email,photo:'g:'+AV_GALLERY[hash(n||'')%AV_GALLERY.length].id,color:'#2448FF',interests:[],since:_t("aujourd’hui"),followers:0,xp:0,balance:0,credit1m:true,bio:'',wallet:'',prefs:{},ctype:'courbe',settled:0,wins:0,played:0,flashWins:0,flashStreak:0,flashBest:0,flashProfit:0,followed:0,deposits:0,depDay:'',streak:1,bestStreak:1,pos:38901,msgsTotal:0,chatXP:0,chatDay:'',maxBet:0,realized:0,following:[],watch:[],props:[],voted:{},positions:[],history:[],deps:[],wds:[],
  notifs:[{id:1,ic:'gift',text:_t("Bienvenue sur Wimoro ! Tes 100 XP de bienvenue t’attendent."),href:'#bienvenue',at:now(),read:false}],
  missions:[{id:'dep1',type:'dep',label:_t("Fais ton premier dépôt"),goal:1,have:0,xp:100,go:'#depot',claimed:false},{id:'fb1',type:'flashbet',label:_t("Joue une manche au marché éclair"),goal:1,have:0,xp:50,go:'#eclair',claimed:false},{id:'chat1',type:'chat',label:_t("Écris ton premier message"),goal:1,have:0,xp:20,go:'#chat',claimed:false}],
  badges:[],copies:[],copiers:0,welcomed:true,blockedShown:''};}
@@ -10189,23 +10189,20 @@ document.addEventListener('input',e=>{const k=e.target.dataset&&e.target.dataset
  if(k==='pw'){const sc=v?pwScore(v):0;$$('[data-sus] i').forEach((i,n)=>{i.style.background=n<sc?(sc<=1?'#F59A0B':sc===2?'#F7C35B':'#2448FF'):'';});const l=$('[data-sul]');if(l)l.textContent=v?(v.length<8?_t("Trop court : 8 caractères minimum."):_t("Sécurité : ")+PW_L[sc].toLowerCase()+'.'):_t("Utilise au moins 8 caractères.");}});
 function doLogin(msg){if(typeof rgLoginBlocked==='function'&&rgLoginBlocked())return;S.me.logged=true;save();if(typeof duelSeed==='function')duelSeed();if(typeof clanSeed==='function')clanSeed();if(typeof comboSeed==='function')comboSeed();const to=!S.me.onboarded?'#bienvenue':S.ui.after&&!/connexion|inscription/.test(S.ui.after)?S.ui.after:'#accueil';S.ui.after='';updateHeader();toast({tone:'blue',icon:'check',title:msg||`${_t("Content de te revoir, {0}",[S.me.n])}`,text:`${_t("{0}, solde {1}",[rankName(myRank().t,myRank().d),F.usd(S.me.balance)])}`});if(location.hash===to)render(true);else location.hash=to;}
 FORMS.login=f=>{const raw=f.email.value.trim(),p=f.pw.value,err=f.querySelector('[data-autherr]');const isEmail=EMAIL_RE.test(raw);const e=raw.toLowerCase();if(!e||e.length<3){err.textContent=_t("Entre ton e-mail ou ton pseudo.");return;}if(p.length<8){err.textContent=_t("Le mot de passe fait au moins 8 caractères.");return;}
- /* Try local AUTH first (email or pseudo as key) */
- let rec=AUTH.get(e);if(!rec){const all=AUTH.all();for(const k in all){if(all[k].pseudo&&all[k].pseudo.toLowerCase()===e){rec=all[k];break;}}}
- if(rec){const legacy=rec.ph===hash(p+'|'+(rec.key||e));if(rec.ph!==pwHash(p,rec.key||e)&&!legacy){err.textContent=_t("Mot de passe incorrect.");return;}if(legacy){rec.ph=pwHash(p,rec.key||e);AUTH.set(rec.key||e,rec);}err.textContent='';enterAccount(rec);doLogin();return;}
- /* Not found locally — try Supabase directly */
- err.textContent=_t("Connexion en cours…");
- const sb=window.__supabase;if(!sb){err.textContent=_t("Aucun compte trouvé.");return;}
- (isEmail?Promise.resolve(e):sb.from('users').select('email').eq('username',e).maybeSingle().then(function(r){return r.data?r.data.email:null;}))
- .then(function(resolvedEmail){
-   if(!resolvedEmail){err.textContent=_t("Aucun compte avec ce pseudo.");return;}
-   return sb.auth.signInWithPassword({email:resolvedEmail,password:p}).then(function(res){
-     if(res.error){err.textContent=res.error.message==='Invalid login credentials'?_t("Mot de passe incorrect."):res.error.message;return;}
-     /* Create local record so enterAccount works */
-     var uid=res.data.user.id;
-     var localRec={id:uid.slice(0,12),key:resolvedEmail,email:resolvedEmail,pseudo:raw,sbId:uid,ph:pwHash(p,resolvedEmail)};
-     AUTH.set(resolvedEmail,localRec);enterAccount(localRec);err.textContent='';doLogin();
-   });
- }).catch(function(ex){err.textContent=_t("Erreur de connexion.");console.warn('Login error:',ex);});
+let rec=AUTH.get(e);if(!rec){const all=AUTH.all();for(const k in all){if(all[k].pseudo&&all[k].pseudo.toLowerCase()===e){rec=all[k];break;}}}
+if(rec){const legacy=rec.ph===hash(p+'|'+(rec.key||e));if(rec.ph!==pwHash(p,rec.key||e)&&!legacy){err.textContent=_t("Mot de passe incorrect.");return;}if(legacy){rec.ph=pwHash(p,rec.key||e);AUTH.set(rec.key||e,rec);}err.textContent='';enterAccount(rec);doLogin();return;}
+err.textContent=_t("Connexion en cours...");
+const sb=window.__supabase;if(!sb){err.textContent=_t("Aucun compte trouvé.");return;}
+(isEmail?Promise.resolve(e):sb.from('users').select('email').eq('username',e).maybeSingle().then(function(r){return r.data?r.data.email:null;}))
+.then(function(resolvedEmail){
+if(!resolvedEmail){err.textContent=_t("Aucun compte avec ce pseudo.");return;}
+return sb.auth.signInWithPassword({email:resolvedEmail,password:p}).then(function(res){
+if(res.error){err.textContent=res.error.message==='Invalid login credentials'?_t("Mot de passe incorrect."):res.error.message;return;}
+var uid=res.data.user.id;
+var localRec={id:uid.slice(0,12),key:resolvedEmail,email:resolvedEmail,pseudo:raw,sbId:uid,ph:pwHash(p,resolvedEmail)};
+AUTH.set(resolvedEmail,localRec);enterAccount(localRec);err.textContent='';doLogin();
+});
+}).catch(function(ex){err.textContent=_t("Erreur de connexion.");console.warn('Login error:',ex);});
 };
 FORMS.signup=f=>{const n=f.pseudo.value.trim(),e=f.email.value.trim(),p=f.pw.value,err=f.querySelector('[data-signerr]');const [st,msg]=pseudoMsg(n);
  if(st!=='ok'){err.textContent=msg;return;}if(!EMAIL_RE.test(e)){err.textContent=_t("Entre une adresse e-mail valide.");return;}if(p.length<8){err.textContent=_t("Le mot de passe doit faire au moins 8 caractères.");return;}if(!f.age.checked){err.textContent=_t("Wimoro est réservé aux personnes majeures.");return;}if(!f.cgu.checked){err.textContent=_t("Accepte les conditions pour continuer.");return;}
@@ -10623,7 +10620,7 @@ const guestMe=()=>Object.assign(newMe('',''),{logged:false,onboarded:true,welcom
 S.auth={key:'',demo:false};S.epoch=0;
 function accKey(rec){if(rec.demo)return 'wimoro-demo';const k='wimoro-acc:'+rec.id,old='wimoro-demo:'+rec.id;return (LS.g(k)===null&&LS.g(old)!==null)?old:k;}
 function enterAccount(rec,fresh,quiet){S.epoch++;KEY=accKey(rec);S.me=rec.demo?demoMe():(fresh||newMe(rec.pseudo,rec.email||''));if(!fresh)load();S.me.logged=true;
- /* Credit demo disabled — real accounts start at 0 */
+ /* Credit demo disabled */
  S.auth={key:rec.key,demo:!!rec.demo};LS.s(SESK,rec.key);
  if(!S.me.missions.some(m=>m.day))S.me.missions.forEach(m=>m.day=today());
  S.ui.dep.method='crypto';S.ui.wd.method='crypto';S.ui.fiat={dep:'50',wd:''};S.ui.kycd={doc:false};S.ui.ptab='positions';S.ui.pe=null;
@@ -13507,696 +13504,121 @@ Object.assign(ACT,{'demo-rank':a=>demoRankSet(+a.dataset.t),'demo-rank-reset':()
 
 </script>
 <script>
-/* ===================== Supabase Integration Layer v2 — Full DB, no localStorage ===================== */
+/* ===================== Supabase Integration ===================== */
 (function(){
-'use strict';
-
-const SB_URL='https://brmwvxncyeypefsgiepf.supabase.co';
-const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJybXd2eG5jeWV5cGVmc2dpZXBmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ1NzYwODAsImV4cCI6MjExMDE1MjA4MH0.-AA2WyzSOyJiK-Nwogbzv-Rowej9A3fWRDpAGSXI3YM';
-const sb=window.__supabase?window.__supabase:((typeof supabase!=='undefined'&&supabase.createClient)?supabase.createClient(SB_URL,SB_KEY):null);
+var SB_URL='https://brmwvxncyeypefsgiepf.supabase.co';
+var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJybXd2eG5jeWV5cGVmc2dpZXBmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ1NzYwODAsImV4cCI6MjExMDE1MjA4MH0.-AA2WyzSOyJiK-Nwogbzv-Rowej9A3fWRDpAGSXI3YM';
+var sb=(typeof supabase!=='undefined'&&supabase.createClient)?supabase.createClient(SB_URL,SB_KEY):null;
 window.__supabase=sb;
-if(!sb){console.warn('Supabase client not loaded, running in offline mode.');return;}
+if(!sb)return;
 
-let sbUid=null;
-let sbSyncT=null;
-let sbRealtimeSub=null;
+var sbUid=null,sbSyncT=null,sbRealtimeSub=null;
 
-/* ===================== Helpers: S.me ↔ DB mapping ===================== */
+function meToUser(me){return {username:me.n||'',email:me.email||'',avatar_photo:me.photo||'',avatar_color:me.color||'#2448FF',bio:me.bio||'',wallet_address:me.wallet||null,kyc_verified:!!me.kyc,onboarded:!!me.onboarded,welcomed:!!me.welcomed,is_demo:!!S.auth.demo,language_preference:typeof LANG!=='undefined'?LANG:'fr',theme_preference:document.documentElement.getAttribute('data-theme')||'auto'};}
 
-function meToUser(me){
-  return {
-    username:me.n||'',email:me.email||'',avatar_photo:me.photo||'',avatar_color:me.color||'#2448FF',
-    bio:me.bio||'',wallet_address:me.wallet||null,kyc_verified:!!me.kyc,
-    onboarded:!!me.onboarded,welcomed:!!me.welcomed,is_demo:!!S.auth.demo,
-    language_preference:typeof LANG!=='undefined'?LANG:'fr',
-    theme_preference:document.documentElement.getAttribute('data-theme')||'auto'
-  };
+function meToStats(me){var acc=Math.round((me.wins||0)/Math.max(1,me.settled||0)*100);var rk=(typeof myRank==='function')?myRank():{t:0,d:0};return {balance:me.balance||0,xp:me.xp||0,followers_count:me.followers||0,rank_tier:rk.t||0,rank_division:rk.d||0,seasonal_position:me.pos||null,profit_realized:me.realized||0,streak_current:me.streak||1,streak_best:me.bestStreak||1,bets_placed:me.played||0,bets_won:me.wins||0,bets_settled:me.settled||0,bets_accuracy_pct:acc,bets_max_amount:me.maxBet||0,followed_bets_count:me.followed||0,contra_wins:me.contraWins||0,deposits_count:me.deposits||0,flash_wins:me.flashWins||0,flash_streak_current:me.flashStreak||0,flash_streak_best:me.flashBest||0,flash_profit_total:me.flashProfit||0,messages_total:me.msgsTotal||0,chat_xp_today:me.chatXP||0,copies_count:(me.copies||[]).length,copiers_count:me.copiers||0};}
+
+function meToPrefs(me){return {chart_type:me.ctype||'courbe',flash_mode:me.fmode||'free'};}
+
+function cleanMe(me){var c=Object.assign({},me);delete c._synced;delete c._dbBalance;delete c._dbRank;return c;}
+
+function sbSaveBlob(){if(!sbUid||S.auth.demo)return Promise.resolve();return sb.from('user_full_state').upsert({user_id:sbUid,state:cleanMe(S.me)}).then(function(){}).catch(function(e){console.warn('SB blob error:',e);});}
+
+function sbPushStructured(){
+if(!sbUid||S.auth.demo)return Promise.resolve();
+return sb.from('user_stats').select('balance,rank_tier').eq('user_id',sbUid).maybeSingle().then(function(cur){
+if(cur.data){
+if(typeof S.me._dbBalance==='number'&&Number(cur.data.balance)!==S.me._dbBalance){S.me.balance=Number(cur.data.balance);S.me._dbBalance=S.me.balance;}
+if(typeof S.me._dbRank==='number'&&cur.data.rank_tier!==S.me._dbRank){/* admin changed rank */}
+}
+return Promise.all([
+sb.from('users').update(meToUser(S.me)).eq('id',sbUid),
+sb.from('user_stats').update(meToStats(S.me)).eq('user_id',sbUid),
+sb.from('user_preferences').update(meToPrefs(S.me)).eq('user_id',sbUid)
+]);
+}).then(function(){S.me._dbBalance=S.me.balance;}).catch(function(e){console.warn('SB push error:',e);});
 }
 
-function meToStats(me){
-  var acc=Math.round((me.wins||0)/Math.max(1,me.settled||0)*100);
-  var rk=(typeof myRank==='function')?myRank():{t:0,d:0};
-  return {
-    balance:me.balance||0,xp:me.xp||0,followers_count:me.followers||0,
-    rank_tier:rk.t||0,rank_division:rk.d||0,seasonal_position:me.pos||null,
-    profit_realized:me.realized||0,streak_current:me.streak||1,streak_best:me.bestStreak||1,
-    bets_placed:me.played||0,bets_won:me.wins||0,bets_settled:me.settled||0,
-    bets_accuracy_pct:acc,bets_max_amount:me.maxBet||0,
-    followed_bets_count:me.followed||0,contra_wins:me.contraWins||0,
-    deposits_count:me.deposits||0,flash_wins:me.flashWins||0,
-    flash_streak_current:me.flashStreak||0,flash_streak_best:me.flashBest||0,
-    flash_profit_total:me.flashProfit||0,messages_total:me.msgsTotal||0,
-    chat_xp_today:me.chatXP||0,copies_count:(me.copies||[]).length,copiers_count:me.copiers||0
-  };
+function sbSyncDebounced(){clearTimeout(sbSyncT);sbSyncT=setTimeout(function(){sbSaveBlob();sbPushStructured();},1500);}
+
+function sbLoadUser(uid){
+return Promise.all([
+sb.from('user_full_state').select('state').eq('user_id',uid).maybeSingle(),
+sb.from('users').select('*').eq('id',uid).maybeSingle(),
+sb.from('user_stats').select('*').eq('user_id',uid).maybeSingle()
+]).then(function(r){
+var blob=r[0].data,user=r[1].data,stats=r[2].data;
+if(blob&&blob.state&&typeof blob.state==='object'&&blob.state.v)Object.assign(S.me,blob.state);
+if(user){S.me.n=user.username||S.me.n;S.me.email=user.email||S.me.email;S.me.photo=user.avatar_photo||S.me.photo;S.me.color=user.avatar_color||S.me.color;S.me.bio=user.bio!=null?user.bio:S.me.bio;S.me.wallet=user.wallet_address||'';S.me.kyc=!!user.kyc_verified;S.me.onboarded=!!user.onboarded;S.me.welcomed=!!user.welcomed;}
+if(stats){S.me.balance=Number(stats.balance);S.me._dbBalance=S.me.balance;S.me.xp=stats.xp||0;S.me._dbRank=stats.rank_tier||0;S.me.followers=stats.followers_count||0;S.me.pos=stats.seasonal_position||S.me.pos;S.me.realized=Number(stats.profit_realized)||0;S.me.streak=stats.streak_current||1;S.me.bestStreak=stats.streak_best||1;S.me.played=stats.bets_placed||0;S.me.wins=stats.bets_won||0;S.me.settled=stats.bets_settled||0;S.me.maxBet=Number(stats.bets_max_amount)||0;S.me.followed=stats.followed_bets_count||0;S.me.contraWins=stats.contra_wins||0;S.me.deposits=stats.deposits_count||0;S.me.flashWins=stats.flash_wins||0;S.me.flashStreak=stats.flash_streak_current||0;S.me.flashBest=stats.flash_streak_best||0;S.me.flashProfit=Number(stats.flash_profit_total)||0;S.me.msgsTotal=stats.messages_total||0;S.me.copiers=stats.copiers_count||0;}
+S.me.logged=true;
+});
 }
 
-function meToPrefs(me){
-  return {
-    chart_type:me.ctype||'courbe',flash_mode:me.fmode||'free',
-    flash_alerts:JSON.stringify(me.falerts||[]),
-    copy_trading_enabled:!!(me.prefs&&me.prefs.copyEnabled),
-    market_sort:S.ui.sort||'actifs',time_filter:S.ui.tf||'1 j',
-    home_chat_room:S.ui.homeRoom||'general',
-    market_interest_categories:JSON.stringify(me.interests||[])
-  };
+function sbStartChat(){
+if(sbRealtimeSub)sbRealtimeSub.unsubscribe();
+sbRealtimeSub=sb.channel('chat-live').on('postgres_changes',{event:'INSERT',schema:'public',table:'chat_messages'},function(p){
+var msg=p.new;if(!msg||msg.user_id===sbUid)return;
+if(typeof room==='function'&&typeof addMsg==='function')addMsg(msg.room_id,{u:msg.user_id,k:msg.message_type||'msg',text:msg.text_content||''});
+}).subscribe();
 }
 
-function userToMe(row,me){
-  if(!row)return;
-  me.n=row.username||me.n;me.email=row.email||me.email;
-  me.photo=row.avatar_photo||me.photo;me.color=row.avatar_color||me.color;
-  me.bio=row.bio||'';me.wallet=row.wallet_address||'';
-  me.kyc=!!row.kyc_verified;me.onboarded=!!row.onboarded;me.welcomed=!!row.welcomed;
-}
-
-function statsToMe(row,me){
-  if(!row)return;
-  me.balance=Number(row.balance)||me.balance;me.xp=row.xp||me.xp;
-  me.followers=row.followers_count||0;me.pos=row.seasonal_position||me.pos;
-  me.realized=Number(row.profit_realized)||0;me.streak=row.streak_current||1;
-  me.bestStreak=row.streak_best||1;me.played=row.bets_placed||0;
-  me.wins=row.bets_won||0;me.settled=row.bets_settled||0;
-  me.maxBet=Number(row.bets_max_amount)||0;me.followed=row.followed_bets_count||0;
-  me.contraWins=row.contra_wins||0;me.deposits=row.deposits_count||0;
-  me.flashWins=row.flash_wins||0;me.flashStreak=row.flash_streak_current||0;
-  me.flashBest=row.flash_streak_best||0;me.flashProfit=Number(row.flash_profit_total)||0;
-  me.msgsTotal=row.messages_total||0;me.chatXP=row.chat_xp_today||0;
-  me.copiers=row.copiers_count||0;
-}
-
-/* ===================== Full state save/load (JSON blob) ===================== */
-
-function cleanMeForStorage(me){
-  var c=Object.assign({},me);
-  delete c._synced;
-  if(c.notifs)c.notifs=c.notifs.map(function(n){var x=Object.assign({},n);delete x._synced;return x;});
-  if(c.history)c.history=c.history.map(function(h){var x=Object.assign({},h);delete x._synced;return x;});
-  return c;
-}
-
-async function sbSaveFullState(){
-  if(!sbUid||S.auth.demo)return;
-  try{
-    await sb.from('user_full_state').upsert({user_id:sbUid,state:cleanMeForStorage(S.me)});
-  }catch(e){console.warn('SB full state save error:',e);}
-}
-
-async function sbLoadFullState(){
-  if(!sbUid||S.auth.demo)return false;
-  try{
-    var res=await sb.from('user_full_state').select('state').eq('user_id',sbUid).single();
-    if(res.data&&res.data.state&&typeof res.data.state==='object'&&res.data.state.v){
-      Object.assign(S.me,res.data.state);
-      return true;
-    }
-  }catch(e){console.warn('SB full state load error:',e);}
-  return false;
-}
-
-/* ===================== Structured data sync ===================== */
-
-async function sbPushStructured(){
-  if(!sbUid||S.auth.demo)return;
-  try{
-    /* Read current DB balance/rank before pushing (protect admin changes) */
-    var cur=await sb.from('user_stats').select('balance,rank_tier,rank_division,xp').eq('user_id',sbUid).maybeSingle();
-    if(cur.data){
-      var db=cur.data;
-      /* If DB balance differs from what we loaded at boot, admin changed it — adopt DB value */
-      if(typeof S.me._dbBalance==='number'&&Number(db.balance)!==S.me._dbBalance){
-        S.me.balance=Number(db.balance);
-        S.me._dbBalance=Number(db.balance);
-      }
-      if(typeof S.me._dbRank==='number'&&db.rank_tier!==S.me._dbRank){
-        S.me.xp=db.xp;
-      }
-    }
-    await Promise.all([
-      sb.from('users').update(meToUser(S.me)).eq('id',sbUid),
-      sb.from('user_stats').update(meToStats(S.me)).eq('user_id',sbUid),
-      sb.from('user_preferences').update(meToPrefs(S.me)).eq('user_id',sbUid)
-    ]);
-    /* Track what we pushed so we can detect admin changes next time */
-    S.me._dbBalance=S.me.balance;
-    S.me._dbRank=meToStats(S.me).rank_tier;
-  }catch(e){console.warn('SB structured push error:',e);}
-}
-
-async function sbPushAll(){
-  if(!sbUid||S.auth.demo)return;
-  await Promise.all([sbSaveFullState(),sbPushStructured(),sbSyncPositions(),sbSyncHistory(),sbSyncDeposits(),sbSyncWithdrawals(),sbSyncNotifs(),sbSyncMarketState()]);
-}
-
-function sbSyncDebounced(){
-  clearTimeout(sbSyncT);
-  sbSyncT=setTimeout(function(){sbSaveFullState();sbPushStructured();},1500);
-}
-
-/* ===================== Positions sync ===================== */
-
-async function sbSyncPositions(){
-  if(!sbUid||S.auth.demo)return;
-  try{
-    var pos=(S.me.positions||[]).filter(function(p){return p&&p.m;});
-    var existing=await sb.from('positions').select('id,market_id,side').eq('user_id',sbUid);
-    var exMap={};
-    (existing.data||[]).forEach(function(r){exMap[r.market_id+'_'+r.side]=r.id;});
-    for(var i=0;i<pos.length;i++){
-      var p=pos[i],key=(p.m||p.market)+'_'+(p.side||'oui');
-      var row={user_id:sbUid,market_id:p.m||p.market||'',side:p.side||'oui',
-        shares:p.shares||p.qty||1,average_price:p.avg||p.price||50};
-      if(exMap[key]){await sb.from('positions').update(row).eq('id',exMap[key]);delete exMap[key];}
-      else{await sb.from('positions').insert(row);}
-    }
-    var staleIds=Object.values(exMap);
-    if(staleIds.length)await sb.from('positions').delete().in('id',staleIds);
-  }catch(e){console.warn('SB positions error:',e);}
-}
-
-/* ===================== History sync ===================== */
-
-async function sbSyncHistory(){
-  if(!sbUid||S.auth.demo)return;
-  try{
-    var hist=(S.me.history||[]).slice(0,100);
-    var toInsert=[];
-    for(var i=0;i<hist.length;i++){
-      var h=hist[i];
-      if(h._synced)continue;
-      toInsert.push({user_id:sbUid,kind:h.kind||'res',market_id:h.m||null,
-        question:h.q||'',side:h.side||'oui',was_winner:!!h.won,
-        pnl:h.pnl||0,settled_at:h.at?new Date(h.at).toISOString():new Date().toISOString()});
-      h._synced=true;
-    }
-    if(toInsert.length)await sb.from('position_history').insert(toInsert);
-  }catch(e){console.warn('SB history error:',e);}
-}
-
-/* ===================== Deposits sync ===================== */
-
-async function sbSyncDeposits(){
-  if(!sbUid||S.auth.demo)return;
-  try{
-    var deps=(S.me.deps||[]).filter(function(d){return !d._synced&&d.coin;});
-    var rows=deps.map(function(d){
-      return {user_id:sbUid,coin:d.coin||'USDC',network:d.net||'Base',
-        coin_amount:d.amt||0,usd_equivalent:d.usd||0,
-        confirmations_received:d.conf||0,confirmations_required:d.need||1,
-        label:d.label||'',tx_hash:d.tx||null,
-        status:d.conf>=d.need?'completed':'pending'};
-    });
-    if(rows.length){
-      await sb.from('deposits').insert(rows);
-      deps.forEach(function(d){d._synced=true;});
-    }
-  }catch(e){console.warn('SB deposits error:',e);}
-}
-
-/* ===================== Withdrawals sync ===================== */
-
-async function sbSyncWithdrawals(){
-  if(!sbUid||S.auth.demo)return;
-  try{
-    var wds=(S.me.wds||[]).filter(function(w){return !w._synced;});
-    var rows=wds.map(function(w){
-      return {user_id:sbUid,network:w.net||'Base',destination_address:w.addr||'',
-        amount_usd:w.amt||0,status:w.st==='sent'?'completed':'pending'};
-    });
-    if(rows.length){
-      await sb.from('withdrawals').insert(rows);
-      wds.forEach(function(w){w._synced=true;});
-    }
-  }catch(e){console.warn('SB withdrawals error:',e);}
-}
-
-/* ===================== Notifications sync ===================== */
-
-async function sbSyncNotifs(){
-  if(!sbUid||S.auth.demo)return;
-  try{
-    var notifs=(S.me.notifs||[]).filter(function(n){return !n._synced;}).slice(0,20);
-    var rows=notifs.map(function(n){
-      return {user_id:sbUid,icon:n.ic||'info',text:n.text||'',href:n.href||'',is_read:!!n.read};
-    });
-    if(rows.length){
-      await sb.from('notifications').insert(rows);
-      notifs.forEach(function(n){n._synced=true;});
-    }
-  }catch(e){console.warn('SB notifs error:',e);}
-}
-
-/* ===================== Market state sync ===================== */
-
-async function sbSyncMarketState(){
-  if(!sbUid)return;
-  try{
-    var updates=[];
-    for(var id in MK){
-      var m=MK[id];
-      if(!m||m.creator==='me')continue;
-      updates.push({market_id:id,current_probability:Math.round(m.p*100)/100,
-        anchor_probability:Math.round((m.anchor||m.p)*100)/100,
-        volume_total:Math.round(m.vol||0),participants_count:m.people||0,
-        messages_count:m.msgs||0,heat_level:Math.round((m.heat||0)*10)/10,
-        online_users_count:m.online||0});
-    }
-    if(updates.length){
-      await sb.from('market_live_state').upsert(updates);
-    }
-  }catch(e){console.warn('SB market state error:',e);}
-}
-
-/* ===================== Chat sync ===================== */
-
-async function sbSendChat(rid,text,kind,extra){
-  if(!sbUid)return;
-  try{
-    var row={room_id:rid,user_id:sbUid,message_type:kind||'msg',text_content:text};
-    if(extra)row.bet_ref=extra;
-    await sb.from('chat_messages').insert(row);
-  }catch(e){console.warn('SB chat send error:',e);}
-}
-
-function sbStartChatRealtime(){
-  if(sbRealtimeSub)sbRealtimeSub.unsubscribe();
-  sbRealtimeSub=sb.channel('chat-realtime')
-    .on('postgres_changes',{event:'INSERT',schema:'public',table:'chat_messages'},function(payload){
-      var msg=payload.new;
-      if(!msg||msg.user_id===sbUid)return;
-      var rid=msg.room_id;
-      if(typeof room==='function'&&typeof addMsg==='function'){
-        var r=room(rid);
-        addMsg(rid,{u:msg.user_id,k:msg.message_type||'msg',text:msg.text_content||''});
-      }
-    }).subscribe();
-}
-
-/* ===================== Flash bets sync ===================== */
-
-async function sbSyncFlashBet(gameId,side,amount,roundNum){
-  if(!sbUid||S.auth.demo)return;
-  try{
-    var roundRes=await sb.from('flash_rounds').select('id').eq('game_id',gameId).eq('round_number',roundNum).single();
-    var roundId=roundRes.data?roundRes.data.id:null;
-    if(!roundId){
-      var ins=await sb.from('flash_rounds').insert({game_id:gameId,round_number:roundNum,round_start_time:new Date().toISOString()}).select('id').single();
-      roundId=ins.data?ins.data.id:null;
-    }
-    if(roundId){
-      await sb.from('flash_bets').insert({user_id:sbUid,round_id:roundId,game_id:gameId,side:side,amount_wager:amount});
-    }
-  }catch(e){console.warn('SB flash bet error:',e);}
-}
-
-/* ===================== Clan sync ===================== */
-
-async function sbSyncClanCreate(clan){
-  if(!sbUid||S.auth.demo)return;
-  try{
-    await sb.from('clans').insert({name:clan.name,founder_user_id:sbUid,
-      description:clan.desc||'',emblem_color:clan.col||'#2448FF',emblem_icon:clan.ic||'shield'});
-    await sb.from('clan_members').insert({clan_id:clan.id,user_id:sbUid,role:'founder'});
-  }catch(e){console.warn('SB clan create error:',e);}
-}
-
-async function sbSyncClanJoin(clanId){
-  if(!sbUid||S.auth.demo)return;
-  try{
-    await sb.from('clan_members').insert({clan_id:clanId,user_id:sbUid,role:'member'});
-    await sb.from('clans').update({member_count:sb.rpc?undefined:1}).eq('id',clanId);
-  }catch(e){console.warn('SB clan join error:',e);}
-}
-
-async function sbSyncClanLeave(clanId){
-  if(!sbUid||S.auth.demo)return;
-  try{
-    await sb.from('clan_members').delete().eq('clan_id',clanId).eq('user_id',sbUid);
-  }catch(e){console.warn('SB clan leave error:',e);}
-}
-
-/* ===================== Copy trading sync ===================== */
-
-async function sbSyncCopyStart(targetUsername){
-  if(!sbUid||S.auth.demo)return;
-  try{
-    var target=await sb.from('users').select('id').eq('username',targetUsername).single();
-    if(target.data){
-      await sb.from('copy_following').insert({copy_follower_id:sbUid,copy_target_user_id:target.data.id});
-    }
-  }catch(e){console.warn('SB copy start error:',e);}
-}
-
-async function sbSyncCopyStop(targetUsername){
-  if(!sbUid||S.auth.demo)return;
-  try{
-    var target=await sb.from('users').select('id').eq('username',targetUsername).single();
-    if(target.data){
-      await sb.from('copy_following').delete().eq('copy_follower_id',sbUid).eq('copy_target_user_id',target.data.id);
-    }
-  }catch(e){console.warn('SB copy stop error:',e);}
-}
-
-/* ===================== Wrap core functions ===================== */
-
-/* --- save / load / flushSave --- */
+/* Wrap save */
 var _origSave=window.save,_origFlush=window.flushSave;
+window.save=function(){_origSave();sbSyncDebounced();};
+window.flushSave=function(){_origFlush();sbSaveBlob();sbPushStructured();};
 
-window.save=function(){
-  _origSave();
-  sbSyncDebounced();
-};
-
-window.flushSave=function(){
-  _origFlush();
-  sbPushAll();
-};
-
-/* --- createAccount --- */
+/* Wrap createAccount */
 var _origCreate=window.createAccount;
 window.createAccount=function(pseudo,email,pw,extra){
-  var rec=_origCreate(pseudo,email,pw,extra);
-  if(!email||!pw)return rec;
-  sb.auth.signUp({email:email.toLowerCase(),password:pw,options:{data:{username:pseudo}}})
-  .then(function(res){
-    if(res.error){console.warn('SB signup error:',res.error.message);return;}
-    var uid=res.data.user.id;
-    sbUid=uid;rec.sbId=uid;AUTH.set(rec.key,rec);
-    return sb.from('users').insert({
-      id:uid,username:pseudo,email:email.toLowerCase(),
-      avatar_photo:S.me.photo||'',avatar_color:S.me.color||'#2448FF',
-      bio:'',onboarded:false,welcomed:false,is_demo:false
-    }).then(function(){
-      sbSaveFullState();
-      sbStartChatRealtime();
-    });
-  }).catch(function(e){console.warn('SB create error:',e);});
-  return rec;
+var rec=_origCreate(pseudo,email,pw,extra);
+if(!email||!pw)return rec;
+sb.auth.signUp({email:email.toLowerCase(),password:pw,options:{data:{username:pseudo}}}).then(function(res){
+if(res.error)return;var uid=res.data.user.id;sbUid=uid;rec.sbId=uid;AUTH.set(rec.key,rec);
+return sb.from('users').insert({id:uid,username:pseudo,email:email.toLowerCase(),avatar_photo:S.me.photo||'',avatar_color:S.me.color||'#2448FF',bio:'',onboarded:false,welcomed:false,is_demo:false}).then(function(){sbSaveBlob();sbStartChat();});
+}).catch(function(e){console.warn('SB create error:',e);});
+return rec;
 };
 
-/* --- FORMS.login wrapper: the original handler now does Supabase auth directly,
-   so we just hook into auth state changes to load structured data --- */
-var _origLogin=FORMS.login;
-FORMS.login=function(f){
-  _origLogin(f);
-};
-
-/* When Supabase auth fires SIGNED_IN, load structured data */
-function sbPostLogin(uid){
-  sbUid=uid;
-  Promise.all([
-    sb.from('user_full_state').select('state').eq('user_id',uid).maybeSingle(),
-    sb.from('users').select('*').eq('id',uid).maybeSingle(),
-    sb.from('user_stats').select('*').eq('user_id',uid).maybeSingle()
-  ]).then(function(r){
-    var blob=r[0].data,user=r[1].data,stats=r[2].data;
-    if(blob&&blob.state&&blob.state.v)Object.assign(S.me,blob.state);
-    if(user){
-      S.me.n=user.username||S.me.n;S.me.email=user.email||S.me.email;
-      S.me.photo=user.avatar_photo||S.me.photo;S.me.color=user.avatar_color||S.me.color;
-      S.me.bio=user.bio!=null?user.bio:S.me.bio;S.me.kyc=!!user.kyc_verified;
-      S.me.onboarded=!!user.onboarded;S.me.welcomed=!!user.welcomed;
-    }
-    if(stats){
-      S.me.balance=Number(stats.balance);S.me._dbBalance=S.me.balance;
-      S.me.xp=stats.xp||0;S.me._dbRank=stats.rank_tier||0;
-      S.me.followers=stats.followers_count||0;S.me.realized=Number(stats.profit_realized)||0;
-      S.me.streak=stats.streak_current||1;S.me.bestStreak=stats.streak_best||1;
-      S.me.played=stats.bets_placed||0;S.me.wins=stats.bets_won||0;S.me.settled=stats.bets_settled||0;
-      S.me.maxBet=Number(stats.bets_max_amount)||0;S.me.followed=stats.followed_bets_count||0;
-      S.me.contraWins=stats.contra_wins||0;S.me.deposits=stats.deposits_count||0;
-      S.me.flashWins=stats.flash_wins||0;S.me.flashStreak=stats.flash_streak_current||0;
-      S.me.flashBest=stats.flash_streak_best||0;S.me.flashProfit=Number(stats.flash_profit_total)||0;
-      S.me.msgsTotal=stats.messages_total||0;S.me.copiers=stats.copiers_count||0;
-    }
-    S.me.logged=true;
-    if(typeof updateHeader==='function')updateHeader();
-    if(typeof render==='function')render(false);
-    sbStartChatRealtime();
-  }).catch(function(e){console.warn('SB post-login error:',e);});
-}
-
-/* --- logout --- */
+/* Wrap logout */
 var _origLogout=window.logout;
-window.logout=function(){
-  sbPushAll().then(function(){
-    sbUid=null;
-    if(sbRealtimeSub){sbRealtimeSub.unsubscribe();sbRealtimeSub=null;}
-    sb.auth.signOut().catch(function(){});
-  }).catch(function(){});
-  _origLogout();
-};
+window.logout=function(){sbSaveBlob().then(function(){sbUid=null;if(sbRealtimeSub){sbRealtimeSub.unsubscribe();sbRealtimeSub=null;}sb.auth.signOut().catch(function(){});}).catch(function(){});_origLogout();};
 
-/* --- bootAuth --- */
-var _origBoot=window.bootAuth;
-window.bootAuth=function(){
-  _origBoot();
-  sb.auth.getSession().then(function(res){
-    if(!res.data||!res.data.session)return;
-    var uid=res.data.session.user.id;
-    sbUid=uid;
-    var rec=S.auth.key?AUTH.get(S.auth.key):null;
-    if(rec&&!rec.sbId){rec.sbId=uid;AUTH.set(rec.key,rec);}
-    if(S.me.logged&&!S.auth.demo){
-      sbLoadFullState().then(function(loaded){
-        if(loaded){
-          S.me.logged=true;
-          if(typeof updateHeader==='function')updateHeader();
-          if(typeof render==='function')render(false);
-        }
-        sbStartChatRealtime();
-      });
-    }
-  }).catch(function(e){console.warn('SB session check error:',e);});
-};
-
-/* --- enterAccount --- */
+/* Wrap enterAccount */
 var _origEnter=window.enterAccount;
-window.enterAccount=function(rec,fresh,quiet){
-  _origEnter(rec,fresh,quiet);
-  if(rec&&rec.sbId){sbUid=rec.sbId;}
-};
+window.enterAccount=function(rec,fresh,quiet){_origEnter(rec,fresh,quiet);if(rec&&rec.sbId)sbUid=rec.sbId;};
 
-/* --- sendMsg (chat) --- */
+/* Wrap sendMsg */
 var _origSendMsg=window.sendMsg;
-window.sendMsg=function(rid){
-  var inp=document.querySelector('[data-in="'+CSS.escape(rid)+'"]');
-  var text=inp?inp.value.trim():'';
-  _origSendMsg(rid);
-  if(text&&sbUid)sbSendChat(rid,text,'msg');
-};
+window.sendMsg=function(rid){var inp=document.querySelector('[data-in="'+CSS.escape(rid)+'"]');var text=inp?inp.value.trim():'';_origSendMsg(rid);if(text&&sbUid)sb.from('chat_messages').insert({room_id:rid,user_id:sbUid,message_type:'msg',text_content:text}).catch(function(){});};
 
-/* --- marketsSave --- */
+/* Wrap marketsSave */
 var _origMkSave=window.marketsSave;
-window.marketsSave=function(){
-  _origMkSave();
-  sbSyncMarketState();
-};
+window.marketsSave=function(){_origMkSave();if(!sbUid)return;var updates=[];for(var id in MK){var m=MK[id];if(!m||m.creator==='me')continue;updates.push({market_id:id,current_probability:Math.round(m.p*100)/100,anchor_probability:Math.round((m.anchor||m.p)*100)/100,volume_total:Math.round(m.vol||0),participants_count:m.people||0,messages_count:m.msgs||0,heat_level:Math.round((m.heat||0)*10)/10,online_users_count:m.online||0});}if(updates.length)sb.from('market_live_state').upsert(updates).catch(function(){});};
 
-/* --- Wrap flash bet if action handler exists --- */
-var origFlashBetHandler=null;
-if(typeof ACT!=='undefined'&&ACT['flash-bet']){
-  origFlashBetHandler=ACT['flash-bet'];
-  ACT['flash-bet']=function(a){
-    origFlashBetHandler(a);
-    if(sbUid&&!S.auth.demo&&typeof S.flash!=='undefined'){
-      var gid=S.ui.fgame||'btc';
-      var g=(typeof G==='function')?G(gid):null;
-      if(g&&g.my){
-        sbSyncFlashBet(gid,g.my.dir||'a',g.my.amt||10,S.flash.round||0);
-      }
-    }
-  };
-}
+/* Wrap marketsLoad */
+var _origMkLoad=window.marketsLoad;
+window.marketsLoad=function(){_origMkLoad();sb.from('market_live_state').select('*').then(function(res){if(!res.data)return;res.data.forEach(function(row){var m=MK[row.market_id];if(!m)return;if(row.current_probability)m.p=Number(row.current_probability);if(row.anchor_probability)m.anchor=Number(row.anchor_probability);if(row.volume_total>m.vol)m.vol=Number(row.volume_total);if(row.participants_count>m.people)m.people=row.participants_count;});}).catch(function(){});};
 
-/* --- Wrap clan functions if they exist --- */
-if(typeof window.clanCreate==='function'){
-  var _origClanCreate=window.clanCreate;
-  window.clanCreate=function(opts){
-    var c=_origClanCreate(opts);
-    if(c)sbSyncClanCreate(c);
-    return c;
-  };
-}
-if(typeof window.clanJoin==='function'){
-  var _origClanJoin=window.clanJoin;
-  window.clanJoin=function(c,silent,nav){
-    var r=_origClanJoin(c,silent,nav);
-    if(r&&c&&c.id)sbSyncClanJoin(c.id);
-    return r;
-  };
-}
-if(typeof window.clanLeave==='function'){
-  var _origClanLeave=window.clanLeave;
-  window.clanLeave=function(){
-    var cid=S.me.clan?S.me.clan.id:null;
-    var r=_origClanLeave();
-    if(cid)sbSyncClanLeave(cid);
-    return r;
-  };
-}
+/* Wrap bootAuth */
+var _origBoot=window.bootAuth;
+window.bootAuth=function(){_origBoot();sb.auth.getSession().then(function(res){if(!res.data||!res.data.session)return;var uid=res.data.session.user.id;sbUid=uid;if(S.me.logged&&!S.auth.demo){sbLoadUser(uid).then(function(){sbStartChat();if(typeof updateHeader==='function')updateHeader();if(typeof checkBadges==='function')checkBadges(true);if(typeof render==='function')render(true);});}}).catch(function(e){console.warn('SB boot error:',e);});};
 
-/* ===================== Periodic full sync ===================== */
-
-setInterval(function(){
-  if(sbUid&&!S.auth.demo&&S.me.logged){
-    sbSaveFullState();
-    sbPushStructured();
-    sbSyncNotifs();
-  }
-},15000);
-
-/* ===================== Auth state listener ===================== */
-
-sb.auth.onAuthStateChange(function(event,session){
-  if(event==='SIGNED_IN'&&session&&session.user){
-    if(!sbUid||sbUid!==session.user.id){
-      sbPostLogin(session.user.id);
-    }
-    sbUid=session.user.id;
-  }else if(event==='SIGNED_OUT'){
-    sbUid=null;
-    if(sbRealtimeSub){sbRealtimeSub.unsubscribe();sbRealtimeSub=null;}
-  }
+/* Auth state listener */
+sb.auth.onAuthStateChange(function(ev,session){
+if(ev==='SIGNED_IN'&&session&&session.user){var uid=session.user.id;if(!sbUid||sbUid!==uid){sbUid=uid;sbLoadUser(uid).then(function(){sbStartChat();if(typeof updateHeader==='function')updateHeader();if(typeof render==='function')render(false);});}sbUid=uid;}
+else if(ev==='SIGNED_OUT'){sbUid=null;if(sbRealtimeSub){sbRealtimeSub.unsubscribe();sbRealtimeSub=null;}}
 });
 
-/* ===================== Page close: push everything ===================== */
+/* Periodic sync */
+setInterval(function(){if(sbUid&&!S.auth.demo&&S.me.logged){sbSaveBlob();sbPushStructured();}},15000);
 
-addEventListener('pagehide',function(){
-  if(sbUid&&!S.auth.demo&&S.me.logged&&navigator.sendBeacon){
-    var body=JSON.stringify({state:cleanMeForStorage(S.me)});
-    navigator.sendBeacon(SB_URL+'/rest/v1/user_full_state?user_id=eq.'+sbUid,
-      new Blob([body],{type:'application/json'}));
-  }
-});
+/* Page close */
+addEventListener('pagehide',function(){if(sbUid&&!S.auth.demo&&navigator.sendBeacon){navigator.sendBeacon(SB_URL+'/rest/v1/user_full_state?user_id=eq.'+sbUid,new Blob([JSON.stringify({state:cleanMe(S.me)})],{type:'application/json'}));}});
 
-console.log('Wimoro × Supabase v2: full DB integration loaded.');
-
-/* ===================== v3: Kill localStorage for user data ===================== */
-
-/* Only allow these keys in localStorage (UI prefs that must load synchronously) */
-var LS_ALLOWED={'wimoro-theme':1,'wimoro-lang':1,'wimoro-tmode':1};
-var _lsSet=LS.s,_lsGet=LS.g,_lsRm=LS.r;
-LS.s=function(k,v){if(LS_ALLOWED[k]){_lsSet(k,v);}else{MEMLS[k]=v;}};
-LS.g=function(k){if(LS_ALLOWED[k])return _lsGet(k);return MEMLS[k]??null;};
-LS.r=function(k){if(LS_ALLOWED[k]){_lsRm(k);}else{delete MEMLS[k];}};
-
-/* Override save: no localStorage, only Supabase */
-window.save=function(){
-  clearTimeout(saveT);
-  sbSyncDebounced();
-};
-window.flushSave=function(){
-  clearTimeout(saveT);
-  sbPushAll();
-};
-
-/* Override load: no-op, data comes from Supabase */
-window.load=function(){};
-
-/* Override marketsSave: Supabase only */
-window.marketsSave=function(){
-  sbSyncMarketState();
-};
-
-/* Override marketsLoad: fetch live state from Supabase */
-window.marketsLoad=function(){
-  if(!sb)return;
-  sb.from('market_live_state').select('*').then(function(res){
-    if(!res.data)return;
-    res.data.forEach(function(row){
-      var m=MK[row.market_id];
-      if(!m)return;
-      if(row.current_probability)m.p=Number(row.current_probability);
-      if(row.anchor_probability)m.anchor=Number(row.anchor_probability);
-      if(row.volume_total>m.vol)m.vol=Number(row.volume_total);
-      if(row.participants_count>m.people)m.people=row.participants_count;
-      if(row.messages_count>m.msgs)m.msgs=row.messages_count;
-    });
-  }).catch(function(e){console.warn('SB marketsLoad error:',e);});
-};
-
-/* Override bootAuth: reads structured tables as source of truth */
-window.bootAuth=function(){
-  S.auth={key:'',demo:false};
-  KEY='wimoro-guest';
-  S.me=guestMe();
-
-  sb.auth.getSession().then(function(res){
-    if(!res.data||!res.data.session)return;
-    var uid=res.data.session.user.id;
-    sbUid=uid;
-
-    return Promise.all([
-      sb.from('user_full_state').select('state').eq('user_id',uid).maybeSingle(),
-      sb.from('users').select('*').eq('id',uid).maybeSingle(),
-      sb.from('user_stats').select('*').eq('user_id',uid).maybeSingle(),
-      sb.from('user_preferences').select('*').eq('user_id',uid).maybeSingle()
-    ]).then(function(r){
-      var blob=r[0].data,user=r[1].data,stats=r[2].data,prefs=r[3].data;
-
-      /* 1. Base: load blob (has positions, history, missions, notifs, deps, wds, etc.) */
-      if(blob&&blob.state&&typeof blob.state==='object'&&blob.state.v){
-        Object.assign(S.me,blob.state);
-      }
-
-      /* 2. Override with users table (source of truth for profile) */
-      if(user){
-        S.me.n=user.username||S.me.n;
-        S.me.email=user.email||S.me.email;
-        S.me.photo=user.avatar_photo||S.me.photo;
-        S.me.color=user.avatar_color||S.me.color;
-        S.me.bio=user.bio!=null?user.bio:S.me.bio;
-        S.me.wallet=user.wallet_address||'';
-        S.me.kyc=!!user.kyc_verified;
-        S.me.onboarded=!!user.onboarded;
-        S.me.welcomed=!!user.welcomed;
-      }
-
-      /* 3. Override with user_stats (source of truth for all numbers) */
-      if(stats){
-        S.me.balance=Number(stats.balance);S.me._dbBalance=S.me.balance;
-        S.me.xp=stats.xp||0;S.me._dbRank=stats.rank_tier||0;
-        S.me.followers=stats.followers_count||0;
-        S.me.pos=stats.seasonal_position||S.me.pos;
-        S.me.realized=Number(stats.profit_realized)||0;
-        S.me.streak=stats.streak_current||1;
-        S.me.bestStreak=stats.streak_best||1;
-        S.me.played=stats.bets_placed||0;
-        S.me.wins=stats.bets_won||0;
-        S.me.settled=stats.bets_settled||0;
-        S.me.maxBet=Number(stats.bets_max_amount)||0;
-        S.me.followed=stats.followed_bets_count||0;
-        S.me.contraWins=stats.contra_wins||0;
-        S.me.deposits=stats.deposits_count||0;
-        S.me.flashWins=stats.flash_wins||0;
-        S.me.flashStreak=stats.flash_streak_current||0;
-        S.me.flashBest=stats.flash_streak_best||0;
-        S.me.flashProfit=Number(stats.flash_profit_total)||0;
-        S.me.msgsTotal=stats.messages_total||0;
-        S.me.chatXP=stats.chat_xp_today||0;
-        S.me.copiers=stats.copiers_count||0;
-      }
-
-      /* 4. Preferences */
-      if(prefs){
-        S.me.ctype=prefs.chart_type||S.me.ctype;
-        S.me.fmode=prefs.flash_mode||S.me.fmode;
-        try{if(prefs.market_interest_categories)S.me.interests=JSON.parse(prefs.market_interest_categories);}catch(e){}
-        try{if(prefs.flash_alerts)S.me.falerts=JSON.parse(prefs.flash_alerts);}catch(e){}
-      }
-
-      S.me.logged=true;
-      S.auth={key:S.me.email||uid,demo:false};
-
-      sbStartChatRealtime();
-      if(typeof updateHeader==='function')updateHeader();
-      if(typeof checkBadges==='function')checkBadges(true);
-      if(typeof render==='function')render(true);
-    });
-  }).catch(function(e){console.warn('SB boot error:',e);});
-};
-
+console.log('Wimoro x Supabase: integration loaded.');
 })();
+
 </script>
 <script>
 'use strict';
