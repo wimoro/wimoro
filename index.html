@@ -13618,23 +13618,38 @@ async function sbLoadFullState(){
 async function sbPushStructured(){
   if(!sbUid||S.auth.demo)return;
   try{
-    /* Only push profile info and preferences — NEVER overwrite user_stats
-       (balance, rank, xp are admin-controlled via dashboard/functions) */
+    /* Read current DB balance/rank before pushing (protect admin changes) */
+    var cur=await sb.from('user_stats').select('balance,rank_tier,rank_division,xp').eq('user_id',sbUid).maybeSingle();
+    if(cur.data){
+      var db=cur.data;
+      /* If DB balance differs from what we loaded at boot, admin changed it — adopt DB value */
+      if(typeof S.me._dbBalance==='number'&&Number(db.balance)!==S.me._dbBalance){
+        S.me.balance=Number(db.balance);
+        S.me._dbBalance=Number(db.balance);
+      }
+      if(typeof S.me._dbRank==='number'&&db.rank_tier!==S.me._dbRank){
+        S.me.xp=db.xp;
+      }
+    }
     await Promise.all([
       sb.from('users').update(meToUser(S.me)).eq('id',sbUid),
+      sb.from('user_stats').update(meToStats(S.me)).eq('user_id',sbUid),
       sb.from('user_preferences').update(meToPrefs(S.me)).eq('user_id',sbUid)
     ]);
+    /* Track what we pushed so we can detect admin changes next time */
+    S.me._dbBalance=S.me.balance;
+    S.me._dbRank=meToStats(S.me).rank_tier;
   }catch(e){console.warn('SB structured push error:',e);}
 }
 
 async function sbPushAll(){
   if(!sbUid||S.auth.demo)return;
-  await Promise.all([sbSaveFullState(),sbSyncPositions(),sbSyncHistory(),sbSyncDeposits(),sbSyncWithdrawals(),sbSyncNotifs(),sbSyncMarketState()]);
+  await Promise.all([sbSaveFullState(),sbPushStructured(),sbSyncPositions(),sbSyncHistory(),sbSyncDeposits(),sbSyncWithdrawals(),sbSyncNotifs(),sbSyncMarketState()]);
 }
 
 function sbSyncDebounced(){
   clearTimeout(sbSyncT);
-  sbSyncT=setTimeout(function(){sbSaveFullState();},1500);
+  sbSyncT=setTimeout(function(){sbSaveFullState();sbPushStructured();},1500);
 }
 
 /* ===================== Positions sync ===================== */
@@ -13902,7 +13917,8 @@ function sbPostLogin(uid){
       S.me.onboarded=!!user.onboarded;S.me.welcomed=!!user.welcomed;
     }
     if(stats){
-      S.me.balance=Number(stats.balance);S.me.xp=stats.xp||0;
+      S.me.balance=Number(stats.balance);S.me._dbBalance=S.me.balance;
+      S.me.xp=stats.xp||0;S.me._dbRank=stats.rank_tier||0;
       S.me.followers=stats.followers_count||0;S.me.realized=Number(stats.profit_realized)||0;
       S.me.streak=stats.streak_current||1;S.me.bestStreak=stats.streak_best||1;
       S.me.played=stats.bets_placed||0;S.me.wins=stats.bets_won||0;S.me.settled=stats.bets_settled||0;
@@ -14024,6 +14040,7 @@ if(typeof window.clanLeave==='function'){
 setInterval(function(){
   if(sbUid&&!S.auth.demo&&S.me.logged){
     sbSaveFullState();
+    sbPushStructured();
     sbSyncNotifs();
   }
 },15000);
@@ -14137,8 +14154,8 @@ window.bootAuth=function(){
 
       /* 3. Override with user_stats (source of truth for all numbers) */
       if(stats){
-        S.me.balance=Number(stats.balance);
-        S.me.xp=stats.xp||0;
+        S.me.balance=Number(stats.balance);S.me._dbBalance=S.me.balance;
+        S.me.xp=stats.xp||0;S.me._dbRank=stats.rank_tier||0;
         S.me.followers=stats.followers_count||0;
         S.me.pos=stats.seasonal_position||S.me.pos;
         S.me.realized=Number(stats.profit_realized)||0;
