@@ -10221,7 +10221,17 @@ AUTH.set(resolvedEmail,localRec);enterAccount(localRec);err.textContent='';doLog
 };
 FORMS.signup=f=>{const n=f.pseudo.value.trim(),e=f.email.value.trim(),p=f.pw.value,err=f.querySelector('[data-signerr]');const [st,msg]=pseudoMsg(n);
  if(st!=='ok'){err.textContent=msg;return;}if(!EMAIL_RE.test(e)){err.textContent=_t("Entre une adresse e-mail valide.");return;}if(p.length<8){err.textContent=_t("Le mot de passe doit faire au moins 8 caractères.");return;}if(!f.age.checked){err.textContent=_t("Wimoro est réservé aux personnes majeures.");return;}if(!f.cgu.checked){err.textContent=_t("Accepte les conditions pour continuer.");return;}
- if(AUTH.get(e.toLowerCase())){err.textContent=_t("Un compte existe déjà avec cet e-mail. Connecte-toi.");return;}createAccount(n,e,p);const refOk=typeof refApplyAtSignup==='function'&&refApplyAtSignup(f.ref?f.ref.value:'');S.ui.ob=1;S.ui.cat='Tout';toast({tone:'blue',icon:'check',title:`${_t("Compte créé, bienvenue {0} !",[n])}`,text:refOk?`${_t("{0} de parrainage offerts. Encore 5 petites étapes.",[F.usd0(REF.BONUS)])}`:_t("Encore 5 petites étapes.")});location.hash='#bienvenue';};
+ if(AUTH.get(e.toLowerCase())){err.textContent=_t("Un compte existe déjà avec cet e-mail. Connecte-toi.");return;}
+err.textContent=_t("Création du compte...");var btn=f.querySelector('[type=submit]');if(btn)btn.disabled=true;
+var sb=window.__supabase;
+if(sb){sb.auth.signUp({email:e.toLowerCase(),password:p,options:{data:{username:n}}}).then(function(res){
+if(res.error){err.textContent=res.error.message;if(btn)btn.disabled=false;return;}
+var uid=res.data.user.id;
+sb.from('users').insert({id:uid,username:n,email:e.toLowerCase(),avatar_photo:'',avatar_color:'#2448FF',bio:'',onboarded:false,welcomed:false,is_demo:false}).then(function(){
+openModal('<div class="md"><div style="padding:36px 32px;text-align:center">'+ic('mail',48,'#2448FF')+'<h3 style="margin:16px 0 8px">'+_t("Vérifie tes e-mails")+'</h3><p style="color:var(--g2);line-height:1.5">'+_t("On a envoyé un lien de confirmation à <b>{0}</b>. Clique dessus pour activer ton compte.",[esc(e)])+'</p><p style="color:var(--g3);font-size:13px;margin-top:16px">'+_t("Tu ne trouves pas l\'e-mail ? Vérifie tes spams.")+'</p><button class="btn b-oui lg full" style="margin-top:20px" data-a="close">'+_t("Compris")+'</button></div></div>');
+});
+}).catch(function(ex){err.textContent=_t("Erreur. Réessaie.");if(btn)btn.disabled=false;console.warn(ex);});
+}else{createAccount(n,e,p);const refOk=typeof refApplyAtSignup==='function'&&refApplyAtSignup(f.ref?f.ref.value:'');S.ui.ob=1;toast({tone:'blue',icon:'check',title:_t("Compte créé, bienvenue {0} !",[n]),text:_t("Encore 5 petites étapes.")});location.hash='#bienvenue';}};
 FORMS.forgot=f=>{const st=f.dataset.step||'1',err=f.querySelector('[data-ferr]');const sb=window.__supabase;
 if(st==='1'){const em=f.email.value.trim();if(!EMAIL_RE.test(em)){err.textContent=_t("Entre une adresse e-mail valide.");return;}
 err.textContent=_t("Envoi du code...");const btn=f.querySelector('[type=submit]');if(btn)btn.disabled=true;
