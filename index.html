@@ -9,7 +9,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Big+Shoulders+Display:wght@600;700;800&display=swap">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 :root{--bg:#F3F4F6;--w:#fff;--ink:#14161B;--g2:#4A505C;--g3:#7A808C;--g4:#A3A8B2;--rule:#E3E6EB;--soft:#F1F3F5;--soft2:#E9ECF0;--oui:#2448FF;--ouiS:#EBEEFF;--non:#F59A0B;--nonT:#9A5B00;--nonS:#FFF2DE;--sg:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;--bs:'Big Shoulders Display','Geist',system-ui,sans-serif;--shadow:0 12px 32px rgba(20,22,27,.08);--panel:#fff;--glass:rgba(255,255,255,.94);--glass2:rgba(255,255,255,.96);--track:#D5D9E0;--hover:#FAFBFC;--veil:rgba(255,255,255,.86);--be:#12A150;--beS:#E7F6EE;--beT:#0B6B3A}
 html{color-scheme:light}
@@ -3013,6 +3012,7 @@ html.pro-lock,html.pro-lock body{overflow:hidden}
 </style>
 <script>try{var l=localStorage.getItem("wimoro-lang")||"en";if(!/^(en|fr|he)$/.test(l))l="en";document.documentElement.lang=l;document.documentElement.dir=l==="he"?"rtl":"ltr";if(l==="he"){var hf=document.createElement("link");hf.rel="stylesheet";hf.href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap";document.head.appendChild(hf);}}catch(e){}</script>
 <script>try{var t=localStorage.getItem("wimoro-theme");if(t==="dark"||(!t&&matchMedia("(prefers-color-scheme: dark)").matches))document.documentElement.setAttribute("data-theme","dark");}catch(e){}</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
 <header class="top">
@@ -3469,8 +3469,8 @@ I18N_ADD("en",{
 "Composition officielle dans une heure, je reste prudent.":"Official line-up in an hour, I’m staying cautious.",
 "Compte":"Account",
 "Compte créé, bienvenue {0} !":"Account created, welcome {0}!",
-"Compte":"Account",
-"Compte : User26":"Account: User26",
+"Compte démo":"Demo account",
+"Compte démo : User26":"Demo account: User26",
 "Compte lié à un portefeuille":"Account linked to a wallet",
 "Conditions pour entrer":"Requirements to enter",
 "Conditions remplies":"Requirements met",
@@ -3537,7 +3537,7 @@ I18N_ADD("en",{
 "Crédité sur ton solde":"Credited to your balance",
 "Crédité {0}{1}, {2}":"Credited {0}{1}, {2}",
 "Crédités automatiquement, sans rien faire.":"Credited automatically, nothing to do.",
-"Crée ton compte en une minute.":"Create your account in a minute, or use the demo account.",
+"Crée ton compte en une minute, ou utilise le compte démo.":"Create your account in a minute, or use the demo account.",
 "Créer":"Create",
 "Créer mon compte":"Create my account",
 "Créer mon propre compte":"Create my own account",
@@ -3610,7 +3610,7 @@ I18N_ADD("en",{
 "Démo : les prix, les scores et les résultats sont simulés.":"Demo: prices, scores and results are simulated.",
 "Démo : rien n’est envoyé ni conservé.":"Demo: nothing is sent or stored.",
 "Démo : rien n’est envoyé ni conservé. Une fois vérifié, tu débloques les dépôts et retraits par carte, virement et PayPal.":"Demo: nothing is sent or stored. Once verified, you unlock deposits and withdrawals by card, bank transfer and PayPal.",
-"Parie sur les marchés, écris dans les chats, joue à l’éclair et monte de rang.":"Clickable demo: markets, bets and players are fictional, no real money is at stake. Everything else works: bet, write in the chats, play Flash and climb the ranks.",
+"Démo cliquable : les marchés, les mises et les joueurs sont fictifs, aucun argent réel n’est en jeu. Tout le reste fonctionne : parie, écris dans les chats, joue à l’éclair et monte de rang.":"Clickable demo: markets, bets and players are fictional, no real money is at stake. Everything else works: bet, write in the chats, play Flash and climb the ranks.",
 "Départ : {0}":"Start: {0}",
 "Dépose des fonds pour continuer.":"Deposit funds to continue.",
 "Dépose en crypto, ou par carte, virement et PayPal après vérification d’identité (KYC). Ton dépôt est crédité en dollars sur ton solde.":"Deposit in crypto, or by card, bank transfer and PayPal after identity verification (KYC). Your deposit is credited in dollars to your balance.",
@@ -3685,7 +3685,7 @@ I18N_ADD("en",{
 "Euro / dollar":"Euro / dollar",
 "Excellent":"Excellent",
 "Exemple : il mise {0}":"Example: they bet {0}",
-"Continuer":"Explore with the demo account",
+"Explorer avec le compte démo":"Explore with the demo account",
 "Expérience":"Experience",
 "Exécuté":"Filled",
 "exécuté":"filled",
@@ -4660,7 +4660,7 @@ I18N_ADD("en",{
 "USDC max par pari":"Max USDC per bet",
 "Utilise au moins 8 caractères.":"Use at least 8 characters.",
 "Utilise-le à ta prochaine connexion.":"Use it next time you log in.",
-"":"" ,
+"Utiliser le compte démo (User26, Or II)":"Use the demo account (User26, Gold II)",
 "Utiliser une adresse de test":"Use a test address",
 "Valeur":"Value",
 "Valeur ($)":"Value ($)",
@@ -4851,7 +4851,7 @@ I18N_ADD("en",{
 "{0} retiré de tes amis":"{0} removed from your friends",
 "{0} Rotation":"{0} Rotation",
 "{0} Règles du chat":"{0} Chat rules",
-"":"",
+"{0} Réinitialiser la démo":"{0} Reset the demo",
 "{0} Salon VIP":"{0} VIP lounge",
 "{0} Se débloque au rang {1}":"{0} Unlocks at {1}",
 "{0} Se déconnecter":"{0} Log out",
@@ -6565,7 +6565,7 @@ I18N_ADD("he",{
 "Crédité sur ton solde":"זוכה ביתרה שלך",
 "Crédité {0}{1}, {2}":"זוכה {0}{1}, {2}",
 "Crédités automatiquement, sans rien faire.":"מזוכה אוטומטית, בלי לעשות כלום.",
-"Crée ton compte en une minute.":"צור חשבון תוך דקה, או השתמש בחשבון ההדגמה.",
+"Crée ton compte en une minute, ou utilise le compte démo.":"צור חשבון תוך דקה, או השתמש בחשבון ההדגמה.",
 "Créer":"יצירה",
 "Créer mon compte":"יצירת החשבון שלי",
 "Créer mon propre compte":"יצירת חשבון משלי",
@@ -6638,7 +6638,7 @@ I18N_ADD("he",{
 "Démo : les prix, les scores et les résultats sont simulés.":"הדגמה: המחירים, התוצאות והפתרונות מדומים.",
 "Démo : rien n’est envoyé ni conservé.":"הדגמה: שום דבר לא נשלח או נשמר.",
 "Démo : rien n’est envoyé ni conservé. Une fois vérifié, tu débloques les dépôts et retraits par carte, virement et PayPal.":"הדגמה: שום דבר לא נשלח או נשמר. אחרי האימות תוכל להפקיד ולמשוך בכרטיס, בהעברה בנקאית וב-PayPal.",
-"Parie sur les marchés, écris dans les chats, joue à l’éclair et monte de rang.":"הדגמה אינטראקטיבית: השווקים, ההימורים והשחקנים בדיוניים, אין כסף אמיתי בסיכון. כל השאר עובד: המר, כתוב בצ׳אטים, שחק בבזק ועלה בדרגות.",
+"Démo cliquable : les marchés, les mises et les joueurs sont fictifs, aucun argent réel n’est en jeu. Tout le reste fonctionne : parie, écris dans les chats, joue à l’éclair et monte de rang.":"הדגמה אינטראקטיבית: השווקים, ההימורים והשחקנים בדיוניים, אין כסף אמיתי בסיכון. כל השאר עובד: המר, כתוב בצ׳אטים, שחק בבזק ועלה בדרגות.",
 "Départ : {0}":"התחלה: {0}",
 "Dépose des fonds pour continuer.":"הפקד כספים כדי להמשיך.",
 "Dépose en crypto, ou par carte, virement et PayPal après vérification d’identité (KYC). Ton dépôt est crédité en dollars sur ton solde.":"הפקד בקריפטו, או בכרטיס, בהעברה בנקאית וב-PayPal אחרי אימות זהות (KYC). ההפקדה מזוכה בדולרים ביתרה שלך.",
@@ -6713,7 +6713,7 @@ I18N_ADD("he",{
 "Euro / dollar":"אירו / דולר",
 "Excellent":"מצוין",
 "Exemple : il mise {0}":"דוגמה: הוא מהמר {0}",
-"Continuer":"לחקור עם חשבון ההדגמה",
+"Explorer avec le compte démo":"לחקור עם חשבון ההדגמה",
 "Expérience":"ניסיון",
 "Exécuté":"בוצע",
 "exécuté":"בוצע",
@@ -7879,7 +7879,7 @@ I18N_ADD("he",{
 "{0} retiré de tes amis":"{0} הוסר מהחברים שלך",
 "{0} Rotation":"{0} רוטציה",
 "{0} Règles du chat":"{0} כללי הצ׳אט",
-"":"",
+"{0} Réinitialiser la démo":"{0} איפוס ההדגמה",
 "{0} Salon VIP":"{0} טרקלין VIP",
 "{0} Se débloque au rang {1}":"{0} נפתח בדרגת {1}",
 "{0} Se déconnecter":"{0} התנתקות",
@@ -9209,11 +9209,11 @@ const F={
  int:v=>bidi(NB(nf0.format(Math.round(v)))),
  d1:v=>bidi(NB(nf1.format(v))),
  d2:v=>bidi(NB(nf2.format(v))),
- usd:v=>money(NB(nf0.format(Math.round(v)))),
+ usd:v=>money(NB(nf2.format(v))),
  usd0:v=>v===Infinity?_t('Illimitée'):money(NB(nf0.format(Math.round(v)))),
  /* C10 : le solde n'est jamais arrondi vers le haut. Centimes tant que la place le permet ; dans l'en-tête mobile, à partir de 100 000 $, tronqué à l'unité. */
- bal:(v,full)=>{const c=Math.round(v);return money(NB(nf0.format(c)));},
- signed:v=>bidi((v>=-0.004?'+':'−')+plain(money(NB(nf0.format(Math.round(Math.abs(v))))))),
+ bal:(v,full)=>{const c=Math.floor(v*100+1e-6)/100;return full||innerWidth>760||Math.abs(c)<1e5?money(NB(nf2.format(c))):money(NB(nf0.format(Math.floor(c))));},
+ signed:v=>bidi((v>=-0.004?'+':'−')+plain(money(NB(nf2.format(Math.abs(v)))))),
  pct:p=>unit(Math.round(p),'%'),
  mult:p=>{const x=100/Math.max(1,p);return bidi('×'+NB((x>=10?nf1:nf2).format(x)));},
  c:p=>unit(Math.round(p),'¢'),
@@ -9383,7 +9383,7 @@ function demoMe(){return {v:5,logged:true,onboarded:true,kyc:false,fmode:'free',
  notifs:[{id:1,ic:'users',text:_t("lea a suivi ta mise sur le Clásico."),href:'#profil',at:T0-36e5,read:false},{id:2,ic:'trophy',text:_t("Plus que 110 XP pour passer Or III."),href:'#rang',at:T0-72e5,read:false},{id:3,ic:'flame',text:_t("Signal de foule sur Bitcoin à 150 000 $."),href:'#marche-btc150k',at:T0-9e6,read:false}],
  missions:[{id:'bets2',type:'bet',label:_t("Place 2 paris"),goal:2,have:0,xp:40,go:'#accueil',claimed:false},{id:'chatm1',type:'chatm',label:_t("Écris dans le chat d’un marché"),goal:1,have:0,xp:30,go:'#marche-btc150k',claimed:false},{id:'flash1',type:'flashwin',label:_t("Gagne une manche au marché éclair"),goal:1,have:0,xp:60,go:'#eclair',claimed:false}],
  badges:[],copies:[],copiers:0,welcomed:false,blockedShown:''};}
-function newMe(n,email){return {v:5,logged:true,onboarded:false,kyc:false,fmode:'free',falerts:[],contraWins:0,n,email,photo:'g:'+AV_GALLERY[hash(n||'')%AV_GALLERY.length].id,color:'#2448FF',interests:[],since:_t("aujourd’hui"),followers:0,xp:0,balance:0,credit1m:true,bio:'',wallet:'',prefs:{},ctype:'courbe',settled:0,wins:0,played:0,flashWins:0,flashStreak:0,flashBest:0,flashProfit:0,followed:0,deposits:0,depDay:'',streak:1,bestStreak:1,pos:38901,msgsTotal:0,chatXP:0,chatDay:'',maxBet:0,realized:0,following:[],watch:[],props:[],voted:{},positions:[],history:[],deps:[],wds:[],
+function newMe(n,email){return {v:5,logged:true,onboarded:false,kyc:false,fmode:'free',falerts:[],contraWins:0,n,email,photo:'g:'+AV_GALLERY[hash(n||'')%AV_GALLERY.length].id,color:'#2448FF',interests:[],since:_t("aujourd’hui"),followers:0,xp:0,balance:0,credit1m:true,bio:'',wallet:'',prefs:{},ctype:'courbe',settled:0,wins:0,played:0,flashWins:0,flashStreak:0,flashBest:0,flashProfit:0,followed:0,deposits:0,depDay:'',streak:1,bestStreak:1,pos:38901,msgsTotal:0,chatXP:0,chatDay:'',maxBet:0,realized:0,following:[],watch:[],props:[],voted:{},positions:[],history:[],deps:[{coin:'USDC',net:'Base',amt:1e6,usd:1e6,at:now(),conf:12,need:12,label:'Crédit démo'}],wds:[],
  notifs:[{id:1,ic:'gift',text:_t("Bienvenue sur Wimoro ! Tes 100 XP de bienvenue t’attendent."),href:'#bienvenue',at:now(),read:false}],
  missions:[{id:'dep1',type:'dep',label:_t("Fais ton premier dépôt"),goal:1,have:0,xp:100,go:'#depot',claimed:false},{id:'fb1',type:'flashbet',label:_t("Joue une manche au marché éclair"),goal:1,have:0,xp:50,go:'#eclair',claimed:false},{id:'chat1',type:'chat',label:_t("Écris ton premier message"),goal:1,have:0,xp:20,go:'#chat',claimed:false}],
  badges:[],copies:[],copiers:0,welcomed:true,blockedShown:''};}
@@ -9929,7 +9929,7 @@ function posTable(){const L=S.me.positions;if(!L.length)return `<div class="empt
 function ptabH(t){if(t==='positions')return posTable()+ordersTableH();if(t==='mine')return myBetsH();
  if(t==='history')return `<div style="padding:4px 20px 12px">${S.me.history.length?S.me.history.map(h=>`<div class="act"><span><span class="sidechip ${h.s}" style="margin-inline-end:8px">${h.k==='flash'?(h.eq?_t("Égalité"):h.s==='oui'?_t("Haut"):_t("Bas")):(h.s==='oui'?_t("Oui"):_t("Non"))}</span>${esc(h.m&&MK[h.m]?MK[h.m].q:h.q)}<small style="display:block;margin-top:3px">${histKind(h)}, ${ago(h.at)}</small></span><span class="hpnl"><b class="num ${plc(h.pnl)}" style="font-size:20px;white-space:nowrap">${F.signed(h.pnl)}</b>${h.pnl>0.004?shareBtnH('win',{q:h.m&&MK[h.m]?MK[h.m].q:h.q,s:h.s,pnl:h.pnl}):''}</span></div>`).join(''):`<div class="empty">${_t("Pas encore d’historique.")} <a class="link" href="#accueil">${_t("Parier sur un marché")}</a></div>`}</div>`;
  if(t==='badges')return `<div style="padding:8px 20px 16px">${BADGES.map(b=>{const on=S.me.badges.includes(b.id);return `<div class="act"><span style="display:flex;gap:12px;align-items:center"><span class="pi" style="width:40px;height:40px;border-radius:10px;display:grid;place-items:center;background:${on?'var(--ouiS)':'var(--soft)'}">${ic(on?b.ic:'lock',18,on?'#2448FF':'#A3A8B2')}</span><span><b style="color:var(--ink)">${b.n}</b><small style="display:block;margin-top:2px">${b.how}</small></span></span>${on?`<span class="xpc">${_t('Obtenu')}</span>`:''}</div>`;}).join('')}</div>`;
- return `<form class="col" style="padding:20px;gap:16px;max-width:520px" data-form="settings"><div class="field"><label for="pseudo">${_t("Pseudo")}</label><input id="pseudo" name="pseudo" value="${esc(S.me.n)}" maxlength="20" pattern="[A-Za-z0-9._]{3,20}" required><span class="sub">${_t("3 à 20 caractères : lettres, chiffres, point ou tiret bas.")}</span></div><button class="btn b-ink" type="submit" style="align-self:flex-start">${_t("Enregistrer")}</button><hr><div><div class="h2" style="font-size:15px">${_t("Compte")}</div><p class="sub" style="margin-top:4px">${esc((accountOfMe()||{}).email||_t("Compte lié à un portefeuille"))}</p><div class="kycrow">${S.me.kyc?`<span class="kyc-badge ok">${_t("{0} KYC vérifié",[ic('check',13,'#2448FF',2.6)])}</span>`:`<span class="kyc-badge">${_t("{0} KYC non fait : crypto uniquement",[ic('lock',13)])}</span><button class="btn b-ink sm" type="button" data-a="kyc">${_t("Faire le KYC")}</button>`}</div></div><hr><div class="swrow"><div><div class="h2" style="font-size:15px">${_t("Mode sombre")}</div><p class="sub" style="margin-top:4px">${_t("Bascule entre le thème clair et le thème sombre. Le bouton lune/soleil de l’en-tête fait la même chose.")}</p></div><button type="button" class="sw${isDark()?' on':''}" role="switch" aria-checked="${isDark()}" aria-label="${_t("Mode sombre")}" data-a="theme"><i></i></button></div>${settingsExtraH()}<hr><div><div class="hbtns" style="margin-top:12px"><button class="btn b-ink" type="button" data-a="logout">${_t("{0} Se déconnecter",[ic('out',16,'#fff')])}</button></div></div></form>`;}
+ return `<form class="col" style="padding:20px;gap:16px;max-width:520px" data-form="settings"><div class="field"><label for="pseudo">${_t("Pseudo")}</label><input id="pseudo" name="pseudo" value="${esc(S.me.n)}" maxlength="20" pattern="[A-Za-z0-9._]{3,20}" required><span class="sub">${_t("3 à 20 caractères : lettres, chiffres, point ou tiret bas.")}</span></div><button class="btn b-ink" type="submit" style="align-self:flex-start">${_t("Enregistrer")}</button><hr><div><div class="h2" style="font-size:15px">${_t("Compte")}</div><p class="sub" style="margin-top:4px">${S.auth.demo?_t("Compte démo"):esc((accountOfMe()||{}).email||_t("Compte lié à un portefeuille"))}</p><div class="kycrow">${S.me.kyc?`<span class="kyc-badge ok">${_t("{0} KYC vérifié",[ic('check',13,'#2448FF',2.6)])}</span>`:`<span class="kyc-badge">${_t("{0} KYC non fait : crypto uniquement",[ic('lock',13)])}</span><button class="btn b-ink sm" type="button" data-a="kyc">${_t("Faire le KYC")}</button>`}</div></div><hr><div class="swrow"><div><div class="h2" style="font-size:15px">${_t("Mode sombre")}</div><p class="sub" style="margin-top:4px">${_t("Bascule entre le thème clair et le thème sombre. Le bouton lune/soleil de l’en-tête fait la même chose.")}</p></div><button type="button" class="sw${isDark()?' on':''}" role="switch" aria-checked="${isDark()}" aria-label="${_t("Mode sombre")}" data-a="theme"><i></i></button></div>${settingsExtraH()}<hr><div><div class="h2" style="font-size:15px">${_t("Démo")}</div><p class="sub" style="margin-top:4px">${_t("Tes progrès sont gardés dans ce navigateur. Tu peux repartir de zéro à tout moment.")}</p><div class="hbtns" style="margin-top:12px"><button class="btn b-ghost" type="button" data-a="reset">${_t("{0} Réinitialiser la démo",[ic('refresh',16)])}</button><button class="btn b-ink" type="button" data-a="logout">${_t("{0} Se déconnecter",[ic('out',16,'#fff')])}</button></div></div></form>`;}
 function vProfile(){const r=myRank(),st=stats(),pf=portfolio(),pg=progress(),t=S.ui.ptab;
  return `<div class="wrap"><section class="pn" style="overflow:hidden"><div class="pf-top"><div class="pf-id"><span class="av t-me${avClass('me')}" style="background:${S.me.color}">${avInner('me',88)}</span><div><h1>${esc(S.me.n)} ${tagH('me')}</h1>${S.me.bio?`<p class="pf-bio">${esc(S.me.bio)}</p>`:''}<div class="pf-meta"><a href="#rang">${rk(r.t,r.d)}</a><span>${_t("Membre depuis {0}",[esc(S.me.since||_t("aujourd’hui"))])}</span><span>${_t("{0} abonné{1}",[F.int(S.me.followers||0),(S.me.followers||0)>1?'s':''])}</span><span>${_t("{0} abonnements",[S.me.following.length])}</span>${visMetaH()}</div></div></div><div class="hbtns own"><a class="btn b-white" href="#amis">${_t("{0} Amis",[ic('users',16)])} <span class="cnt2">${friendsOf().length}</span></a><a class="btn b-white" href="#copie">${ic('copy',16)} <span class="lg-only">${_t("Copy trading")}</span><span class="sm-only">${_t("Copies")}</span>${copiesLive().length?` <span class="cnt2">${copiesLive().length}</span>`:''}</a><button class="btn b-white" data-a="copylink" data-v="#profil">${ic('share',16)} <span>${_t("Partager")}<span class="lg-only"> ${_t("le profil")}</span></span></button><a class="btn b-ink" href="#modifier">${_t("{0} Modifier le profil",[ic('user',16,'#fff')])}</a></div></div>
  <div class="pf-stats"><div><small>${_t("Profit total")}</small><b class="num ${plc(pf.profit)}" data-live="profit">${F.signed(pf.profit)}</b></div><div><small>${_t("Précision")}</small><b class="num">${F.pct(st.acc)}</b></div><div><small>${_t("Paris joués")}</small><b class="num">${F.int(S.me.played)}</b></div><div><small>${_t("Série en cours")}</small><b class="num">${_t("{0} jours",[S.me.streak])}</b></div><div><small>${_t("Valeur des positions")}</small><b class="num" data-live="pvalue">${F.usd(pf.value)}</b></div></div></section>
@@ -9970,7 +9970,7 @@ function wdCheck(){const w=S.ui.wd,f=NETS[w.net].fmt,amt=F.parse(w.amt);const ad
 function wdCalcH(){const c=wdCheck(),w=S.ui.wd;return `<div class="line"><span>${_t("Frais du réseau {0}",[w.net])}</span><b>${F.usd(c.fee)}</b></div><div class="line"><span>${_t("Tu reçois")}</span><b>${F.d2(c.recv)} USDC</b></div>${c.err?`<p class="sub" style="color:var(--nonT)">${c.err}</p>`:''}<button class="btn b-ink lg full" data-a="withdraw"${c.ok?'':' disabled'}>${_t("Retirer {0}",[c.amt?F.d2(c.amt)+' USDC':''])}</button>`;}
 function vWithdraw(){const w=S.ui.wd;return `<div class="wrap"><div class="pagehead"><div><h1 class="ptitle">${_t("Retirer des fonds")}</h1><p class="plead">${_t("Retire tes gains en crypto, ou par carte, virement et PayPal après vérification d’identité (KYC).")}</p></div><div class="seg"><a href="#depot" style="padding:6px 12px;border-radius:6px;font-size:13px;font-weight:500;color:var(--g3)">${_t("Déposer")}</a><button class="on">${_t("Retirer")}</button></div></div>
  <div class="g-dep"><div class="col">${methodsH('wd')}${wMethod()!=='crypto'?fiatWdH():`<section class="pn pad step"><div class="step-h"><i>1</i><h3>${_t("Choisis le réseau")}</h3></div><div class="nets">${COINS.USDC.nets.map(n=>`<button class="net${w.net===n?' on':''}" data-a="wnet" data-v="${n}"><span class="rad"></span><span class="nn"><b>${n}</b><small>${NETS[n].d}</small></span><span class="nf">${_t("Frais : {0}",[F.usd(WFEE[n])])}<small>${NETS[n].time}</small></span></button>`).join('')}</div></section>
- <section class="pn pad step"><div class="step-h"><i>2</i><h3>${_t("Adresse et montant")}</h3></div><div class="field"><label for="wa">${_t("Adresse de ton portefeuille sur {0}",[w.net])}</label><input id="wa" data-wd="addr" value="${esc(w.addr)}" placeholder="${NETS[w.net].fmt==='evm'?'0x…':_t("Adresse")}" autocomplete="off" spellcheck="false"></div><div class="field"><label for="wm">${_t("Montant en USDC")}</label><label class="amt"><input id="wm" data-wd="amt" inputmode="decimal" value="${esc(w.amt)}" placeholder="0"><button class="btn b-ghost sm" data-a="wd-max">${_t("Max")}</button></label></div><div class="col" style="gap:10px" data-wdcalc>${wdCalcH()}</div></section>`}</div>
+ <section class="pn pad step"><div class="step-h"><i>2</i><h3>${_t("Adresse et montant")}</h3></div><div class="field"><label for="wa">${_t("Adresse de ton portefeuille sur {0}",[w.net])}</label><input id="wa" data-wd="addr" value="${esc(w.addr)}" placeholder="${NETS[w.net].fmt==='evm'?'0x…':_t("Adresse")}" autocomplete="off" spellcheck="false"><span class="demo-h">${demoB()}<button class="link" data-a="wd-test" style="font-size:13px">${_t("Utiliser une adresse de test")}</button></span></div><div class="field"><label for="wm">${_t("Montant en USDC")}</label><label class="amt"><input id="wm" data-wd="amt" inputmode="decimal" value="${esc(w.amt)}" placeholder="0"><button class="btn b-ghost sm" data-a="wd-max">${_t("Max")}</button></label></div><div class="col" style="gap:10px" data-wdcalc>${wdCalcH()}</div></section>`}</div>
  <aside class="col"><section class="pn pad"><div class="sub" style="margin:0">${_t("Disponible au retrait")}</div><div class="num balbig" data-bal>${F.bal(S.me.balance,true)}</div></section><section class="pn pad"><div class="h2" style="margin-bottom:4px">${_t("Retraits récents")}</div><div data-wds>${wdsH()}</div></section></aside></div></div>`;}
 function wdsH(){return S.me.wds.length?S.me.wds.slice(0,6).map(x=>x.method?fiatWdRow(x):`<div class="dep"><span class="tk">USDC</span><span class="dd">${_t("<b>{0} USDC sur {1}</b>",[F.d2(x.amt),x.net])}<small>${_t("Vers {0}…{1}, {2}",[esc(x.addr.slice(0,6)),esc(x.addr.slice(-4)),ago(x.at)])}</small></span>${x.st==='sent'?`<span class="st-ok">${_t("{0} Envoyé",[ic('check',13,'#2448FF',2.6)])}</span>`:`<span class="st-wait">${_t("En cours d’envoi")}<span class="bar"><i style="width:60%"></i></span></span>`}</div>`).join(''):`<p class="sub">${_t("Aucun retrait pour l’instant.")}</p>`;}
 
@@ -10004,7 +10004,7 @@ document.addEventListener('click',e=>{const a=e.target.closest?e.target.closest(
 function toggleNotifs(){let p=$('#npanel');if(p){p.remove();return;}p=document.createElement('div');p.id='npanel';p.className='npanel';p.innerHTML=`<div class="nh">${_t("<b>Notifications</b>")}<span class="nh-r">${S.me.notifs.length?`<button class="link" data-a="np-clear">${_t("Tout effacer")}</button>`:''}<button class="x" data-a="npanel-close" aria-label="${_t("Fermer")}">${ic('x',16)}</button></span></div>${npModeH()}${S.me.notifs.length?S.me.notifs.map((n,i)=>`<div class="nitem${n.read?'':' unread'}"><a class="nlink" href="${n.href||'#accueil'}" data-a="npanel-close"><span class="ni">${ic(n.ic||'info',16)}</span><span>${esc(n.text)}<small>${ago(n.at)}</small></span></a><button class="nx" data-a="np-del" data-i="${i}" aria-label="${_t('Effacer cette notification')}" title="${_t('Effacer')}">${ic('x',14)}</button></div>`).join(''):`<div class="empty">${_t("Rien de neuf pour l’instant.")}</div>`}`;document.body.appendChild(p);fixText(p);S.me.notifs.forEach(n=>n.read=true);updateBell();save();}
 
 /* ===================== Modales diverses ===================== */
-function welcome(){const r=myRank(),pg=progress();openModal(`<div class="md lockm">${LOGO(48)}<div><h3 style="font-size:24px;font-weight:700">${_t("Bienvenue sur Wimoro")}</h3><p class="muted" style="margin-top:8px;line-height:1.55">${_t("Parie sur les marchés, écris dans les chats, joue à l’éclair et monte de rang.")}</p></div><a class="lockrow" href="#rang" data-a="close" style="width:100%">${rk(r.t,r.d)}<span style="font-size:13px;font-weight:600">${pg.nx?`${_t("Plus que {0} pour {1}",[F.xp(pg.left),rankName(pg.nx.t,pg.nx.d)])}`:''}</span></a><div class="md-acts" style="width:100%"><a class="btn b-oui lg full" href="#eclair" data-a="close">${_t("{0} Gagner mes premiers XP",[ic('bolt',16,'#fff')])}</a><a class="btn b-white lg full" href="#inscription" data-a="close">${_t("Créer mon propre compte")}</a><button class="btn b-ghost lg full" data-a="close">${_t("Continuer")}</button></div></div>`);S.me.welcomed=true;save();}
+function welcome(){const r=myRank(),pg=progress();openModal(`<div class="md lockm">${LOGO(48)}<div><h3 style="font-size:24px;font-weight:700">${_t("Bienvenue sur Wimoro")}</h3><p class="muted" style="margin-top:8px;line-height:1.55">${_t("Démo cliquable : les marchés, les mises et les joueurs sont fictifs, aucun argent réel n’est en jeu. Tout le reste fonctionne : parie, écris dans les chats, joue à l’éclair et monte de rang.")}</p></div><a class="lockrow" href="#rang" data-a="close" style="width:100%">${rk(r.t,r.d)}<span style="font-size:13px;font-weight:600">${pg.nx?`${_t("Plus que {0} pour {1}",[F.xp(pg.left),rankName(pg.nx.t,pg.nx.d)])}`:''}</span></a><div class="md-acts" style="width:100%"><a class="btn b-oui lg full" href="#eclair" data-a="close">${_t("{0} Gagner mes premiers XP",[ic('bolt',16,'#fff')])}</a><a class="btn b-white lg full" href="#inscription" data-a="close">${_t("Créer mon propre compte")}</a><button class="btn b-ghost lg full" data-a="close">${_t("Explorer avec le compte démo")}</button></div></div>`);S.me.welcomed=true;save();}
 function citeModal(rid){openModal(`<div class="md"><div class="md-h"><div><h3>${_t("Citer un marché")}</h3><p>${_t("Le marché s’affichera avec sa cote en direct dans ton message.")}</p></div><button class="x" data-a="close" aria-label="${_t("Fermer")}">${ic('x')}</button></div><div class="pickl">${MARKETS.map(m=>`<button data-a="cite-pick" data-m="${m.id}" data-room="${rid}"><span>${esc(m.short)}</span><b class="num up">${F.pct(m.p)}</b></button>`).join('')}</div></div>`);}
 function shareModal(rid){const L=S.me.positions;if(!L.length){toast({icon:'info',title:_t("Aucune mise à partager"),text:_t("Place un pari pour pouvoir le partager."),href:'#accueil'});return;}openModal(`<div class="md"><div class="md-h"><div><h3>${_t("Partager une mise")}</h3><p>${_t("+5 XP, puis +20 XP chaque fois qu’un joueur la suit.")}</p></div><button class="x" data-a="close" aria-label="${_t("Fermer")}">${ic('x')}</button></div><div class="pickl">${L.map((p,i)=>`<button data-a="share-pick" data-i="${i}" data-room="${rid}"><span><b>${esc(MK[p.m].short)}</b><small class="muted" style="display:block">${_t("{0}, {1} parts à {2}",[p.s==='oui'?_t("Oui"):_t("Non"),F.d1(p.sh),F.c(p.avg)])}</small></span><b class="num">${F.usd0(p.sh*p.avg/100)}</b></button>`).join('')}</div></div>`);}
 function statsLinesH(m){const big=m.bets.filter(b=>b.a>.6),o=m.bets.filter(b=>b.s).length;return `<div class="line"><span>${_t("Mises enregistrées")}</span><b>${F.int(m.bets.length)}</b></div><div class="line"><span>${_t("Part des mises sur Oui")}</span><b>${F.pct(o/Math.max(1,m.bets.length)*100)}</b></div><div class="line"><span>${_t("Grosses mises")}</span>${_t("<b>{0}, dont {1} sur Oui</b>",[F.int(big.length),F.pct(big.filter(b=>b.s).length/Math.max(1,big.length)*100)])}</div><div class="line"><span>${_t("Volume total")}</span><b>${F.compact(m.vol)}</b></div>`;}
@@ -10054,7 +10054,7 @@ function copyText(t,label){const done=()=>toast({icon:'copy',title:label||_t("Co
 
 const AUTH_ACT=new Set(['bet','buy','sell','tside','preset','flash-bet','fmode','falert','kyc','dmethod','wmethod','fiat-dep','fiat-wd','share','share-pick','cite','react','follow-bet','follow-pbet','follow-user','dm','claim','propose','watch','sim-dep','withdraw','vote','cr-submit','cb-add','cb-place','cb-cash']);
 const AUTH_MSG={bet:_t("Connecte-toi pour parier."),buy:_t("Connecte-toi pour parier."),'flash-bet':_t("Connecte-toi pour jouer au pari éclair."),react:_t("Connecte-toi pour réagir."),share:_t("Connecte-toi pour partager une mise."),'follow-bet':_t("Connecte-toi pour suivre cette mise."),vote:_t("Connecte-toi pour voter."),'cb-add':_t("Connecte-toi pour créer un combiné.")};
-function needLogin(msg){S.ui.after=location.hash||'#accueil';S.ui.authNote=msg;toast({tone:'amber',icon:'lock',title:msg,text:_t("Crée ton compte en une minute."),href:'#connexion'});location.hash='#connexion';}
+function needLogin(msg){S.ui.after=location.hash||'#accueil';S.ui.authNote=msg;toast({tone:'amber',icon:'lock',title:msg,text:_t("Crée ton compte en une minute, ou utilise le compte démo."),href:'#connexion'});location.hash='#connexion';}
 const ACT={
  bet:a=>openBet(a.dataset.m,a.dataset.s,25),
  tside:a=>{const ctx=a.dataset.ctx,st=tState(ctx);st.side=a.dataset.v;st.lp='';const box=$(`[data-ticket="${ctx}"]`);if(box){box.innerHTML=ticketInner(ctx);fixText(box);}},
@@ -10089,7 +10089,7 @@ const ACT={
  withdraw:()=>{const c=wdCheck(),w=S.ui.wd;if(!c.ok)return;S.me.balance-=c.amt;const x={net:w.net,addr:w.addr.trim(),amt:c.amt,fee:c.fee,at:now(),st:'pending'};S.me.wds.unshift(x);w.amt='';updateHeader();toast({icon:'out',title:_t("Retrait en cours"),text:`${_t("{0} USDC vers {1}…{2}",[F.d2(c.recv),x.addr.slice(0,6),x.addr.slice(-4)])}`});render(false);save();const ep=S.epoch;setTimeout(()=>{if(ep!==S.epoch)return;x.st='sent';notif('out',`${_t("Retrait envoyé : {0} USDC sur {1}.",[F.d2(c.recv),x.net])}`,'#retrait');toast({tone:'blue',icon:'check',title:_t("Retrait envoyé"),text:`${_t("{0} USDC sur {1}",[F.d2(c.recv),x.net])}`});const el=$('[data-wds]');if(el){el.innerHTML=wdsH();fixText(el);}save();},4500);},
  notifs:()=>toggleNotifs(),'npanel-close':()=>{const p=$('#npanel');if(p)p.remove();},
  close:()=>closeModal(),'feed-down':a=>{const w=a.closest('.nm-w'),f=w&&w.previousElementSibling;if(f){f.dataset.down=Date.now();f.scrollTo({top:f.scrollHeight,behavior:'smooth'});}if(w)w.remove();},'rankup-close':()=>{const o=$('.rankup');if(o)o.remove();},
- reset:()=>{},noop:()=>{}
+ reset:()=>resetDemo(),noop:()=>{}
 };
 document.addEventListener('click',e=>{const a=e.target.closest('[data-a]');
  if(!a){const row=e.target.closest('[data-href]');if(row&&!e.target.closest('a,button,input,label,select'))location.hash=row.dataset.href;
@@ -10169,7 +10169,7 @@ function vLogin(){if(authRedirect())return '';const m=S.ui.authMode,note=S.ui.au
  <div class="seg" style="width:100%;margin-top:20px"><button style="flex:1" class="${m==='mail'?'on':''}" data-a="auth-mode" data-v="mail">${_t("E-mail")}</button><button style="flex:1" class="${m==='wallet'?'on':''}" data-a="auth-mode" data-v="wallet">${_t("Portefeuille crypto")}</button></div>
  ${m==='mail'?`<form class="col" data-form="login" style="gap:14px;margin-top:18px" novalidate><div class="field"><label for="le">${_t("E-mail")}</label><input id="le" name="email" type="email" autocomplete="email" value="${esc(S.ui.authEmail||'')}" placeholder="${_t("toi@exemple.fr")}"></div><div class="field"><label for="lp">${_t("Mot de passe")}</label><div class="pw"><input id="lp" name="pw" type="password" autocomplete="current-password" placeholder="${_t("8 caractères minimum")}"><button type="button" class="link" data-a="pw-toggle" data-for="lp">${_t("Afficher")}</button></div></div><button class="link" type="button" data-a="forgot" style="align-self:flex-start;font-size:13px">${_t("Mot de passe oublié ?")}</button><p class="err" data-autherr></p><button class="btn b-oui lg full" type="submit">${_t("Se connecter")}</button></form>`
  :`<div class="pickl" style="margin-top:18px">${[[_t("Portefeuille Ethereum du navigateur"),_t("Ethereum, Base, Arbitrum")],[_t("Portefeuille Solana"),'Solana'],[_t("Application mobile"),_t("Scanne un QR code avec ton portefeuille")]].map(([t,s2])=>`<button data-a="wallet" data-v="${t}" data-new=""><span><b>${t}</b><small class="muted" style="display:block">${s2}</small></span>${ic('right',18)}</button>`).join('')}</div><p class="sub" style="margin-top:12px">${_t("Tu signes un message pour prouver que l’adresse t’appartient. Aucune transaction, aucun frais.")}</p>`}
- <p class="sub" style="text-align:center;margin-top:18px;font-size:14px">${_t("Pas encore de compte ?")} <a class="link" href="#inscription">${_t("Créer un compte")}</a></p></div>`);}
+ <div class="orl"><span>${_t("ou")}</span></div><button class="btn b-ghost lg full" data-a="demo-login">${_t("Utiliser le compte démo (User26, Or II)")}</button><p class="sub" style="text-align:center;margin-top:10px">${_t("Les comptes créés ici restent dans ce navigateur : tu peux te déconnecter et revenir avec ton e-mail et ton mot de passe.")}</p><p class="sub" style="text-align:center;margin-top:18px;font-size:14px">${_t("Pas encore de compte ?")} <a class="link" href="#inscription">${_t("Créer un compte")}</a></p></div>`);}
 function walletModal(){openModal(`<div class="md"><div class="md-h"><div><h3>${_t("S’inscrire avec un portefeuille")}</h3><p>${_t("Tu signes un message pour prouver que l’adresse t’appartient. Aucune transaction, aucun frais.")}</p></div><button class="x" data-a="close" aria-label="${_t("Fermer")}">${ic('x')}</button></div><div class="pickl">${[[_t("Portefeuille Ethereum du navigateur"),_t("Ethereum, Base, Arbitrum")],[_t("Portefeuille Solana"),'Solana'],[_t("Application mobile"),_t("Scanne un QR code avec ton portefeuille")]].map(([t,s2])=>`<button data-a="wallet" data-v="${t}" data-new="1"><span><b>${t}</b><small class="muted" style="display:block">${s2}</small></span>${ic('right',18)}</button>`).join('')}</div><p class="sub" style="margin-top:12px">${_t("En continuant, tu confirmes avoir 18 ans ou plus et accepter les conditions d’utilisation.")}</p></div>`);}
 function pwScore(p){let s=0;if(p.length>=8)s++;if(/[A-Z]/.test(p)&&/[a-z]/.test(p))s++;if(/\d/.test(p))s++;if(/[^A-Za-z0-9]/.test(p)||p.length>=12)s++;return s;}
 const PW_L=[_t("Trop court"),_t("Faible"),_t("Moyen"),_t("Bon"),_t("Excellent")];
@@ -10201,7 +10201,7 @@ Object.assign(ACT,{
  forgot:()=>forgotModal(1),
  wallet:a=>{const isNew=!!a.dataset.new;toast({icon:'wallet',title:_t("Signature demandée"),text:`${_t("Confirme dans « {0} ».",[a.dataset.v])}`,dur:1800});$$('[data-a="wallet"]').forEach(b=>b.disabled=true);a.classList.add('busy');setTimeout(()=>{closeModal();const all=AUTH.all(),wk=Object.keys(all).find(k=>k.startsWith('w:'));if(isNew||!wk){createAccount('joueur'+Math.floor(R()*9000+1000),'',null,{wallet:true});if(typeof refApplyAtSignup==='function')refApplyAtSignup(pendingRef());S.ui.ob=1;toast({tone:'blue',icon:'check',title:_t("Portefeuille connecté"),text:_t("Ton compte est créé. Encore 5 petites étapes.")});location.hash='#bienvenue';}else{enterAccount(all[wk]);doLogin(_t("Portefeuille connecté"));}},1600);},
  'wallet-modal':()=>walletModal(),
- 
+ 'demo-login':()=>{enterAccount(DEMO_ACC);S.me.welcomed=true;doLogin(_t("Compte démo : User26"));},
  logout:()=>logout()
 });
 
@@ -10376,7 +10376,7 @@ function bigsH(){return S.bigs.map(b=>{const m=MK[b.m];if(!m)return '';return `<
 function pushBig(seed){const u=pickUser(),m=pick(MARKETS),s=R()<m.p/100?'oui':'non',amt=Math.round((300+Math.pow(R(),2)*6200)/10)*10;S.bigs.unshift({u,m:m.id,s,amt,at:seed?now()-Math.round(R()*9e5):now()});if(seed)S.bigs.sort((a,b)=>b.at-a.at);S.bigs=S.bigs.slice(0,6);
  if(!seed){const el=$('[data-bigs]');if(el){el.innerHTML=bigsH();fixText(el);const f=el.firstElementChild;if(f)f.classList.add('new');}}}
 /* carte « rang » d'un visiteur : même emplacement, mais une invitation à entrer */
-function guestRankH(){return `<section class="pn pad hs-rank hs-guest"><div class="hr-top">${emb(0,0,'e44')}<span><span class="sub" style="margin:0;display:block">${_t("Ton rang")}</span><b>${_t('Tu commences au rang {0}',[rankName(0,0)])}</b></span></div><p class="sub" style="margin:12px 0 0">${_t("Chaque pari rapporte de l’XP et te fait monter, de Fer à Radiant.")}</p><div class="hg-btns"><button class="btn b-oui full" data-a="demo-login">${_t("Continuer")}</button><a class="btn b-white full" href="#inscription">${_t("Créer un compte")}</a></div></section>`;}
+function guestRankH(){return `<section class="pn pad hs-rank hs-guest"><div class="hr-top">${emb(0,0,'e44')}<span><span class="sub" style="margin:0;display:block">${_t("Ton rang")}</span><b>${_t('Tu commences au rang {0}',[rankName(0,0)])}</b></span></div><p class="sub" style="margin:12px 0 0">${_t("Chaque pari rapporte de l’XP et te fait monter, de Fer à Radiant.")}</p><div class="hg-btns"><button class="btn b-oui full" data-a="demo-login">${_t("Explorer avec le compte démo")}</button><a class="btn b-white full" href="#inscription">${_t("Créer un compte")}</a></div></section>`;}
 function homeSideH(){const r=myRank(),pg=progress(),done=S.me.missions.filter(m=>m.have>=m.goal).length,top=lbRows('Semaine').slice(0,5);
  return `${S.me.logged?`<section class="pn pad hs-rank"><a class="hr-top" href="#rang">${emb(r.t,r.d,'e44')}<span><span class="sub" style="margin:0;display:block">${_t("Ton rang")}</span><b>${rankName(r.t,r.d)}</b></span>${ic('right',18,'#A3A8B2')}</a><div class="xpbar sm" style="margin-top:14px"><i style="width:${pg.pct}%"></i></div><div class="hr-meta"><span>${pg.nx?`${_t("Plus que <b>{0}</b> pour {1}",[F.xp(pg.left),rankName(pg.nx.t,pg.nx.d)])}`:_t("Rang maximal")}</span><a class="link" href="#rang">${_t("Missions {0} / {1}",[done,S.me.missions.length])}</a></div></section>`:guestRankH()}
  <section class="pn pad"><div class="ph" style="margin-bottom:8px"><div><div class="h2"><i class="live" aria-hidden="true"></i>${_t("Grosses mises en direct")}</div><div class="sub">${_t("Les plus gros paris de la dernière heure")}</div></div></div><div class="bigs" data-bigs>${bigsH()}</div></section>
@@ -10605,7 +10605,7 @@ const guestMe=()=>Object.assign(newMe('',''),{logged:false,onboarded:true,welcom
 S.auth={key:'',demo:false};S.epoch=0;
 function accKey(rec){if(rec.demo)return 'wimoro-demo';const k='wimoro-acc:'+rec.id,old='wimoro-demo:'+rec.id;return (LS.g(k)===null&&LS.g(old)!==null)?old:k;}
 function enterAccount(rec,fresh,quiet){S.epoch++;KEY=accKey(rec);S.me=rec.demo?demoMe():(fresh||newMe(rec.pseudo,rec.email||''));if(!fresh)load();S.me.logged=true;
- /* credit demo disabled */
+
  S.auth={key:rec.key,demo:!!rec.demo};LS.s(SESK,rec.key);
  if(!S.me.missions.some(m=>m.day))S.me.missions.forEach(m=>m.day=today());
  S.ui.dep.method='crypto';S.ui.wd.method='crypto';S.ui.fiat={dep:'50',wd:''};S.ui.kycd={doc:false};S.ui.ptab='positions';S.ui.pe=null;
@@ -13520,137 +13520,118 @@ addEventListener('scroll',()=>{NAV.pos[NAV.cur]=window.scrollY;},{passive:true})
 
 </script>
 <script>
-/* Supabase sync — runs after site is fully loaded */
+/* === WIMORO x SUPABASE === */
 (function(){
-/* Force clear stale localStorage if ?clear=1 or version mismatch */
-try{
-var wv=localStorage.getItem('wimoro-v');
-if(location.search.includes('clear=1')||wv!=='sb2'){
-var keys=[];for(var k=0;k<localStorage.length;k++){var key=localStorage.key(k);if(key&&key.startsWith('wimoro-')&&key!=='wimoro-theme'&&key!=='wimoro-lang'&&key!=='wimoro-tmode')keys.push(key);}
-keys.forEach(function(k){localStorage.removeItem(k);});
-localStorage.setItem('wimoro-v','sb2');
-if(location.search.includes('clear=1')){location.replace(location.pathname+'#accueil');return;}
-}
-}catch(e){}
-if(typeof supabase==='undefined'||!supabase.createClient)return;
+if(typeof supabase==='undefined')return;
 var sb=supabase.createClient('https://brmwvxncyeypefsgiepf.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJybXd2eG5jeWV5cGVmc2dpZXBmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ1NzYwODAsImV4cCI6MjExMDE1MjA4MH0.-AA2WyzSOyJiK-Nwogbzv-Rowej9A3fWRDpAGSXI3YM');
-window.__supabase=sb;
-var uid=null;
+window.__sb=sb;var uid=null;
 
-function sync(){
-if(!uid||!S.me.logged)return;
-/* FIRST read DB stats (admin may have changed them) */
-sb.from('user_stats').select('*').eq('user_id',uid).maybeSingle().then(function(r){
-if(r.data){var s=r.data;
-S.me.balance=Number(s.balance);S.me.xp=s.xp||0;
-S.me.played=s.bets_placed||0;S.me.wins=s.bets_won||0;S.me.settled=s.bets_settled||0;
-S.me.flashWins=s.flash_wins||0;S.me.deposits=s.deposits_count||0;
-S.me.followed=s.followed_bets_count||0;S.me.realized=Number(s.profit_realized)||0;
-S.me.streak=s.streak_current||1;S.me.bestStreak=s.streak_best||1;
-S.me.copiers=s.copiers_count||0;S.me.msgsTotal=s.messages_total||0;
-if(typeof updateHeader==='function')updateHeader();}
-/* THEN save blob with updated values */
-var c=Object.assign({},S.me);
-sb.from('user_full_state').upsert({user_id:uid,state:c}).catch(function(){});
-}).catch(function(){});
-/* Save profile info */
-sb.from('users').update({username:S.me.n||'',avatar_photo:S.me.photo||'',avatar_color:S.me.color||'#2448FF',bio:S.me.bio||'',kyc_verified:!!S.me.kyc}).eq('id',uid).catch(function(){});
-}
-
-function load(){
-if(!uid)return;
-Promise.all([
+/* --- LOAD: fetch user data from Supabase, apply to S.me, re-render --- */
+function sbLoad(){
+if(!uid)return Promise.resolve();
+return Promise.all([
 sb.from('user_full_state').select('state').eq('user_id',uid).maybeSingle(),
 sb.from('users').select('*').eq('id',uid).maybeSingle(),
 sb.from('user_stats').select('*').eq('user_id',uid).maybeSingle()
 ]).then(function(r){
-var blob=r[0].data,user=r[1].data,stats=r[2].data;
+var blob=r[0].data,user=r[1].data,st=r[2].data;
 if(blob&&blob.state&&blob.state.v)Object.assign(S.me,blob.state);
-if(user){if(user.username)S.me.n=user.username;S.me.email=user.email||S.me.email;S.me.photo=user.avatar_photo||S.me.photo;S.me.color=user.avatar_color||S.me.color;S.me.kyc=!!user.kyc_verified;}
-if(stats){S.me.balance=Number(stats.balance);S.me.xp=stats.xp||0;S.me.followers=stats.followers_count||0;S.me.played=stats.bets_placed||0;S.me.wins=stats.bets_won||0;S.me.settled=stats.bets_settled||0;S.me.flashWins=stats.flash_wins||0;S.me.msgsTotal=stats.messages_total||0;S.me.realized=Number(stats.profit_realized)||0;S.me.deposits=stats.deposits_count||0;S.me.followed=stats.followed_bets_count||0;S.me.contraWins=stats.contra_wins||0;S.me.flashStreak=stats.flash_streak_current||0;S.me.flashBest=stats.flash_streak_best||0;S.me.flashProfit=Number(stats.flash_profit_total)||0;S.me.copiers=stats.copiers_count||0;S.me.streak=stats.streak_current||1;S.me.bestStreak=stats.streak_best||1;}
+if(user){S.me.n=user.username||S.me.n;S.me.email=user.email||S.me.email;S.me.photo=user.avatar_photo||S.me.photo;S.me.color=user.avatar_color||S.me.color;S.me.kyc=!!user.kyc_verified;}
+if(st){S.me.balance=Number(st.balance);S.me.xp=st.xp||0;S.me.played=st.bets_placed||0;S.me.wins=st.bets_won||0;S.me.settled=st.bets_settled||0;S.me.deposits=st.deposits_count||0;S.me.flashWins=st.flash_wins||0;S.me.followed=st.followed_bets_count||0;S.me.realized=Number(st.profit_realized)||0;S.me.streak=st.streak_current||1;S.me.bestStreak=st.streak_best||1;S.me.copiers=st.copiers_count||0;S.me.msgsTotal=st.messages_total||0;S.me.contraWins=st.contra_wins||0;S.me.flashStreak=st.flash_streak_current||0;S.me.flashBest=st.flash_streak_best||0;S.me.flashProfit=Number(st.flash_profit_total)||0;S.me.followers=st.followers_count||0;}
 S.me.logged=true;S.me.onboarded=true;
 if(typeof updateHeader==='function')updateHeader();
 if(typeof render==='function')render(false);
+}).catch(function(e){console.warn('sbLoad error',e);});
+}
+
+/* --- SAVE: save blob to Supabase (positions, history, etc) --- */
+function sbSave(){
+if(!uid||!S.me.logged)return;
+sb.from('user_full_state').upsert({user_id:uid,state:Object.assign({},S.me)}).catch(function(){});
+sb.from('users').update({username:S.me.n||'',avatar_photo:S.me.photo||'',avatar_color:S.me.color||'#2448FF',bio:S.me.bio||''}).eq('id',uid).catch(function(){});
+}
+
+/* --- REFRESH: read latest stats from DB (admin changes) --- */
+function sbRefresh(){
+if(!uid||!S.me.logged)return;
+sb.from('user_stats').select('*').eq('user_id',uid).maybeSingle().then(function(r){
+if(!r.data)return;var st=r.data;
+S.me.balance=Number(st.balance);S.me.xp=st.xp||0;S.me.played=st.bets_placed||0;S.me.wins=st.bets_won||0;S.me.settled=st.bets_settled||0;S.me.deposits=st.deposits_count||0;S.me.flashWins=st.flash_wins||0;S.me.followed=st.followed_bets_count||0;S.me.realized=Number(st.profit_realized)||0;S.me.streak=st.streak_current||1;S.me.bestStreak=st.streak_best||1;S.me.copiers=st.copiers_count||0;S.me.msgsTotal=st.messages_total||0;
+if(typeof updateHeader==='function')updateHeader();
 }).catch(function(){});
 }
 
+/* --- BOOT: check Supabase session on page load --- */
 sb.auth.getSession().then(function(r){
-if(r.data&&r.data.session){uid=r.data.session.user.id;load();}
+if(r.data&&r.data.session){uid=r.data.session.user.id;sbLoad();}
 else if(S.me.logged&&S.me.email){
-/* User is logged in locally but not in Supabase — try to find their data */
 sb.from('users').select('id').ilike('email',S.me.email).maybeSingle().then(function(u){
-if(u.data&&u.data.id){uid=u.data.id;load();}
-}).catch(function(){});
-}
+if(u.data){uid=u.data.id;sbLoad();}}).catch(function(){});}
 }).catch(function(){});
 
-sb.auth.onAuthStateChange(function(e,s){
-if(e==='SIGNED_IN'&&s&&s.user){uid=s.user.id;load();}
-if(e==='SIGNED_OUT'){uid=null;}
+/* --- AUTH STATE: react to login/logout --- */
+sb.auth.onAuthStateChange(function(ev,sess){
+if(ev==='SIGNED_IN'&&sess&&sess.user){uid=sess.user.id;sbLoad();}
+if(ev==='SIGNED_OUT'){uid=null;}
 });
 
-var oc=window.createAccount;
-if(oc)window.createAccount=function(n,e,p,x){
-var rec=oc(n,e,p,x);
-if(e&&p)sb.auth.signUp({email:e.toLowerCase(),password:p}).then(function(r){
-if(r.data&&r.data.user){uid=r.data.user.id;rec.sbId=uid;
-sb.from('users').insert({id:uid,username:n,email:e.toLowerCase(),avatar_photo:'',avatar_color:'#2448FF',bio:'',onboarded:true,welcomed:true,is_demo:false}).catch(function(){});}
-}).catch(function(){});
-return rec;};
-
-/* Override login to use Supabase Auth */
-var origFormsLogin=FORMS.login;
+/* --- OVERRIDE LOGIN: use Supabase Auth --- */
 FORMS.login=function(f){
 var raw=f.email.value.trim(),pw=f.pw.value,err=f.querySelector('[data-autherr]');
 if(!raw||raw.length<3){err.textContent='Entre ton e-mail ou pseudo.';return;}
-if(pw.length<8){err.textContent='Le mot de passe fait au moins 8 caractères.';return;}
+if(pw.length<8){err.textContent='8 caract\u00e8res minimum.';return;}
 err.textContent='Connexion...';
 var btn=f.querySelector('[type=submit]');if(btn)btn.disabled=true;
-var email=raw.toLowerCase();
-/* If not an email, look up email by username */
-var emailP=email.includes('@')?Promise.resolve(email):sb.from('users').select('email').ilike('username',email).maybeSingle().then(function(r){return r.data?r.data.email:null;});
-emailP.then(function(resolved){
-if(!resolved){err.textContent='Aucun compte avec ce pseudo.';if(btn)btn.disabled=false;return;}
-sb.auth.signInWithPassword({email:resolved,password:pw}).then(function(res){
-if(res.error){err.textContent=res.error.message==='Invalid login credentials'?'E-mail ou mot de passe incorrect.':res.error.message;if(btn)btn.disabled=false;return;}
+var em=raw.toLowerCase();
+var p=em.includes('@')?Promise.resolve(em):sb.from('users').select('email').ilike('username',em).maybeSingle().then(function(r){return r.data?r.data.email:null;});
+p.then(function(email){
+if(!email){err.textContent='Aucun compte trouv\u00e9.';if(btn)btn.disabled=false;return;}
+sb.auth.signInWithPassword({email:email,password:pw}).then(function(res){
+if(res.error){err.textContent='E-mail ou mot de passe incorrect.';if(btn)btn.disabled=false;return;}
 uid=res.data.user.id;
-/* Create local auth record so enterAccount works */
-var rec={id:uid.slice(0,12),key:resolved,email:resolved,pseudo:raw,sbId:uid,ph:''};
-AUTH.set(resolved,rec);
-enterAccount(rec);
-load();
-if(typeof doLogin==='function')doLogin();
-}).catch(function(e){err.textContent='Erreur de connexion.';if(btn)btn.disabled=false;});
-}).catch(function(e){err.textContent='Erreur.';if(btn)btn.disabled=false;});
+AUTH.set(email,{id:uid.slice(0,12),key:email,email:email,pseudo:raw,sbId:uid,ph:''});
+enterAccount({id:uid.slice(0,12),key:email,email:email,pseudo:raw,sbId:uid});
+sbLoad().then(function(){if(typeof doLogin==='function')doLogin();});
+}).catch(function(){err.textContent='Erreur.';if(btn)btn.disabled=false;});
+}).catch(function(){err.textContent='Erreur.';if(btn)btn.disabled=false;});
 };
 
-/* Override forgot password to use Supabase magic link */
+/* --- OVERRIDE SIGNUP: use Supabase Auth --- */
+var _origCreate=window.createAccount;
+window.createAccount=function(n,e,pw,x){
+var rec=_origCreate(n,e,pw,x);
+if(e&&pw){sb.auth.signUp({email:e.toLowerCase(),password:pw}).then(function(r){
+if(r.data&&r.data.user){uid=r.data.user.id;rec.sbId=uid;
+sb.from('users').insert({id:uid,username:n,email:e.toLowerCase(),avatar_photo:'',avatar_color:'#2448FF',bio:'',onboarded:true,welcomed:true,is_demo:false}).catch(function(){});}
+}).catch(function(){});}
+return rec;
+};
+
+/* --- OVERRIDE LOGOUT --- */
+var _origLogout=window.logout;
+window.logout=function(){sbSave();uid=null;sb.auth.signOut().catch(function(){});_origLogout();};
+
+/* --- OVERRIDE FORGOT PASSWORD --- */
 FORMS.forgot=function(f){
 var err=f.querySelector('[data-ferr]');
-var step=f.dataset.step||'1';
-if(step!=='1')return;
 var em=f.email?f.email.value.trim():'';
 if(!em||!em.includes('@')){err.textContent='Entre une adresse e-mail valide.';return;}
 err.textContent='Envoi en cours...';
 var btn=f.querySelector('[type=submit]');if(btn)btn.disabled=true;
-sb.auth.resetPasswordForEmail(em,{redirectTo:location.origin+'/#nouveau-mdp'}).then(function(res){
-if(res.error){err.textContent=res.error.message;if(btn)btn.disabled=false;return;}
+sb.auth.resetPasswordForEmail(em,{redirectTo:location.origin}).then(function(r){
+if(r.error){err.textContent=r.error.message;if(btn)btn.disabled=false;return;}
 if(typeof closeModal==='function')closeModal();
-if(typeof toast==='function')toast({tone:'blue',icon:'mail',title:'E-mail envoyé',text:'Clique sur le lien reçu par e-mail pour changer ton mot de passe.'});
+if(typeof toast==='function')toast({tone:'blue',icon:'mail',title:'E-mail envoy\u00e9',text:'V\u00e9rifie ta bo\u00eete mail.'});
 }).catch(function(){err.textContent='Erreur.';if(btn)btn.disabled=false;});
 };
 
-var ol=window.logout;
-if(ol)window.logout=function(){sync();uid=null;sb.auth.signOut().catch(function(){});ol();};
+/* --- PERIODIC: refresh from DB every 10s + save blob --- */
+setInterval(function(){if(uid&&S.me.logged){sbRefresh();sbSave();}},10000);
 
-setInterval(function(){
-if(uid&&S.me.logged)sync();
-else if(!uid&&S.me.logged&&S.me.email){
-sb.from('users').select('id').ilike('email',S.me.email).maybeSingle().then(function(u){
-if(u.data&&u.data.id){uid=u.data.id;load();}
-}).catch(function(){});}
-},15000);
-addEventListener('pagehide',function(){if(uid&&S.me.logged)sync();});
+/* --- PAGE CLOSE: save --- */
+addEventListener('pagehide',function(){if(uid&&S.me.logged)sbSave();});
+
+console.log('Wimoro x Supabase OK');
 })();
 </script>
 </body>
