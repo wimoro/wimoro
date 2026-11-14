@@ -13802,7 +13802,50 @@ if(_origRankUp)window.rankUp=function(r){
    in newMe() but the Supabase trigger sets onboarded=true in DB. */
 /* onboarding: newMe defaults to onboarded=true, sbLoad confirms from DB */
 
-console.log('Wimoro x Supabase OK (clean rebuild)');
+/* === MODE SWITCH: Demo ↔ Account === */
+
+/* Add "Create Account" button when in demo mode */
+/* Add "Demo Mode" button when logged in with account */
+ACT['switch-to-account'] = function() {
+  /* From demo → go to login/signup page */
+  if (typeof logout === 'function') logout();
+  location.hash = '#connexion';
+};
+
+ACT['switch-to-demo'] = function() {
+  /* From account → switch to demo */
+  uid = null;
+  try { sb.auth.signOut(); } catch(e) {}
+  try {
+    for(var i=localStorage.length-1;i>=0;i--){
+      var k=localStorage.key(i);
+      if(k&&(k.startsWith('sb-')||k.includes('supabase')))localStorage.removeItem(k);
+    }
+  } catch(e) {}
+  /* Enter demo account */
+  if (typeof DEMO_ACC !== 'undefined' && typeof enterAccount === 'function') {
+    enterAccount(DEMO_ACC);
+    S.me.welcomed = true;
+    if (typeof doLogin === 'function') doLogin('Mode Demo');
+  }
+};
+
+/* Inject switch button into user menu */
+var _origUmenuH = window.umenuH;
+if (typeof umenuH === 'function') {
+  window.umenuH = function() {
+    var html = _origUmenuH();
+    /* Add switch button at the bottom */
+    var isDemoMode = S.auth && S.auth.demo;
+    var switchBtn = isDemoMode
+      ? '<a class="ui" href="#connexion" data-a="switch-to-account" style="border-top:1px solid var(--rule);padding-top:12px;margin-top:8px">' + ic('user',16) + ' Creer un compte / Se connecter</a>'
+      : '<button class="ui" data-a="switch-to-demo" style="border-top:1px solid var(--rule);padding-top:12px;margin-top:8px">' + ic('refresh',16) + ' Passer en mode Demo</button>';
+    /* Insert before the closing </div> of umenu */
+    return html + switchBtn;
+  };
+}
+
+console.log('Wimoro x Supabase OK (clean rebuild + mode switch)');
 })();
 </script>
 </body>
