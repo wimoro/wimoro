@@ -13717,7 +13717,91 @@ if (_origStartDeposit) window.startDeposit = function(amt) {
   }).catch(function(){toast({tone:'red',icon:'info',title:'Erreur',text:'D\u00e9p\u00f4t refus\u00e9'});});
 };
 
-console.log('Wimoro x Supabase OK (Phase 1: server balance)');
+/* === PHASE 2: Shared markets via Realtime === */
+SB_LIVE.markets = true;
+SB_LIVE.chat = true;
+
+/* Load markets from DB on boot */
+sb.rpc('get_markets').then(function(res){
+  if(!res.data)return;
+  res.data.forEach(function(row){
+    var m=MK[row.market_id];if(!m)return;
+    m.p=Number(row.current_probability);
+    m.anchor=Number(row.anchor_probability)||m.p;
+    if(Number(row.volume_total)>m.vol)m.vol=Number(row.volume_total);
+    if(row.participants_count>m.people)m.people=row.participants_count;
+  });
+  if(typeof render==='function')render(false);
+});
+
+/* Realtime: market price updates */
+sb.channel('mkt-live').on('postgres_changes',{event:'UPDATE',schema:'public',table:'market_live_state'},function(p){
+  var row=p.new;if(!row)return;
+  var m=MK[row.market_id];if(!m)return;
+  var old=m.p;
+  m.p=Number(row.current_probability);
+  m.vol=Number(row.volume_total);
+  m.people=row.participants_count;
+  if(typeof updateMarket==='function')updateMarket(m,old);
+}).subscribe();
+
+/* === PHASE 3: Real-time chat === */
+var _origSendMsg=window.sendMsg;
+window.sendMsg=function(rid){
+  if(!SB_LIVE.chat||!uid){_origSendMsg(rid);return;}
+  var inp=document.querySelector('[data-in="'+CSS.escape(rid)+'"]');
+  if(!inp)return;var text=inp.value.trim();if(!text)return;
+  inp.value='';inp.focus();
+  /* Send via server */
+  sb.rpc('send_chat_message',{p_room_id:rid,p_text:text}).then(function(res){
+    if(res.error){toast({tone:'red',icon:'info',title:'Erreur',text:res.error.message});return;}
+    /* Add locally for instant feedback */
+    if(typeof addMsg==='function'&&typeof mkMsg==='function'){
+      addMsg(rid,mkMsg({u:'me',k:'msg',text:text}));
+    }
+  }).catch(function(){});
+};
+
+/* Realtime: incoming chat messages */
+sb.channel('chat-live').on('postgres_changes',{event:'INSERT',schema:'public',table:'chat_messages'},function(p){
+  var msg=p.new;if(!msg||msg.user_id===uid)return;
+  var rid=msg.room_id;
+  if(typeof room==='function'&&typeof addMsg==='function'&&typeof mkMsg==='function'){
+    var r=room(rid);
+    addMsg(rid,mkMsg({u:msg.user_id,k:msg.message_type||'msg',text:msg.text_content||''}));
+  }
+}).subscribe();
+
+/* === PHASE 5: Flash bet override === */
+var _origFlashBet=null;
+if(typeof ACT!=='undefined'&&ACT['flash-bet']){
+  _origFlashBet=ACT['flash-bet'];
+  ACT['flash-bet']=function(a){
+    if(!uid){if(_origFlashBet)_origFlashBet(a);return;}
+    var gid=S.ui.fgame||'btc';
+    var g=(typeof G==='function')?G(gid):null;
+    var amt=S.ui.flashAmt||10;
+    var side=a?a.dataset.v:'a';
+    if(!side)side='a';
+
+    sb.rpc('flash_bet',{p_game_id:gid,p_side:side,p_amount:amt}).then(function(res){
+      if(res.error){toast({tone:'red',icon:'info',title:'Erreur',text:res.error.message||'Pari refus\u00e9'});return;}
+      S.me.balance=Number(res.data.new_balance);
+      S.me.played++;
+      updateHeader();
+      toast({tone:'blue',icon:'bolt',title:'Pari \u00e9clair plac\u00e9',text:amt+'$ sur '+(side==='a'?'Haut':side==='b'?'Bas':'Break even')});
+      /* Still run original for UI animation */
+      if(_origFlashBet)_origFlashBet(a);
+    }).catch(function(){
+      toast({tone:'red',icon:'info',title:'Erreur',text:'Pari refus\u00e9'});
+    });
+  };
+}
+
+/* === PHASE 9: Demo deposit override === */
+/* startDeposit already overridden in Phase 1 */
+
+console.log('Wimoro x Supabase OK (Phases 1-9: full backend)');
 })();
 </script>
 </body>
