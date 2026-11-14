@@ -13631,7 +13631,93 @@ setInterval(function(){if(uid&&S.me.logged){sbRefresh();sbSave();}},10000);
 /* --- PAGE CLOSE: save --- */
 addEventListener('pagehide',function(){if(uid&&S.me.logged)sbSave();});
 
-console.log('Wimoro x Supabase OK');
+/* === PHASE 1: Server-side balance === */
+var SB_LIVE = {balance: true};
+
+/* Override placeBet to use server RPC */
+var _origPlaceBet = window.placeBet;
+window.placeBet = function(ctx, ev) {
+  if (!SB_LIVE.balance || !uid) { _origPlaceBet(ctx, ev); return; }
+  var st = tState(ctx), m = MK[st.m], c = calcT(st);
+  if (!c.ok) return;
+  if (typeof rgBlocked === 'function' && rgBlocked('bet')) return;
+  /* Optimistic UI: show pending */
+  var btn = ctx === 'sheet' ? document.querySelector('.md .btn[data-c="btn"]') : document.querySelector('[data-ticket="page"] .btn[data-c="btn"]');
+  if (btn) { btn.disabled = true; btn.textContent = '...'; }
+  sb.rpc('place_bet', {p_market_id: m.id, p_side: st.side, p_amount: c.amt}).then(function(res) {
+    if (res.error) { toast({tone:'red', icon:'info', title:'Erreur', text: res.error.message || 'Pari refus\u00e9'}); if(btn){btn.disabled=false;btn.textContent=st.mode==='buy'?'Acheter':'Vendre';} return; }
+    var d = res.data;
+    S.me.balance = Number(d.new_balance);
+    S.me.played++;
+    S.me.maxBet = Math.max(S.me.maxBet || 0, c.amt);
+    /* Update local position for immediate display */
+    var p = S.me.positions.find(function(x){return x.m===m.id&&x.s===st.side;});
+    if (p) { p.avg = Number(d.avg_price); p.sh = (p.sh||0) + Number(d.shares); }
+    else { S.me.positions.push({m:m.id, s:st.side, sh:Number(d.shares), avg:Number(d.avg_price)}); }
+    /* Update market price locally */
+    var old = m.p;
+    m.p = Number(d.new_market_price);
+    if (typeof updateMarket === 'function') updateMarket(m, old);
+    m.people++;
+    if (typeof addBet === 'function') addBet(m, {s:st.side==='oui'?1:0, a:Math.min(1,c.amt/300), me:1});
+    /* UI feedback */
+    updateHeader();
+    if (typeof mission === 'function') mission('bet');
+    toast({tone:'blue', icon:'check', title:'Pari plac\u00e9', text:d.shares+' parts '+st.side+' sur '+m.short});
+    if (typeof checkBadges === 'function') checkBadges();
+    save();
+    if (ctx === 'sheet') closeModal(); else rerenderTicket();
+  }).catch(function(e) {
+    toast({tone:'red', icon:'info', title:'Erreur', text:'Pari refus\u00e9'});
+    if(btn){btn.disabled=false;}
+  });
+};
+
+/* Override sellPos to use server RPC */
+var _origSellPos = window.sellPos;
+window.sellPos = function(ctx) {
+  if (!SB_LIVE.balance || !uid) { _origSellPos(ctx); return; }
+  var st = tState(ctx), c = calcT(st);
+  if (!c.ok) return;
+  sb.rpc('sell_position', {p_market_id: st.m, p_side: st.side, p_shares: c.sh}).then(function(res) {
+    if (res.error) { toast({tone:'red', icon:'info', title:'Erreur', text:res.error.message||'Vente refus\u00e9e'}); return; }
+    var d = res.data;
+    S.me.balance = Number(d.new_balance);
+    /* Update local position */
+    var p = S.me.positions.find(function(x){return x.m===st.m&&x.s===st.side;});
+    if (p) { p.sh -= Number(d.shares_sold); if (p.sh < 0.05) S.me.positions = S.me.positions.filter(function(x){return x!==p;}); }
+    S.me.history.unshift({k:'sell', m:st.m, q:MK[st.m].q, s:st.side, win:Number(d.proceeds)>(Number(d.shares_sold)*(p?p.avg:50)/100), pnl:Number(d.proceeds)-(Number(d.shares_sold)*(p?p.avg:50)/100), at:Date.now()});
+    /* Update market */
+    var m = MK[st.m], old = m.p;
+    m.p = Number(d.new_market_price);
+    if (typeof updateMarket === 'function') updateMarket(m, old);
+    updateHeader();
+    toast({tone:'blue', icon:'check', title:'Position vendue', text:d.proceeds+'$ cr\u00e9dit\u00e9s'});
+    st.amt = '';
+    rerenderTicket();
+    save();
+  }).catch(function() {
+    toast({tone:'red', icon:'info', title:'Erreur', text:'Vente refus\u00e9e'});
+  });
+};
+
+/* Override deposit confirmation to use server RPC */
+var _origStartDeposit = window.startDeposit;
+if (_origStartDeposit) window.startDeposit = function(amt) {
+  if (!SB_LIVE.balance || !uid) { _origStartDeposit(amt); return; }
+  var st = S.ui.dep;
+  sb.rpc('demo_deposit', {p_coin: st.coin, p_network: st.net, p_amount: amt * (typeof coinUSD==='function'?coinUSD(st.coin):1)}).then(function(res) {
+    if (res.error) { toast({tone:'red', icon:'info', title:'Erreur', text:res.error.message}); return; }
+    S.me.balance = Number(res.data.new_balance);
+    S.me.deposits++;
+    updateHeader();
+    toast({tone:'blue', icon:'check', title:'D\u00e9p\u00f4t cr\u00e9dit\u00e9', text:'+'+amt+' '+st.coin});
+    save();
+    if(typeof render==='function')render(false);
+  }).catch(function(){toast({tone:'red',icon:'info',title:'Erreur',text:'D\u00e9p\u00f4t refus\u00e9'});});
+};
+
+console.log('Wimoro x Supabase OK (Phase 1: server balance)');
 })();
 </script>
 </body>
