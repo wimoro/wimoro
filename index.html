@@ -13566,6 +13566,12 @@ if(typeof render==='function')render(false);
 
 sb.auth.getSession().then(function(r){
 if(r.data&&r.data.session){uid=r.data.session.user.id;load();}
+else if(S.me.logged&&S.me.email){
+/* User is logged in locally but not in Supabase — try to find their data */
+sb.from('users').select('id').ilike('email',S.me.email).maybeSingle().then(function(u){
+if(u.data&&u.data.id){uid=u.data.id;load();}
+}).catch(function(){});
+}
 }).catch(function(){});
 
 sb.auth.onAuthStateChange(function(e,s){
@@ -13585,7 +13591,13 @@ return rec;};
 var ol=window.logout;
 if(ol)window.logout=function(){sync();uid=null;sb.auth.signOut().catch(function(){});ol();};
 
-setInterval(function(){if(uid&&S.me.logged)sync();},15000);
+setInterval(function(){
+if(uid&&S.me.logged)sync();
+else if(!uid&&S.me.logged&&S.me.email){
+sb.from('users').select('id').ilike('email',S.me.email).maybeSingle().then(function(u){
+if(u.data&&u.data.id){uid=u.data.id;load();}
+}).catch(function(){});}
+},15000);
 addEventListener('pagehide',function(){if(uid&&S.me.logged)sync();});
 })();
 </script>
