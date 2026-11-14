@@ -323,5 +323,21 @@ if (typeof umenuH === 'function') {
   };
 }
 
-console.log('Wimoro x Supabase OK (clean rebuild + mode switch)');
+/* === MULTI-USER SYNC: disable client-side bots === */
+/* Server pg_cron (bot_tick) handles market prices, chat, reactions.
+   Client bots would desync prices between browsers. */
+var _origBotBet=window.botBet, _origBotChat=window.botChat;
+var _origBotReact=window.botReact, _origBurst=window.burst;
+var _origDriftAnchors=window.driftAnchors;
+var _origMarketsSave=window.marketsSave, _origMarketsLoad=window.marketsLoad;
+
+window.botBet=function(){if(!uid)_origBotBet();};
+window.botChat=function(){if(!uid)_origBotChat();};
+window.botReact=function(){if(!uid)_origBotReact();};
+window.burst=function(i){if(!uid)_origBurst(i);};
+window.driftAnchors=function(){if(!uid)_origDriftAnchors();};
+window.marketsSave=function(){if(!uid)_origMarketsSave();};
+window.marketsLoad=function(){if(!uid)_origMarketsLoad();};
+
+console.log('Wimoro x Supabase OK — multi-user sync active');
 })();
