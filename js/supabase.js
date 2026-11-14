@@ -23,10 +23,14 @@ if(typeof render==='function')render(false);
 }
 
 /* --- SAVE: save blob to Supabase (positions, history, etc) --- */
-function sbSave(){
+async function sbSave(){
 if(!uid||!S.me.logged)return;
-sb.from('user_full_state').upsert({user_id:uid,state:Object.assign({},S.me)}).then(function(r){if(r.error)console.warn('save blob error',r.error);});
-sb.from('users').update({username:S.me.n||'',avatar_photo:S.me.photo||'',avatar_color:S.me.color||'#2448FF',bio:S.me.bio||''}).eq('id',uid).then(function(r){if(r.error)console.warn('save user error',r.error);});
+try{
+  var r1=await sb.from('user_full_state').upsert({user_id:uid,state:Object.assign({},S.me)});
+  if(r1.error)console.warn('sbSave blob error:',r1.error.message);
+  var r2=await sb.from('users').update({username:S.me.n||'',avatar_photo:S.me.photo||'',avatar_color:S.me.color||'#2448FF',bio:S.me.bio||''}).eq('id',uid);
+  if(r2.error)console.warn('sbSave user error:',r2.error.message);
+}catch(e){console.warn('sbSave exception:',e);}
 }
 
 /* --- REFRESH: read latest stats from DB (admin changes) --- */
