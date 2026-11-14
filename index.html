@@ -13554,9 +13554,17 @@ sb.from('users').update({username:S.me.n||'',avatar_photo:S.me.photo||'',avatar_
 /* --- REFRESH: read latest stats from DB (admin changes) --- */
 function sbRefresh(){
 if(!uid||!S.me.logged)return;
+/* Remember rank before refresh */
+var rankBefore = (typeof myRank==='function') ? myRank() : {t:0,d:0};
 sb.from('user_stats').select('*').eq('user_id',uid).maybeSingle().then(function(r){
 if(!r.data)return;var st=r.data;
 S.me.balance=Number(st.balance);S.me.xp=st.xp||0;S.me.played=st.bets_placed||0;S.me.wins=st.bets_won||0;S.me.settled=st.bets_settled||0;S.me.deposits=st.deposits_count||0;S.me.flashWins=st.flash_wins||0;S.me.followed=st.followed_bets_count||0;S.me.realized=Number(st.profit_realized)||0;S.me.streak=st.streak_current||1;S.me.bestStreak=st.streak_best||1;S.me.copiers=st.copiers_count||0;S.me.msgsTotal=st.messages_total||0;
+/* Suppress rank popup if rank didn't change from server refresh */
+var rankAfter = (typeof myRank==='function') ? myRank() : {t:0,d:0};
+if(rankAfter.t===rankBefore.t && rankAfter.d===rankBefore.d){
+  /* Same rank — suppress any pending rank popup by marking as seen */
+  S.me._sbRankSeen = rankAfter.t + '.' + rankAfter.d;
+}
 if(typeof updateHeader==='function')updateHeader();
 }).catch(function(){});
 }
@@ -13776,24 +13784,35 @@ sb.channel('chat-live').on('postgres_changes',{event:'INSERT',schema:'public',ta
 var _origFlashBet=null;
 if(typeof ACT!=='undefined'&&ACT['flash-bet']){
   _origFlashBet=ACT['flash-bet'];
-  ACT['flash-bet']=function(a){
-    if(!uid){if(_origFlashBet)_origFlashBet(a);return;}
-    var gid=S.ui.fgame||'btc';
-    var g=(typeof G==='function')?G(gid):null;
+  ACT['flash-bet']=function(a,ev){
+    if(!uid){if(_origFlashBet)_origFlashBet(a,ev);return;}
+    /* Read game ID from button or UI state */
+    var gid=a.dataset.fg||S.ui.fgame||'btc';
     var amt=S.ui.flashAmt||10;
-    var side=a?a.dataset.v:'a';
-    if(!side)side='a';
+    /* Map frontend side names to RPC side names */
+    var frontSide=a?a.dataset.v:'oui';
+    var rpcSide=frontSide==='oui'?'a':frontSide==='non'?'b':frontSide==='be'?'be':frontSide;
+    var label=frontSide==='oui'?'Haut':frontSide==='non'?'Bas':'Break even';
 
-    sb.rpc('flash_bet',{p_game_id:gid,p_side:side,p_amount:amt}).then(function(res){
-      if(res.error){toast({tone:'red',icon:'info',title:'Erreur',text:res.error.message||'Pari refus\u00e9'});return;}
+    /* Disable button to prevent double clicks */
+    if(a)a.disabled=true;
+
+    sb.rpc('flash_bet',{p_game_id:gid,p_side:rpcSide,p_amount:amt}).then(function(res){
+      if(res.error){toast({tone:'red',icon:'info',title:'Erreur',text:res.error.message||'Pari refus\u00e9'});if(a)a.disabled=false;return;}
       S.me.balance=Number(res.data.new_balance);
       S.me.played++;
       updateHeader();
-      toast({tone:'blue',icon:'bolt',title:'Pari \u00e9clair plac\u00e9',text:amt+'$ sur '+(side==='a'?'Haut':side==='b'?'Bas':'Break even')});
-      /* Still run original for UI animation */
-      if(_origFlashBet)_origFlashBet(a);
+      toast({tone:'blue',icon:'bolt',title:'Pari \u00e9clair plac\u00e9',text:amt+'$ '+label});
+      /* Run original for LOCAL UI animation only — but skip balance deduction */
+      /* The original flashBet() checks S.me.balance and deducts it, so we need
+         to temporarily set a flag to prevent double debit */
+      S.me._skipFlashDebit=true;
+      if(_origFlashBet)_origFlashBet(a,ev);
+      delete S.me._skipFlashDebit;
+      if(a)a.disabled=false;
     }).catch(function(){
       toast({tone:'red',icon:'info',title:'Erreur',text:'Pari refus\u00e9'});
+      if(a)a.disabled=false;
     });
   };
 }
@@ -13872,8 +13891,17 @@ if (uid) sb.rpc('init_daily_missions').catch(function(){});
 // Override checkBadges to also check server-side
 var _origCheckBadges = window.checkBadges;
 window.checkBadges = function(silent) {
-  _origCheckBadges(silent); // run local check for UI
-  if (uid) sb.rpc('check_badges').catch(function(){}); // also check server
+  _origCheckBadges(silent);
+  if (uid) sb.rpc('check_badges').catch(function(){});
+};
+
+/* Suppress rank-up popup from server refresh (not from real user action) */
+var _origRankUp = window.rankUp;
+if(_origRankUp) window.rankUp = function(r) {
+  var key = r.t + '.' + r.d;
+  if (S.me._sbRankSeen === key) return; /* Already seen this rank */
+  S.me._sbRankSeen = key;
+  _origRankUp(r);
 };
 
 /* --- P5: NEWSLETTER --- */
@@ -13893,7 +13921,10 @@ if (typeof ACT !== 'undefined') {
 var _origNotif = window.notif;
 window.notif = function(icon, text, href) {
   _origNotif(icon, text, href); // local UI
-  if (uid) sb.rpc('create_notification', {p_user_id: uid, p_icon: icon, p_text: text, p_href: href || ''}).catch(function(){});
+  if (uid) sb.rpc('create_notification', {p_user_id: uid, p_icon: icon, p_text: text, p_href: href || ''}).then(function(r){
+    /* Track the ID so Realtime listener skips it */
+    if(r && r.data && r.data.id) _notifSentIds[r.data.id] = true;
+  }).catch(function(){});
 };
 
 // Load notifications from DB on boot
@@ -13909,15 +13940,16 @@ if (uid) {
 }
 
 // Subscribe to notification changes via Realtime
+/* Realtime notifications — skip duplicates created by this client */
+var _notifSentIds = {};
 sb.channel('notif-live').on('postgres_changes', {event:'INSERT', schema:'public', table:'notifications', filter:'user_id=eq.' + (uid||'')}, function(p) {
   var n = p.new;
-  if (!n) return;
+  if (!n || _notifSentIds[n.id]) return; /* Skip if we created this one */
+  /* Also skip if we already have this notification locally */
+  if (S.me.notifs.some(function(x){ return x.id === n.id; })) return;
   S.me.notifs.unshift({id:n.id, ic:n.icon, text:n.text, href:n.href, at:new Date(n.created_at).getTime(), read:false});
   if (S.me.notifs.length > 30) S.me.notifs.pop();
   if (typeof updateBell === 'function') updateBell();
-  if (typeof toast === 'function' && (S.me.tmode || 'imp') !== 'none') {
-    toast({icon:n.icon, title:n.text, href:n.href});
-  }
 }).subscribe();
 
 /* --- P7: AUTH (email confirmation) --- */
