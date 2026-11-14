@@ -13557,7 +13557,7 @@ sb.from('user_stats').select('*').eq('user_id',uid).maybeSingle()
 var blob=r[0].data,user=r[1].data,stats=r[2].data;
 if(blob&&blob.state&&blob.state.v)Object.assign(S.me,blob.state);
 if(user){if(user.username)S.me.n=user.username;S.me.email=user.email||S.me.email;S.me.photo=user.avatar_photo||S.me.photo;S.me.color=user.avatar_color||S.me.color;S.me.kyc=!!user.kyc_verified;}
-if(stats){S.me.balance=Number(stats.balance);S.me.xp=stats.xp||0;S.me.followers=stats.followers_count||0;S.me.played=stats.bets_placed||0;S.me.wins=stats.bets_won||0;S.me.settled=stats.bets_settled||0;S.me.flashWins=stats.flash_wins||0;S.me.msgsTotal=stats.messages_total||0;S.me.realized=Number(stats.profit_realized)||0;}
+if(stats){S.me.balance=Number(stats.balance);S.me.xp=stats.xp||0;S.me.followers=stats.followers_count||0;S.me.played=stats.bets_placed||0;S.me.wins=stats.bets_won||0;S.me.settled=stats.bets_settled||0;S.me.flashWins=stats.flash_wins||0;S.me.msgsTotal=stats.messages_total||0;S.me.realized=Number(stats.profit_realized)||0;S.me.deposits=stats.deposits_count||0;S.me.followed=stats.followed_bets_count||0;S.me.contraWins=stats.contra_wins||0;S.me.flashStreak=stats.flash_streak_current||0;S.me.flashBest=stats.flash_streak_best||0;S.me.flashProfit=Number(stats.flash_profit_total)||0;S.me.copiers=stats.copiers_count||0;S.me.streak=stats.streak_current||1;S.me.bestStreak=stats.streak_best||1;}
 S.me.logged=true;S.me.onboarded=true;
 if(typeof updateHeader==='function')updateHeader();
 if(typeof render==='function')render(false);
