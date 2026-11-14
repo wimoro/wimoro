@@ -13598,6 +13598,48 @@ sb.from('users').insert({id:uid,username:n,email:e.toLowerCase(),avatar_photo:''
 }).catch(function(){});
 return rec;};
 
+/* Override login to use Supabase Auth */
+var origFormsLogin=FORMS.login;
+FORMS.login=function(f){
+var raw=f.email.value.trim(),pw=f.pw.value,err=f.querySelector('[data-autherr]');
+if(!raw||raw.length<3){err.textContent='Entre ton e-mail ou pseudo.';return;}
+if(pw.length<8){err.textContent='Le mot de passe fait au moins 8 caractères.';return;}
+err.textContent='Connexion...';
+var btn=f.querySelector('[type=submit]');if(btn)btn.disabled=true;
+var email=raw.toLowerCase();
+/* If not an email, look up email by username */
+var emailP=email.includes('@')?Promise.resolve(email):sb.from('users').select('email').ilike('username',email).maybeSingle().then(function(r){return r.data?r.data.email:null;});
+emailP.then(function(resolved){
+if(!resolved){err.textContent='Aucun compte avec ce pseudo.';if(btn)btn.disabled=false;return;}
+sb.auth.signInWithPassword({email:resolved,password:pw}).then(function(res){
+if(res.error){err.textContent=res.error.message==='Invalid login credentials'?'E-mail ou mot de passe incorrect.':res.error.message;if(btn)btn.disabled=false;return;}
+uid=res.data.user.id;
+/* Create local auth record so enterAccount works */
+var rec={id:uid.slice(0,12),key:resolved,email:resolved,pseudo:raw,sbId:uid,ph:''};
+AUTH.set(resolved,rec);
+enterAccount(rec);
+load();
+if(typeof doLogin==='function')doLogin();
+}).catch(function(e){err.textContent='Erreur de connexion.';if(btn)btn.disabled=false;});
+}).catch(function(e){err.textContent='Erreur.';if(btn)btn.disabled=false;});
+};
+
+/* Override forgot password to use Supabase magic link */
+FORMS.forgot=function(f){
+var err=f.querySelector('[data-ferr]');
+var step=f.dataset.step||'1';
+if(step!=='1')return;
+var em=f.email?f.email.value.trim():'';
+if(!em||!em.includes('@')){err.textContent='Entre une adresse e-mail valide.';return;}
+err.textContent='Envoi en cours...';
+var btn=f.querySelector('[type=submit]');if(btn)btn.disabled=true;
+sb.auth.resetPasswordForEmail(em,{redirectTo:location.origin+'/#nouveau-mdp'}).then(function(res){
+if(res.error){err.textContent=res.error.message;if(btn)btn.disabled=false;return;}
+if(typeof closeModal==='function')closeModal();
+if(typeof toast==='function')toast({tone:'blue',icon:'mail',title:'E-mail envoyé',text:'Clique sur le lien reçu par e-mail pour changer ton mot de passe.'});
+}).catch(function(){err.textContent='Erreur.';if(btn)btn.disabled=false;});
+};
+
 var ol=window.logout;
 if(ol)window.logout=function(){sync();uid=null;sb.auth.signOut().catch(function(){});ol();};
 
