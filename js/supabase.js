@@ -339,5 +339,106 @@ window.driftAnchors=function(){if(!uid)_origDriftAnchors();};
 window.marketsSave=function(){if(!uid)_origMarketsSave();};
 window.marketsLoad=function(){if(!uid)_origMarketsLoad();};
 
-console.log('Wimoro x Supabase OK — multi-user sync active');
+/* === FRIENDS: Load from Supabase instead of localStorage === */
+
+/* Override the friends page to load real data from DB */
+var _origVFriends = window.vFriends;
+if(typeof vFriends === 'function') {
+  window.vFriends = function() {
+    if (!uid) return _origVFriends(); /* Demo mode: use local */
+
+    /* Show loading, then fetch from DB */
+    var html = _origVFriends(); /* Render local first (instant) */
+
+    /* Async: fetch real friends from Supabase and update */
+    sb.rpc('get_friends').then(function(res) {
+      if (!res.data || !Array.isArray(res.data)) return;
+      var friends = res.data;
+
+      var accepted = friends.filter(function(f){return f.status==='accepted';});
+      var incoming = friends.filter(function(f){return f.status==='pending' && f.direction==='in';});
+      var outgoing = friends.filter(function(f){return f.status==='pending' && f.direction==='out';});
+
+      /* Update S.me arrays so the rest of the UI works */
+      S.me.friends = accepted.map(function(f){return f.username;});
+      S.me.freqIn = incoming.map(function(f){return f.username;});
+      S.me.freqOut = outgoing.map(function(f){return f.username;});
+
+      /* Also store user_ids for accept/decline operations */
+      window._sbFriendMap = {};
+      friends.forEach(function(f){ window._sbFriendMap[f.username] = f.user_id; });
+
+      /* Re-render the friends page with real data */
+      if ((S.ui.route||'') === 'amis' && typeof render === 'function') {
+        render(false);
+      }
+    }).catch(function(){});
+
+    return html;
+  };
+}
+
+/* Override fr-accept to use Supabase user_id */
+var _origFrAccept = ACT['fr-accept'];
+ACT['fr-accept'] = function(a) {
+  if (!uid) { if(_origFrAccept) _origFrAccept(a); return; }
+  var u = a.dataset.u;
+  var targetUid = (window._sbFriendMap && window._sbFriendMap[u]) ? window._sbFriendMap[u] : null;
+
+  if (!targetUid) {
+    /* Try to look up by username */
+    sb.from('users').select('id').ilike('username', USERS[u] ? USERS[u].n : u).maybeSingle().then(function(r) {
+      if (r.data) {
+        sb.rpc('accept_friend_request', {p_from_user_id: r.data.id}).then(function() {
+          toast({icon:'users', title:'Ami accepte'});
+          /* Refresh friends list */
+          if (typeof vFriends === 'function') vFriends();
+        });
+      }
+    });
+    return;
+  }
+
+  sb.rpc('accept_friend_request', {p_from_user_id: targetUid}).then(function(r) {
+    if (r.error) { toast({tone:'red', icon:'info', title:'Erreur', text:r.error.message}); return; }
+    toast({icon:'users', title:'Ami accepte'});
+    /* Move from incoming to friends locally */
+    var idx = S.me.freqIn.indexOf(u);
+    if (idx >= 0) S.me.freqIn.splice(idx, 1);
+    if (!S.me.friends.includes(u)) S.me.friends.push(u);
+    save();
+    if (typeof refreshFriends === 'function') refreshFriends();
+  }).catch(function(){});
+};
+
+/* Override fr-decline to use Supabase */
+ACT['fr-decline'] = function(a) {
+  if (!uid) return;
+  var u = a.dataset.u;
+  var targetUid = (window._sbFriendMap && window._sbFriendMap[u]) ? window._sbFriendMap[u] : null;
+  if (!targetUid) return;
+
+  sb.rpc('decline_friend_request', {p_from_user_id: targetUid}).then(function() {
+    var idx = S.me.freqIn.indexOf(u);
+    if (idx >= 0) S.me.freqIn.splice(idx, 1);
+    save();
+    if (typeof refreshFriends === 'function') refreshFriends();
+    toast({icon:'check', title:'Demande refusee'});
+  }).catch(function(){});
+};
+
+/* Override fr-remove to use Supabase */
+ACT['fr-remove'] = function(a) {
+  if (!uid) return;
+  var u = a.dataset.u;
+  sb.rpc('remove_friend', {p_friend_username: USERS[u] ? USERS[u].n : u}).then(function() {
+    S.me.friends = S.me.friends.filter(function(f){return f!==u;});
+    save();
+    if (typeof closeModal === 'function') closeModal();
+    if (typeof refreshFriends === 'function') refreshFriends();
+    toast({icon:'check', title:'Ami supprime'});
+  }).catch(function(){});
+};
+
+console.log('Wimoro x Supabase OK — friends synced from DB');
 })();
