@@ -13539,6 +13539,8 @@ if(blob&&blob.state&&blob.state.v)Object.assign(S.me,blob.state);
 if(user){S.me.n=user.username||S.me.n;S.me.email=user.email||S.me.email;S.me.photo=user.avatar_photo||S.me.photo;S.me.color=user.avatar_color||S.me.color;S.me.kyc=!!user.kyc_verified;}
 if(st){S.me.balance=Number(st.balance);S.me.xp=st.xp||0;S.me.played=st.bets_placed||0;S.me.wins=st.bets_won||0;S.me.settled=st.bets_settled||0;S.me.deposits=st.deposits_count||0;S.me.flashWins=st.flash_wins||0;S.me.followed=st.followed_bets_count||0;S.me.realized=Number(st.profit_realized)||0;S.me.streak=st.streak_current||1;S.me.bestStreak=st.streak_best||1;S.me.copiers=st.copiers_count||0;S.me.msgsTotal=st.messages_total||0;S.me.contraWins=st.contra_wins||0;S.me.flashStreak=st.flash_streak_current||0;S.me.flashBest=st.flash_streak_best||0;S.me.flashProfit=Number(st.flash_profit_total)||0;S.me.followers=st.followers_count||0;}
 S.me.logged=true;S.me.onboarded=true;
+/* Mark current rank as seen to prevent popup on boot */
+S.me._sbRankSeen = (typeof myRank==='function') ? (myRank().t+'.'+myRank().d) : '0.0';
 if(typeof updateHeader==='function')updateHeader();
 if(typeof render==='function')render(false);
 }).catch(function(e){console.warn('sbLoad error',e);});
@@ -13554,33 +13556,38 @@ sb.from('users').update({username:S.me.n||'',avatar_photo:S.me.photo||'',avatar_
 /* --- REFRESH: read latest stats from DB (admin changes) --- */
 function sbRefresh(){
 if(!uid||!S.me.logged)return;
-/* Remember rank before refresh */
-var rankBefore = (typeof myRank==='function') ? myRank() : {t:0,d:0};
-sb.from('user_stats').select('*').eq('user_id',uid).maybeSingle().then(function(r){
+sb.from('user_stats').select('balance,xp,bets_placed,bets_won,bets_settled,deposits_count,flash_wins,followed_bets_count,profit_realized,streak_current,streak_best,copiers_count,messages_total').eq('user_id',uid).maybeSingle().then(function(r){
 if(!r.data)return;var st=r.data;
-S.me.balance=Number(st.balance);S.me.xp=st.xp||0;S.me.played=st.bets_placed||0;S.me.wins=st.bets_won||0;S.me.settled=st.bets_settled||0;S.me.deposits=st.deposits_count||0;S.me.flashWins=st.flash_wins||0;S.me.followed=st.followed_bets_count||0;S.me.realized=Number(st.profit_realized)||0;S.me.streak=st.streak_current||1;S.me.bestStreak=st.streak_best||1;S.me.copiers=st.copiers_count||0;S.me.msgsTotal=st.messages_total||0;
-/* Suppress rank popup if rank didn't change from server refresh */
-var rankAfter = (typeof myRank==='function') ? myRank() : {t:0,d:0};
-if(rankAfter.t===rankBefore.t && rankAfter.d===rankBefore.d){
-  /* Same rank — suppress any pending rank popup by marking as seen */
-  S.me._sbRankSeen = rankAfter.t + '.' + rankAfter.d;
-}
-if(typeof updateHeader==='function')updateHeader();
+/* Only update if values actually changed — prevents render loops */
+var bal=Number(st.balance),xp=st.xp||0;
+var changed = (bal!==S.me.balance)||(xp!==S.me.xp);
+/* Always mark current rank as seen to prevent popup loops */
+S.me._sbRankSeen = (typeof myRank==='function') ? (myRank().t+'.'+myRank().d) : '0.0';
+/* Apply values silently */
+S.me.balance=bal;S.me.xp=xp;S.me.played=st.bets_placed||0;S.me.wins=st.bets_won||0;S.me.settled=st.bets_settled||0;S.me.deposits=st.deposits_count||0;S.me.flashWins=st.flash_wins||0;S.me.followed=st.followed_bets_count||0;S.me.realized=Number(st.profit_realized)||0;S.me.streak=st.streak_current||1;S.me.bestStreak=st.streak_best||1;S.me.copiers=st.copiers_count||0;S.me.msgsTotal=st.messages_total||0;
+/* Mark new rank as seen too (after XP update) */
+S.me._sbRankSeen = (typeof myRank==='function') ? (myRank().t+'.'+myRank().d) : '0.0';
+/* Only update header if balance or XP changed — NO render(), NO checkRank() */
+if(changed && typeof updateHeader==='function')updateHeader();
 }).catch(function(){});
 }
 
 /* --- BOOT: check Supabase session on page load --- */
 sb.auth.getSession().then(function(r){
-if(r.data&&r.data.session){uid=r.data.session.user.id;sbLoad();}
+if(r.data&&r.data.session){uid=r.data.session.user.id;_sbLoadDone=true;sbLoad();}
 else if(S.me.logged&&S.me.email){
 sb.from('users').select('id').ilike('email',S.me.email).maybeSingle().then(function(u){
 if(u.data){uid=u.data.id;sbLoad();}}).catch(function(){});}
 }).catch(function(){});
 
 /* --- AUTH STATE: react to login/logout --- */
+var _sbLoadDone = false;
 sb.auth.onAuthStateChange(function(ev,sess){
-if(ev==='SIGNED_IN'&&sess&&sess.user){uid=sess.user.id;sbLoad();}
-if(ev==='SIGNED_OUT'){uid=null;}
+if(ev==='SIGNED_IN'&&sess&&sess.user){
+  if(!_sbLoadDone){uid=sess.user.id;sbLoad();_sbLoadDone=true;}
+  else{uid=sess.user.id;} /* Don't reload if already loaded */
+}
+if(ev==='SIGNED_OUT'){uid=null;_sbLoadDone=false;}
 });
 
 /* --- OVERRIDE LOGIN: use Supabase Auth --- */
@@ -13634,7 +13641,7 @@ if(typeof toast==='function')toast({tone:'blue',icon:'mail',title:'E-mail envoy\
 };
 
 /* --- PERIODIC: refresh from DB every 10s + save blob --- */
-setInterval(function(){if(uid&&S.me.logged){sbRefresh();sbSave();}},10000);
+setInterval(function(){if(uid&&S.me.logged){sbRefresh();}},15000); /* sbSave only on page close, not periodic — prevents trigger loops */
 
 /* --- PAGE CLOSE: save --- */
 addEventListener('pagehide',function(){if(uid&&S.me.logged)sbSave();});
@@ -13895,11 +13902,15 @@ window.checkBadges = function(silent) {
   if (uid) sb.rpc('check_badges').catch(function(){});
 };
 
-/* Suppress rank-up popup from server refresh (not from real user action) */
+/* Suppress rank-up popup — only show for genuinely new promotions */
 var _origRankUp = window.rankUp;
+var _rankUpShownKey = '';
 if(_origRankUp) window.rankUp = function(r) {
   var key = r.t + '.' + r.d;
-  if (S.me._sbRankSeen === key) return; /* Already seen this rank */
+  /* Skip if this rank was already shown OR if sbRefresh marked it as seen */
+  if (_rankUpShownKey === key) return;
+  if (S.me._sbRankSeen === key) return;
+  _rankUpShownKey = key;
   S.me._sbRankSeen = key;
   _origRankUp(r);
 };
