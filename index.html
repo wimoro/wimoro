@@ -13522,6 +13522,16 @@ addEventListener('scroll',()=>{NAV.pos[NAV.cur]=window.scrollY;},{passive:true})
 <script>
 /* Supabase sync — runs after site is fully loaded */
 (function(){
+/* Force clear stale localStorage if ?clear=1 or version mismatch */
+try{
+var wv=localStorage.getItem('wimoro-v');
+if(location.search.includes('clear=1')||wv!=='sb2'){
+var keys=[];for(var k=0;k<localStorage.length;k++){var key=localStorage.key(k);if(key&&key.startsWith('wimoro-')&&key!=='wimoro-theme'&&key!=='wimoro-lang'&&key!=='wimoro-tmode')keys.push(key);}
+keys.forEach(function(k){localStorage.removeItem(k);});
+localStorage.setItem('wimoro-v','sb2');
+if(location.search.includes('clear=1')){location.replace(location.pathname+'#accueil');return;}
+}
+}catch(e){}
 if(typeof supabase==='undefined'||!supabase.createClient)return;
 var sb=supabase.createClient('https://brmwvxncyeypefsgiepf.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJybXd2eG5jeWV5cGVmc2dpZXBmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ1NzYwODAsImV4cCI6MjExMDE1MjA4MH0.-AA2WyzSOyJiK-Nwogbzv-Rowej9A3fWRDpAGSXI3YM');
 window.__supabase=sb;
