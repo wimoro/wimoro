@@ -13529,20 +13529,20 @@ var uid=null;
 
 function sync(){
 if(!uid||!S.me.logged)return;
+/* Save blob (positions, history, missions, etc) — never touch user_stats */
 var c=Object.assign({},S.me);
 sb.from('user_full_state').upsert({user_id:uid,state:c}).catch(function(){});
+/* Save profile info only */
 sb.from('users').update({username:S.me.n||'',avatar_photo:S.me.photo||'',avatar_color:S.me.color||'#2448FF',bio:S.me.bio||'',kyc_verified:!!S.me.kyc}).eq('id',uid).catch(function(){});
-/* Read DB first to not overwrite admin changes */
-sb.from('user_stats').select('balance,rank_tier,rank_division,xp').eq('user_id',uid).maybeSingle().then(function(r){
-var db=r.data;if(!db)return;
-/* Keep the HIGHER balance (admin top-up or game earnings) */
-var bal=Math.max(Number(db.balance)||0,S.me.balance||0);
-/* Keep DB rank/xp if higher (admin set) */
-var xp=Math.max(db.xp||0,S.me.xp||0);
-var tier=Math.max(db.rank_tier||0,(typeof myRank==='function'?myRank():{t:0}).t||0);
-var div=db.rank_tier>((typeof myRank==='function'?myRank():{t:0}).t||0)?db.rank_division||0:(typeof myRank==='function'?myRank():{d:0}).d||0;
-S.me.balance=bal;S.me.xp=xp;
-sb.from('user_stats').update({balance:bal,xp:xp,rank_tier:tier,rank_division:div,bets_placed:S.me.played||0,bets_won:S.me.wins||0,bets_settled:S.me.settled||0,flash_wins:S.me.flashWins||0,messages_total:S.me.msgsTotal||0,profit_realized:S.me.realized||0}).eq('user_id',uid).catch(function(){});
+/* Read latest balance/stats from DB (admin may have changed them) */
+sb.from('user_stats').select('*').eq('user_id',uid).maybeSingle().then(function(r){
+if(!r.data)return;var s=r.data;
+S.me.balance=Number(s.balance);S.me.xp=s.xp||0;
+S.me.played=s.bets_placed||0;S.me.wins=s.bets_won||0;S.me.settled=s.bets_settled||0;
+S.me.flashWins=s.flash_wins||0;S.me.deposits=s.deposits_count||0;
+S.me.followed=s.followed_bets_count||0;S.me.realized=Number(s.profit_realized)||0;
+S.me.streak=s.streak_current||1;S.me.bestStreak=s.streak_best||1;
+S.me.copiers=s.copiers_count||0;S.me.msgsTotal=s.messages_total||0;
 if(typeof updateHeader==='function')updateHeader();
 }).catch(function(){});
 }
