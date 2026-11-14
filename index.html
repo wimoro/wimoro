@@ -13925,6 +13925,51 @@ sb.channel('notif-live').on('postgres_changes', {event:'INSERT', schema:'public'
 // SMTP is configured (Resend), templates are set
 // autoconfirm is ON for smooth demo
 
+/* === Friend search: query Supabase real users === */
+var _fqTimer = null;
+document.addEventListener('input', function(e) {
+  if (!e.target.matches || !e.target.matches('[data-fq]')) return;
+  if (!uid) return; // not logged in to Supabase
+  var q = (e.target.value || '').trim();
+  if (q.length < 2) return; // min 2 chars
+  clearTimeout(_fqTimer);
+  _fqTimer = setTimeout(function() {
+    sb.rpc('search_users', {p_query: q, p_limit: 10}).then(function(res) {
+      if (!res.data || !Array.isArray(res.data)) return;
+      var box = document.querySelector('[data-fres]');
+      if (!box) return;
+      var results = res.data;
+      if (results.length === 0) {
+        // Keep the original "no results" message if already shown
+        return;
+      }
+      // Render real users
+      var html = results.map(function(u) {
+        var isFriend = (S.me.friends || []).some(function(f) { return f === u.username; });
+        var btn = isFriend
+          ? '<button class="btn b-soft sm">' + _t("Amis") + '</button>'
+          : '<button class="btn b-ink sm" data-a="fr-add-sb" data-uid="' + u.user_id + '" data-uname="' + u.username + '">' + ic('plus',15,'#fff') + ' ' + _t("Ajouter") + '</button>';
+        return '<div class="fr-row"><span class="av" style="background:' + (u.avatar_color || '#2448FF') + '">' + (u.username ? u.username[0].toUpperCase() : '?') + '</span><span class="nm">' + u.username + '</span>' + btn + '</div>';
+      }).join('');
+      box.innerHTML = html;
+      if (typeof fixText === 'function') fixText(box);
+    }).catch(function() {});
+  }, 300); // debounce 300ms
+});
+
+/* Handle fr-add-sb (add real Supabase user as friend) */
+ACT['fr-add-sb'] = function(a) {
+  var uname = a.dataset.uname;
+  if (!uname || !uid) return;
+  sb.rpc('send_friend_request', {p_target_username: uname}).then(function(r) {
+    if (r.error) { toast({tone:'red', icon:'info', title:'Erreur', text: r.error.message}); return; }
+    toast({icon:'check', title:_t('Demande envoyee'), text: uname, dur: 2500});
+    a.disabled = true;
+    a.textContent = _t('Demande envoyee');
+    a.className = 'btn b-white sm';
+  }).catch(function() {});
+};
+
 console.log('Wimoro x Supabase OK (Phase 10: COMPLETE)');
 })();
 </script>
