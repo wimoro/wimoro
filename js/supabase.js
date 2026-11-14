@@ -343,6 +343,35 @@ window.driftAnchors=function(){if(!uid)_origDriftAnchors();};
 window.marketsSave=function(){if(!uid)_origMarketsSave();};
 window.marketsLoad=function(){if(!uid)_origMarketsLoad();};
 
+/* === FRIENDS: Override friendsOf/fIn/fOut for account mode === */
+/* In account mode, return empty arrays instead of hardcoded bots
+   until Supabase data arrives via sbLoadFriends() */
+var _origFriendsOf = friendsOf;
+var _origFIn = fIn;
+var _origFOut = fOut;
+friendsOf = function() {
+  if (uid) {
+    /* Account mode: return real friends from S.me (populated by sbLoadFriends) */
+    if (!S.me.friends) S.me.friends = [];
+    return S.me.friends;
+  }
+  return _origFriendsOf(); /* Demo mode: original behavior */
+};
+fIn = function() {
+  if (uid) {
+    if (!S.me.freqIn) S.me.freqIn = [];
+    return S.me.freqIn;
+  }
+  return _origFIn();
+};
+fOut = function() {
+  if (uid) {
+    if (!S.me.freqOut) S.me.freqOut = [];
+    return S.me.freqOut;
+  }
+  return _origFOut();
+};
+
 /* === FRIENDS: Sync from Supabase on boot + periodically === */
 window._sbFriendMap = {};
 var _friendsLoaded = false;
