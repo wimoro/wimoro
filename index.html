@@ -13529,22 +13529,22 @@ var uid=null;
 
 function sync(){
 if(!uid||!S.me.logged)return;
-/* Save blob (positions, history, missions, etc) — never touch user_stats */
-var c=Object.assign({},S.me);
-sb.from('user_full_state').upsert({user_id:uid,state:c}).catch(function(){});
-/* Save profile info only */
-sb.from('users').update({username:S.me.n||'',avatar_photo:S.me.photo||'',avatar_color:S.me.color||'#2448FF',bio:S.me.bio||'',kyc_verified:!!S.me.kyc}).eq('id',uid).catch(function(){});
-/* Read latest balance/stats from DB (admin may have changed them) */
+/* FIRST read DB stats (admin may have changed them) */
 sb.from('user_stats').select('*').eq('user_id',uid).maybeSingle().then(function(r){
-if(!r.data)return;var s=r.data;
+if(r.data){var s=r.data;
 S.me.balance=Number(s.balance);S.me.xp=s.xp||0;
 S.me.played=s.bets_placed||0;S.me.wins=s.bets_won||0;S.me.settled=s.bets_settled||0;
 S.me.flashWins=s.flash_wins||0;S.me.deposits=s.deposits_count||0;
 S.me.followed=s.followed_bets_count||0;S.me.realized=Number(s.profit_realized)||0;
 S.me.streak=s.streak_current||1;S.me.bestStreak=s.streak_best||1;
 S.me.copiers=s.copiers_count||0;S.me.msgsTotal=s.messages_total||0;
-if(typeof updateHeader==='function')updateHeader();
+if(typeof updateHeader==='function')updateHeader();}
+/* THEN save blob with updated values */
+var c=Object.assign({},S.me);
+sb.from('user_full_state').upsert({user_id:uid,state:c}).catch(function(){});
 }).catch(function(){});
+/* Save profile info */
+sb.from('users').update({username:S.me.n||'',avatar_photo:S.me.photo||'',avatar_color:S.me.color||'#2448FF',bio:S.me.bio||'',kyc_verified:!!S.me.kyc}).eq('id',uid).catch(function(){});
 }
 
 function load(){
