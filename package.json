@@ -1,0 +1,16 @@
+{
+  "name": "wimoro",
+  "private": true,
+  "description": "Outils de test et d'audit de Wimoro. Le site lui-meme n'a besoin d'aucune installation.",
+  "type": "module",
+  "scripts": {
+    "serve": "node tools/serve.mjs",
+    "test": "playwright test",
+    "audit:inventaire": "node tools/audit/inventaire.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.1",
+    "acorn": "8.19.0",
+    "acorn-walk": "8.3.5"
+  }
+}
