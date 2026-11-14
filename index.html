@@ -13539,8 +13539,6 @@ if(blob&&blob.state&&blob.state.v)Object.assign(S.me,blob.state);
 if(user){S.me.n=user.username||S.me.n;S.me.email=user.email||S.me.email;S.me.photo=user.avatar_photo||S.me.photo;S.me.color=user.avatar_color||S.me.color;S.me.kyc=!!user.kyc_verified;}
 if(st){S.me.balance=Number(st.balance);S.me.xp=st.xp||0;S.me.played=st.bets_placed||0;S.me.wins=st.bets_won||0;S.me.settled=st.bets_settled||0;S.me.deposits=st.deposits_count||0;S.me.flashWins=st.flash_wins||0;S.me.followed=st.followed_bets_count||0;S.me.realized=Number(st.profit_realized)||0;S.me.streak=st.streak_current||1;S.me.bestStreak=st.streak_best||1;S.me.copiers=st.copiers_count||0;S.me.msgsTotal=st.messages_total||0;S.me.contraWins=st.contra_wins||0;S.me.flashStreak=st.flash_streak_current||0;S.me.flashBest=st.flash_streak_best||0;S.me.flashProfit=Number(st.flash_profit_total)||0;S.me.followers=st.followers_count||0;}
 S.me.logged=true;S.me.onboarded=true;
-/* Mark current rank as seen to prevent popup on boot */
-S.me._sbRankSeen = (typeof myRank==='function') ? (myRank().t+'.'+myRank().d) : '0.0';
 if(typeof updateHeader==='function')updateHeader();
 if(typeof render==='function')render(false);
 }).catch(function(e){console.warn('sbLoad error',e);});
@@ -13556,38 +13554,25 @@ sb.from('users').update({username:S.me.n||'',avatar_photo:S.me.photo||'',avatar_
 /* --- REFRESH: read latest stats from DB (admin changes) --- */
 function sbRefresh(){
 if(!uid||!S.me.logged)return;
-sb.from('user_stats').select('balance,xp,bets_placed,bets_won,bets_settled,deposits_count,flash_wins,followed_bets_count,profit_realized,streak_current,streak_best,copiers_count,messages_total').eq('user_id',uid).maybeSingle().then(function(r){
+sb.from('user_stats').select('*').eq('user_id',uid).maybeSingle().then(function(r){
 if(!r.data)return;var st=r.data;
-/* Only update if values actually changed — prevents render loops */
-var bal=Number(st.balance),xp=st.xp||0;
-var changed = (bal!==S.me.balance)||(xp!==S.me.xp);
-/* Always mark current rank as seen to prevent popup loops */
-S.me._sbRankSeen = (typeof myRank==='function') ? (myRank().t+'.'+myRank().d) : '0.0';
-/* Apply values silently */
-S.me.balance=bal;S.me.xp=xp;S.me.played=st.bets_placed||0;S.me.wins=st.bets_won||0;S.me.settled=st.bets_settled||0;S.me.deposits=st.deposits_count||0;S.me.flashWins=st.flash_wins||0;S.me.followed=st.followed_bets_count||0;S.me.realized=Number(st.profit_realized)||0;S.me.streak=st.streak_current||1;S.me.bestStreak=st.streak_best||1;S.me.copiers=st.copiers_count||0;S.me.msgsTotal=st.messages_total||0;
-/* Mark new rank as seen too (after XP update) */
-S.me._sbRankSeen = (typeof myRank==='function') ? (myRank().t+'.'+myRank().d) : '0.0';
-/* Only update header if balance or XP changed — NO render(), NO checkRank() */
-if(changed && typeof updateHeader==='function')updateHeader();
+S.me.balance=Number(st.balance);S.me.xp=st.xp||0;S.me.played=st.bets_placed||0;S.me.wins=st.bets_won||0;S.me.settled=st.bets_settled||0;S.me.deposits=st.deposits_count||0;S.me.flashWins=st.flash_wins||0;S.me.followed=st.followed_bets_count||0;S.me.realized=Number(st.profit_realized)||0;S.me.streak=st.streak_current||1;S.me.bestStreak=st.streak_best||1;S.me.copiers=st.copiers_count||0;S.me.msgsTotal=st.messages_total||0;
+if(typeof updateHeader==='function')updateHeader();
 }).catch(function(){});
 }
 
 /* --- BOOT: check Supabase session on page load --- */
 sb.auth.getSession().then(function(r){
-if(r.data&&r.data.session){uid=r.data.session.user.id;_sbLoadDone=true;sbLoad();}
+if(r.data&&r.data.session){uid=r.data.session.user.id;sbLoad();}
 else if(S.me.logged&&S.me.email){
 sb.from('users').select('id').ilike('email',S.me.email).maybeSingle().then(function(u){
 if(u.data){uid=u.data.id;sbLoad();}}).catch(function(){});}
 }).catch(function(){});
 
 /* --- AUTH STATE: react to login/logout --- */
-var _sbLoadDone = false;
 sb.auth.onAuthStateChange(function(ev,sess){
-if(ev==='SIGNED_IN'&&sess&&sess.user){
-  if(!_sbLoadDone){uid=sess.user.id;sbLoad();_sbLoadDone=true;}
-  else{uid=sess.user.id;} /* Don't reload if already loaded */
-}
-if(ev==='SIGNED_OUT'){uid=null;_sbLoadDone=false;}
+if(ev==='SIGNED_IN'&&sess&&sess.user){uid=sess.user.id;sbLoad();}
+if(ev==='SIGNED_OUT'){uid=null;}
 });
 
 /* --- OVERRIDE LOGIN: use Supabase Auth --- */
@@ -13641,354 +13626,157 @@ if(typeof toast==='function')toast({tone:'blue',icon:'mail',title:'E-mail envoy\
 };
 
 /* --- PERIODIC: refresh from DB every 10s + save blob --- */
-setInterval(function(){if(uid&&S.me.logged){sbRefresh();}},15000); /* sbSave only on page close, not periodic — prevents trigger loops */
+setInterval(function(){if(uid&&S.me.logged){sbRefresh();sbSave();}},10000);
 
 /* --- PAGE CLOSE: save --- */
 addEventListener('pagehide',function(){if(uid&&S.me.logged)sbSave();});
 
-/* === PHASE 1: Server-side balance === */
-var SB_LIVE = {balance: true};
+/* === SERVER-SIDE BALANCE === */
+var SB_LIVE = {balance: true, markets: true, chat: true};
 
-/* Override placeBet to use server RPC */
+/* placeBet → server RPC */
 var _origPlaceBet = window.placeBet;
 window.placeBet = function(ctx, ev) {
   if (!SB_LIVE.balance || !uid) { _origPlaceBet(ctx, ev); return; }
   var st = tState(ctx), m = MK[st.m], c = calcT(st);
   if (!c.ok) return;
   if (typeof rgBlocked === 'function' && rgBlocked('bet')) return;
-  /* Optimistic UI: show pending */
   var btn = ctx === 'sheet' ? document.querySelector('.md .btn[data-c="btn"]') : document.querySelector('[data-ticket="page"] .btn[data-c="btn"]');
   if (btn) { btn.disabled = true; btn.textContent = '...'; }
   sb.rpc('place_bet', {p_market_id: m.id, p_side: st.side, p_amount: c.amt}).then(function(res) {
-    if (res.error) { toast({tone:'red', icon:'info', title:'Erreur', text: res.error.message || 'Pari refus\u00e9'}); if(btn){btn.disabled=false;btn.textContent=st.mode==='buy'?'Acheter':'Vendre';} return; }
+    if (res.error) { toast({tone:'red', icon:'info', title:'Erreur', text: res.error.message}); if(btn)btn.disabled=false; return; }
     var d = res.data;
-    S.me.balance = Number(d.new_balance);
-    S.me.played++;
-    S.me.maxBet = Math.max(S.me.maxBet || 0, c.amt);
-    /* Update local position for immediate display */
+    S.me.balance = Number(d.new_balance); S.me.played++;
     var p = S.me.positions.find(function(x){return x.m===m.id&&x.s===st.side;});
     if (p) { p.avg = Number(d.avg_price); p.sh = (p.sh||0) + Number(d.shares); }
     else { S.me.positions.push({m:m.id, s:st.side, sh:Number(d.shares), avg:Number(d.avg_price)}); }
-    /* Update market price locally */
-    var old = m.p;
-    m.p = Number(d.new_market_price);
+    var old = m.p; m.p = Number(d.new_market_price);
     if (typeof updateMarket === 'function') updateMarket(m, old);
-    m.people++;
-    if (typeof addBet === 'function') addBet(m, {s:st.side==='oui'?1:0, a:Math.min(1,c.amt/300), me:1});
-    /* UI feedback */
-    updateHeader();
-    toast({tone:'blue', icon:'check', title:'Pari plac\u00e9', text:d.shares+' parts '+st.side+' sur '+m.short});
-    save();
+    updateHeader(); toast({tone:'blue', icon:'check', title:'Pari place', text:d.shares+' parts'}); save();
     if (ctx === 'sheet') closeModal(); else rerenderTicket();
-  }).catch(function(e) {
-    toast({tone:'red', icon:'info', title:'Erreur', text:'Pari refus\u00e9'});
-    if(btn){btn.disabled=false;}
-  });
+  }).catch(function() { if(btn)btn.disabled=false; });
 };
 
-/* Override sellPos to use server RPC */
+/* sellPos → server RPC */
 var _origSellPos = window.sellPos;
 window.sellPos = function(ctx) {
   if (!SB_LIVE.balance || !uid) { _origSellPos(ctx); return; }
   var st = tState(ctx), c = calcT(st);
   if (!c.ok) return;
   sb.rpc('sell_position', {p_market_id: st.m, p_side: st.side, p_shares: c.sh}).then(function(res) {
-    if (res.error) { toast({tone:'red', icon:'info', title:'Erreur', text:res.error.message||'Vente refus\u00e9e'}); return; }
+    if (res.error) { toast({tone:'red', icon:'info', title:'Erreur', text:res.error.message}); return; }
     var d = res.data;
     S.me.balance = Number(d.new_balance);
-    /* Update local position */
     var p = S.me.positions.find(function(x){return x.m===st.m&&x.s===st.side;});
     if (p) { p.sh -= Number(d.shares_sold); if (p.sh < 0.05) S.me.positions = S.me.positions.filter(function(x){return x!==p;}); }
-    S.me.history.unshift({k:'sell', m:st.m, q:MK[st.m].q, s:st.side, win:Number(d.proceeds)>(Number(d.shares_sold)*(p?p.avg:50)/100), pnl:Number(d.proceeds)-(Number(d.shares_sold)*(p?p.avg:50)/100), at:Date.now()});
-    /* Update market */
-    var m = MK[st.m], old = m.p;
-    m.p = Number(d.new_market_price);
+    var m = MK[st.m], old = m.p; m.p = Number(d.new_market_price);
     if (typeof updateMarket === 'function') updateMarket(m, old);
-    updateHeader();
-    toast({tone:'blue', icon:'check', title:'Position vendue', text:d.proceeds+'$ cr\u00e9dit\u00e9s'});
-    st.amt = '';
-    rerenderTicket();
-    save();
-  }).catch(function() {
-    toast({tone:'red', icon:'info', title:'Erreur', text:'Vente refus\u00e9e'});
-  });
+    updateHeader(); toast({tone:'blue', icon:'check', title:'Vendu', text:d.proceeds+'$'});
+    st.amt=''; rerenderTicket(); save();
+  }).catch(function() {});
 };
 
-/* Override deposit confirmation to use server RPC */
-var _origStartDeposit = window.startDeposit;
-if (_origStartDeposit) window.startDeposit = function(amt) {
-  if (!SB_LIVE.balance || !uid) { _origStartDeposit(amt); return; }
+/* flashBet → server RPC (NO original call to prevent loops) */
+if(typeof ACT!=='undefined'&&ACT['flash-bet']){
+  ACT['flash-bet']=function(a,ev){
+    if(!uid)return;
+    var gid=a.dataset.fg||S.ui.fgame||'btc', amt=S.ui.flashAmt||10;
+    var fside=a?a.dataset.v:'oui';
+    var rside=fside==='oui'?'a':fside==='non'?'b':'be';
+    if(a)a.disabled=true;
+    sb.rpc('flash_bet',{p_game_id:gid,p_side:rside,p_amount:amt}).then(function(res){
+      if(res.error){toast({tone:'red',icon:'info',title:'Erreur',text:res.error.message});if(a)a.disabled=false;return;}
+      S.me.balance=Number(res.data.new_balance); S.me.played++;
+      updateHeader(); toast({tone:'blue',icon:'bolt',title:'Pari eclair',text:amt+'$'});
+      if(a)a.disabled=false;
+    }).catch(function(){if(a)a.disabled=false;});
+  };
+}
+
+/* startDeposit → server RPC */
+var _origDep = window.startDeposit;
+if (_origDep) window.startDeposit = function(amt) {
+  if (!SB_LIVE.balance || !uid) { _origDep(amt); return; }
   var st = S.ui.dep;
-  sb.rpc('demo_deposit', {p_coin: st.coin, p_network: st.net, p_amount: amt * (typeof coinUSD==='function'?coinUSD(st.coin):1)}).then(function(res) {
-    if (res.error) { toast({tone:'red', icon:'info', title:'Erreur', text:res.error.message}); return; }
-    S.me.balance = Number(res.data.new_balance);
-    S.me.deposits++;
-    updateHeader();
-    toast({tone:'blue', icon:'check', title:'D\u00e9p\u00f4t cr\u00e9dit\u00e9', text:'+'+amt+' '+st.coin});
-    save();
+  sb.rpc('demo_deposit', {p_coin:st.coin, p_network:st.net, p_amount:amt*(typeof coinUSD==='function'?coinUSD(st.coin):1)}).then(function(res) {
+    if (res.error) return;
+    S.me.balance = Number(res.data.new_balance); S.me.deposits++;
+    updateHeader(); save(); toast({tone:'blue', icon:'check', title:'Depot', text:'+'+amt});
     if(typeof render==='function')render(false);
-  }).catch(function(){toast({tone:'red',icon:'info',title:'Erreur',text:'D\u00e9p\u00f4t refus\u00e9'});});
+  }).catch(function(){});
 };
 
-/* === PHASE 2: Shared markets via Realtime === */
-SB_LIVE.markets = true;
-SB_LIVE.chat = true;
-
-/* Load markets from DB on boot */
+/* === SHARED MARKETS === */
 sb.rpc('get_markets').then(function(res){
   if(!res.data)return;
   res.data.forEach(function(row){
     var m=MK[row.market_id];if(!m)return;
-    m.p=Number(row.current_probability);
-    m.anchor=Number(row.anchor_probability)||m.p;
+    m.p=Number(row.current_probability); m.anchor=Number(row.anchor_probability)||m.p;
     if(Number(row.volume_total)>m.vol)m.vol=Number(row.volume_total);
-    if(row.participants_count>m.people)m.people=row.participants_count;
   });
-  if(typeof render==='function')render(false);
-});
+}).catch(function(){});
 
-/* Realtime: market price updates */
 sb.channel('mkt-live').on('postgres_changes',{event:'UPDATE',schema:'public',table:'market_live_state'},function(p){
-  var row=p.new;if(!row)return;
-  var m=MK[row.market_id];if(!m)return;
-  var old=m.p;
-  m.p=Number(row.current_probability);
-  m.vol=Number(row.volume_total);
-  m.people=row.participants_count;
+  var row=p.new;if(!row)return;var m=MK[row.market_id];if(!m)return;
+  var old=m.p;m.p=Number(row.current_probability);
   if(typeof updateMarket==='function')updateMarket(m,old);
 }).subscribe();
 
-/* === PHASE 3: Real-time chat === */
-var _origSendMsg=window.sendMsg;
+/* === CHAT === */
+var _origSM=window.sendMsg;
 window.sendMsg=function(rid){
-  if(!SB_LIVE.chat||!uid){_origSendMsg(rid);return;}
+  if(!SB_LIVE.chat||!uid){_origSM(rid);return;}
   var inp=document.querySelector('[data-in="'+CSS.escape(rid)+'"]');
   if(!inp)return;var text=inp.value.trim();if(!text)return;
   inp.value='';inp.focus();
-  /* Send via server */
   sb.rpc('send_chat_message',{p_room_id:rid,p_text:text}).then(function(res){
-    if(res.error){toast({tone:'red',icon:'info',title:'Erreur',text:res.error.message});return;}
-    /* Add locally for instant feedback */
-    if(typeof addMsg==='function'&&typeof mkMsg==='function'){
-      addMsg(rid,mkMsg({u:'me',k:'msg',text:text}));
-    }
+    if(res.error)return;
+    if(typeof addMsg==='function'&&typeof mkMsg==='function')addMsg(rid,mkMsg({u:'me',k:'msg',text:text}));
   }).catch(function(){});
 };
 
-/* Realtime: incoming chat messages */
 sb.channel('chat-live').on('postgres_changes',{event:'INSERT',schema:'public',table:'chat_messages'},function(p){
   var msg=p.new;if(!msg||msg.user_id===uid)return;
-  var rid=msg.room_id;
-  if(typeof room==='function'&&typeof addMsg==='function'&&typeof mkMsg==='function'){
-    var r=room(rid);
-    addMsg(rid,mkMsg({u:msg.user_id,k:msg.message_type||'msg',text:msg.text_content||''}));
-  }
+  if(typeof room==='function'&&typeof addMsg==='function'&&typeof mkMsg==='function')
+    addMsg(msg.room_id,mkMsg({u:msg.user_id,k:msg.message_type||'msg',text:msg.text_content||''}));
 }).subscribe();
 
-/* === PHASE 5: Flash bet override === */
-var _origFlashBet=null;
-if(typeof ACT!=='undefined'&&ACT['flash-bet']){
-  _origFlashBet=ACT['flash-bet'];
-  ACT['flash-bet']=function(a,ev){
-    if(!uid){if(_origFlashBet)_origFlashBet(a,ev);return;}
-    var gid=a.dataset.fg||S.ui.fgame||'btc';
-    var amt=S.ui.flashAmt||10;
-    var frontSide=a?a.dataset.v:'oui';
-    var rpcSide=frontSide==='oui'?'a':frontSide==='non'?'b':frontSide==='be'?'be':frontSide;
-    var label=frontSide==='oui'?'Haut':frontSide==='non'?'Bas':'Break even';
-    if(a)a.disabled=true;
-
-    sb.rpc('flash_bet',{p_game_id:gid,p_side:rpcSide,p_amount:amt}).then(function(res){
-      if(res.error){toast({tone:'red',icon:'info',title:'Erreur',text:res.error.message||'Pari refus\u00e9'});if(a)a.disabled=false;return;}
-      S.me.balance=Number(res.data.new_balance);
-      S.me.played++;
-      updateHeader();
-      toast({tone:'blue',icon:'bolt',title:'Pari \u00e9clair plac\u00e9',text:amt+'$ '+label});
-      if(a)a.disabled=false;
-      /* DO NOT call original — it would deduct balance again + trigger gainXP/checkRank loops */
-    }).catch(function(){
-      toast({tone:'red',icon:'info',title:'Erreur',text:'Pari refus\u00e9'});
-      if(a)a.disabled=false;
-    });
-  };
-}
-
-/* === PHASE 9: Demo deposit override === */
-/* startDeposit already overridden in Phase 1 */
-
-/* === PHASE 10: Frontend overrides for all 7 priorities === */
-
-/* --- P1: FRIENDS --- */
-Object.assign(ACT, {
-'fr-add': function(a) {
-  var u = a.dataset.u;
-  if (!uid) return;
-  sb.rpc('send_friend_request', {p_target_username: USERS[u] ? USERS[u].n : u}).then(function(r) {
-    if (r.error) { toast({tone:'red', icon:'info', title:'Erreur', text:r.error.message || 'Erreur'}); return; }
-    toast({icon:'check', title:'Demande envoyee', dur:2000});
-    if (typeof refreshFriends === 'function') refreshFriends();
-  });
-},
-'fr-accept': function(a) {
-  var u = a.dataset.u;
-  if (!uid) return;
-  // Look up user ID from username
-  sb.from('users').select('id').ilike('username', USERS[u] ? USERS[u].n : u).maybeSingle().then(function(r) {
-    if (!r.data) return;
-    sb.rpc('accept_friend_request', {p_from_user_id: r.data.id}).then(function() {
-      toast({icon:'users', title:'Ami accepte'});
-      if (typeof refreshFriends === 'function') refreshFriends();
-    });
-  });
-},
-'fr-decline': function(a) {
-  var u = a.dataset.u;
-  if (!uid) return;
-  sb.from('users').select('id').ilike('username', USERS[u] ? USERS[u].n : u).maybeSingle().then(function(r) {
-    if (!r.data) return;
-    sb.rpc('decline_friend_request', {p_from_user_id: r.data.id}).then(function() {
-      toast({icon:'check', title:'Demande refusee'});
-      if (typeof refreshFriends === 'function') refreshFriends();
-    });
-  });
-},
-'fr-remove': function(a) {
-  var u = a.dataset.u;
-  if (!uid) return;
-  sb.rpc('remove_friend', {p_friend_username: USERS[u] ? USERS[u].n : u}).then(function() {
-    toast({icon:'check', title:'Ami supprime'});
-    if (typeof closeModal === 'function') closeModal();
-    if (typeof refreshFriends === 'function') refreshFriends();
-  });
-}
+/* === FRIEND SEARCH === */
+var _fqT=null;
+document.addEventListener('input',function(e){
+  if(!e.target.matches||!e.target.matches('[data-fq]')||!uid)return;
+  var q=(e.target.value||'').trim();if(q.length<2)return;
+  clearTimeout(_fqT);
+  _fqT=setTimeout(function(){
+    sb.rpc('search_users',{p_query:q,p_limit:10}).then(function(res){
+      if(!res.data||!Array.isArray(res.data)||!res.data.length)return;
+      var box=document.querySelector('[data-fres]');if(!box)return;
+      box.innerHTML=res.data.map(function(u){
+        return '<div class="fr-row"><span class="av" style="background:'+(u.avatar_color||'#2448FF')+'">'+(u.username?u.username[0].toUpperCase():'?')+'</span><span class="nm">'+u.username+'</span><button class="btn b-ink sm" data-a="fr-add-sb" data-uname="'+u.username+'">Ajouter</button></div>';
+      }).join('');
+      if(typeof fixText==='function')fixText(box);
+    }).catch(function(){});
+  },300);
 });
-
-/* --- P2: CLANS (override create/join/leave) --- */
-var _origClanCreate = window.clanCreate;
-if (_origClanCreate) window.clanCreate = function(opts) {
-  if (!uid) return _origClanCreate(opts);
-  sb.rpc('create_clan', {p_name:opts.name||'', p_description:opts.desc||'', p_emblem_color:opts.col||'#2448FF', p_emblem_icon:opts.ic||'shield'}).then(function(r) {
-    if (r.error) { toast({tone:'red',icon:'info',title:'Erreur',text:r.error.message}); return; }
-    if (r.data) { S.me.balance = Number(r.data.new_balance); updateHeader(); }
-    toast({tone:'green',icon:'shield',title:'Clan cree !'}); save();
-    _origClanCreate(opts); // run original for local UI
-  });
+ACT['fr-add-sb']=function(a){
+  var uname=a.dataset.uname;if(!uname||!uid)return;
+  sb.rpc('send_friend_request',{p_target_username:uname}).then(function(r){
+    if(r.error){toast({tone:'red',icon:'info',title:'Erreur',text:r.error.message});return;}
+    toast({icon:'check',title:'Demande envoyee',dur:2500});
+    a.disabled=true;a.textContent='Envoyee';a.className='btn b-white sm';
+  }).catch(function(){});
 };
 
-/* --- P3: COPY TRADING --- */
-// Copy trading already has complex local logic. Override the key entry point.
-var _origCopyFire = window.copyFire;
-// For now, copy trading works locally. The RPC start_copy/stop_copy handle the DB tracking.
-
-/* --- P4: MISSIONS & BADGES --- */
-// Init missions on login
-if (uid) sb.rpc('init_daily_missions').catch(function(){});
-
-// Override checkBadges to also check server-side
-var _origCheckBadges = window.checkBadges;
-window.checkBadges = function(silent) {
-  /* Only run server-side check — original creates duplicate notifs */
-  if (uid) { sb.rpc('check_badges').catch(function(){}); return; }
-  _origCheckBadges(silent);
-};
-
-/* Rank-up popup — show once per rank, persist across refreshes */
-var _origRankUp = window.rankUp;
-if(_origRankUp) window.rankUp = function(r) {
-  var key = r.t + '.' + r.d;
-  /* Check localStorage for this rank (persists across refreshes) */
-  try { if(localStorage.getItem('wimoro-rank-seen') === key) return; } catch(e){}
-  try { localStorage.setItem('wimoro-rank-seen', key); } catch(e){}
+/* === RANK POPUP (show once, persist in localStorage) === */
+var _origRankUp=window.rankUp;
+if(_origRankUp)window.rankUp=function(r){
+  var key=r.t+'.'+r.d;
+  try{if(localStorage.getItem('wimoro-rank-seen')===key)return;}catch(e){}
+  try{localStorage.setItem('wimoro-rank-seen',key);}catch(e){}
   _origRankUp(r);
 };
 
-/* --- P5: NEWSLETTER --- */
-// Add newsletter subscribe handler
-if (typeof ACT !== 'undefined') {
-  ACT['newsletter-sub'] = function(a) {
-    var email = S.me.email || '';
-    if (!email) { toast({icon:'info',title:'Connecte-toi pour t\'abonner'}); return; }
-    sb.rpc('newsletter_subscribe', {p_email: email}).then(function(r) {
-      if (r.data && r.data.status === 'subscribed') toast({tone:'blue',icon:'mail',title:'Abonne a la newsletter'});
-    });
-  };
-}
-
-/* --- P6: NOTIFICATIONS --- */
-// Override notif() to also write to DB
-var _origNotif = window.notif;
-window.notif = function(icon, text, href) {
-  _origNotif(icon, text, href); // local UI only — don't spam DB
-  /* DB notifications are created by server RPCs when needed */
-};
-
-// Load notifications from DB on boot
-if (uid) {
-  sb.rpc('get_my_notifications', {p_limit: 30}).then(function(r) {
-    if (r.data && Array.isArray(r.data)) {
-      S.me.notifs = r.data.map(function(n) {
-        return {id: n.id, ic: n.icon, text: n.text, href: n.href, at: new Date(n.created_at).getTime(), read: n.is_read};
-      });
-      if (typeof updateBell === 'function') updateBell();
-    }
-  }).catch(function(){});
-}
-
-// Subscribe to notification changes via Realtime
-/* Notifications: loaded from DB on boot, no Realtime (prevents loops) */
-var _notifSentIds = {};
-
-/* --- P7: AUTH (email confirmation) --- */
-// Already handled by existing FORMS.login, FORMS.forgot overrides
-// SMTP is configured (Resend), templates are set
-// autoconfirm is ON for smooth demo
-
-/* === Friend search: query Supabase real users === */
-var _fqTimer = null;
-document.addEventListener('input', function(e) {
-  if (!e.target.matches || !e.target.matches('[data-fq]')) return;
-  if (!uid) return; // not logged in to Supabase
-  var q = (e.target.value || '').trim();
-  if (q.length < 2) return; // min 2 chars
-  clearTimeout(_fqTimer);
-  _fqTimer = setTimeout(function() {
-    sb.rpc('search_users', {p_query: q, p_limit: 10}).then(function(res) {
-      if (!res.data || !Array.isArray(res.data)) return;
-      var box = document.querySelector('[data-fres]');
-      if (!box) return;
-      var results = res.data;
-      if (results.length === 0) {
-        // Keep the original "no results" message if already shown
-        return;
-      }
-      // Render real users
-      var html = results.map(function(u) {
-        var isFriend = (S.me.friends || []).some(function(f) { return f === u.username; });
-        var btn = isFriend
-          ? '<button class="btn b-soft sm">' + _t("Amis") + '</button>'
-          : '<button class="btn b-ink sm" data-a="fr-add-sb" data-uid="' + u.user_id + '" data-uname="' + u.username + '">' + ic('plus',15,'#fff') + ' ' + _t("Ajouter") + '</button>';
-        return '<div class="fr-row"><span class="av" style="background:' + (u.avatar_color || '#2448FF') + '">' + (u.username ? u.username[0].toUpperCase() : '?') + '</span><span class="nm">' + u.username + '</span>' + btn + '</div>';
-      }).join('');
-      box.innerHTML = html;
-      if (typeof fixText === 'function') fixText(box);
-    }).catch(function() {});
-  }, 300); // debounce 300ms
-});
-
-/* Handle fr-add-sb (add real Supabase user as friend) */
-ACT['fr-add-sb'] = function(a) {
-  var uname = a.dataset.uname;
-  if (!uname || !uid) return;
-  sb.rpc('send_friend_request', {p_target_username: uname}).then(function(r) {
-    if (r.error) { toast({tone:'red', icon:'info', title:'Erreur', text: r.error.message}); return; }
-    toast({icon:'check', title:_t('Demande envoyee'), text: uname, dur: 2500});
-    a.disabled = true;
-    a.textContent = _t('Demande envoyee');
-    a.className = 'btn b-white sm';
-  }).catch(function() {});
-};
-
-console.log('Wimoro x Supabase OK (Phase 10: COMPLETE)');
+console.log('Wimoro x Supabase OK (clean rebuild)');
 })();
 </script>
 </body>
