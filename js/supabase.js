@@ -17,6 +17,7 @@ if(blob&&blob.state&&blob.state.v)Object.assign(S.me,blob.state);
 if(user){S.me.n=user.username||S.me.n;S.me.email=user.email||S.me.email;S.me.photo=user.avatar_photo||S.me.photo;S.me.color=user.avatar_color||S.me.color;S.me.kyc=!!user.kyc_verified;}
 if(st){S.me.balance=Number(st.balance);S.me.xp=st.xp||0;S.me.played=st.bets_placed||0;S.me.wins=st.bets_won||0;S.me.settled=st.bets_settled||0;S.me.deposits=st.deposits_count||0;S.me.flashWins=st.flash_wins||0;S.me.followed=st.followed_bets_count||0;S.me.realized=Number(st.profit_realized)||0;S.me.streak=st.streak_current||1;S.me.bestStreak=st.streak_best||1;S.me.copiers=st.copiers_count||0;S.me.msgsTotal=st.messages_total||0;S.me.contraWins=st.contra_wins||0;S.me.flashStreak=st.flash_streak_current||0;S.me.flashBest=st.flash_streak_best||0;S.me.flashProfit=Number(st.flash_profit_total)||0;S.me.followers=st.followers_count||0;}
 S.me.logged=true;S.me.onboarded=true;
+console.log('[SB] sbLoad complete: balance='+S.me.balance+' xp='+S.me.xp);
 if(typeof updateHeader==='function')updateHeader();
 if(typeof render==='function')render(false);
 }).catch(function(e){console.warn('sbLoad error',e);});
@@ -27,7 +28,7 @@ async function sbSave(){
 if(!uid||!S.me.logged)return;
 try{
   var r1=await sb.from('user_full_state').upsert({user_id:uid,state:Object.assign({},S.me)});
-  if(r1.error)console.warn('sbSave blob error:',r1.error.message);
+  if(r1.error)console.warn('[SB] sbSave blob error:',r1.error.message);else console.log('[SB] State saved to DB');
   var r2=await sb.from('users').update({username:S.me.n||'',avatar_photo:S.me.photo||'',avatar_color:S.me.color||'#2448FF',bio:S.me.bio||''}).eq('id',uid);
   if(r2.error)console.warn('sbSave user error:',r2.error.message);
 }catch(e){console.warn('sbSave exception:',e);}
@@ -45,7 +46,7 @@ if(typeof updateHeader==='function')updateHeader();
 
 /* --- BOOT: check Supabase session on page load --- */
 sb.auth.getSession().then(function(r){
-if(r.data&&r.data.session){uid=r.data.session.user.id;sbLoad();}
+if(r.data&&r.data.session){uid=r.data.session.user.id;console.log('[SB] Session found, uid='+uid.slice(0,8));sbLoad();}
 else if(S.me.logged&&S.me.email){
 sb.from('users').select('id').ilike('email',S.me.email).maybeSingle().then(function(u){
 if(u.data){uid=u.data.id;sbLoad();}}).catch(function(){});}
@@ -221,6 +222,7 @@ sb.rpc('get_markets').then(function(res){
 sb.channel('mkt-live').on('postgres_changes',{event:'UPDATE',schema:'public',table:'market_live_state'},function(p){
   var row=p.new;if(!row)return;var m=MK[row.market_id];if(!m)return;
   var old=m.p;m.p=Number(row.current_probability);
+  console.log('[SB] Market update: '+row.market_id+'='+row.current_probability);
   if(typeof updateMarket==='function')updateMarket(m,old);
 }).subscribe();
 
@@ -392,6 +394,7 @@ function sbLoadFriends() {
     S.me.freqIn = incoming;
     S.me.freqOut = outgoing;
     _friendsLoaded = true;
+    console.log('[SB] Friends loaded: '+accepted.length+' friends, '+incoming.length+' incoming, '+outgoing.length+' outgoing');
     if (typeof refreshFriends === 'function') refreshFriends();
   }).catch(function(){});
 }
@@ -416,6 +419,7 @@ ACT['fr-add'] = function(a) {
     if (r.error) { toast({tone:'red', icon:'info', title:'Erreur', text:r.error.message}); return; }
     if (!S.me.freqOut) S.me.freqOut = [];
     S.me.freqOut.push(u);
+    console.log('[SB] Friend request sent to '+uname);
     toast({icon:'check', title:'Demande envoyee', dur:2000});
     if (typeof refreshFriends === 'function') refreshFriends();
   }).catch(function(){});
@@ -440,6 +444,7 @@ ACT['fr-accept'] = function(a) {
 function doAccept(u, targetUid) {
   sb.rpc('accept_friend_request', {p_from_user_id: targetUid}).then(function(r) {
     if (r.error) { toast({tone:'red', icon:'info', title:'Erreur', text:r.error.message}); return; }
+    console.log('[SB] Friend accepted: '+u);
     toast({icon:'users', title:'Ami accepte'});
     S.me.freqIn = (S.me.freqIn||[]).filter(function(x){return x!==u;});
     if (!(S.me.friends||[]).includes(u)) (S.me.friends=S.me.friends||[]).push(u);
