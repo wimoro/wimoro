@@ -25,8 +25,8 @@ if(typeof render==='function')render(false);
 /* --- SAVE: save blob to Supabase (positions, history, etc) --- */
 function sbSave(){
 if(!uid||!S.me.logged)return;
-sb.from('user_full_state').upsert({user_id:uid,state:Object.assign({},S.me)}).catch(function(){});
-sb.from('users').update({username:S.me.n||'',avatar_photo:S.me.photo||'',avatar_color:S.me.color||'#2448FF',bio:S.me.bio||''}).eq('id',uid).catch(function(){});
+sb.from('user_full_state').upsert({user_id:uid,state:Object.assign({},S.me)}).then(function(r){if(r.error)console.warn('save blob error',r.error);});
+sb.from('users').update({username:S.me.n||'',avatar_photo:S.me.photo||'',avatar_color:S.me.color||'#2448FF',bio:S.me.bio||''}).eq('id',uid).then(function(r){if(r.error)console.warn('save user error',r.error);});
 }
 
 /* --- REFRESH: read latest stats from DB (admin changes) --- */
@@ -80,7 +80,7 @@ window.createAccount=function(n,e,pw,x){
 var rec=_origCreate(n,e,pw,x);
 if(e&&pw){sb.auth.signUp({email:e.toLowerCase(),password:pw}).then(function(r){
 if(r.data&&r.data.user){uid=r.data.user.id;rec.sbId=uid;
-sb.from('users').insert({id:uid,username:n,email:e.toLowerCase(),avatar_photo:'',avatar_color:'#2448FF',bio:'',onboarded:true,welcomed:true,is_demo:false}).catch(function(){});}
+sb.from('users').insert({id:uid,username:n,email:e.toLowerCase(),avatar_photo:'',avatar_color:'#2448FF',bio:'',onboarded:true,welcomed:true,is_demo:false}).then(function(r){if(r.error)console.warn('create user error',r.error);});}
 }).catch(function(){});}
 return rec;
 };
