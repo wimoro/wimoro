@@ -117,3 +117,19 @@ I18N_ADD("he",{
 "Ton rang ne permet pas encore cette action.":"הדרגה שלך עדיין לא מאפשרת את הפעולה הזו.",
 "{0} t’a écrit.":"{0} שלח לך הודעה."
 });
+I18N_ADD("en",{
+"Ce compte est suspendu.":"This account is suspended.",
+"Ce compte est suspendu jusqu’au {0}.":"This account is suspended until {0}.",
+"Marché résolu : {0}. Tu gagnes {1}.":"Market resolved: {0}. You win {1}.",
+"Marché résolu : {0}. Ta position {1} est perdue.":"Market resolved: {0}. Your {1} position lost.",
+"Ton solde a été crédité de {0} par l’équipe Wimoro.":"The Wimoro team credited {0} to your balance.",
+"Ton solde a été débité de {0} par l’équipe Wimoro.":"The Wimoro team debited {0} from your balance."
+});
+I18N_ADD("he",{
+"Ce compte est suspendu.":"החשבון הזה מושעה.",
+"Ce compte est suspendu jusqu’au {0}.":"החשבון הזה מושעה עד {0}.",
+"Marché résolu : {0}. Tu gagnes {1}.":"השוק הוכרע: {0}. זכית ב-{1}.",
+"Marché résolu : {0}. Ta position {1} est perdue.":"השוק הוכרע: {0}. הפוזיציה שלך על {1} הפסידה.",
+"Ton solde a été crédité de {0} par l’équipe Wimoro.":"צוות Wimoro זיכה את היתרה שלך ב-{0}.",
+"Ton solde a été débité de {0} par l’équipe Wimoro.":"צוות Wimoro חייב את היתרה שלך ב-{0}."
+});

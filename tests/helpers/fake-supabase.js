@@ -43,7 +43,7 @@
   try { db = JSON.parse(localStorage.getItem(DBKEY) || 'null'); } catch (e) { db = null; }
   if (!db) {
     db = { session: clone(CFG.session || null), comptes: clone(CFG.comptes || {}), etats: {}, marches: {}, ops: {}, chat: clone(CFG.chat || {}), fiches: clone(CFG.fiches || {}), seq: 1 };
-    (CFG.marches || []).forEach(function (x) { db.marches[x.market_id] = { p: +x.current_probability, d0: x.d0 == null ? null : +x.d0, vol: +(x.volume_total || 0), people: x.participants_count | 0, liq: x.liquidity_depth == null ? null : +x.liquidity_depth, st: x.status || 'open', hot: 0, ph: clone(x.price_history || []) }; });
+    (CFG.marches || []).forEach(function (x) { db.marches[x.market_id] = { def: x.def ? clone(x.def) : undefined, p: +x.current_probability, d0: x.d0 == null ? null : +x.d0, vol: +(x.volume_total || 0), people: x.participants_count | 0, liq: x.liquidity_depth == null ? null : +x.liquidity_depth, st: x.status || 'open', hot: 0, ph: clone(x.price_history || []) }; });
     if (db.session) { var u0 = db.session.user; db.etats[u0.id] = fusion(etatNeuf(u0.id, u0.email || '', 'realuser', false), CFG.etat || {}); }
   }
   var persist = function () { try { localStorage.setItem(DBKEY, JSON.stringify(db)); } catch (e) {} };
@@ -78,6 +78,41 @@
     api_notifs_read: function () { etat().notifs.forEach(function (n) { n.read = true; }); return null; },
     api_notif_hide: function (a) { var e = etat(); e.notifs = a.p_id ? e.notifs.filter(function (n) { return n.id !== a.p_id; }) : []; return null; },
     api_present: function () { return null; },
+    /* Panel d'administration : même contrat que wm.admin (une action, des paramètres), sur un petit modèle en mémoire. */
+    api_admin: function (a) { var act = a.p_action, p = a.p || {}; if (act === 'moi') return { admin: !!CFG.admin }; if (!CFG.admin) throw { message: 'interdit' };
+      var A = db.admin = db.admin || fusion({ joueurs: [], marches: [], msgs: [], bots: { actif: true, intensite: 1, chat: 1 }, journal: [] }, CFG.adminData || {});
+      var J = function (id) { var j = A.joueurs.filter(function (x) { return x.id === id; })[0]; if (!j) throw { message: 'joueur_inconnu' }; return j; };
+      var M = function (id) { var m = A.marches.filter(function (x) { return x.id === id; })[0]; if (!m) throw { message: 'marche_inconnu' }; if (m.st === 'resolved') throw { message: 'deja_resolu' }; return m; };
+      var note = function (action, cible, d) { A.journal.unshift({ a: action, cible: cible, d: d || {}, par: 'chef', at: Date.now() }); };
+      var fiche = function (id) { return { j: clone(J(id)), ops: [], journal: clone(A.journal.filter(function (x) { return x.cible === id; }).slice(0, 10)) }; };
+      var chiffres = function () { return { inscrits: A.joueurs.filter(function (j) { return !j.bot; }).length, inscrits_7j: 1, actifs_24h: 1, actifs_7j: 2, bots: 10000, marches_ouverts: A.marches.filter(function (m) { return m.st !== 'resolved'; }).length,
+        volume_total: 1234567, mises_24h: 50, positions: 3, messages_24h: A.msgs.length, soldes: A.joueurs.reduce(function (s, j) { return s + (j.bot ? 0 : j.balance); }, 0), base_mo: 80, bots_cfg: clone(A.bots), present: true }; };
+      var motif = function () { if (String(p.motif || '').trim().length < 3) throw { message: 'motif_requis' }; };
+      var r, j, m, q;
+      switch (act) {
+        case 'chiffres': r = chiffres(); break;
+        case 'joueurs': q = String(p.q || '').toLowerCase(); r = { joueurs: clone(A.joueurs.filter(function (x) { return q ? (x.n.toLowerCase().indexOf(q) >= 0 || String(x.email).toLowerCase().indexOf(q) >= 0) : !x.bot; })) }; break;
+        case 'joueur': r = fiche(p.id); break;
+        case 'solde': motif(); j = J(p.id); if (!(+p.delta)) throw { message: 'montant_invalide' }; if (j.balance + +p.delta < 0) throw { message: 'solde_negatif' }; j.balance = Math.round((j.balance + +p.delta) * 100) / 100; note('solde', p.id, { delta: +p.delta, motif: p.motif }); r = fiche(p.id); break;
+        case 'xp': j = J(p.id); j.xp = Math.max(0, j.xp + (+p.delta | 0)); note('xp', p.id, { delta: +p.delta }); r = fiche(p.id); break;
+        case 'rang': j = J(p.id); j.t = +p.t; j.d = +p.d; note('rang', p.id, { t: +p.t, d: +p.d }); r = fiche(p.id); break;
+        case 'kyc': j = J(p.id); j.kyc = !!p.ok; note('kyc', p.id, { ok: !!p.ok }); r = fiche(p.id); break;
+        case 'suspendre': j = J(p.id); if (+p.jours) { motif(); j.susp = +p.jours === -1 ? -1 : Date.now() + p.jours * 864e5; j.suspMotif = p.motif; note('suspension', p.id, { motif: p.motif }); } else { j.susp = null; j.suspMotif = null; note('suspension_levee', p.id); } r = fiche(p.id); break;
+        case 'marches': r = { marches: clone(A.marches) }; break;
+        case 'marche': if (!/^[a-z0-9][a-z0-9-]{2,39}$/.test(p.id || '')) throw { message: 'identifiant_invalide' }; if (String(p.q || '').length < 8) throw { message: 'question_invalide' };
+          m = A.marches.filter(function (x) { return x.id === p.id; })[0];
+          if (m) { m.q = p.q; m.short = p.short || m.short; m.cat = p.cat; m.date = p.date; m.time = p.time; m.ref = +p.p; m.heat = +p.heat; m.rules = p.rules; note('marche_modifie', p.id); }
+          else { A.marches.push({ id: p.id, q: p.q, short: p.short || p.q.slice(0, 40), cat: p.cat, st: 'open', issue: null, p: +p.p, ref: +p.p, vol: 0, date: p.date, time: p.time, heat: +p.heat, rules: p.rules, parent: null, cree: true, positions: 0 }); note('marche_cree', p.id); }
+          r = { marches: clone(A.marches) }; break;
+        case 'marche_etat': m = M(p.id); m.st = p.etat; note(p.etat === 'closed' ? 'marche_ferme' : 'marche_rouvert', p.id); r = { marches: clone(A.marches) }; break;
+        case 'resoudre': m = M(p.id); m.st = 'resolved'; m.issue = p.issue; q = { joueurs: m.positions, verse: 120.5 }; m.positions = 0; note('marche_resolu', p.id, { issue: p.issue, joueurs: q.joueurs, verse: q.verse }); r = { marches: clone(A.marches), reglement: q, autres: {} }; break;
+        case 'chat': r = { msgs: clone(A.msgs) }; break;
+        case 'masquer': q = A.msgs.length; A.msgs = A.msgs.filter(function (x) { return String(x.id) !== String(p.id); }); if (A.msgs.length === q) throw { message: 'message_inconnu' }; note('message_masque', null, {}); r = { msgs: clone(A.msgs) }; break;
+        case 'bots': ['intensite', 'chat'].forEach(function (k) { if (k in p) { if (!(+p[k] >= 0 && +p[k] <= 3)) throw { message: 'montant_invalide' }; A.bots[k] = +p[k]; } }); if ('actif' in p) A.bots.actif = !!p.actif; note('bots', null, clone(A.bots)); r = chiffres(); break;
+        case 'journal': r = { journal: clone(A.journal) }; break;
+        default: throw { message: 'action_inconnue' };
+      }
+      persist(); return r; },
     api_chat_seen: function () { return null; },
     api_leaderboard: function () { var ids = Object.keys(db.fiches).filter(function (id) { return id !== uid() && db.fiches[id].pub !== 0; }).sort(function (x, y) { return (db.fiches[y].profit || 0) - (db.fiches[x].profit || 0); }).slice(0, 50), users = {};
       ids.forEach(function (id) { users[id] = ficheDe(id); }); return { ids: ids, users: users }; },

@@ -255,12 +255,18 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 - [ ] Purge du journal de pg_cron (30 000 lignes, 6 Mo par jour) : migration `purge_journal_cron` prête, **attend ta
       confirmation** (voir « À faire par l'humain »).
 - [x] Messages des bots dans le chat, en gabarit + paramètres (K26) : voir 4.5.
-- [ ] Marche/arrêt et intensité depuis le panel admin. _Recette 9._ Le réglage existe déjà côté serveur
-      (`wm.config`, clé « bots » : `actif`, `intensite` de 0 à 3) ; il reste à le poser dans le panel.
+- [x] Marche/arrêt, intensité et bavardage des bots depuis le panel d'administration (onglet « Bots »). _Recette 9._
 
 ## Phase 6 — Panel d'administration
-- [ ] Page séparée, contrôle `is_admin()` dans chaque RPC : joueurs, soldes (motif journalisé), rang, KYC, suspension ;
-      marchés ; modération du chat ; bots ; chiffres.
+- [x] Page séparée `admin.html`, une seule porte côté serveur (`api_admin`) qui vérifie à chaque appel que le compte est
+      dans `public.admin_users` ; tout ce qui modifie est journalisé (`wm.admin_journal`). Joueurs : recherche, solde avec
+      motif, XP, rang, KYC fictif, suspension. Marchés : création, modification, fermeture des mises, **résolution**
+      (1 $ par part gagnante, positions réglées, joueurs prévenus). Chat : masquer un message. Bots. Chiffres. Journal.
+      _Tests_ `tests/sql/admin.spec.mjs` (7), `tests/compte/admin.spec.mjs` (4), `tests/compte/marches-etat.spec.mjs` (5),
+      `tests/e2e/comptes.spec.mjs` (un compte ordinaire est refusé par le vrai serveur).
+- [ ] Limite : le parcours d'un vrai administrateur n'a pas été joué contre la vraie base (je n'ai pas le mot de passe du
+      compte `WimoroAdmin`, et je n'ai pas voulu créer de marché d'essai en production). Il est prouvé dans la base
+      embarquée et avec le faux serveur.
 
 ## Phase 7 — Sécurité
 - [x] Aucune écriture directe du client sur solde, positions, statistiques, dépôts, marchés (migration `securite_urgence_droits`,
@@ -307,6 +313,11 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 | Comptes de test à l'avenir | Chaque compte de test se supprime lui-même à la fin de la suite (`api_test_end`). | Plus rien ne s'accumule dans la vraie base ; la fonction refuse toute adresse qui n'est pas une adresse de test. |
 | Branche de travail | On garde `fix/harmonisation-front-back` ; une pull request par lot. | C'est la branche fixée au départ ; chaque fusion reste annulable séparément. |
 | Bots dans le chat | Ils ne parlent que dans les salons regardés (signalés par l'écran), environ un message toutes les 7 secondes ; leurs messages vivent dans un anneau de 30 par salon, pas dans la table des messages. | Un chat vivant là où quelqu'un lit, sans faire grossir la base ni exiger de purge. |
+| Rang donné par un administrateur | On relève les compteurs dont le rang dépend (XP, paris réglés, précision…) ; jamais de baisse. | Le rang n'est pas une valeur stockée librement : l'écran et le serveur le recalculent. Un rang « forcé » aurait été contredit à l'écran. |
+| Marché créé depuis le panel | Texte dans une seule langue (celle saisie), sans traduction ; catégories limitées à celles du site. | Le catalogue d'origine est traduit dans le code ; un marché ajouté à chaud n'a que le texte de l'administrateur. |
+| Marché résolu | Il quitte les listes du site ; son nom reste connu pour l'historique. Un marché « fermé » reste visible, le serveur y refuse les mises. | Le mode Démo n'a jamais eu d'écran « marché terminé » : pas de nouvel écran inventé. |
+| Suspension | Le serveur refuse toute action du joueur suspendu ; l'écran le déconnecte et l'explique. Un administrateur ne peut pas être suspendu. | Même mécanisme que l'auto-exclusion, déjà éprouvé. |
+| Démarrage du direct | Les marchés sont relus une fois juste après l'abonnement au temps réel. | Un changement de prix pouvait être manqué entre la première lecture et l'abonnement (constaté par un test contre le vrai serveur). |
 | Protection de `main` | Non activée. | Elle changerait ta façon de publier ; elle reste proposée, facultative. |
 
 ## À faire par l'humain
@@ -318,6 +329,8 @@ Rien d'obligatoire. Le détail et les constats sont dans `docs/EXPLOITATION.md`,
 2. Facultatif : accepter la confirmation Supabase pour la migration de rangement `securite_urgence_nettoyage`.
 3. Facultatif : ajouter `Ton code : {{ .Token }}` au modèle d'e-mail « Reset Password ».
 4. Facultatif : protéger la branche `main` sur GitHub.
+5. Pour administrer : ouvrir <https://wimoro.com/admin.html> et se connecter avec le compte `WimoroAdmin` (le seul
+   administrateur aujourd'hui). Mode d'emploi : `docs/EXPLOITATION.md`, § 7.
 
 ## Journal
 
@@ -338,3 +351,4 @@ Rien d'obligatoire. Le détail et les constats sont dans `docs/EXPLOITATION.md`,
 | 15 nov. 2026 | 4.6 (suite) : classement servi par le serveur. | migration `classement` (empreinte identique) ; 168 tests (74 SQL) |
 | 15 nov. 2026 | Mise en ligne : pull request n° 1 fusionnée, wimoro.com vérifié (Démo, Compte, trois langues). Ancienne API fermée après contrôle des journaux. Purge horaire du journal de pg_cron. 27 comptes de test supprimés ; la suite nettoie désormais derrière elle. | fusion `13f224e` ; migrations `purge_journal_cron`, `fermeture_ancienne_api`, `comptes_test` (empreintes identiques) ; 174 tests (77 SQL) ; 9 scénarios contre le site en ligne, avant et après la fermeture |
 | 16 nov. 2026 | 4.5 (fin) : messages des bots dans le chat, en gabarit + paramètres. | migration `chat_bots` (empreinte identique) ; 180 tests (81 SQL) ; 9 scénarios de bout en bout contre le vrai back |
+| 16 nov. 2026 | Phase 6 : panel d'administration (joueurs, marchés avec résolution, chat, bots, chiffres, journal). Bots du chat : un rythme par salon regardé. Démarrage du direct : relecture de rattrapage. | migrations `admin`, `chat_bots_rythme` (empreintes identiques) ; 196 tests (88 SQL) ; 10 scénarios de bout en bout contre le vrai back |

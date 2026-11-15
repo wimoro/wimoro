@@ -239,7 +239,7 @@ test('recette 5 · chat : A écrit dans le salon général puis dans celui d’u
   await expect.poll(async () => (await bots()).length, { timeout: 15000 }).toBeGreaterThanOrEqual(6);
   const dejaLa = await bots();
   for (const t of dejaLa) { expect(t.length).toBeGreaterThan(3); expect(t).not.toMatch(/[{}]/); }
-  await expect.poll(async () => (await bots()).length, { timeout: 60000 }).toBeGreaterThan(dejaLa.length);
+  await expect.poll(async () => (await bots()).length, { timeout: 90000 }).toBeGreaterThan(dejaLa.length);   // un message toutes les 15 s environ, par salon regardé
 
   // l'anti-spam du serveur : deux messages coup sur coup, le second est refusé
   const refus = await a.evaluate(async () => { try { await API.call('api_chat_send', { p_room: 'm:clasico', p_text: 'trop vite' }); await API.call('api_chat_send', { p_room: 'm:clasico', p_text: 'trop vite, encore' }); return 'accepté'; } catch (e) { return e.code; } });
@@ -384,4 +384,18 @@ test('recette 1 · mode Compte, trois langues : chaque écran s’ouvre sans err
     }
   }
   expect(erreurs, 'zéro erreur console').toEqual([]);
+});
+
+test('panel d’administration : un compte ordinaire est refusé par le vrai serveur, et la page ne lui montre rien', async ({ page }) => {
+  const erreurs = await ouvrirReel(page, '#connexion');
+  // par e-mail : la connexion par pseudo est limitée en fréquence, et la suite s'en est déjà servie plusieurs fois
+  await page.locator('#le').fill(EMAIL); await page.locator('#lp').fill(MDP); await page.locator('form[data-form="login"] [type=submit]').click();
+  await expect(page).toHaveURL(/#accueil/, { timeout: 20000 }); await pret(page);
+  await page.goto('/admin.html');
+  await expect(page.locator('#adm-refus')).toContainText('Accès réservé', { timeout: 20000 });
+  await expect(page.locator('#adm-nav')).toBeHidden();
+  for (const action of ['chiffres', 'joueurs', 'solde', 'rang', 'suspendre', 'marche', 'resoudre', 'masquer', 'bots', 'journal'])
+    expect(await page.evaluate(async a => { try { await API.call('api_admin', { p_action: a, p: { id: 'btc150k', issue: 'oui', delta: 1000, motif: 'essai', jours: 1, t: 8, d: 0, actif: false } }); return 'ouvert'; } catch (e) { return e.code; } }, action), action).toBe('interdit');
+  expect(await page.evaluate(async () => (await API.call('api_markets')).m.btc150k.st)).toBe('open');   // rien n'a bougé
+  expect(erreurs).toEqual([]);
 });
