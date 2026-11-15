@@ -30,10 +30,10 @@ test.describe('avant la migration (état de la production au moment de l’audit
   });
 });
 
-test.describe('après la migration', () => {
+test.describe('après la migration d’urgence, ancien site encore en ligne (avant la fermeture de l’ancienne API)', () => {
   let db, alice, bob, carol, clan;
   test.beforeAll(async () => {
-    db = await creerBase(); await semer(db);
+    db = await creerBase({ until: 'fermeture_ancienne_api' }); await semer(db);
     alice = await creerJoueur(db, 'alice', 500); bob = await creerJoueur(db, 'bob', 500); carol = await creerJoueur(db, 'carol', 500);
     [{ id: clan }] = await q(db, `insert into public.clans (name, founder_user_id) values ('Les Aigles', $1) returning id`, [alice]);
     await q(db, `insert into public.clan_members (clan_id, user_id, role) values ($1, $2, 'founder')`, [clan, alice]);
@@ -145,9 +145,7 @@ test.describe('après la migration', () => {
     expect((await enTantQue(db, carol, s => s('select username, status, direction from public.get_friends()')))).toEqual([{ username: 'bobby', status: 'pending', direction: 'in' }]);
   });
 
-  test('K11, K12 : publication temps réel, search_path et droits d’exécution', async () => {
-    const pub = (await q(db, `select tablename from pg_publication_tables where pubname = 'supabase_realtime' order by 1`)).map(x => x.tablename);
-    expect(pub).not.toContain('users'); expect(pub).not.toContain('user_stats');
+  test('K12 : search_path et droits d’exécution (K11, la publication temps réel : voir fermeture.spec.mjs)', async () => {
     const sans = await q(db, `select proname from pg_proc where pronamespace = 'public'::regnamespace and prokind = 'f' and not exists (select 1 from unnest(coalesce(proconfig, '{}')) c where c like 'search_path=%')`);
     expect(sans).toEqual([]);
     const anon = (await q(db, `select p.proname from pg_proc p where p.pronamespace = 'public'::regnamespace and has_function_privilege('anon', p.oid, 'execute') order by 1`)).map(x => x.proname);

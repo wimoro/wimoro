@@ -3,8 +3,10 @@
 // même état ; même vérification depuis un second navigateur.
 //
 // Lancer : E2E=1 CHROME=1 npx playwright test --project=e2e
-// Les comptes créés sont des comptes de test jetables (marqués is_test, e-mail wimoro-e2e-…@example.com).
+// Les comptes créés sont des comptes de test jetables (e-mail wimoro-e2e-…@example.com). À la fin de la suite, chacun se
+// supprime lui-même par api_test_end (réservée à ces adresses) : rien ne reste dans la vraie base.
 import { test, expect } from '@playwright/test';
+import fs from 'node:fs';
 
 const stamp = Date.now().toString(36);
 const PSEUDO = 'e2e_' + stamp, EMAIL = `wimoro-e2e-${stamp}@example.com`, MDP = 'E2e-' + stamp + '-Xy9!';
@@ -22,6 +24,19 @@ async function ouvrirReel(page, hash) {
 }
 
 test.describe.configure({ mode: 'serial' });
+
+test.afterAll(async () => {
+  const src = fs.readFileSync('js/api.js', 'utf8');
+  const back = 'https://' + /REF='([a-z0-9]+)'/.exec(src)[1] + '.supabase.co', cle = /CLE='([^']+)'/.exec(src)[1];
+  for (const suffixe of ['', '-b', '-c']) {
+    const email = `wimoro-e2e-${stamp}${suffixe}@example.com`;
+    const r = await fetch(back + '/auth/v1/token?grant_type=password', { method: 'POST', headers: { apikey: cle, 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password: MDP }) });
+    if (!r.ok) continue;                                                                    // compte jamais créé (suite interrompue avant)
+    const { access_token: jeton } = await r.json();
+    const d = await fetch(back + '/rest/v1/rpc/api_test_end', { method: 'POST', headers: { apikey: cle, Authorization: 'Bearer ' + jeton, 'Content-Type': 'application/json' }, body: '{}' });
+    if (!d.ok) console.warn(`compte de test non supprimé : ${email} (HTTP ${d.status})`);
+  }
+});
 
 test('inscription réelle, onboarding, rechargement : le serveur garde tout', async ({ page }) => {
   const erreurs = await ouvrirReel(page, '#inscription');

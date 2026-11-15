@@ -57,8 +57,13 @@ avec la même clé, l'opération n'est appliquée qu'une fois et renvoie le mêm
 | Edge Function `connexion` | visiteur | connexion par pseudo, sans jamais révéler d'e-mail ; limite les tentatives |
 | Edge Function `eclair` | joueur | pari éclair : `bet` (miser) et `settle` (régler les manches terminées) |
 
-Les **anciennes fonctions** (`place_bet`, `demo_deposit`, `get_markets`, `send_chat_message`…) existent encore pour
-l'ancien site tant qu'il est en ligne. Elles seront fermées à la livraison (voir `docs/EXPLOITATION.md`).
+| `api_test_end()` | compte de test | un compte `wimoro-e2e-…@example.com` se supprime lui-même à la fin des tests ; refusée à tout autre compte |
+
+Les **anciennes fonctions** (`place_bet`, `demo_deposit`, `get_markets`, `send_chat_message`…) existent toujours dans
+la base, mais **plus personne ne peut les appeler** depuis la mise en ligne du 15 novembre 2026 (migration
+`fermeture_ancienne_api`). De même, les visiteurs et les joueurs n'ont plus aucun droit direct sur les tables : tout
+passe par les fonctions `api_…`. Les policies de lecture sont restées en place, sans effet tant qu'aucun droit de
+lecture n'est rendu. Retour arrière : `supabase/livraison/retour_ancienne_api.sql` (voir `docs/EXPLOITATION.md`, § 2).
 
 ## 3. Marchés et moteur de prix
 

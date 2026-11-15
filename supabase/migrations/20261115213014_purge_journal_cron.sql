@@ -1,6 +1,5 @@
--- EN ATTENTE DE TA CONFIRMATION (l'outil de base de données demande un accord manuel pour toute suppression).
+-- Purge du journal technique de pg_cron (table cron.job_run_details). Autorisée explicitement par le propriétaire du projet.
 --
--- Purge du journal technique de pg_cron (table cron.job_run_details).
 -- pg_cron écrit une ligne à chaque exécution d'une tâche. Le tick des bots tourne toutes les 3 secondes : environ
 -- 30 000 lignes par jour (6 Mo), sans limite. Cette tâche garde les 6 dernières heures et supprime le reste, une fois
 -- par heure. Aucune donnée de joueur n'est concernée : ce journal ne sert qu'au diagnostic.

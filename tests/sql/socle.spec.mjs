@@ -45,8 +45,8 @@ test('api_state : tout l’état du joueur, dans la forme attendue par l’inter
 });
 
 test('api_state : positions, amis et fiches des joueurs cités', async () => {
-  await enTantQue(db, alice, s => s(`select public.place_bet('btc150k', 'oui', 50)`));
-  await enTantQue(db, bob, s => s(`select public.send_friend_request('alice')`));
+  await enTantQue(db, alice, s => s(`select public.api_buy('btc150k', 'oui', 50, gen_random_uuid())`));
+  await enTantQue(db, bob, s => s(`select public.api_friend('add', $1)`, [alice]));
   const s = await api(alice, 'api_state');
   expect(s.positions).toHaveLength(1);
   expect(s.positions[0]).toMatchObject({ m: 'btc150k', s: 'oui' });
