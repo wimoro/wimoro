@@ -176,7 +176,8 @@ function buildBaseline(d) {
   p('', '-- ── 12. Temps réel (publications) ──────────────────────────────────────────');
   for (const pub of d.publications || []) {
     p(`-- publication ${pub.name} : ${pub.all_tables ? 'TOUTES les tables' : (pub.tables || []).length + ' table(s)'} (insert=${pub.insert}, update=${pub.update}, delete=${pub.delete})`);
-    if (!pub.all_tables) for (const t of pub.tables || []) p(`alter publication ${qi(pub.name)} add table ${t};`);
+    // Seule « supabase_realtime » nous appartient ; les autres publications sont gérées par Supabase lui-même.
+    if (!pub.all_tables && pub.name === 'supabase_realtime') for (const t of pub.tables || []) p(`alter publication ${qi(pub.name)} add table ${t};`);
   }
 
   p('', '-- ── 13. Tâches planifiées (pg_cron) ────────────────────────────────────────');

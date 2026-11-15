@@ -3414,12 +3414,6 @@ alter publication supabase_realtime add table public.notifications;
 alter publication supabase_realtime add table public.user_stats;
 alter publication supabase_realtime add table public.users;
 -- publication supabase_realtime_messages_publication : 6 table(s) (insert=true, update=true, delete=true)
-alter publication supabase_realtime_messages_publication add table realtime.messages_2026_11_12;
-alter publication supabase_realtime_messages_publication add table realtime.messages_2026_11_13;
-alter publication supabase_realtime_messages_publication add table realtime.messages_2026_11_14;
-alter publication supabase_realtime_messages_publication add table realtime.messages_2026_11_15;
-alter publication supabase_realtime_messages_publication add table realtime.messages_2026_11_16;
-alter publication supabase_realtime_messages_publication add table realtime.messages_2026_11_17;
 
 -- ── 13. Tâches planifiées (pg_cron) ────────────────────────────────────────
 -- tâche n°1 — 1889 exécutions, 82 en échec, durée moyenne 0.158s, max 1.379s

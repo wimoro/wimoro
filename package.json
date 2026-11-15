@@ -9,6 +9,7 @@
     "audit:inventaire": "node tools/audit/inventaire.mjs"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.16",
     "@playwright/test": "1.65.1",
     "acorn": "8.19.0",
     "acorn-walk": "8.3.5"

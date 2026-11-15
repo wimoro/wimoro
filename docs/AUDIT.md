@@ -158,6 +158,11 @@ Détail complet : `docs/audit/inventaire-back.md` et `supabase/migrations/0000_b
 
 ### 6.2 Sécurité (à traiter en priorité)
 
+> **Mise à jour du 15 nov. 2026 :** les trous K01 à K13 ci-dessous sont **fermés** par la migration
+> `20261115032907_securite_urgence_droits`. Vérifié sur la vraie base par l'API publique avec un compte de test
+> (`tools/e2e/verif-securite.mjs` : 10 actions normales acceptées, 12 actions interdites refusées) et par 13 tests
+> SQL (`tests/sql/securite*.spec.mjs`). Le tableau décrit l'état trouvé pendant l'audit.
+
 Vérifié sur la vraie base, en lecture seule, avec la seule clé publique.
 
 | N° | Constat | Preuve |
@@ -215,6 +220,7 @@ Rien à signaler côté secrets : **une seule clé dans tout l'historique git, l
 | K46 | `get_leaderboard` | Ignore la période demandée. |
 | K47 | `handle_auth_user_created` | Crée le profil avec `onboarded = true` et un pseudo non validé. |
 | K48 | `settle_market` | Attend `yes` / `no` alors que les positions utilisent `oui` / `non` ; ne gère pas les marchés à issues multiples. |
+| **K49** | `place_bet` puis `sell_position` | **Acheter puis revendre tout de suite rapporte de l'argent** quand le prix est sous 3 % : le prix est forcé à 3 % après l'achat, quel que soit le montant. Mesuré avec un compte de test : 10 $ misés à 2,2 ¢ la part, revendus aussitôt 12,25 $. |
 
 Il n'existe rien côté serveur pour : les ordres limites, stop et take-profit (table `orders` vide), les combinés, le règlement
 des duels, le KYC, les dépôts par carte, les limites de jeu responsable, le parrainage, les propositions de marché et leurs

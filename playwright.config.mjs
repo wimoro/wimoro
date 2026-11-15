@@ -22,8 +22,10 @@ export default defineConfig({
     ...(useChrome ? { channel: 'chrome' } : {}),
   },
   projects: [
-    { name: 'bureau', use: { ...devices['Desktop Chrome'], ...(useChrome ? { channel: 'chrome' } : {}) } },
-    { name: 'mobile', use: { ...devices['Pixel 7'], ...(useChrome ? { channel: 'chrome' } : {}) }, grep: /@mobile/ },
+    // Tests du back : base Postgres embarquée, aucun navigateur.
+    { name: 'sql', testMatch: 'sql/**/*.spec.mjs' },
+    { name: 'bureau', testIgnore: 'sql/**', use: { ...devices['Desktop Chrome'], ...(useChrome ? { channel: 'chrome' } : {}) } },
+    { name: 'mobile', testIgnore: 'sql/**', use: { ...devices['Pixel 7'], ...(useChrome ? { channel: 'chrome' } : {}) }, grep: /@mobile/ },
   ],
   webServer: {
     command: `node tools/serve.mjs ${PORT}`,

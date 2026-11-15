@@ -69,27 +69,25 @@ Les douze décisions de la mission sont appliquées telles quelles. Précisions 
 
 ### 3.0 Urgence sécurité (base)
 
-- [ ] Migration `securite_urgence` : retirer `EXECUTE` à `anon`, `authenticated` et `public` sur les fonctions `admin_*`,
-      `bot_*`, `flash_settle_round`, `flash_tick_server`, `settle_market`, `grant_xp`, `progress_mission`,
-      `create_notification`, `_post_bet_hook` et les fonctions de trigger ; retirer l'accès à `admin_players_view`.
-      _Test_ : avec la clé publique, `rpc/admin_get_player` et la vue répondent « permission denied ».
-- [ ] E-mails : lecture de `users` limitée à sa propre ligne ; vue `profils_publics` sans e-mail.
-      _Test_ : `GET users?select=email` en anonyme renvoie 0 ligne ; un compte connecté ne lit que le sien.
-- [ ] Écritures directes retirées sur `user_stats`, `positions`, `market_live_state`, `market_price_history`, `deposits`,
-      `withdrawals`, `flash_bets`, `notifications`, `user_badges`, `missions`, `orders`, `position_history`, `friendships`,
-      `clans`, `clan_members`, `chat_messages`. _Test_ : un compte de test ne peut plus modifier son solde par l'API.
-- [ ] Chat : lecture limitée aux salons publics ; salons privés et de clan réservés à leurs membres.
-- [ ] `accept_friend_request` : XP seulement si une demande a réellement été acceptée.
-- [ ] `users` et `user_stats` retirées de la publication temps réel.
-- [ ] `search_path` fixé sur toutes les fonctions.
-- [ ] Vérification : le site en ligne (ancien front) marche toujours pour connexion par e-mail, pari, vente, dépôt, chat.
-- [ ] Pousser la branche sur GitHub (l'audit devient public seulement après cette étape).
+- [x] Migration `20261115032907_securite_urgence_droits` (appliquée) : e-mails illisibles par l'API ; fonctions `admin_*`,
+      `bot_*`, règlements et aides internes fermées aux clients ; plus aucune écriture directe sur l'argent, le jeu et le
+      social ; chat privé réservé aux membres ; XP d'amitié corrigée ; chat borné ; `search_path` fixé partout ;
+      droits par défaut resserrés.
+      _Preuves_ : `tests/sql/securite.spec.mjs` (12 tests), `tests/sql/securite-partie1.spec.mjs`,
+      `tools/e2e/verif-securite.mjs` sur la vraie base (22 contrôles), catalogue relu (4 tables seulement restent
+      inscriptibles par un joueur, sur ses propres lignes ; 7 fonctions ouvertes aux visiteurs).
+- [x] L'ancien front en ligne marche toujours pour : connexion par e-mail, pari, vente, dépôt, marchés, amis, profil.
+      Régression connue et voulue : la connexion par pseudo (elle lisait les e-mails).
+- [ ] Migration `securite_urgence_nettoyage` : retirer les policies d'écriture devenues sans objet et sortir `users` /
+      `user_stats` de la publication temps réel. **En attente : la base demande une confirmation manuelle** (voir « À faire
+      par l'humain »). Sans risque en attendant : les droits d'écriture sont déjà retirés.
+- [x] Pousser la branche sur GitHub (l'audit ne devient public qu'une fois les trous fermés).
 
 ### 3.1 Outillage de test
 
 - [x] Serveur local `tools/serve.mjs`, configuration Playwright, faux client Supabase `tests/helpers/fake-supabase.js`.
 - [ ] `tests/helpers/app.mjs` : ouvrir le site dans un mode et une langue donnés, collecter les erreurs console.
-- [ ] Base embarquée pour les tests SQL (`tests/sql/`), chargée avec la baseline puis les migrations.
+- [x] Base embarquée pour les tests SQL (`tests/sql/base.mjs`, PGlite) : bouchons Supabase → baseline → migrations, en moins d'une seconde.
 - [ ] Intégration continue : `.github/workflows/tests.yml` sur chaque pull request.
 
 ### 3.2 Les trois bloquants
@@ -214,8 +212,12 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 
 ## À faire par l'humain (tableau de bord Supabase ou GitHub)
 
-Rien pour l'instant. Cette liste se remplira au fil du chantier (modèle d'e-mail du code à 6 chiffres, URL de redirection,
-SMTP, mode de publication GitHub Pages).
+1. **Accepter la confirmation Supabase** quand elle s'affiche pendant une session de travail : l'outil de base de données
+   demande un accord manuel pour toute instruction qui supprime quelque chose, et la demande expire après 2 minutes.
+   Deux opérations l'attendent : la migration `securite_urgence_nettoyage` (retrait de règles devenues inutiles) et la
+   suppression des comptes de test `wimoro-e2e-…@example.com`.
+2. La liste se complétera au fil du chantier (modèle d'e-mail du code à 6 chiffres, URL de redirection, SMTP, mode de
+   publication GitHub Pages).
 
 ## Journal
 
@@ -223,3 +225,4 @@ SMTP, mode de publication GitHub Pages).
 |---|---|---|
 | 15 nov. 2026 | Phase 0 : accès, tag, branche, export du back, sauvegarde. | commits `17ff4c5`, `9ed0350` ; migration `20261114234523_backup_avant_reparation` |
 | 15 nov. 2026 | Phase 1 : audit complet. Phase 2 : ce plan. | `docs/AUDIT.md`, `docs/audit/` |
+| 15 nov. 2026 | 3.0 : trous de sécurité K01 à K13 fermés en production. Base de test embarquée. | migration `20261115032907_securite_urgence_droits` ; 13 tests SQL ; `tools/e2e/verif-securite.mjs` |
