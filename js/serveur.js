@@ -47,6 +47,10 @@ const ERR_TXT={
  kyc_piece:()=>_t("Ajoute ta pièce d’identité."),
  mission_indisponible:()=>_t("Cette récompense a déjà été récupérée."),
  suspendu:()=>_t("Ce compte est suspendu."),
+ serie_en_cours:()=>_t("Tu as déjà une série en cours."),
+ serie_absente:()=>_t("Cette série est terminée."),
+ deja_choisi:()=>_t("Ton choix est déjà fait pour cette manche."),
+ choix_fermes:()=>_t("Choix fermés"),
  trop_vite:()=>_t("Pas si vite : attends une seconde entre deux messages."),
  message_repete:()=>_t("Tu viens d’envoyer ce message."),
  trop_de_messages:()=>_t("Trop de messages d’un coup. Réessaie dans une minute."),
@@ -69,7 +73,7 @@ const srvErreur=e=>{if(e&&e.code==='session'){srvSessionPerdue();return;}if(e&&e
    qui touche au solde, à l'XP ou à un état partagé n'est exécutée localement quand le serveur fait autorité. */
 const SRV_BLOQUE=new Set(('share-pick vote '
  +'cp-start cp-stop-do cp-edit cp-manage cp-pause cp-stop cp-open limit-place ord-cancel guard guard-save guard-del dl-create dl-cancel dl-accept dl-share dl-decline duel-open stk-create stack-open '
- +'bz-join bz-rebuy bz-choose sr-start sr-cash sr-play sr-share cl-war-join cl-sim cl-join cl-apply cl-leave-do cl-share cl-promote cl-kick cl-invite cl-call-do cl-war cl-feedopt cl-create-open cl-leave cl-call-open cl-war-open '
+ +'bz-join bz-rebuy bz-choose sr-share cl-war-join cl-sim cl-join cl-apply cl-leave-do cl-share cl-promote cl-kick cl-invite cl-call-do cl-war cl-feedopt cl-create-open cl-leave cl-call-open cl-war-open '
  +'cb-place cb-cash cb-add cb-clear cb-rm cb-stake pro-sh-send pro-share follow-user follow-bet follow-pbet share ref-copy ref-share propose react '
  +'wallet wallet-modal demo-login demo-rank demo-rank-open demo-rank-reset').split(/\s+/));
 const SRV_FORMS_BLOQUE=new Set(['create','clan','clcode']);
@@ -109,8 +113,11 @@ const missionDe=m=>({id:m.id,type:m.type,label:missionLabel(m.id),goal:m.goal,ha
 const depDe=d=>({id:d.id,coin:d.coin,net:d.method&&FIAT[d.method]?FIAT[d.method].n:d.net,method:d.method||undefined,amt:+d.amt,fee:+d.fee||0,usd:+d.usd,at:d.at,due:d.due||0,conf:d.st==='pending'?(d.conf|0):(d.need||12),need:d.need||12,label:d.label||undefined});
 const wdDe=w=>({id:w.id,net:w.method&&FIAT[w.method]?FIAT[w.method].n:w.net,addr:w.method&&FIAT[w.method]?FIAT[w.method].dest:w.addr,method:w.method||undefined,amt:+w.amt,fee:+w.fee||0,at:w.at,due:w.due||0,st:w.st});
 const rgDe=r=>({lim:{day:+(r.lim||{}).day||0,week:+(r.lim||{}).week||0,month:+(r.lim||{}).month||0},pend:Object.assign({},r.pend||{}),pause:+r.pause||0,excl:+r.excl||0});
-/* une ligne d'historique du pari éclair arrive sous la forme « eclair|jeu|manche » : son libellé est composé ici, dans la langue du lecteur */
-const histDe=h=>{if(h.k==='flash'&&typeof h.q==='string'&&h.q.startsWith('eclair|')){const [,gid,r]=h.q.split('|'),d=GM[gid];
+/* une ligne d'historique du pari éclair arrive sous la forme « eclair|jeu|manche », une série sous la forme
+   « serie|jeu|manches gagnées|manche atteinte|multiplicateur » : leur libellé est composé ici, dans la langue du lecteur */
+const histSerie=h=>{const [,gid,won,step,mult]=h.q.split('|'),nom=GM[gid]?GM[gid].name:gid;
+ return {k:'serie',q:h.win?_t("La Série {0} : {1} sur {1}, encaissé à ×{2}",[nom,won,F.d1(+mult)]):_t("La Série {0} : {1} sur {2}",[nom,won,step]),s:h.s,win:!!h.win,pnl:+h.pnl,at:h.at};};
+const histDe=h=>{if(h.k==='flash'&&typeof h.q==='string'&&h.q.startsWith('serie|'))return histSerie(h);if(h.k==='flash'&&typeof h.q==='string'&&h.q.startsWith('eclair|')){const [,gid,r]=h.q.split('|'),d=GM[gid];
   return {k:'flash',q:d?_t("Éclair {0}, manche {1} : {2}",[d.name,F.int(+r),sideLabel(d,h.s)]):h.q,s:h.s==='non'?'non':'oui',eq:h.s==='be',win:!!h.win,pnl:+h.pnl,at:h.at};}
  return {k:h.k,m:h.m||undefined,q:h.m&&MK[h.m]?MK[h.m].q:(h.q||h.m||''),s:h.s,win:!!h.win,pnl:+h.pnl,at:h.at};};
 const miseDe=m=>({id:m.id,s:m.s,amt:+m.amt,fee:+m.fee,net:+m.net,price:m.price,mult:+m.mult,tk:m.tk|0});
@@ -135,6 +142,7 @@ function hydrater(e){
  me.deps=(e.deps||[]).map(depDe);me.wds=(e.wds||[]).map(wdDe);if(e.rg)me.rg=rgDe(e.rg);
  /* pari éclair : les mises de la manche en cours sont rendues par le serveur (flashBoot les replace sur leurs paris) */
  {const b=e.eclair&&e.eclair.b||{};if(Object.keys(b).length){me.fmy={r:e.eclair.r,b:{}};for(const g in b)me.fmy.b[g]=miseDe(b[g]);}SRV_ECLAIR_DU=e.eclair?(e.eclair.du|0):0;}
+ me.serie=serieDe(e.serie);
  me.notifs=(e.notifs||[]).map(notifDe);me.missions=(e.missions||[]).map(missionDe);me.badges=(e.badges||[]).slice();
  me.friends=(e.friends||[]).slice();me.freqIn=(e.freqIn||[]).slice();me.freqOut=(e.freqOut||[]).slice();me.following=(e.following||[]).slice();
  const pr=e.prefs||{};for(const k of SRV_PREFS)if(pr[k]!==undefined)me[k]=pr[k];
@@ -437,6 +445,61 @@ async function srvChatEnvoyer(rid,inp,text){
  }catch(e){srvErreur(e);}
  finally{srvChatOccupe=false;}
 }
+
+/* ----- La Série : lancée, jouée et réglée par le serveur (Edge Function « eclair », actions serie_…) -----
+   Le serveur donne l'heure de début de la manche, le prix de départ, la cote retenue et l'issue ; l'écran garde son
+   affichage (compte à rebours, courbe, cotes du moment) et annonce les résultats avec les mêmes messages qu'en mode Démo. */
+const serieDe=x=>x?{sid:x.id,gid:x.gid,stake:+x.stake,stack:+x.stack,step:x.step|0,state:x.state,hist:(x.hist||[]).map(h=>Object.assign({},h)),at:+x.at||0,endAt:+x.endAt||0,
+ rStart:(+x.rStart||0)-FSKEW,rEnd:(+x.rStart||0)-FSKEW+SERIE.ROUND_MS,p0:+x.p0,choice:x.choice||null,mult:+x.mult||0,fee:+x.fee||0,path:[+x.p0],closed:false}:null;
+function srvSerieEtat(x){const avant=S.me.serie,s=serieDe(x);if(avant&&s&&avant.sid===s.sid&&avant.step===s.step&&avant.path)s.path=avant.path;S.me.serie=s;}
+let srvSerieOccupe=false,srvSerieApres=0;
+async function srvSerieAppel(action,corps,ev){
+ const r=await API.fn('eclair',Object.assign({action},corps||{}));
+ if(typeof r.now==='number')FSKEW=r.now-Date.now();
+ srvAppliquer(r,ev);if('serie' in r)srvSerieEtat(r.serie);
+ for(const h of r.hist||[])S.me.history.unshift(histDe(h));
+ return r;
+}
+/* les annonces d'une manche réglée ou d'un encaissement : mêmes messages qu'en mode Démo */
+function srvSerieAnnonce(x){const d=GM[x.gid]||{name:x.gid};
+ if(x.r==='gagnee')toast({tone:'green',icon:'bolt',flash:true,title:`${_t("Manche {0} gagnée : stack {1}",[x.step,F.usd(+x.stack)])}`,text:`${_t("{0} Encaisse ou continue dans les {1} secondes.",[x.out==='be'?_t("Break even !"):x.out==='oui'?_t("Haut."):_t("Bas."),SERIE.CHOICE_MS/1000])}`,href:'#serie'});
+ else if(x.r==='perdue')toast({tone:'red',icon:'bolt',flash:true,title:`${_t("Série perdue à la manche {0}",[x.step])}`,text:`${_t("C’était {0}. Mise perdue : {1}.",[x.out==='be'?'break even':x.out==='oui'?_t("Haut"):_t("Bas"),F.usd(+x.stake)])}`,href:'#serie'});
+ else if(x.r==='rendue'){if(x.out)toast({tone:'amber',icon:'wallet',force:true,title:_t("Série annulée"),text:_t("Aucun choix dans les 30 secondes : ta mise t’est rendue."),href:'#serie'});}
+ else{const tot=+x.stack/+x.stake;
+  if(x.r==='auto')toast({tone:'amber',icon:'wallet',force:true,title:_t("Encaissement automatique"),text:`${_t("Aucun choix dans les {0} secondes : {1} encaissés.",[SERIE.CHOICE_MS/1000,F.usd(+x.stack)])}`,href:'#serie'});
+  serieToday().unshift({u:'me',steps:x.won|0,mult:tot,cashed:+x.stack,at:now()});S.me.serieBest=Math.max(S.me.serieBest||0,x.won|0);
+  toast({tone:'green',icon:'trophy',force:true,title:`${_t("Encaissé : {0} (×{1})",[F.usd(+x.stack),F.d1(tot)])}`,text:`${_t("{0} sur {0} sur {1}. Bravo.",[x.won|0,d.name])}`,href:'#serie'});if(x.r==='encaissee')confetti(36);}
+}
+async function srvSerieLancer(gid,stake){
+ if(srvSerieOccupe)return;if(typeof rgBlocked==='function'&&rgBlocked('bet'))return;
+ if(stake>S.me.balance){toast({tone:'amber',icon:'wallet',title:_t("Solde insuffisant"),text:_t("Dépose des fonds pour continuer."),href:'#depot'});return;}
+ srvSerieOccupe=true;
+ try{await srvSerieAppel('serie_start',{gid,stake,key:cleOp()});
+  toast({tone:'blue',icon:'bolt',force:true,title:`${_t("Série lancée à {0}",[F.usd0(stake)])}`,text:_t("Choisis Haut, Bas ou Break even pour la première manche.")});}
+ catch(e){srvErreur(e);}
+ finally{srvSerieOccupe=false;updateHeader();serieRefresh();}
+}
+async function srvSerieChoisir(side){
+ const s=serieCur();if(!s||srvSerieOccupe)return;srvSerieOccupe=true;
+ try{await srvSerieAppel('serie_play',{gid:s.gid,choice:side});}
+ catch(e){if(e.code==='choix_fermes')toast({tone:'amber',icon:'lock',title:_t("Choix fermés"),text:`${_t("Le choix se fait dans les {0} premières secondes de la manche.",[SERIE.CHOICE_MS/1000])}`});else srvErreur(e);}
+ finally{srvSerieOccupe=false;serieRefresh();}
+}
+async function srvSerieEncaisser(){
+ if(srvSerieOccupe)return;srvSerieOccupe=true;
+ try{const r=await srvSerieAppel('serie_cash');if(r.regle)srvSerieAnnonce(r.regle);}
+ catch(e){if(e.code==='choix_fermes'||e.code==='deja_choisi')srvSerieApres=0;else srvErreur(e);}
+ finally{srvSerieOccupe=false;updateHeader();serieRefresh();}
+}
+/* fin d'une manche : le serveur la règle (et celles d'après si l'on revient plus tard) ; si son horloge est encore dans la
+   manche, on redemande une seconde plus tard */
+async function srvSerieRegler(){
+ if(srvSerieOccupe||now()<srvSerieApres)return;srvSerieOccupe=true;srvSerieApres=now()+1200;
+ try{const r=await srvSerieAppel('serie_settle');for(const x of r.regles||[])srvSerieAnnonce(x);}
+ catch(e){if(e.code==='session'||e.code==='exclu'||e.code==='suspendu')srvErreur(e);else{srvSerieApres=now()+4000;console.warn('[srv] règlement de la série remis à plus tard',e.code);}}
+ finally{srvSerieOccupe=false;updateHeader();serieRefresh();}
+}
+planifier('serveur : série',1000,()=>{if(typeof serieTick==='function')serieTick();},'serveur');
 
 /* ----- Sujet privé du joueur : ses messages privés et ses notifications arrivent en direct, à lui seul ----- */
 function srvPerso(evt,d){

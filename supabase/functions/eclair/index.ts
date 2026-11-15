@@ -8,6 +8,11 @@
 // Appel (session du joueur obligatoire) : POST
 //   { action: 'bet', gid, side, amt, key }  →  { ok: true, now, me, ev, mise }
 //   { action: 'settle' }                    →  { ok: true, now, me, ev, regles, hist, eclair }
+// La Série (manches de 60 secondes jouées avec tout le stack, même moteur, même principe) :
+//   { action: 'serie_start', gid, stake, key }  →  { ok: true, now, me, ev, serie }      (heure et prix de départ : serveur)
+//   { action: 'serie_play', gid, choice }       →  { ok: true, now, me, ev, serie }      (cote et frais : serveur)
+//   { action: 'serie_cash' }                    →  { ok: true, now, me, ev, serie, hist, regle }
+//   { action: 'serie_settle' }                  →  { ok: true, now, me, ev, serie, hist, regles }  (issue : serveur)
 // Refus : { ok: false, code } avec un code stable (mises_fermees, deja_mise, solde_insuffisant, pause, be_plein…).
 // La fonction vérifie elle-même la session auprès du service d'authentification (getUser) : verify_jwt est désactivé.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
@@ -95,6 +100,59 @@ Deno.serve(async (req: Request) => {
     const { data, error } = await admin.rpc("srv_eclair_regler", { p_user: joueur, p_res: res });
     if (error) { const c = codeDe(error.message); if (c === "serveur") console.error("règlement :", error.message); return refus(req, c, c === "serveur" ? 500 : 400); }
     return json(req, { ok: true, now: Date.now(), ...data });
+  }
+
+  // ── La Série ──
+  // deno-lint-ignore no-explicit-any
+  const appel = async (nom: string, args: Record<string, unknown>, quoi: string): Promise<{ data?: any; non?: Response }> => {
+    const { data, error } = await admin.rpc(nom, args);
+    if (!error) return { data };
+    const c = codeDe(error.message);
+    if (c === "serveur") console.error("%s : %s", quoi, error.message);
+    return { non: refus(req, c, c === "serveur" ? 500 : 400) };
+  };
+  const actif = (gid: unknown) => { const d = ME.JEUX[String(gid ?? "")]; return d && d.kind === "dir" ? d : null; };   // la Série se joue sur un actif à trajectoire
+
+  if (corps?.action === "serie_start") {
+    const d = actif(corps.gid);
+    if (!d) return refus(req, "jeu_inconnu");
+    const t = Date.now();                                    // l'heure du serveur fixe le début de la manche et son prix de départ
+    const r = await appel("srv_serie_start", { p_user: joueur, p: { gid: d.id, stake: Number(corps.stake), t, p0: ME.prixAu(d, t), key: corps.key ?? null } }, "série, lancement");
+    return r.non ?? json(req, { ok: true, now: Date.now(), ...r.data });
+  }
+
+  if (corps?.action === "serie_play") {
+    const d = actif(corps.gid), choix = String(corps.choice ?? "");
+    if (!d) return refus(req, "jeu_inconnu");
+    if (!["oui", "non", "be"].includes(choix)) return refus(req, "cote_invalide");
+    const cotes = ME.serieCotes(d, Date.now());              // la cote du moment, pas celle que l'écran affichait
+    const r = await appel("srv_serie_play", { p_user: joueur, p: { gid: d.id, choice: choix, mult: cotes[choix], taux: ME.taux(d.cat, false) * .5, taux_remise: ME.taux(d.cat, true) * .5 } }, "série, choix");
+    return r.non ?? json(req, { ok: true, now: Date.now(), ...r.data });
+  }
+
+  if (corps?.action === "serie_cash") {
+    const r = await appel("srv_serie_cash", { p_user: joueur }, "série, encaissement");
+    return r.non ?? json(req, { ok: true, now: Date.now(), ...r.data });
+  }
+
+  if (corps?.action === "serie_settle") {
+    // Règle la manche terminée, puis les suivantes si le joueur revient plus tard (sans choix : encaissement ou mise rendue).
+    // deno-lint-ignore no-explicit-any
+    let dernier: any = null; const regles: unknown[] = [], hist: unknown[] = [];
+    for (let i = 0; i < 14; i++) {
+      const l = await appel("srv_serie_lire", { p_user: joueur }, "série, lecture");
+      if (l.non) return l.non;
+      const s = l.data?.serie, d = s ? ME.JEUX[s.gid] : null;
+      if (!s || !d || Date.now() < Number(s.rStart) + ME.SERIE_MS) { if (!dernier) dernier = s ? { serie: s } : {}; break; }   // rien à régler
+      const x = ME.serieIssue(d, Number(s.rStart));
+      const r = await appel("srv_serie_regler", { p_user: joueur, p: { id: s.id, step: s.step, out: x.out, p1: x.p1 } }, "série, règlement");
+      if (r.non) return r.non;
+      dernier = r.data;
+      if (r.data?.regle) regles.push(r.data.regle);
+      hist.push(...(r.data?.hist ?? []));
+      if (r.data?.serie?.state !== "running") break;
+    }
+    return json(req, { ok: true, now: Date.now(), ...dernier, regles, hist });
   }
 
   return refus(req, "requete");

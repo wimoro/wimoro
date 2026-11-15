@@ -184,7 +184,14 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
       serveur est celui que l'écran avait calculé).
 - [ ] Limite connue : la cagnotte d'une manche est celle des joueurs simulés plus la mise du joueur, comme en mode Démo ;
       les mises des autres vrais joueurs n'y entrent pas encore.
-- [ ] Blitz et Série : annoncés comme indisponibles en mode Compte.
+- [x] La Série en mode Compte : lancée, jouée, réglée et encaissée par le serveur (Edge Function `eclair`, actions `serie_…` ;
+      fonctions `srv_serie_…` réservées à la clé de service). Heure de début, prix de départ, cote et issue viennent du
+      serveur. _Tests_ `tests/sql/serie.spec.mjs` (7), `tests/compte/serie.spec.mjs` (3), `tests/e2e/comptes.spec.mjs`
+      (une manche gagnée puis encaissée contre le vrai serveur : le stack payé est celui que l'écran annonce).
+- [ ] Blitz Royale : annoncé comme indisponible en mode Compte.
+- [ ] Limite assumée de la maquette : le pari éclair, la Série et le Blitz sont **déterministes** (tout se déduit de l'heure,
+      avec un moteur public). Un joueur qui lit le code peut donc connaître l'issue d'une manche à l'avance. Sans
+      conséquence avec de l'argent fictif ; à remplacer par un tirage secret côté serveur avant tout argent réel.
 
 ### 4.5 Chat
 - [x] Salons publics (général et salon de chaque marché) : historique, envoi, réception en direct ; on ne s'abonne qu'au
@@ -318,6 +325,8 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 | Marché résolu | Il quitte les listes du site ; son nom reste connu pour l'historique. Un marché « fermé » reste visible, le serveur y refuse les mises. | Le mode Démo n'a jamais eu d'écran « marché terminé » : pas de nouvel écran inventé. |
 | Suspension | Le serveur refuse toute action du joueur suspendu ; l'écran le déconnecte et l'explique. Un administrateur ne peut pas être suspendu. | Même mécanisme que l'auto-exclusion, déjà éprouvé. |
 | Démarrage du direct | Les marchés sont relus une fois juste après l'abonnement au temps réel. | Un changement de prix pouvait être manqué entre la première lecture et l'abonnement (constaté par un test contre le vrai serveur). |
+| La Série : XP et « paris réglés » | Les 10 XP sont donnés au premier choix (pas au lancement) ; une série reprise avant tout gain ne compte pas comme un pari réglé. | En mode Démo, lancer puis reprendre sa mise rapportait 10 XP et un « pari réglé » : sur un serveur, c'était une faille (rang gratuit). |
+| La Série : cote | La cote retenue est celle que le serveur calcule à la réception du choix, pas celle affichée une fraction de seconde plus tôt. | Le serveur fait autorité ; l'écran affiche ensuite la cote retenue. |
 | Protection de `main` | Non activée. | Elle changerait ta façon de publier ; elle reste proposée, facultative. |
 
 ## À faire par l'humain
@@ -352,3 +361,4 @@ Rien d'obligatoire. Le détail et les constats sont dans `docs/EXPLOITATION.md`,
 | 15 nov. 2026 | Mise en ligne : pull request n° 1 fusionnée, wimoro.com vérifié (Démo, Compte, trois langues). Ancienne API fermée après contrôle des journaux. Purge horaire du journal de pg_cron. 27 comptes de test supprimés ; la suite nettoie désormais derrière elle. | fusion `13f224e` ; migrations `purge_journal_cron`, `fermeture_ancienne_api`, `comptes_test` (empreintes identiques) ; 174 tests (77 SQL) ; 9 scénarios contre le site en ligne, avant et après la fermeture |
 | 16 nov. 2026 | 4.5 (fin) : messages des bots dans le chat, en gabarit + paramètres. | migration `chat_bots` (empreinte identique) ; 180 tests (81 SQL) ; 9 scénarios de bout en bout contre le vrai back |
 | 16 nov. 2026 | Phase 6 : panel d'administration (joueurs, marchés avec résolution, chat, bots, chiffres, journal). Bots du chat : un rythme par salon regardé. Démarrage du direct : relecture de rattrapage. | migrations `admin`, `chat_bots_rythme` (empreintes identiques) ; 196 tests (88 SQL) ; 10 scénarios de bout en bout contre le vrai back |
+| 16 nov. 2026 | 4.4 (suite) : La Série en mode Compte. | migration `serie` (empreinte identique), Edge Function `eclair` version 2 ; 206 tests (95 SQL) ; 11 scénarios de bout en bout contre le vrai back |

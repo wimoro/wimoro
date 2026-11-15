@@ -61,7 +61,7 @@
 
   /* ----- Les fonctions du contrat ----- */
   var RPC = {
-    api_state: function () { var e0 = etat(); regler(e0, []); rgMaj(e0, []); var e = clone(e0); e.deps = e0.deps.map(depJson); e.eclair = eclairJson(e0); delete e.eclairMises; e.now = Date.now() + (CFG.decalage || 0); return e; },
+    api_state: function () { var e0 = etat(); regler(e0, []); rgMaj(e0, []); var e = clone(e0); e.deps = e0.deps.map(depJson); e.eclair = eclairJson(e0); delete e.eclairMises; e.serie = serieJson(e0); e.now = Date.now() + (CFG.decalage || 0); return e; },
     api_pseudo_libre: function (a) { return /^[A-Za-z0-9._]{3,20}$/.test(a.p_pseudo || '') && !pseudoPris(a.p_pseudo); },
     api_profile_update: function (a) { var p = a.p || {}, me = etat().me;
       if ('n' in p) { if (!/^[A-Za-z0-9._]{3,20}$/.test(p.n || '')) throw { message: 'pseudo_invalide' }; if (pseudoPris(p.n, uid())) throw { message: 'pseudo_pris' }; me.n = p.n; }
@@ -323,6 +323,42 @@
   var eclairJson = function (e) { var ME = MoteurEclair, r = ME.round(Date.now()), L = e.eclairMises || [], b = {};
     L.forEach(function (m) { if (m.etat === 'ouverte' && m.r === r) b[m.g] = clone(m); });
     return { r: r, du: L.filter(function (m) { return m.etat === 'ouverte' && m.r < r; }).length, b: b }; };
+  /* La Série : mêmes règles que supabase/migrations/…_serie.sql, avec le moteur chargé par la page */
+  var serieJson = function (e) { return e.serie ? clone(e.serie) : null; };
+  var serieFin = function (e, s, mode, ev, hist) { var me = e.me, avant = rangDe(me), h;
+    if (mode === 'rendue') { me.balance = Math.round((me.balance + s.stake) * 100) / 100; s.state = 'cashed'; s.stack = s.stake; s.step = 0; }
+    else { me.balance = Math.round((me.balance + s.stack) * 100) / 100; me.settled++; me.wins++; me.realized = Math.round(((me.realized || 0) + s.stack - s.stake) * 100) / 100; s.state = 'cashed'; s.step = s.won;
+      h = { k: 'flash', q: 'serie|' + s.gid + '|' + s.won + '|' + s.won + '|' + (Math.round(s.stack / s.stake * 10) / 10), s: 'oui', win: true, pnl: Math.round((s.stack - s.stake) * 100) / 100, at: Date.now() };
+      e.history.unshift(clone(h)); hist.push(h); var n = 20 + s.won * 10; me.xp += n; ev.push({ k: 'xp', n: n, src: 'serie' }); rangMonte(me, avant, ev); }
+    s.choice = null; s.endAt = Date.now(); };
+  function serieAction(b) { var ME = MoteurEclair, e = etat(), me = e.me, t = Date.now(), s = e.serie, ev = [], hist = [], regles = [], d, rep, x, cle;
+    var enCours = function () { if (!s || s.state !== 'running') throw { message: 'serie_absente' }; };
+    if (b.action === 'serie_start') { d = ME.JEUX[b.gid]; cle = uid() + ':' + b.key;
+      if (!d || d.kind !== 'dir') throw { message: 'jeu_inconnu' }; if ([5, 10, 25, 50, 100].indexOf(+b.stake) < 0) throw { message: 'montant_invalide' }; if (!b.key) throw { message: 'cle_absente' };
+      if (db.ops[cle]) { rep = clone(db.ops[cle]); rep.rejoue = true; return rep; }
+      if (e.rg && e.rg.pause > t) throw { message: 'pause' }; if (s && s.state === 'running') throw { message: 'serie_en_cours' }; if (me.balance < +b.stake) throw { message: 'solde_insuffisant' };
+      me.balance = Math.round((me.balance - b.stake) * 100) / 100; me.played++;
+      e.serie = { id: db.seq++, gid: d.id, stake: +b.stake, stack: +b.stake, step: 1, state: 'running', rStart: t, p0: ME.prixAu(d, t), choice: null, mult: null, fee: 0, won: 0, hist: [], at: t, endAt: null };
+      rep = reponse(ev); rep.serie = serieJson(e); db.ops[cle] = clone(rep); return rep; }
+    if (b.action === 'serie_play') { enCours(); d = ME.JEUX[b.gid]; if (!d || s.gid !== b.gid) throw { message: 'serie_absente' };
+      if (['oui', 'non', 'be'].indexOf(b.choice) < 0) throw { message: 'cote_invalide' }; if (s.choice) throw { message: 'deja_choisi' }; if (t >= s.rStart + 31500) throw { message: 'choix_fermes' };
+      s.choice = b.choice; s.mult = ME.serieCotes(d, t)[b.choice]; s.fee = Math.round(s.stack * ME.taux(d.cat, rangDe(me).t >= 5) * .5 * 100) / 100;
+      if (s.step === 1) { var av = rangDe(me); me.xp += 10; ev.push({ k: 'xp', n: 10, src: 'serie' }); rangMonte(me, av, ev); }
+      rep = reponse(ev); rep.serie = serieJson(e); return rep; }
+    if (b.action === 'serie_cash') { enCours(); if (s.choice) throw { message: 'deja_choisi' }; if (t >= s.rStart + 60000) throw { message: 'choix_fermes' };
+      x = { r: s.won ? 'encaissee' : 'rendue', step: s.step }; serieFin(e, s, s.won ? 'encaissee' : 'rendue', ev, hist);
+      x.stack = s.stack; x.stake = s.stake; x.gid = s.gid; x.won = s.won; rep = reponse(ev); rep.serie = serieJson(e); rep.hist = hist; rep.regle = x; return rep; }
+    if (b.action === 'serie_settle') {
+      for (var i = 0; i < 14 && s && s.state === 'running' && t >= s.rStart + 60000; i++) { d = ME.JEUX[s.gid]; var iss = ME.serieIssue(d, s.rStart), pas = s.step, r;
+        if (!s.choice) { r = s.won ? 'auto' : 'rendue'; serieFin(e, s, r, ev, hist); }
+        else if (s.choice === iss.out) { s.hist.push({ step: s.step, choice: s.choice, out: iss.out, mult: s.mult, p0: s.p0, p1: iss.p1, win: true }); s.won++;
+          var st = Math.round((s.stack - s.fee) * s.mult * 100) / 100;
+          if (s.step >= 12) { s.stack = st; r = 'max'; serieFin(e, s, r, ev, hist); } else { s.stack = st; s.step++; s.rStart += 60000; s.p0 = iss.p1; s.choice = null; s.mult = null; s.fee = 0; r = 'gagnee'; } }
+        else { s.hist.push({ step: s.step, choice: s.choice, out: iss.out, mult: s.mult, p0: s.p0, p1: iss.p1, win: false }); s.state = 'lost'; s.stack = 0; s.endAt = t; me.settled++; me.realized = Math.round(((me.realized || 0) - s.stake) * 100) / 100;
+          var hp = { k: 'flash', q: 'serie|' + s.gid + '|' + s.won + '|' + s.step + '|0', s: 'non', win: false, pnl: -s.stake, at: t }; e.history.unshift(clone(hp)); hist.push(hp); r = 'perdue'; }
+        regles.push({ r: r, step: pas, out: iss.out, p1: iss.p1, stack: s.stack, stake: s.stake, gid: s.gid, won: s.won }); }
+      rep = reponse(ev); rep.serie = serieJson(e); rep.hist = hist; rep.regles = regles; return rep; }
+    return null; }
   function eclairMiser(b) { var ME = MoteurEclair, e = etat(), me = e.me, t = Date.now(), d = ME.JEUX[b.gid], amt = Math.round(Number(b.amt) * 100) / 100, cle = uid() + ':' + b.key;
     if (!d) throw { message: 'jeu_inconnu' }; if (['oui', 'non', 'be'].indexOf(b.side) < 0) throw { message: 'cote_invalide' };
     if (!(amt >= 1) || !(amt <= 10000)) throw { message: 'montant_invalide' }; if (!b.key) throw { message: 'cle_absente' };
@@ -380,11 +416,11 @@
     var b = (opt && opt.body) || {}; rec('fn', name, { pseudo: b.pseudo });
     var ko = function (code) { return Promise.resolve({ data: null, error: { message: 'Edge Function returned a non-2xx status code', context: { json: function () { return Promise.resolve({ ok: false, code: code }); } } } }); };
     if (name === 'eclair') {
-      calls[calls.length - 1].args = { action: b.action, gid: b.gid, side: b.side, amt: b.amt };
+      calls[calls.length - 1].args = { action: b.action, gid: b.gid, side: b.side, amt: b.amt, stake: b.stake, choice: b.choice };
       if (CFG.horsLigne) return Promise.reject(new TypeError('Failed to fetch'));
       var forcee = (CFG.fn || {}).eclair; if (forcee) return ko(forcee);
       if (!uid()) return ko('session');
-      try { var rep = b.action === 'bet' ? eclairMiser(b) : b.action === 'settle' ? eclairRegler() : null; if (!rep) return ko('requete'); persist(); rep.ok = true; rep.now = Date.now() + (CFG.decalage || 0);
+      try { var rep = b.action === 'bet' ? eclairMiser(b) : b.action === 'settle' ? eclairRegler() : /^serie_/.test(b.action || '') ? serieAction(b) : null; if (!rep) return ko('requete'); persist(); rep.ok = true; rep.now = Date.now() + (CFG.decalage || 0);
         return new Promise(function (ok) { setTimeout(function () { ok({ data: clone(rep), error: null }); }, CFG.latence || 3); }); }
       catch (e) { return ko(e.message || 'serveur'); }
     }
