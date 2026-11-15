@@ -14,7 +14,7 @@ const guestMe=()=>Object.assign(newMe('',''),{logged:false,onboarded:true,welcom
 S.auth={key:'',demo:false};S.epoch=0;
 function accKey(rec){if(rec.demo)return 'wimoro-demo';const k='wimoro-acc:'+rec.id,old='wimoro-demo:'+rec.id;return (LS.g(k)===null&&LS.g(old)!==null)?old:k;}
 function enterAccount(rec,fresh,quiet){S.epoch++;KEY=accKey(rec);S.me=rec.demo?demoMe():(fresh||newMe(rec.pseudo,rec.email||''));if(!fresh)load();S.me.logged=true;
-
+ if(!S.me.credit1m){S.me.balance+=1e6;S.me.credit1m=true;(S.me.deps=S.me.deps||[]).unshift({coin:'USDC',net:'Base',amt:1e6,usd:1e6,at:now(),conf:12,need:12,label:'Crédit démo'});}
  S.auth={key:rec.key,demo:!!rec.demo};LS.s(SESK,rec.key);
  if(!S.me.missions.some(m=>m.day))S.me.missions.forEach(m=>m.day=today());
  S.ui.dep.method='crypto';S.ui.wd.method='crypto';S.ui.fiat={dep:'50',wd:''};S.ui.kycd={doc:false};S.ui.ptab='positions';S.ui.pe=null;

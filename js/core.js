@@ -115,8 +115,8 @@ const USERS={
 const USER_IDS=Object.keys(USERS);
 
 /* Indice pour le testeur : petite mention toujours identique, jamais dans le libellé principal d'un bouton ou d'un titre. */
-const demoB=()=>'';
-const demoHint=(txt,tag='p')=>'';
+const demoB=()=>`<span class="demo-b">${_t('Mode démo')}</span>`;
+const demoHint=(txt,tag='p')=>`<${tag} class="demo-h">${demoB()}<span>${txt}</span></${tag}>`;
 /* ===================== Dates ===================== */
 /* Un seul formateur par langue ; l'heure est toujours sur 24 h (« 23:59 »). */
 const DAYMS=864e5,isoDate=s=>{const [y,mo,d]=s.split('-').map(Number);return new Date(y,mo-1,d);};
@@ -193,7 +193,7 @@ function demoMe(){return {v:5,logged:true,onboarded:true,kyc:false,fmode:'free',
  notifs:[{id:1,ic:'users',text:_t("lea a suivi ta mise sur le Clásico."),href:'#profil',at:T0-36e5,read:false},{id:2,ic:'trophy',text:_t("Plus que 110 XP pour passer Or III."),href:'#rang',at:T0-72e5,read:false},{id:3,ic:'flame',text:_t("Signal de foule sur Bitcoin à 150 000 $."),href:'#marche-btc150k',at:T0-9e6,read:false}],
  missions:[{id:'bets2',type:'bet',label:_t("Place 2 paris"),goal:2,have:0,xp:40,go:'#accueil',claimed:false},{id:'chatm1',type:'chatm',label:_t("Écris dans le chat d’un marché"),goal:1,have:0,xp:30,go:'#marche-btc150k',claimed:false},{id:'flash1',type:'flashwin',label:_t("Gagne une manche au marché éclair"),goal:1,have:0,xp:60,go:'#eclair',claimed:false}],
  badges:[],copies:[],copiers:0,welcomed:false,blockedShown:''};}
-function newMe(n,email){return {v:5,logged:true,onboarded:true,kyc:false,fmode:'free',falerts:[],contraWins:0,n,email,photo:'g:'+AV_GALLERY[hash(n||'')%AV_GALLERY.length].id,color:'#2448FF',interests:[],since:_t("aujourd’hui"),followers:0,xp:0,balance:0,credit1m:true,bio:'',wallet:'',prefs:{},ctype:'courbe',settled:0,wins:0,played:0,flashWins:0,flashStreak:0,flashBest:0,flashProfit:0,followed:0,deposits:0,depDay:'',streak:1,bestStreak:1,pos:38901,msgsTotal:0,chatXP:0,chatDay:'',maxBet:0,realized:0,following:[],watch:[],props:[],voted:{},positions:[],history:[],deps:[{coin:'USDC',net:'Base',amt:1e6,usd:1e6,at:now(),conf:12,need:12,label:'Crédit démo'}],wds:[],
+function newMe(n,email){return {v:5,logged:true,onboarded:false,kyc:false,fmode:'free',falerts:[],contraWins:0,n,email,photo:'g:'+AV_GALLERY[hash(n||'')%AV_GALLERY.length].id,color:'#2448FF',interests:[],since:_t("aujourd’hui"),followers:0,xp:0,balance:1e6,credit1m:true,bio:'',wallet:'',prefs:{},ctype:'courbe',settled:0,wins:0,played:0,flashWins:0,flashStreak:0,flashBest:0,flashProfit:0,followed:0,deposits:0,depDay:'',streak:1,bestStreak:1,pos:38901,msgsTotal:0,chatXP:0,chatDay:'',maxBet:0,realized:0,following:[],watch:[],props:[],voted:{},positions:[],history:[],deps:[{coin:'USDC',net:'Base',amt:1e6,usd:1e6,at:now(),conf:12,need:12,label:'Crédit démo'}],wds:[],
  notifs:[{id:1,ic:'gift',text:_t("Bienvenue sur Wimoro ! Tes 100 XP de bienvenue t’attendent."),href:'#bienvenue',at:now(),read:false}],
  missions:[{id:'dep1',type:'dep',label:_t("Fais ton premier dépôt"),goal:1,have:0,xp:100,go:'#depot',claimed:false},{id:'fb1',type:'flashbet',label:_t("Joue une manche au marché éclair"),goal:1,have:0,xp:50,go:'#eclair',claimed:false},{id:'chat1',type:'chat',label:_t("Écris ton premier message"),goal:1,have:0,xp:20,go:'#chat',claimed:false}],
  badges:[],copies:[],copiers:0,welcomed:true,blockedShown:''};}

@@ -86,14 +86,14 @@ Les douze décisions de la mission sont appliquées telles quelles. Précisions 
 ### 3.1 Outillage de test
 
 - [x] Serveur local `tools/serve.mjs`, configuration Playwright, faux client Supabase `tests/helpers/fake-supabase.js`.
-- [ ] `tests/helpers/app.mjs` : ouvrir le site dans un mode et une langue donnés, collecter les erreurs console.
+- [x] `tests/helpers/app.mjs` : ouvrir le site dans un mode et une langue donnés, collecter les erreurs console, figer l'horloge.
 - [x] Base embarquée pour les tests SQL (`tests/sql/base.mjs`, PGlite) : bouchons Supabase → baseline → migrations, en moins d'une seconde.
 - [ ] Intégration continue : `.github/workflows/tests.yml` sur chaque pull request.
 
 ### 3.2 Les trois bloquants
 
-- [ ] **B01** — plus d'erreur au chargement. _Test_ `demo/chargement.spec` : zéro erreur console, 3 modes × 3 langues.
-- [ ] **B02** — le pari éclair marche en mode Démo. _Test_ `demo/eclair.spec` : mise acceptée, affichée, réglée en fin de manche.
+- [x] **B01** — plus d'erreur au chargement (mode local). _Test_ `tests/demo/chargement.spec.mjs` : zéro erreur console, visiteur et Démo × 3 langues × 26 écrans. Le mode Compte sera couvert par `tests/compte/` à l'étape 3.3.
+- [x] **B02** — le pari éclair marche en mode Démo. _Test_ `tests/demo/eclair.spec.mjs` : mise acceptée, affichée, réglée en fin de manche, conservée après rechargement, une seule mise par pari.
 - [ ] **B04** — aucun simulateur du navigateur ne tourne en mode serveur. _Test_ `compte/simulateurs.spec` : en 10 s sans
       message du serveur, aucun prix, volume ni message de chat ne change.
 
@@ -118,9 +118,10 @@ Les douze décisions de la mission sont appliquées telles quelles. Précisions 
 
 ### 3.6 Mode Démo identique à `3a1d258`
 
-- [ ] Rétablir en mode local : pastilles « Mode démo », crédit de démonstration, onboarding.
-      _Test_ `demo/parcours.spec` : inscription locale → onboarding → 1 000 000 $ → pari → vente.
-- [ ] _Test_ `demo/ecrans.spec` : 26 écrans × 3 langues, zéro erreur.
+- [x] Rétablir en mode local : pastilles « Mode démo », crédit de démonstration, onboarding. Les 23 fichiers JS et le CSS
+      sont redevenus identiques à `3a1d258` (vérifié par `tools/audit/reproduire.mjs --only=S1` : 23/23).
+      _Test_ `tests/demo/parcours.spec.mjs` : inscription locale → onboarding → 1 000 000 $ → achat → vente.
+- [x] _Test_ `tests/demo/chargement.spec.mjs` : 26 écrans × 3 langues, zéro erreur, et aucun débordement sur téléphone.
 
 ### 3.7 Textes (B18)
 
@@ -225,4 +226,5 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 |---|---|---|
 | 15 nov. 2026 | Phase 0 : accès, tag, branche, export du back, sauvegarde. | commits `17ff4c5`, `9ed0350` ; migration `20261114234523_backup_avant_reparation` |
 | 15 nov. 2026 | Phase 1 : audit complet. Phase 2 : ce plan. | `docs/AUDIT.md`, `docs/audit/` |
+| 15 nov. 2026 | 3.2, 3.6 : `js/supabase.js` retiré ; mode Démo redevenu identique à `3a1d258` ; B01 et B02 corrigés. | 14 tests Playwright dans `tests/demo/` |
 | 15 nov. 2026 | 3.0 : trous de sécurité K01 à K13 fermés en production. Base de test embarquée. | migration `20261115032907_securite_urgence_droits` ; 13 tests SQL ; `tools/e2e/verif-securite.mjs` |

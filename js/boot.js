@@ -7,7 +7,7 @@ bootAuth();if(typeof rgBoot==='function')rgBoot();
 flashBoot();marketsLoad();
 (S.me.props||[]).forEach(pr=>{if(pr.status==='live')createMarketFromProposal(pr,false);});
 seedRooms();checkBadges(true);if(!S.me.missions.some(m=>m.day)){S.me.missions.forEach(m=>m.day=today());}
-/* onboarding redirect handled by sbLoad */
+if(S.me.logged&&!S.me.onboarded&&location.hash!=='#bienvenue')location.replace('#bienvenue');
 for(let i=0;i<5;i++)pushBig(true);
 i18nStatic(document.body);const md=document.querySelector('meta[name=description]');if(md&&LANG!=='fr'&&I18N[LANG][md.content])md.content=I18N[LANG][md.content];
 if(typeof duelSeed==='function'){duelSeed();duelLinkBoot();}if(typeof clanSeed==='function')clanSeed();if(typeof comboSeed==='function')comboSeed();if(typeof proBoot==='function')proBoot();
