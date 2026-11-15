@@ -112,7 +112,7 @@ function bzRefresh(light){if(document.hidden||(S.ui.route||'')!=='blitz')return;
  else if(r.state==='live'){const left=Math.max(0,(r.between?r.between:r.rEnd)-t),chg=(g.price/r.p0-1)*100;set('cd',e=>e.textContent=_t('{0} s',[Math.ceil(left/1000)]));set('bar',e=>e.style.width=(r.between?0:100-left/BZ.ROUND_MS*100).toFixed(1)+'%');set('price',e=>e.textContent=bzGame().fp(g.price));set('chg',e=>{e.textContent=pctFx(chg);e.className='delta '+(chg>=0?'up':'dn');});set('share',e=>e.textContent=F.usd(bzShare(r)));set('alive',e=>e.textContent=F.int(bzAlive(r)));if(!r.between)set('chart',e=>e.innerHTML=roundChartSvg(bzGame(),r.p0,r.path,BZ.ROUND_MS));set('phase',e=>e.innerHTML=bzPhaseH(r));set('vol',e=>e.innerHTML=bzVolH(r));}}
 /* bavardage du Blitz */
 const BZ_LINES=[_t("Haut évidemment, regardez la bougie."),_t("Je passe Break even cette manche, ça stagne."),_t("Encore en vie, on y croit."),_t("Éliminé à la 3, je suis spectateur maintenant."),_t("La cagnotte est énorme ce soir."),_t("Qui a pris Bas ? Bravo."),_t("Rachat fait, deuxième chance."),_t("Ma part monte à chaque manche, ne bougez pas.")];
-setInterval(()=>{if(document.hidden||R()<.6)return;const r=bzR();if(!r)return;const L=r.bots.filter(b=>USERS[b.u]);if(!L.length)return;addMsg('blitz',mkMsg({u:pick(L).u,k:'msg',text:pick(BZ_LINES)}));},7000);
+planifier('blitz : messages des bots',7000,()=>{if(document.hidden||R()<.6)return;const r=bzR();if(!r)return;const L=r.bots.filter(b=>USERS[b.u]);if(!L.length)return;addMsg('blitz',mkMsg({u:pick(L).u,k:'msg',text:pick(BZ_LINES)}));});
 
 /* =====================================================================================
  *  La Série (solo)
@@ -197,7 +197,7 @@ Object.assign(ACT,{
  'sr-cash':()=>serieCash(false),
  'sr-share':()=>serieShare()
 });
-setInterval(()=>{bzTick();serieTick();},1000);
+planifier('blitz et série : moteur local',1000,()=>{bzTick();serieTick();});
 /* salle de chat du Blitz */
-{const r=room('blitz');r.name=_t("Blitz Royale");r.kind='blitz';if(!r.msgs.length){const t=now(),ids=USER_IDS.slice().sort(()=>R()-.5);[_t("Le Blitz de 20 h a fini sur 3 survivants, 412 $ chacun."),_t("Je rentre dès l’ouverture, le jackpot est reporté."),_t("Conseil : Break even quand la bougie stagne, ça m’a sauvé deux fois.")].forEach((x,i)=>r.msgs.push(mkMsg({u:ids[i],k:'msg',text:x,at:t-(9-i*3)*60000})));}}
+{const r=room('blitz');r.name=_t("Blitz Royale");r.kind='blitz';SEMIS.push(()=>{if(r.msgs.length)return;const t=now(),ids=USER_IDS.slice().sort(()=>R()-.5);[_t("Le Blitz de 20 h a fini sur 3 survivants, 412 $ chacun."),_t("Je rentre dès l’ouverture, le jackpot est reporté."),_t("Conseil : Break even quand la bougie stagne, ça m’a sauvé deux fois.")].forEach((x,i)=>r.msgs.push(mkMsg({u:ids[i],k:'msg',text:x,at:t-(9-i*3)*60000})));});}
 

@@ -101,5 +101,5 @@ Object.assign(ACT,{
   try{if(navigator.share){await navigator.share({title:'Wimoro',text,url:refLink()});return;}}catch(e){if(e&&e.name==='AbortError')return;}copyText(text+' '+refLink(),_t("Lien copié"));}
 });
 Object.assign(VIEWS,{parrainage:vReferral});PROTECTED.add('parrainage');TITLES.parrainage=_t("Parrainage");
-{const live=fn=>()=>{if(!document.hidden)fn();};setInterval(live(botReferral),70000);}
+{const live=fn=>()=>{if(!document.hidden)fn();};planifier('parrainage : faux filleuls',70000,live(botReferral));}
 

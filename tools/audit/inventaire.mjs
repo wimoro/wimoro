@@ -8,6 +8,8 @@ import * as acorn from 'acorn';
 import * as walk from 'acorn-walk';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+// --sortie <dossier> : où écrire (par défaut docs/audit, qui garde l'inventaire du commit audité)
+const SORTIE = process.argv.includes('--sortie') ? path.resolve(process.argv[process.argv.indexOf('--sortie') + 1]) : path.join(ROOT, 'docs/audit');
 const order = [...fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8').matchAll(/<script[^>]* src="js\/([^"?]+)/g)].map(m => m[1]).filter(f => !/^i18n-\d/.test(f));
 const isFn = n => n && (n.type === 'FunctionExpression' || n.type === 'ArrowFunctionExpression' || n.type === 'FunctionDeclaration');
 
@@ -172,9 +174,9 @@ md.push('', '## Clés localStorage (via `LS`)', '', '| Clé | Fichiers |', '|---
 for (const [k, s] of Object.entries(lsKeys).sort()) md.push(`| \`${k}\` | ${[...s].join(', ')} |`);
 md.push('', '## Appels au client Supabase', '', '| Où | Appel |', '|---|---|');
 for (const c of sbCalls) md.push(`| ${c.file}:${c.line} | \`sb.${c.call}\` |`);
-fs.mkdirSync(path.join(ROOT, 'docs/audit'), { recursive: true });
-fs.writeFileSync(path.join(ROOT, 'docs/audit/inventaire-front.md'), md.join('\n') + '\n');
-fs.writeFileSync(path.join(ROOT, 'docs/audit/inventaire-front.json'), JSON.stringify({ rows, timers, sbCalls, wrappers: Object.fromEntries(Object.entries(G).filter(([, d]) => d.length > 1).map(([n, d]) => [n, d.map(x => x.file + ':' + x.line)])) }, null, 1));
+fs.mkdirSync(SORTIE, { recursive: true });
+fs.writeFileSync(path.join(SORTIE, 'inventaire-front.md'), md.join('\n') + '\n');
+fs.writeFileSync(path.join(SORTIE, 'inventaire-front.json'), JSON.stringify({ rows, timers, sbCalls, wrappers: Object.fromEntries(Object.entries(G).filter(([, d]) => d.length > 1).map(([n, d]) => [n, d.map(x => x.file + ':' + x.line)])) }, null, 1));
 console.log(md.slice(2, 8).join('\n'));
 console.log('\nFonctions redéfinies : ' + Object.entries(G).filter(([, d]) => d.length > 1).map(([n, d]) => `${n} (${d.map(x => x.file.replace('.js', '')).join('→')})`).join(', '));
 console.log(`\nÉcritures directes du solde : ${tb} fonctions ; gainXP : ${tx} fonctions ; accès USERS[ : ${tu}`);

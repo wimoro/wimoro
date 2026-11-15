@@ -183,5 +183,5 @@ Object.assign(ACT,{
   toast({icon:'shield',title:_t("Protection activée"),text:`${_t("{0}{1}{2} sur {3}.",[c.stop?`${_t("Stop loss à {0}",[F.c(c.stop)])}`:'',c.stop&&c.tp?', ':'',c.tp?`${_t("take profit à {0}",[F.c(c.tp)])}`:'',c.m.short])}`,dur:3200});ordersRefresh();if(S.ui.route==='profil')render(false);},
  'guard-del':()=>{const d=S.ui.guard;if(!d)return;dropGuard(d.m,d.s);S.ui.guard=null;closeModal();save();toast({icon:'shield',title:_t("Protection retirée"),dur:2200});ordersRefresh();if(S.ui.route==='profil')render(false);}
 });
-{const live=fn=>()=>{if(!document.hidden)fn();};setInterval(live(ordersTick),2000);}
+{const live=fn=>()=>{if(!document.hidden)fn();};planifier('ordres : exécution locale',2000,live(ordersTick));}
 

@@ -113,6 +113,17 @@ const USERS={
  nina:{n:'nina',t:0,d:1,tone:0,profit:12,acc:50,bets:2,fol:3,bio:_t("Premier pari cette semaine.")}
 };
 const USER_IDS=Object.keys(USERS);
+/* Joueur absent de l'annuaire : une fiche de secours complète (jamais undefined), remplacée quand le serveur répond. */
+const FANTOMES={};
+function fantome(u){const k=String(u);return FANTOMES[k]||(FANTOMES[k]={n:/^[0-9a-f]{8}-[0-9a-f]{4}-/.test(k)?_t("Joueur"):k,t:0,d:0,tone:hash(k)%4,profit:0,acc:0,bets:0,fol:0,bio:'',inconnu:true});}
+/* Minuteurs : chaque module déclare les siens ici, boot.js les lance selon le mode.
+   'local' (par défaut) : simulateur d'état partagé (bots, faux joueurs), jamais lancé quand le serveur fait autorité ; 'tous' : affichage. */
+/* Décors de départ du mode local (messages d'exemple dans les salons…) : déclarés par les modules, posés par boot.js en mode local seulement. */
+const SEMIS=[];
+const PLAN=[];
+const planifier=(nom,ms,fn,quand)=>{PLAN.push({nom,ms,fn,quand:quand||'local'});};
+/* vrai une fois le mode connu et le premier rendu fait : avant, les clics et la navigation sont ignorés */
+let PRET=false;
 
 /* Indice pour le testeur : petite mention toujours identique, jamais dans le libellé principal d'un bouton ou d'un titre. */
 const demoB=()=>`<span class="demo-b">${_t('Mode démo')}</span>`;
@@ -207,7 +218,7 @@ const S={
 /* ===================== Persistance légère (confort uniquement) ===================== */
 let KEY='wimoro-demo';
 let saveT=null;
-function save(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(S.me));}catch(e){}},400);}
+function save(){if(SRV()){srvSauver();return;}clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(S.me));}catch(e){}},400);}
 function load(){try{const d=JSON.parse(localStorage.getItem(KEY)||'null');if(d&&d.v===S.me.v)Object.assign(S.me,d);}catch(e){}
  /* compte démo enregistré sous l'ancien nom : on le renomme */
  if(KEY==='wimoro-demo'&&S.me.n==='dan.h'){S.me.n='User26';S.me.email='user26@exemple.fr';}}
@@ -215,11 +226,11 @@ function load(){try{const d=JSON.parse(localStorage.getItem(KEY)||'null');if(d&&
    pour que les marchés reprennent là où ils en étaient après un rechargement. */
 const MKKEY='wimoro-markets';
 const r2=v=>Math.round(v*100)/100;
-function marketsSave(){try{const o={v:1,at:now(),m:{}};for(const id in MK){const m=MK[id];if(m.creator==='me'||!m.ph)continue;o.m[id]={p:r2(m.p),d0:m.d0,vol:Math.round(m.vol),people:m.people,msgs:m.msgs,anchor:r2(m.anchor),liq:m.liq,ph:m.ph.map(r2)};}localStorage.setItem(MKKEY,JSON.stringify(o));}catch(e){}}
+function marketsSave(){if(SRV())return;try{const o={v:1,at:now(),m:{}};for(const id in MK){const m=MK[id];if(m.creator==='me'||!m.ph)continue;o.m[id]={p:r2(m.p),d0:m.d0,vol:Math.round(m.vol),people:m.people,msgs:m.msgs,anchor:r2(m.anchor),liq:m.liq,ph:m.ph.map(r2)};}localStorage.setItem(MKKEY,JSON.stringify(o));}catch(e){}}
 function marketsLoad(){try{const o=JSON.parse(localStorage.getItem(MKKEY)||'null');if(!o||o.v!==1||!o.m)return;for(const id in o.m){const m=MK[id],s=o.m[id];if(!m||!s||typeof s.p!=='number'||!Array.isArray(s.ph))continue;
   m.p=clamp(s.p,3,97);if(typeof s.d0==='number')m.d0=s.d0;if(s.vol>=m.vol)m.vol=s.vol;if(s.people>=m.people)m.people=s.people;if(s.msgs>=m.msgs)m.msgs=s.msgs;if(typeof s.anchor==='number')m.anchor=clamp(s.anchor,5,95);if(typeof s.liq==='number')m.liq=s.liq;if(s.ph.length)m.ph=s.ph.slice(-160);}}catch(e){}}
 function resetDemo(){try{localStorage.removeItem(KEY);}catch(e){}location.hash='#accueil';location.reload();}
-function flushSave(){clearTimeout(saveT);try{localStorage.setItem(KEY,JSON.stringify(S.me));}catch(e){}}
+function flushSave(){if(SRV()){srvSauver(true);return;}clearTimeout(saveT);try{localStorage.setItem(KEY,JSON.stringify(S.me));}catch(e){}}
 
 /* ===================== Rang : calculs ===================== */
 function stats(){const m=S.me;return {xp:m.xp,settled:m.settled,acc:Math.round(m.wins/Math.max(1,m.settled)*100),deposits:m.deposits,flashWins:m.flashWins,followed:m.followed,pos:m.pos};}
@@ -241,7 +252,7 @@ function progress(){const r=myRank(),nx=nextStep(r),xp=S.me.xp,cur=DIV_XP[r.t][r
 
 /* ===================== Salons ===================== */
 let MID=0;const MSG={};
-function room(id){if(!S.rooms[id]){let name=_t("Général"),kind='global';if(id==='vip'){name=_t("Salon VIP");kind='vip';}else if(id.startsWith('m:')){name='#'+id.slice(2);kind='market';}else if(id.startsWith('dm:')){name=USERS[id.slice(3)].n;kind='dm';}else if(id.startsWith('clan:')){name=typeof CK!=='undefined'&&CK[id.slice(5)]?CK[id.slice(5)].name:_t("Clan");kind='clan';}S.rooms[id]={id,name,kind,msgs:[],unread:0};}return S.rooms[id];}
+function room(id){if(!S.rooms[id]){let name=_t("Général"),kind='global';if(id==='vip'){name=_t("Salon VIP");kind='vip';}else if(id.startsWith('m:')){name='#'+id.slice(2);kind='market';}else if(id.startsWith('dm:')){name=userOf(id.slice(3)).n;kind='dm';}else if(id.startsWith('clan:')){name=typeof CK!=='undefined'&&CK[id.slice(5)]?CK[id.slice(5)].name:_t("Clan");kind='clan';}S.rooms[id]={id,name,kind,msgs:[],unread:0};}return S.rooms[id];}
 function roomLabel(id){const r=room(id);return r.kind==='market'?'#'+id.slice(2):r.name;}
 function mkMsg(o){const x=Object.assign({id:++MID,at:now(),r:{},my:[],followers:0},o);MSG[x.id]=x;return x;}
 
@@ -297,12 +308,12 @@ function botChat(){const cur=curMarket();let rid;const x=R();
 function botBetCard(rid,m,u){const s=R()<clamp(.5+(m.anchor-m.p)*.05+(m.p-50)/150,.2,.8)?'oui':'non';const amt=pick([50,80,120,200,300,500,750,1200]);const price=Math.round(s==='oui'?m.p:100-m.p);
  addMsg(rid,mkMsg({u,k:'bet',text:pick(['',_t("Je suis dedans."),_t("Allez."),_t("Petite entrée."),_t("Je charge."),_t("Gros pari ce soir.")]),bet:{m:m.id,s,amt,price},followers:0}));
  addBet(m,{s:s==='oui'?1:0,a:Math.min(1,amt/1300),me:0});const old=m.p;m.p=clamp(m.p+(s==='oui'?1:-1)*Math.min(1.6,amt/700),3,97);m.vol+=amt;updateMarket(m,old);if(u&&u!=='me')copyFire(u,m,s,amt);}
-function botRankUp(){const ids=USER_IDS.filter(u=>USERS[u].t<8);const u=pick(ids),U=USERS[u];if(U.d<2&&U.t<8)U.d++;else{U.t=Math.min(8,U.t+1);U.d=0;}
+function botRankUp(){const ids=USER_IDS.filter(u=>userOf(u).t<8);const u=pick(ids),U=userOf(u);if(U.d<2&&U.t<8)U.d++;else{U.t=Math.min(8,U.t+1);U.d=0;}
  addMsg('general',mkMsg({k:'evt',text:`${_t("{0} vient de passer {1}",[U.n,rankName(U.t,U.d)])}`,rt:U.t,rd:U.d}));}
 function botReact(){const pool=[];for(const id of ['general',...MARKETS.map(m=>'m:'+m.id)]){const r=S.rooms[id];if(!r)continue;r.msgs.slice(-8).forEach(x=>{if(x.k==='msg'||x.k==='bet'||x.k==='ana')pool.push(x);});}
  const mine=pool.filter(x=>x.u==='me');const x=mine.length&&R()<.35?pick(mine):pick(pool);if(!x)return;const e=x.k==='bet'?pick(['🔥','💸']):pick(['🔥','👀','💸','🎯']);x.r[e]=(x.r[e]||0)+1;refreshReacts(x);
  if(x.k==='bet'&&x.u!=='me'&&R()<.6){x.followers++;setFc(x);}
- if(x.u==='me'&&R()<.5){const u=pickUser();toast({icon:'smile',title:`${_t("{0} a réagi {1} à ton message",[USERS[u].n,e])}`,text:'+1 XP',href:''});gainXP(1);}}
+ if(x.u==='me'&&R()<.5){const u=pickUser();toast({icon:'smile',title:`${_t("{0} a réagi {1} à ton message",[userOf(u).n,e])}`,text:'+1 XP',href:''});gainXP(1);}}
 let burstOn=false;
 function burst(){if(burstOn)return;burstOn=true;const cur=curMarket();const m=cur&&R()<.5?cur:weighted();const side=R()<.6?(m.p>50?'oui':'non'):(m.p>50?'non':'oui');const n=10+Math.floor(R()*10);const from=m.p;let i=0;
  const iv=setInterval(()=>{addBet(m,{s:side==='oui'?1:0,a:.25+R()*.75,me:0});const old=m.p;m.p=clamp(m.p+(side==='oui'?1:-1)*(.22+R()*.3),3,97);m.anchor=clamp(m.anchor+(side==='oui'?1:-1)*.2,5,95);m.vol+=600+R()*3000;m.people+=R()<.5?1:0;updateMarket(m,old);
@@ -313,13 +324,15 @@ function burst(){if(burstOn)return;burstOn=true;const cur=curMarket();const m=cu
    if(watched)notif('flame',`${_t("Signal de foule sur {0} : de {1} % à {2} %.",[m.short,sig.from,sig.to])}`,'#marche-'+m.id);}},170);}
 
 /* ----- Progression du joueur ----- */
-function gainXP(n,ev){if(!n)return;const before=myRank();S.me.xp+=n;floatXP('+'+n+' XP',ev);updateHeader();checkRank(before);refreshRankBits();save();}
-function checkRank(before){const after=myRank();if(after.t>before.t||(after.t===before.t&&after.d>before.d)){setTimeout(()=>rankUp(after),450);notif('trophy',`${_t("Tu passes {0}.",[rankName(after.t,after.d)])}`,'#rang');checkBadges();return;}
+/* En mode serveur, l'XP, les missions, les badges et les notifications sont attribués par le serveur : ces aides ne font
+   rien, et l'affichage vient de sa réponse (srvAppliquer dans serveur.js). */
+function gainXP(n,ev){if(!n||SRV())return;const before=myRank();S.me.xp+=n;floatXP('+'+n+' XP',ev);updateHeader();checkRank(before);refreshRankBits();save();}
+function checkRank(before){if(SRV())return;const after=myRank();if(after.t>before.t||(after.t===before.t&&after.d>before.d)){setTimeout(()=>rankUp(after),450);notif('trophy',`${_t("Tu passes {0}.",[rankName(after.t,after.d)])}`,'#rang');checkBadges();return;}
  const nx=nextStep(after);if(nx&&nx.tier&&S.me.xp>=nx.xp){const miss=conds(nx.t).filter(c=>!c.ok&&c.k!=='xp');const key=nx.t+':'+miss.map(c=>c.k).join(',');if(miss.length&&S.me.blockedShown!==key){S.me.blockedShown=key;toast({tone:'amber',icon:'lock',title:`${_t("XP suffisante pour {0}",[rankName(nx.t,0)])}`,text:_t("Il te manque : ")+miss.map(c=>c.label.toLowerCase()).join(', ')+'.',href:'#rang',dur:7000});notif('lock',`${_t("Pour passer {0}, il te manque : {1}.",[rankName(nx.t,0),miss.map(c=>c.label.toLowerCase()).join(', ')])}`,'#rang');}}}
-function mission(type,n=1){let ch=false;for(const m of S.me.missions){if(m.type!==type||m.claimed||m.have>=m.goal)continue;m.have=Math.min(m.goal,m.have+n);ch=true;if(m.have>=m.goal){toast({tone:'blue',icon:'gift',title:_t("Mission terminée"),text:`${_t("{0} : récupère tes {1} XP.",[m.label,m.xp])}`,href:'#rang'});notif('gift',`${_t("Mission terminée : {0}. Récupère tes {1} XP.",[m.label,m.xp])}`,'#rang');}}if(ch){refreshRankBits();save();}}
+function mission(type,n=1){if(SRV())return;let ch=false;for(const m of S.me.missions){if(m.type!==type||m.claimed||m.have>=m.goal)continue;m.have=Math.min(m.goal,m.have+n);ch=true;if(m.have>=m.goal){toast({tone:'blue',icon:'gift',title:_t("Mission terminée"),text:`${_t("{0} : récupère tes {1} XP.",[m.label,m.xp])}`,href:'#rang'});notif('gift',`${_t("Mission terminée : {0}. Récupère tes {1} XP.",[m.label,m.xp])}`,'#rang');}}if(ch){refreshRankBits();save();}}
 const BADGES=[{id:'first',n:_t("Premier pari"),ic:'check',ok:me=>me.played>=1,how:_t("Place ton premier pari.")},{id:'streak7',n:_t("Série de 7 jours"),ic:'flame',ok:me=>me.bestStreak>=7,how:_t("Joue 7 jours d’affilée.")},{id:'contra',n:_t("Contre la foule"),ic:'down',ok:me=>(me.contraWins||0)>=1,how:_t("Gagne un pari pris contre 70 % des joueurs.")},{id:'voice',n:_t("Voix du live chat"),ic:'chat',ok:me=>me.msgsTotal>=50,how:_t("Écris 50 messages dans les chats.")},{id:'dep',n:_t("Premier dépôt"),ic:'wallet',ok:me=>me.deposits>=1,how:_t("Fais ton premier dépôt.")},{id:'flash3',n:_t("Triplé éclair"),ic:'bolt',ok:me=>me.flashWins>=3,how:_t("Gagne 3 manches au marché éclair.")},{id:'fol25',n:_t("Suivi par 25"),ic:'users',ok:me=>me.followed>=25,how:_t("25 mises suivies par d’autres joueurs.")},{id:'clanfounder',n:_t("Fondateur de clan"),ic:'shield',ok:me=>!!me.clanCreated,how:_t("Crée ton clan.")},{id:'clanweek',n:_t("Champion de clan"),ic:'trophy',ok:me=>(me.weekChamp||0)>=1,how:_t("Termine premier du classement de la semaine de ton clan.")},{id:'whale',n:_t("Grosse mise"),ic:'target',ok:me=>me.maxBet>=500,how:_t("Place un pari de 500 $ ou plus.")}];
-function checkBadges(silent){for(const b of BADGES){if(b.ok(S.me)&&!S.me.badges.includes(b.id)){S.me.badges.push(b.id);if(!silent){toast({tone:'blue',icon:'star',title:_t("Badge débloqué"),text:b.n,href:'#profil'});notif('star',`${_t("Badge débloqué : {0}.",[b.n])}`,'#profil');}}}}
-function notif(icon,text,href){S.me.notifs.unshift({id:now()+R(),ic:icon,text,href,at:now(),read:false});S.me.notifs=S.me.notifs.slice(0,30);updateBell();save();}
+function checkBadges(silent){if(SRV())return;for(const b of BADGES){if(b.ok(S.me)&&!S.me.badges.includes(b.id)){S.me.badges.push(b.id);if(!silent){toast({tone:'blue',icon:'star',title:_t("Badge débloqué"),text:b.n,href:'#profil'});notif('star',`${_t("Badge débloqué : {0}.",[b.n])}`,'#profil');}}}}
+function notif(icon,text,href){if(SRV())return;S.me.notifs.unshift({id:now()+R(),ic:icon,text,href,at:now(),read:false});S.me.notifs=S.me.notifs.slice(0,30);updateBell();save();}
 function posValue(p){const m=MK[p.m],pr=p.s==='oui'?m.p:100-m.p;return p.sh*pr/100;}
 function posPnl(p){const m=MK[p.m],pr=p.s==='oui'?m.p:100-m.p;return p.sh*(pr-p.avg)/100;}
 /* gain réel si on vendait tout maintenant : on mange le carnet, donc c'est un peu moins que le prix milieu */

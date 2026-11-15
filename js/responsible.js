@@ -195,7 +195,7 @@ Object.assign(ACT,{
  'rg-export':a=>rgExport(a.dataset.f)
 });
 Object.assign(VIEWS,{responsable:vRG});PROTECTED.add('responsable');TITLES.responsable=_t("Jeu responsable");
-{const live=fn=>()=>{if(!document.hidden)fn();};setInterval(live(rgTick),30000);}
+{const live=fn=>()=>{if(!document.hidden)fn();};planifier('jeu responsable : échéances locales',30000,live(rgTick));}
 
 /* ---------- Langue et réglages supplémentaires de l'onglet Paramètres ---------- */
 function langBtnsH(){return Object.keys(LANGS).map(k=>`<button type="button" class="${k===LANG?'on':''}" data-a="lang-set" data-v="${k}" lang="${k}" dir="${LANGS[k].dir}">${LANGS[k].n}</button>`).join('');}

@@ -30,7 +30,7 @@ function proClanRoom(mc){const rid='clan:'+mc.id,cr=room(rid);cr.name=mc.name;cr
 const PRO_SH_MAX=15e5;
 function proPublish(snap,rooms){const P=proMe(),ep=S.epoch,size=x=>JSON.stringify(x).length;P.sh=P.sh.filter(x=>x&&x.id!==snap.id);P.sh.unshift({id:snap.id,at:snap.at,rooms:rooms.slice(),snap});P.sh=P.sh.slice(0,12);
  {let tot=P.sh.reduce((a,x)=>a+size(x),0);while(P.sh.length>1&&tot>PRO_SH_MAX)tot-=size(P.sh.pop());if(tot>PRO_SH_MAX){P.sh.shift();toast({tone:'amber',icon:'info',title:_t('Analyse très lourde'),text:_t('Elle est publiée, mais trop volumineuse pour être gardée après un rechargement de la page.'),dur:6000});}}
- rooms.forEach((rid,n)=>{const dm=rid.startsWith('dm:');if(rid.startsWith('clan:')){const mc=typeof myClan==='function'?myClan():null;if(mc&&'clan:'+mc.id===rid)proClanRoom(mc);}if(dm){const r=room(rid);if(!r.msgs.length)r.msgs.push(mkMsg({k:'evt',text:_t('Début de ta conversation avec {0}',[USERS[rid.slice(3)].n])}));}
+ rooms.forEach((rid,n)=>{const dm=rid.startsWith('dm:');if(rid.startsWith('clan:')){const mc=typeof myClan==='function'?myClan():null;if(mc&&'clan:'+mc.id===rid)proClanRoom(mc);}if(dm){const r=room(rid);if(!r.msgs.length)r.msgs.push(mkMsg({k:'evt',text:_t('Début de ta conversation avec {0}',[userOf(rid.slice(3)).n])}));}
   const x=mkMsg({u:'me',k:'ana',text:snap.txt||'',ana:snap,shid:snap.id,inj:1});addMsg(rid,x);
   setTimeout(()=>{if(ep!==S.epoch)return;const e=pick(['🎯','🔥','👀']);x.r[e]=(x.r[e]||0)+1+Math.floor(R()*3);refreshReacts(x);},1400+n*500+R()*1500);
   setTimeout(()=>{if(ep!==S.epoch)return;let u;if(dm)u=rid.slice(3);else if(rid.startsWith('clan:')){const mc=typeof myClan==='function'?myClan():null,mates=mc&&typeof clanMates==='function'?clanMates(mc):[];u=mates.length?pick(mates):pickUser();}else u=pickUser();
@@ -55,7 +55,7 @@ function proShareH(){const sh=PV.share,s=sh.snap,m=MK[s.m],mc=typeof myClan==='f
    ${opt('gen',ic('chat',17),_t('Chat général'),_t('Toute la communauté Wimoro'))}
    ${opt('mkt',ic('hash',17),_t('Chat du marché'),esc(m.short))}
    ${mc?opt('clan',emblemH(mc,22),_t('Mon clan'),esc(mc.name)):`<a class="psh-o off" href="#clans" data-a="close"><span class="psh-i">${ic('shield',17)}</span><span class="psh-t"><b>${_t('Mon clan')}</b><small>${_t('Rejoins un clan pour partager avec lui')}</small></span><i class="psh-go">${ic('right',15)}</i></a>`}
-   <div class="psh-o dm${D.dm?' on':''}"><span class="psh-i">${ic('send',17)}</span><span class="psh-t"><b>${_t('Message privé')}</b>${!dmOk?`<small>${_t('Les messages privés s’ouvrent au rang {0}',[TIERS[GATES.dm.t].name])}</small>`:fr.length?`<small>${_t('Choisis un ami')}</small><span class="psh-fr" role="group" aria-label="${esc(_t('Choisis un ami'))}">${fr.filter(u=>USERS[u]).map(u=>`<button class="chip${D.dm===u?' on':''}" data-a="pro-sh-dm" data-u="${u}" aria-pressed="${D.dm===u}">${avH(u,20,'span')}${esc(USERS[u].n)}</button>`).join('')}</span>`:`<small>${_t('Ajoute un ami pour lui envoyer ton analyse')}</small>`}</span>${!dmOk?`<button class="btn b-white sm" data-a="lock" data-g="dm">${ic('lock',12)} ${TIERS[GATES.dm.t].name}</button>`:fr.length?'':`<a class="btn b-white sm" href="#amis" data-a="close">${_t('Mes amis')}</a>`}</div></div>
+   <div class="psh-o dm${D.dm?' on':''}"><span class="psh-i">${ic('send',17)}</span><span class="psh-t"><b>${_t('Message privé')}</b>${!dmOk?`<small>${_t('Les messages privés s’ouvrent au rang {0}',[TIERS[GATES.dm.t].name])}</small>`:fr.length?`<small>${_t('Choisis un ami')}</small><span class="psh-fr" role="group" aria-label="${esc(_t('Choisis un ami'))}">${fr.filter(u=>USERS[u]).map(u=>`<button class="chip${D.dm===u?' on':''}" data-a="pro-sh-dm" data-u="${u}" aria-pressed="${D.dm===u}">${avH(u,20,'span')}${esc(userOf(u).n)}</button>`).join('')}</span>`:`<small>${_t('Ajoute un ami pour lui envoyer ton analyse')}</small>`}</span>${!dmOk?`<button class="btn b-white sm" data-a="lock" data-g="dm">${ic('lock',12)} ${TIERS[GATES.dm.t].name}</button>`:fr.length?'':`<a class="btn b-white sm" href="#amis" data-a="close">${_t('Mes amis')}</a>`}</div></div>
   <div class="psh-d out"><div class="psh-dt">${_t('Ou en dehors de Wimoro')}</div>
    <button class="psh-o" data-a="pro-sh-img"><span class="psh-i">${ic('image',17)}</span><span class="psh-t"><b>${_t('Créer une image à partager')}</b><small>${_t('Ton graphique annoté et ton commentaire, pour une story ou un message')}</small></span><i class="psh-go">${ic('right',15)}</i></button></div>
   ${demoHint(_t('Les autres joueurs sont simulés : ton analyse est enregistrée sur cet appareil, pas envoyée ailleurs.'))}
@@ -146,7 +146,7 @@ Object.assign(ACT,{
  'pro-sh-dm':a=>{if(!PV.share)return;PV.share.dst.dm=PV.share.dst.dm===a.dataset.u?'':a.dataset.u;proShareSync();},
  'pro-sh-send':()=>{const sh=PV.share;if(!sh)return;const rooms=proShareRooms();if(!rooms.length)return;const t=$('#ov [data-psh-txt]');sh.snap.txt=t?t.value.trim().slice(0,280):'';sh.snap.at=now();
   proPublish(sh.snap,rooms);PV.share=null;closeModal();S.ui.room=rooms.find(r=>!r.startsWith('m:'))||rooms[0];
-  toast({tone:'blue',icon:'share',title:_t('Analyse partagée'),text:rooms.map(r=>r==='general'?_t('Chat général'):r.startsWith('m:')?_t('Chat du marché'):r.startsWith('clan:')?_t('Mon clan'):USERS[r.slice(3)].n).join(', '),href:'#chat',dur:5200});},
+  toast({tone:'blue',icon:'share',title:_t('Analyse partagée'),text:rooms.map(r=>r==='general'?_t('Chat général'):r.startsWith('m:')?_t('Chat du marché'):r.startsWith('clan:')?_t('Mon clan'):userOf(r.slice(3)).n).join(', '),href:'#chat',dur:5200});},
  'pro-sh-img':()=>proShareImg(),
  'pro-sh-back':()=>{if(PV.share)openModal(proShareH(),'wide');else closeModal();},
  'pro-view':a=>{const x=MSG[a.dataset.id];if(x&&x.ana){const s=x.ana;if(!s.by||!s.by.n){const U=userOf(x.u);s.by={u:x.u,n:U.n,t:U.t,d:U.d};}proOpen(null,s);}},
@@ -179,7 +179,8 @@ function proSeedBots(){const t=5.5*6e4,g=room('general');if(!g.msgs.some(x=>x.k=
 if(typeof clanSeedRoom==='function'){const clanSeedRoomP=clanSeedRoom;clanSeedRoom=function(c){clanSeedRoomP(c);const rid='clan:'+c.id,mates=typeof clanMates==='function'?clanMates(c):[],u=mates.length?mates[0]:'maxou';if(USERS[u]&&!room(rid).msgs.some(x=>x.k==='ana')){const x=proBotMsg(u,'btc150k',2,6*6e4);room(rid).msgs.push(x);room(rid).msgs.sort((a,b)=>a.at-b.at);}};}
 /* de temps en temps, un joueur partage une analyse d'un marché déjà ouvert en Mode Pro */
 function proBotShare(){const ids=Object.keys(PD).filter(id=>MK[id]&&!MK[id].creator);if(!ids.length)return;const mid=pick(ids),rid=R()<.5?'general':'m:'+mid,r=room(rid);if(r.msgs.slice(-40).filter(x=>x.k==='ana').length>=2)return;addMsg(rid,proBotMsg(pickUser(),mid,Math.floor(R()*PRO_BOT.length),0));}
-function proBoot(){PRO_UP=true;proRooms();proSeedBots();setInterval(()=>{if(!document.hidden&&R()<.4)proBotShare();},150000);}
+function proBoot(){PRO_UP=true;proRooms();proSeedBots();}
+planifier('mode pro : analyses publiées par des bots',150000,()=>{if(PRO_UP&&!document.hidden&&R()<.4)proBotShare();});
 /* changement de compte : les analyses publiées suivent le compte */
 {const enterAccountP=enterAccount;enterAccount=function(rec,fresh,quiet){if(PV.open)proClose(true);enterAccountP(rec,fresh,quiet);if(PRO_UP)proRooms();};const logoutP=logout;logout=function(){if(PV.open)proClose(true);logoutP();proRooms();};}
 let PRO_UP=false;

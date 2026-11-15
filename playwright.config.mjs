@@ -24,8 +24,10 @@ export default defineConfig({
   projects: [
     // Tests du back : base Postgres embarquée, aucun navigateur.
     { name: 'sql', testMatch: 'sql/**/*.spec.mjs' },
-    { name: 'bureau', testIgnore: 'sql/**', use: { ...devices['Desktop Chrome'], ...(useChrome ? { channel: 'chrome' } : {}) } },
-    { name: 'mobile', testIgnore: 'sql/**', use: { ...devices['Pixel 7'], ...(useChrome ? { channel: 'chrome' } : {}) }, grep: /@mobile/ },
+    { name: 'bureau', testIgnore: ['sql/**', 'e2e/**'], use: { ...devices['Desktop Chrome'], ...(useChrome ? { channel: 'chrome' } : {}) } },
+    { name: 'mobile', testIgnore: ['sql/**', 'e2e/**'], use: { ...devices['Pixel 7'], ...(useChrome ? { channel: 'chrome' } : {}) }, grep: /@mobile/ },
+    // Bout en bout contre le VRAI back, avec des comptes de test jetables : seulement sur demande (E2E=1).
+    ...(process.env.E2E ? [{ name: 'e2e', testMatch: 'e2e/**/*.spec.mjs', fullyParallel: false, use: { ...devices['Desktop Chrome'], ...(useChrome ? { channel: 'chrome' } : {}) } }] : []),
   ],
   webServer: {
     command: `node tools/serve.mjs ${PORT}`,

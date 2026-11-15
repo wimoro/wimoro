@@ -1,140 +1,159 @@
-/* Faux client Supabase pour les tests : remplace le script du CDN supabase-js.
- * Il garde une petite « base » en mémoire (persistée dans localStorage pour survivre à un rechargement),
- * enregistre tous les appels et permet de simuler le temps réel.
- * Configuration : window.__FAKE_SB__ = { session, tables, rpc, accounts, autoconfirm, failWrites } avant le chargement.
- * Inspection    : window.__fakeSB.calls, .db, .emit(table, event, row), .setSession(s)
+/* Faux client Supabase pour les tests : il remplace js/vendor/supabase-*.js.
+ * Il imite le contrat du vrai back (fonctions api_*, service de connexion, authentification), garde son état dans
+ * localStorage pour survivre à un rechargement, enregistre tous les appels et permet de simuler le temps réel.
+ *
+ * Configuration (avant le chargement) : window.__FAKE_SB__ = {
+ *   session   : { user: { id, email } } | null      session ouverte au départ
+ *   etat      : { me: {…}, positions: […], … }      morceaux d'état fusionnés dans l'état par défaut du joueur connecté
+ *   comptes   : { 'a@b.c': { id, password, pseudo } }  comptes existants (connexion)
+ *   marches   : [ { market_id, current_probability, … } ]
+ *   rpc       : { nom: valeur | { error: { message } } }   réponses forcées
+ *   autoconfirm : false  → l'inscription demande une confirmation d'e-mail (pas de session)
+ *   otp       : '123456'  code accepté par verifyOtp
+ *   latence   : ms
+ * }
+ * Inspection : window.__fakeSB.calls, .db, .count(kind, name), .emit(sujet, événement, données)
  */
 (function () {
   'use strict';
   var CFG = window.__FAKE_SB__ || {};
   var DBKEY = '__fakedb__';
   var clone = function (x) { return x === undefined ? x : JSON.parse(JSON.stringify(x)); };
+  var fusion = function (a, b) { for (var k in b) { if (b[k] && typeof b[k] === 'object' && !Array.isArray(b[k]) && a[k] && typeof a[k] === 'object' && !Array.isArray(a[k])) fusion(a[k], b[k]); else a[k] = clone(b[k]); } return a; };
+
+  function etatNeuf(uid, email, pseudo, nouveau) {
+    return {
+      v: 1, uid: uid,
+      me: { n: pseudo, email: email, photo: '', color: '#2448FF', bio: '', wallet: '', interests: [], kyc: false, kycAt: null,
+        onboarded: !nouveau, welcomed: !nouveau, obBonus: !nouveau, pub: true, since: Date.now() - (nouveau ? 0 : 30 * 864e5), rankSeen: 0,
+        balance: nouveau ? 0 : 500, xp: 0, settled: 0, wins: 0, played: 0, flashWins: 0, flashStreak: 0, flashBest: 0, flashProfit: 0,
+        followed: 0, deposits: 0, depDay: '', streak: 1, bestStreak: 1, pos: 38901, msgsTotal: 0, chatXP: 0, chatDay: '', maxBet: 0,
+        realized: 0, contraWins: 0, followers: 0, copiers: 0 },
+      positions: [], history: [], deps: [], wds: [], notifs: [],
+      missions: [{ id: 'chat1', type: 'chat', goal: 1, have: 0, xp: 20, go: '#chat', claimed: false }, { id: 'dep1', type: 'dep', goal: 1, have: 0, xp: 100, go: '#depot', claimed: false }, { id: 'fb1', type: 'flashbet', goal: 1, have: 0, xp: 50, go: '#eclair', claimed: false }],
+      badges: [], friends: [], freqIn: [], freqOut: [], following: [], watch: [], prefs: {}, users: {}
+    };
+  }
+
   var db;
   try { db = JSON.parse(localStorage.getItem(DBKEY) || 'null'); } catch (e) { db = null; }
-  if (!db) db = { tables: clone(CFG.tables || {}), session: clone(CFG.session || null), accounts: clone(CFG.accounts || {}), seq: 1 };
+  if (!db) {
+    db = { session: clone(CFG.session || null), comptes: clone(CFG.comptes || {}), etats: {}, marches: clone(CFG.marches || []), seq: 1 };
+    if (db.session) { var u0 = db.session.user; db.etats[u0.id] = fusion(etatNeuf(u0.id, u0.email || '', 'realuser', false), CFG.etat || {}); }
+  }
   var persist = function () { try { localStorage.setItem(DBKEY, JSON.stringify(db)); } catch (e) {} };
   persist();
-  var calls = [], authCbs = [], channels = [];
-  var T = function (name) { return db.tables[name] || (db.tables[name] = []); };
-  var rec = function (kind, name, args) { calls.push({ kind: kind, name: name, args: clone(args), at: Date.now() }); };
+
+  var calls = [], authCbs = [], canaux = [], CLE = 'wimoro-auth';
+  var ranger = function () { try { if (db.session) localStorage.setItem(CLE, JSON.stringify({ faux: true, user: db.session.user })); else localStorage.removeItem(CLE); } catch (e) {} };
+  var rec = function (kind, name, args) { var c = { kind: kind, name: name, args: clone(args === undefined ? null : args), at: Date.now() }; calls.push(c); (db.journal = db.journal || []).push(c); if (db.journal.length > 300) db.journal.shift(); try { localStorage.setItem(DBKEY, JSON.stringify(db)); } catch (e) {} };
   var uid = function () { return db.session && db.session.user ? db.session.user.id : null; };
-  var like = function (pattern, value) {
-    var re = new RegExp('^' + String(pattern).replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/%/g, '.*').replace(/_/g, '.') + '$', 'i');
-    return re.test(String(value == null ? '' : value));
-  };
-  var keyOf = { users: 'id', user_stats: 'user_id', user_full_state: 'user_id', user_preferences: 'user_id', market_live_state: 'market_id' };
-  var fireAuth = function (ev) { authCbs.slice().forEach(function (cb) { try { cb(ev, clone(db.session)); } catch (e) { console.error(e); } }); };
+  var etat = function () { var id = uid(); if (!id) throw { message: 'session' }; return db.etats[id]; };
+  var fireAuth = function (ev) { ranger(); authCbs.slice().forEach(function (cb) { try { cb(ev, clone(db.session)); } catch (e) { console.error(e); } }); };
+  var reponse = function (ev) { return { me: clone(etat().me), ev: ev || [] }; };
+  var notif = function (ic, code, p, href) { var n = { id: 'n' + (db.seq++), ic: ic, code: code, p: p || {}, href: href || '', at: Date.now(), read: false }; etat().notifs.unshift(n); return { k: 'notif', n: clone(n) }; };
+  var pseudoPris = function (p, sauf) { p = String(p).toLowerCase(); for (var id in db.etats) if (id !== sauf && String(db.etats[id].me.n).toLowerCase() === p) return true; return ['admin', 'wimoro', 'user26'].indexOf(p) >= 0; };
 
-  function exec(q) {
-    rec('from', q.table + '.' + q.op, { filters: q.filters, payload: q.payload });
-    if (CFG.failWrites && q.op !== 'select') return Promise.resolve({ data: null, error: { message: 'fake: write failed' } });
-    var rows = T(q.table);
-    var match = function (r) { return q.filters.every(function (f) { return f[0] === 'eq' ? String(r[f[1]]) === String(f[2]) : like(f[2], r[f[1]]); }); };
-    if (q.op === 'select') {
-      var out = rows.filter(match).map(clone);
-      if (q.single) return Promise.resolve(out.length > 1 ? { data: null, error: { message: 'multiple rows' } } : { data: out[0] || null, error: null });
-      return Promise.resolve({ data: out, error: null });
-    }
-    if (q.op === 'insert' || q.op === 'upsert') {
-      var list = Array.isArray(q.payload) ? q.payload : [q.payload], k = keyOf[q.table];
-      for (var i = 0; i < list.length; i++) {
-        var row = clone(list[i]), ex = k ? rows.find(function (r) { return String(r[k]) === String(row[k]); }) : null;
-        if (ex && q.op === 'insert') return Promise.resolve({ data: null, error: { message: 'duplicate key value violates unique constraint', code: '23505' } });
-        if (ex) Object.assign(ex, row); else rows.push(row);
-      }
-      persist(); return Promise.resolve({ data: null, error: null });
-    }
-    if (q.op === 'update') { rows.filter(match).forEach(function (r) { Object.assign(r, clone(q.payload)); }); persist(); return Promise.resolve({ data: null, error: null }); }
-    if (q.op === 'delete') { db.tables[q.table] = rows.filter(function (r) { return !match(r); }); persist(); return Promise.resolve({ data: null, error: null }); }
-    return Promise.resolve({ data: null, error: { message: 'fake: op ' + q.op } });
-  }
-  function from(table) {
-    var q = { table: table, op: 'select', filters: [], payload: null, single: false };
-    var api = {
-      select: function () { return api; }, order: function () { return api; }, limit: function () { return api; }, range: function () { return api; },
-      eq: function (c, v) { q.filters.push(['eq', c, v]); return api; },
-      ilike: function (c, v) { q.filters.push(['ilike', c, v]); return api; },
-      maybeSingle: function () { q.single = true; return api; }, single: function () { q.single = true; return api; },
-      insert: function (p) { q.op = 'insert'; q.payload = p; return api; },
-      upsert: function (p) { q.op = 'upsert'; q.payload = p; return api; },
-      update: function (p) { q.op = 'update'; q.payload = p; return api; },
-      delete: function () { q.op = 'delete'; return api; },
-      then: function (ok, ko) { return exec(q).then(ok, ko); } // « thenable » sans .catch, comme supabase-js
-    };
-    return api;
-  }
-
-  // Comportement par défaut des RPC : imite le serveur actuel de façon minimale.
-  var stats = function () { var id = uid(); var s = T('user_stats').find(function (r) { return r.user_id === id; }); if (!s) { s = { user_id: id, balance: 0, xp: 0 }; T('user_stats').push(s); } return s; };
+  /* ----- Les fonctions du contrat ----- */
   var RPC = {
-    get_markets: function () { return clone(T('market_live_state')); },
-    get_friends: function () { return clone(T('__friends')); },
-    place_bet: function (a) { var s = stats(), m = T('market_live_state').find(function (r) { return r.market_id === a.p_market_id; }) || { current_probability: 50 };
-      if (a.p_amount > s.balance) throw { message: 'Insufficient balance' };
-      var price = a.p_side === 'oui' ? Number(m.current_probability) : 100 - Number(m.current_probability), sh = Math.round(a.p_amount / (price / 100) * 100) / 100;
-      s.balance = Math.round((s.balance - a.p_amount) * 100) / 100; s.xp = (s.xp || 0) + 10; s.bets_placed = (s.bets_placed || 0) + 1;
-      T('positions').push({ user_id: uid(), market_id: a.p_market_id, side: a.p_side, shares: sh, average_price: price });
-      return { new_balance: s.balance, shares: sh, avg_price: price, new_market_price: Number(m.current_probability) + (a.p_side === 'oui' ? 0.2 : -0.2) }; },
-    sell_position: function (a) { var s = stats(); var pro = Math.round(a.p_shares * 0.5 * 100) / 100; s.balance += pro; return { new_balance: s.balance, shares_sold: a.p_shares, proceeds: pro, new_market_price: 50 }; },
-    flash_bet: function (a) { var s = stats(); if (a.p_amount > s.balance) throw { message: 'Insufficient balance' }; s.balance = Math.round((s.balance - a.p_amount) * 100) / 100; T('flash_bets').push({ user_id: uid(), game_id: a.p_game_id, side: a.p_side, amount: a.p_amount }); return { new_balance: s.balance }; },
-    demo_deposit: function (a) { var s = stats(); s.balance = Math.round((s.balance + a.p_amount) * 100) / 100; s.deposits_count = (s.deposits_count || 0) + 1; T('deposits').push({ user_id: uid(), coin: a.p_coin, usd: a.p_amount }); return { new_balance: s.balance }; },
-    send_chat_message: function (a) { T('chat_messages').push({ id: db.seq++, room_id: a.p_room_id, user_id: uid(), text_content: a.p_text, message_type: 'msg' }); return { id: db.seq }; }
+    api_state: function () { var e = clone(etat()); e.now = Date.now() + (CFG.decalage || 0); return e; },
+    api_pseudo_libre: function (a) { return /^[A-Za-z0-9._]{3,20}$/.test(a.p_pseudo || '') && !pseudoPris(a.p_pseudo); },
+    api_profile_update: function (a) { var p = a.p || {}, me = etat().me;
+      if ('n' in p) { if (!/^[A-Za-z0-9._]{3,20}$/.test(p.n || '')) throw { message: 'pseudo_invalide' }; if (pseudoPris(p.n, uid())) throw { message: 'pseudo_pris' }; me.n = p.n; }
+      if ('bio' in p) { if ((p.bio || '').length > 160) throw { message: 'bio_trop_longue' }; me.bio = p.bio || ''; }
+      if ('color' in p) me.color = p.color; if ('photo' in p) { if (!/^(g:[a-z0-9-]{1,24})?$/.test(p.photo || '')) throw { message: 'photo_invalide' }; me.photo = p.photo || ''; }
+      if ('interests' in p) me.interests = clone(p.interests || []); if ('pub' in p) me.pub = !!p.pub; if ('welcomed' in p) me.welcomed = true;
+      return reponse(); },
+    api_onboarding: function (a) { var p = a.p || {}, me = etat().me, ev = [];
+      if (p.bonus && !me.obBonus) { me.obBonus = true; me.xp += 100; ev.push({ k: 'xp', n: 100, src: 'bienvenue' }); ev.push(notif('trophy', 'rank_up', { t: 0, d: 1 }, '#rang')); }
+      if (p.done) me.onboarded = true;
+      return reponse(ev); },
+    api_rank_seen: function (a) { var me = etat().me; me.rankSeen = Math.max(me.rankSeen || 0, a.p_rang | 0); return null; },
+    api_prefs_save: function (a) { etat().prefs = clone(a.p_prefs); return null; },
+    api_notifs_read: function () { etat().notifs.forEach(function (n) { n.read = true; }); return null; },
+    api_notif_hide: function (a) { var e = etat(); e.notifs = a.p_id ? e.notifs.filter(function (n) { return n.id !== a.p_id; }) : []; return null; },
+    get_markets: function () { return clone(db.marches); }
   };
+  var SANS_SESSION = { get_markets: 1, api_pseudo_libre: 1 };
   function rpc(name, args) {
     rec('rpc', name, args || {});
-    var over = (CFG.rpc || {})[name];
+    var force = (CFG.rpc || {})[name];
     return new Promise(function (resolve) {
       setTimeout(function () {
-        if (over !== undefined) { resolve(over && over.error ? { data: null, error: over.error } : { data: clone(over && over.data !== undefined ? over.data : over), error: null }); return; }
-        if (!RPC[name]) { resolve({ data: null, error: { message: 'fake: function ' + name + ' not found', code: 'PGRST202' } }); return; }
-        if (!uid() && name !== 'get_markets') { resolve({ data: null, error: { message: 'Not authenticated' } }); return; }
-        try { var d = RPC[name](args || {}); persist(); resolve({ data: d, error: null }); } catch (e) { resolve({ data: null, error: { message: e.message || String(e) } }); }
-      }, CFG.latency || 5);
+        if (CFG.horsLigne) { resolve({ data: null, error: { message: 'TypeError: Failed to fetch' } }); return; }
+        if (force !== undefined) { resolve(force && force.error ? { data: null, error: force.error } : { data: clone(force), error: null }); return; }
+        if (!RPC[name]) { resolve({ data: null, error: { message: 'Could not find the function public.' + name, code: 'PGRST202' } }); return; }
+        if (!uid() && !SANS_SESSION[name]) { resolve({ data: null, error: { message: 'permission denied for function ' + name, code: '42501' } }); return; }
+        try { var d = RPC[name](args || {}); persist(); resolve({ data: d === undefined ? null : d, error: null }); }
+        catch (e) { resolve({ data: null, error: { message: e.message || String(e), code: 'P0001' } }); }
+      }, CFG.latence || 3);
     });
   }
 
+  /* ----- Service de connexion par pseudo (Edge Function « connexion ») ----- */
+  var functions = { invoke: function (name, opt) {
+    var b = (opt && opt.body) || {}; rec('fn', name, { pseudo: b.pseudo });
+    var ko = function (code) { return Promise.resolve({ data: null, error: { message: 'Edge Function returned a non-2xx status code', context: { json: function () { return Promise.resolve({ ok: false, code: code }); } } } }); };
+    if (name !== 'connexion') return ko('serveur');
+    for (var em in db.comptes) { var c = db.comptes[em]; if (String(c.pseudo || '').toLowerCase() === String(b.pseudo || '').toLowerCase()) return c.password === b.mot_de_passe ? Promise.resolve({ data: { ok: true, access_token: 'jeton:' + c.id + ':' + em, refresh_token: 'r' }, error: null }) : ko('identifiants'); }
+    return ko('identifiants');
+  } };
+
+  /* ----- Authentification ----- */
+  var ouvrir = function (id, em, pseudo) { db.session = { user: { id: id, email: em } }; if (!db.etats[id]) db.etats[id] = etatNeuf(id, em, pseudo || em.split('@')[0], false); persist(); fireAuth('SIGNED_IN'); };
   var auth = {
     getSession: function () { rec('auth', 'getSession'); return Promise.resolve({ data: { session: clone(db.session) }, error: null }); },
-    getUser: function () { return Promise.resolve({ data: { user: db.session ? clone(db.session.user) : null }, error: null }); },
     onAuthStateChange: function (cb) { authCbs.push(cb); return { data: { subscription: { unsubscribe: function () { authCbs = authCbs.filter(function (x) { return x !== cb; }); } } } }; },
     signInWithPassword: function (c) { rec('auth', 'signInWithPassword', { email: c.email });
-      var a = db.accounts[String(c.email).toLowerCase()];
-      if (!a || a.password !== c.password) return Promise.resolve({ data: { user: null, session: null }, error: { message: 'Invalid login credentials' } });
-      db.session = { user: { id: a.id, email: c.email.toLowerCase() } }; persist(); fireAuth('SIGNED_IN');
+      var a = db.comptes[String(c.email).toLowerCase()];
+      if (!a || a.password !== c.password) return Promise.resolve({ data: { user: null, session: null }, error: { message: 'Invalid login credentials', code: 'invalid_credentials' } });
+      ouvrir(a.id, String(c.email).toLowerCase(), a.pseudo);
       return Promise.resolve({ data: { user: clone(db.session.user), session: clone(db.session) }, error: null }); },
+    setSession: function (t) { rec('auth', 'setSession'); var m = /^jeton:([^:]+):(.+)$/.exec(t.access_token || ''); if (!m) return Promise.resolve({ data: {}, error: { message: 'invalid token' } }); var a = db.comptes[m[2]] || {}; ouvrir(m[1], m[2], a.pseudo); return Promise.resolve({ data: { session: clone(db.session) }, error: null }); },
     signUp: function (c) { rec('auth', 'signUp', { email: c.email, options: c.options || null });
       var em = String(c.email).toLowerCase();
-      if (db.accounts[em]) return Promise.resolve({ data: { user: null, session: null }, error: { message: 'User already registered' } });
-      var id = '00000000-0000-4000-8000-' + String(1000 + db.seq++).padStart(12, '0');
-      db.accounts[em] = { id: id, password: c.password };
-      var meta = (c.options && c.options.data) || {};
-      T('users').push({ id: id, username: meta.username || em.split('@')[0] + '_' + id.slice(-4), email: em, onboarded: true, welcomed: true, is_demo: false });
-      T('user_stats').push({ user_id: id, balance: 0, xp: 0 });
-      if (CFG.autoconfirm === false) { persist(); return Promise.resolve({ data: { user: { id: id, email: em }, session: null }, error: null }); }
+      if (db.comptes[em]) return Promise.resolve({ data: { user: null, session: null }, error: { message: 'User already registered', code: 'user_already_exists' } });
+      var id = '00000000-0000-4000-8000-' + String(100000 + db.seq++).padStart(12, '0'), meta = (c.options && c.options.data) || {};
+      var pseudo = /^[A-Za-z0-9._]{3,20}$/.test(meta.username || '') && !pseudoPris(meta.username) ? meta.username : 'joueur' + id.slice(-6);
+      db.comptes[em] = { id: id, password: c.password, pseudo: pseudo };
+      db.etats[id] = etatNeuf(id, em, pseudo, true);
+      if (CFG.autoconfirm === false) { persist(); return Promise.resolve({ data: { user: { id: id, email: em, identities: [{}] }, session: null }, error: null }); }
       db.session = { user: { id: id, email: em } }; persist(); fireAuth('SIGNED_IN');
       return Promise.resolve({ data: { user: clone(db.session.user), session: clone(db.session) }, error: null }); },
+    resend: function (p) { rec('auth', 'resend', { email: p.email, type: p.type }); return Promise.resolve({ data: {}, error: null }); },
     signOut: function () { rec('auth', 'signOut'); db.session = null; persist(); fireAuth('SIGNED_OUT'); return Promise.resolve({ error: null }); },
     resetPasswordForEmail: function (email, opt) { rec('auth', 'resetPasswordForEmail', { email: email, options: opt || null }); return Promise.resolve({ data: {}, error: null }); },
-    verifyOtp: function (p) { rec('auth', 'verifyOtp', { email: p.email, type: p.type }); return Promise.resolve({ data: {}, error: { message: 'fake: verifyOtp not configured' } }); },
-    updateUser: function (p) { rec('auth', 'updateUser', Object.keys(p || {})); return Promise.resolve({ data: {}, error: null }); }
+    verifyOtp: function (p) { rec('auth', 'verifyOtp', { email: p.email, type: p.type });
+      var a = db.comptes[String(p.email).toLowerCase()];
+      if (!a || p.token !== (CFG.otp || '123456')) return Promise.resolve({ data: {}, error: { message: 'Token has expired or is invalid', code: 'otp_expired' } });
+      ouvrir(a.id, String(p.email).toLowerCase(), a.pseudo); return Promise.resolve({ data: { session: clone(db.session) }, error: null }); },
+    updateUser: function (p) { rec('auth', 'updateUser', Object.keys(p || {}));
+      if (!db.session) return Promise.resolve({ data: {}, error: { message: 'not authenticated' } });
+      if (p.password) { var c = db.comptes[db.session.user.email]; if (c) c.password = p.password; persist(); }
+      return Promise.resolve({ data: { user: clone(db.session.user) }, error: null }); }
   };
-  function channel(name) {
-    var ch = { name: name, handlers: [], subscribed: false,
-      on: function (type, filter, cb) { ch.handlers.push({ type: type, filter: filter, cb: cb }); rec('channel', name + '.on', { type: type, filter: filter }); return ch; },
-      subscribe: function (cb) { ch.subscribed = true; if (cb) setTimeout(function () { cb('SUBSCRIBED'); }, 0); return ch; },
-      unsubscribe: function () { ch.subscribed = false; return Promise.resolve('ok'); }, send: function () { return Promise.resolve('ok'); } };
-    channels.push(ch); return ch;
+
+  /* ----- Temps réel : diffusion par sujet ----- */
+  function channel(sujet, opt) {
+    var ch = { sujet: sujet, prive: !!(opt && opt.config && opt.config.private), handlers: [],
+      on: function (type, filtre, cb) { ch.handlers.push({ type: type, filtre: filtre, cb: cb }); rec('channel', sujet, { type: type, filtre: filtre }); return ch; },
+      subscribe: function (cb) { if (cb) setTimeout(function () { cb('SUBSCRIBED'); }, 0); return ch; },
+      unsubscribe: function () { return Promise.resolve('ok'); }, send: function () { return Promise.resolve('ok'); } };
+    canaux.push(ch); return ch;
   }
-  var client = { from: from, rpc: rpc, auth: auth, channel: channel, removeChannel: function (c) { channels = channels.filter(function (x) { return x !== c; }); return Promise.resolve('ok'); }, removeAllChannels: function () { channels = []; return Promise.resolve([]); } };
+  var client = { rpc: rpc, auth: auth, functions: functions, channel: channel,
+    removeChannel: function (c) { canaux = canaux.filter(function (x) { return x !== c; }); return Promise.resolve('ok'); },
+    from: function (t) { rec('from', t); throw new Error('faux serveur : accès direct à la table « ' + t + ' » (le front ne doit passer que par les fonctions api_*)'); } };
 
   window.__fakeSB = {
-    calls: calls, db: db, channels: channels, persist: persist,
+    calls: calls, db: db, persist: persist,
+    /** tous les appels depuis le début du test, rechargements compris */
+    journal: function () { return db.journal || []; },
     count: function (kind, name) { return calls.filter(function (c) { return c.kind === kind && (!name || c.name === name); }).length; },
-    setSession: function (s) { db.session = s; persist(); },
-    /** Simule un événement temps réel « postgres_changes » */
-    emit: function (table, event, row, old) { var n = 0; channels.forEach(function (ch) { ch.handlers.forEach(function (h) {
-      if (h.type === 'postgres_changes' && h.filter && h.filter.table === table && (h.filter.event === '*' || h.filter.event === event)) { n++; h.cb({ eventType: event, schema: 'public', table: table, new: clone(row), old: clone(old || {}) }); } }); }); return n; },
-    reset: function () { try { localStorage.removeItem(DBKEY); } catch (e) {} }
+    sujets: function () { return canaux.map(function (c) { return c.sujet; }); },
+    /** Simule un message diffusé par le serveur sur un sujet. */
+    emit: function (sujet, evenement, donnees) { var n = 0; canaux.forEach(function (ch) { if (ch.sujet !== sujet) return; ch.handlers.forEach(function (h) { if (h.type === 'broadcast') { n++; h.cb({ event: evenement, payload: clone(donnees) }); } }); }); return n; },
+    etat: function () { return db.etats[uid()]; }
   };
-  window.supabase = { createClient: function (url, key, opts) { rec('createClient', url, { opts: opts || null }); return client; } };
+  window.supabase = { createClient: function (url, cle, opts) { rec('createClient', url, { cle: String(cle).slice(0, 15), storageKey: opts && opts.auth && opts.auth.storageKey }); if (opts && opts.auth && opts.auth.storageKey) CLE = opts.auth.storageKey; ranger(); return client; } };
 })();

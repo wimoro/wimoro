@@ -42,11 +42,11 @@ const CLANS=[],CK={};
  /* classement dans chaque division */
  for(const dv of CLAN.DIVS){const L=CLANS.filter(c=>c.div===dv).sort((a,b)=>b.score-a.score);L.forEach((c,i)=>c.rank=i+1);}
  /* joueurs simulés : la plupart ont un clan (les mêmes 10 joueurs reviennent dans plusieurs clans de démo) */
- USER_IDS.forEach((u,i)=>{if(i%5===4)return;const c=CLANS[(hash(u)%40)+60];c.members.push({u,since:now()-(20+hash(u)%200)*86400e3,pts:Math.round(1000+hash(u+'p')%9000)});USERS[u].clan=c.id;});
+ USER_IDS.forEach((u,i)=>{if(i%5===4)return;const c=CLANS[(hash(u)%40)+60];c.members.push({u,since:now()-(20+hash(u)%200)*86400e3,pts:Math.round(1000+hash(u+'p')%9000)});userOf(u).clan=c.id;});
 }
 /* ---------- Mon clan ---------- */
 const myClan=()=>S.me.clan&&CK[S.me.clan.id]?CK[S.me.clan.id]:null;
-const clanOf=u=>u==='me'?myClan():(USERS[u]&&USERS[u].clan?CK[USERS[u].clan]:null);
+const clanOf=u=>u==='me'?myClan():(USERS[u]&&userOf(u).clan?CK[userOf(u).clan]:null);
 const clanRole=()=>S.me.clan?S.me.clan.role:'';
 const isOfficer=()=>['chef','officier'].includes(clanRole());
 const clanMembersN=c=>c.n+(c.members.length?0:0)+(myClan()===c?1:0);
@@ -226,7 +226,7 @@ function hubSwH(on){return `<nav class="seg hubsw" aria-label="${_t('Clans et jo
 function clanTopH(){const c=clansSorted()[0];if(!c)return '';return `<a class="cltop" href="#clan-${c.id}">${emblemH(c,34)}<span>${_t("<b>Top clan mondial : {0}",[esc(c.name)])} <span class="ctg gold">${esc(c.tag)}</span></b><small>${_t("{0}{1} points ce mois",[clanDivMode()?divName(c)+' · ':'',F.int(c.score)])}</small></span><span class="btn b-white sm">${_t("Clans")}</span></a>`;}
 /* bots : vie du clan */
 const CLAN_LINES=[_t("Gros volume aujourd’hui, on remonte au classement."),_t("Qui a suivi l’appel de clan ? Ça paie."),_t("On est 2e de la division, encore un effort."),_t("Guerre ce week-end, préparez vos mises."),_t("Je passe officier ? Je peux gérer les candidatures."),_t("Le top 3 mondial est à portée ce mois.")];
-setInterval(()=>{if(document.hidden)return;const c=myClan();if(!c)return;clanWarTick();clanWeekAward();if(S.me.wins>(S._clanWins===undefined?S.me.wins:S._clanWins)){const h=S.me.history.find(x=>x.win&&x.pnl>0);if(h)clanOnWin(`${_t("{0} vient de gagner {1} sur {2}.",[S.me.n,F.usd0(h.pnl),h.m&&MK[h.m]?MK[h.m].short:h.q])}`);}S._clanWins=S.me.wins;if(R()<.5){const mates=clanMates(c);if(mates.length)addMsg('clan:'+c.id,mkMsg({u:pick(mates),k:'msg',text:pick(CLAN_LINES)}));}if(R()<.35){const u=pick(clanMates(c)),m=pick(MARKETS);if(u)clanFeedPush(c,{u,txt:R()<.5?`${_t("{0} vient de gagner {1} sur {2}.",[duelUserN(u),F.usd0(pick([120,200,320,400,650])),m.short])}`:`${_t("{0} a misé {1} sur {2}.",[duelUserN(u),F.usd0(pick([50,100,200,300])),m.short])}`});save();if((S.ui.route||'').startsWith('clan-')&&(S.ui.cltab||'activite')==='activite')render(false);}},20000);
+planifier('clans : guerres, classement et messages simulés',20000,()=>{if(document.hidden)return;const c=myClan();if(!c)return;clanWarTick();clanWeekAward();if(S.me.wins>(S._clanWins===undefined?S.me.wins:S._clanWins)){const h=S.me.history.find(x=>x.win&&x.pnl>0);if(h)clanOnWin(`${_t("{0} vient de gagner {1} sur {2}.",[S.me.n,F.usd0(h.pnl),h.m&&MK[h.m]?MK[h.m].short:h.q])}`);}S._clanWins=S.me.wins;if(R()<.5){const mates=clanMates(c);if(mates.length)addMsg('clan:'+c.id,mkMsg({u:pick(mates),k:'msg',text:pick(CLAN_LINES)}));}if(R()<.35){const u=pick(clanMates(c)),m=pick(MARKETS);if(u)clanFeedPush(c,{u,txt:R()<.5?`${_t("{0} vient de gagner {1} sur {2}.",[duelUserN(u),F.usd0(pick([120,200,320,400,650])),m.short])}`:`${_t("{0} a misé {1} sur {2}.",[duelUserN(u),F.usd0(pick([50,100,200,300])),m.short])}`});save();if((S.ui.route||'').startsWith('clan-')&&(S.ui.cltab||'activite')==='activite')render(false);}});
 Object.assign(VIEWS,{clans:vClans,clan:vClan});TITLES.clans=_t("Clans");TITLES.clan=_t("Clan");
 Object.assign(ACT,{
  'cl-tab':a=>{S.ui.clf=S.ui.clf||{};S.ui.clf.tab=a.dataset.v;render(false);},
@@ -244,8 +244,8 @@ Object.assign(ACT,{
  'cl-leave-do':()=>{clanLeave();closeModal();location.hash='#clans';},
  'cl-share':()=>{const c=myClan();if(c)clanShare(c);},
  'cl-promote':a=>{const c=myClan();if(!c||clanRole()!=='chef'||c.officers.length>=CLAN.OFFICERS)return;c.officers.push(a.dataset.u);clanFeedPush(c,{u:'me',txt:`${_t("{0} est nommé officier.",[duelUserN(a.dataset.u)])}`});save();toast({icon:'check',title:`${_t("{0} est officier",[duelUserN(a.dataset.u)])}`});render(false);},
- 'cl-kick':a=>{const c=myClan();if(!c||!isOfficer())return;const u=a.dataset.u;c.members=c.members.filter(m=>m.u!==u);c.officers=c.officers.filter(x=>x!==u);c.n=Math.max(0,c.n-1);if(USERS[u]&&USERS[u].clan===c.id)USERS[u].clan=null;clanFeedPush(c,{u:'me',txt:`${_t("{0} a été exclu du clan.",[duelUserN(u)])}`});save();toast({icon:'check',title:`${_t("{0} exclu",[duelUserN(u)])}`});render(false);},
- 'cl-invite':()=>{const c=myClan();if(!c||!isOfficer())return;const fr=friendsOf().filter(u=>!clanMates(c).includes(u));if(!fr.length){toast({icon:'info',title:_t("Tous tes amis sont déjà dans le clan")});return;}const u=fr[0];c.members.push({u,since:now(),pts:0});USERS[u].clan=c.id;c.n++;clanFeedPush(c,{u:'me',txt:`${_t("{0} rejoint le clan sur invitation de {1}.",[duelUserN(u),S.me.n])}`});save();toast({tone:'green',icon:'userplus',title:`${_t("{0} a rejoint le clan",[duelUserN(u)])}`,text:_t("Invitation acceptée.")});render(false);},
+ 'cl-kick':a=>{const c=myClan();if(!c||!isOfficer())return;const u=a.dataset.u;c.members=c.members.filter(m=>m.u!==u);c.officers=c.officers.filter(x=>x!==u);c.n=Math.max(0,c.n-1);if(USERS[u]&&userOf(u).clan===c.id)userOf(u).clan=null;clanFeedPush(c,{u:'me',txt:`${_t("{0} a été exclu du clan.",[duelUserN(u)])}`});save();toast({icon:'check',title:`${_t("{0} exclu",[duelUserN(u)])}`});render(false);},
+ 'cl-invite':()=>{const c=myClan();if(!c||!isOfficer())return;const fr=friendsOf().filter(u=>!clanMates(c).includes(u));if(!fr.length){toast({icon:'info',title:_t("Tous tes amis sont déjà dans le clan")});return;}const u=fr[0];c.members.push({u,since:now(),pts:0});userOf(u).clan=c.id;c.n++;clanFeedPush(c,{u:'me',txt:`${_t("{0} rejoint le clan sur invitation de {1}.",[duelUserN(u),S.me.n])}`});save();toast({tone:'green',icon:'userplus',title:`${_t("{0} a rejoint le clan",[duelUserN(u)])}`,text:_t("Invitation acceptée.")});render(false);},
  'cl-call-open':()=>clanCallModal(),
  'cl-call-do':()=>{const c=myClan();const sel=$('#clcm'),side=$('#ov .sd.on');if(!c||!sel)return;clanCall(c,sel.value,side?side.dataset.clcs:'oui');closeModal();toast({tone:'blue',icon:'target',force:true,title:_t("Appel de clan lancé"),text:_t("Les membres le voient en tête du fil et dans le chat.")});S.ui.cltab='activite';render(false);},
  'cl-war':()=>{const c=myClan();if(!c)return;clanWarDeclare(c);toast({tone:'blue',icon:'swords',force:true,title:`${_t("Guerre déclarée contre {0}",[CK[c.war.foe].name])}`,text:_t("48 h, buy-in par participant, score des 10 meilleurs.")});render(false);},
@@ -266,12 +266,12 @@ const CL_PUBLIC=[
  {i:24,name:_t("Les Éclairs"),tag:'ECLR',chief:'ines',cats:['Crypto','Sport'],ic:'flame',col:'#2448FF',desc:_t("Un pari toutes les 45 secondes, toute la soirée."),mem:['orbital','nina'],n:47},
  {i:29,name:_t("Macro club"),tag:'MACR',chief:'kaizen',cats:['Économie'],ic:'chart',col:'#7350E3',desc:_t("Taux, inflation et banques centrales."),mem:['kaizen'],n:41}];
 /* un joueur n'a qu'un clan : on le retire des autres listes de membres */
-function clanMoveUser(u,c){CLANS.forEach(o=>{if(o!==c)o.members=o.members.filter(m=>m.u!==u);});if(USERS[u])USERS[u].clan=c.id;}
+function clanMoveUser(u,c){CLANS.forEach(o=>{if(o!==c)o.members=o.members.filter(m=>m.u!==u);});if(USERS[u])userOf(u).clan=c.id;}
 for(const P of CL_PUBLIC){const c=CLANS[P.i];if(!c)continue;c.name=P.name;c.tag=P.tag;c.chief=P.chief;c.cats=P.cats;c.ic=P.ic;c.col=P.col;c.desc=P.desc;c.access='open';c.minRank=0;c.lang=['fr'];c.n=P.n;c.members=P.mem.map((u,k)=>({u,since:now()-(40-k*5)*86400e3,pts:Math.round(400+rng(hash(P.tag+u))()*1600)}));c.officers=P.mem.slice(1,2);P.mem.forEach(u=>clanMoveUser(u,c));c.public=true;}
 /* ---------- Persistance : seul S.me est sauvegardé, l'état vivant de mon clan y est recopié à chaque save ---------- */
 const CL_LIVE=['members','officers','chief','chiefLastActive','wars','war','calls','feed','n'];
 const save0=save;
-save=function(){const c=myClan();if(c){const st={};for(const k of CL_LIVE)st[k]=c[k];S.me.clanLive={id:c.id,st,full:c.mine?c:null};}else if(S.me.clanLive)delete S.me.clanLive;save0();};
+save=function(){if(SRV()){save0();return;}const c=myClan();if(c){const st={};for(const k of CL_LIVE)st[k]=c[k];S.me.clanLive={id:c.id,st,full:c.mine?c:null};}else if(S.me.clanLive)delete S.me.clanLive;save0();};
 function clanRestore(){const L=S.me.clanLive;if(!L||!S.me.clan||S.me.clan.id!==L.id)return;let c=CK[L.id];if(!c&&L.full){c=L.full;CLANS.push(c);CK[c.id]=c;}if(!c)return;Object.assign(c,L.st);(c.members||[]).forEach(m=>clanMoveUser(m.u,c));const r=room('clan:'+c.id);r.name=c.name;r.kind='clan';}
 /* ---------- Démo : User26 est officier des Renards de Fer ---------- */
 function clanDemoDress(c){['lea','maxou','jules'].forEach(u=>clanMoveUser(u,c));c.members=[...new Set([...clanMates(c),'lea','maxou','jules'])].map(u=>c.members.find(m=>m.u===u)||{u,since:now()-30*86400e3,pts:1200});c.officers=['lea'];c.chief='satoshi';c.chiefLastActive=now()-3*86400e3;c.wars.unshift({foe:'c52',at:now()-5*86400e3,status:'won',a:4120,b:3870,pot:260});clanFeedPush(c,{u:'lea',tk:'lea vient de gagner 400 $ sur Bitcoin à 150 000 $.'});clanFeedPush(c,{u:'maxou',tk:'maxou a misé 200 $ sur Barça au Clásico.'});}

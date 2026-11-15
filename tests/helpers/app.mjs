@@ -18,7 +18,7 @@ export const debutManche = (n = 1000) => Date.UTC(2026, 10, 1) + n * 45000;
 
 /**
  * @param {import('@playwright/test').Page} page
- * @param {{ mode?: 'visiteur'|'demo'|'compte', lang?: 'en'|'fr'|'he', hash?: string, faux?: object, local?: Record<string,string>, horloge?: number|Date }} [o]
+ * @param {{ mode?: 'visiteur'|'demo'|'compte', lang?: 'en'|'fr'|'he', hash?: string, faux?: object (voir fake-supabase.js : etat, comptes, marches…), local?: Record<string,string>, horloge?: number|Date }} [o]
  *        horloge : fige l'heure au départ (les minuteurs n'avancent qu'avec page.clock.runFor / fastForward).
  */
 export async function ouvrir(page, o = {}) {
@@ -29,8 +29,7 @@ export async function ouvrir(page, o = {}) {
   // Le client Supabase (fichier local ou CDN) est toujours remplacé par le faux serveur ; les polices ne sont pas chargées.
   await page.route(/(js\/vendor\/supabase[^/]*\.js|cdn\.jsdelivr\.net\/.*supabase)/, r => r.fulfill({ contentType: 'text/javascript', body: FAUX }));
   await page.route(/fonts\.(googleapis|gstatic)\.com/, r => r.fulfill({ status: 200, contentType: 'text/css', body: '' }));
-  const tables = { users: [{ id: UID, username: 'realuser', email: 'real@test.dev', avatar_color: '#2448FF', kyc_verified: false }], user_stats: [{ user_id: UID, balance: 500, xp: 0 }], ...(faux.tables || {}) };
-  const cfg = { ...faux, tables, session: mode === 'compte' ? (faux.session || { user: { id: UID, email: 'real@test.dev' } }) : null };
+  const cfg = { ...faux, session: mode === 'compte' ? (faux.session || { user: { id: UID, email: 'real@test.dev' } }) : null };
   if (horloge != null) await page.clock.install({ time: horloge });
   await page.addInitScript(({ lang, mode, cfg, local }) => {
     if (!sessionStorage.getItem('__init__')) {          // seulement au premier chargement, pas aux rechargements

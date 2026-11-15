@@ -88,33 +88,41 @@ Les douze décisions de la mission sont appliquées telles quelles. Précisions 
 - [x] Serveur local `tools/serve.mjs`, configuration Playwright, faux client Supabase `tests/helpers/fake-supabase.js`.
 - [x] `tests/helpers/app.mjs` : ouvrir le site dans un mode et une langue donnés, collecter les erreurs console, figer l'horloge.
 - [x] Base embarquée pour les tests SQL (`tests/sql/base.mjs`, PGlite) : bouchons Supabase → baseline → migrations, en moins d'une seconde.
+- [x] Faux serveur aligné sur le contrat `api_*` ; tests de bout en bout contre le vrai back sur demande (`E2E=1`, projet `e2e`).
 - [ ] Intégration continue : `.github/workflows/tests.yml` sur chaque pull request.
 
 ### 3.2 Les trois bloquants
 
 - [x] **B01** — plus d'erreur au chargement (mode local). _Test_ `tests/demo/chargement.spec.mjs` : zéro erreur console, visiteur et Démo × 3 langues × 26 écrans. Le mode Compte sera couvert par `tests/compte/` à l'étape 3.3.
 - [x] **B02** — le pari éclair marche en mode Démo. _Test_ `tests/demo/eclair.spec.mjs` : mise acceptée, affichée, réglée en fin de manche, conservée après rechargement, une seule mise par pari.
-- [ ] **B04** — aucun simulateur du navigateur ne tourne en mode serveur. _Test_ `compte/simulateurs.spec` : en 10 s sans
-      message du serveur, aucun prix, volume ni message de chat ne change.
+- [x] **B04** — aucun simulateur du navigateur ne tourne en mode serveur. _Test_ `tests/compte/simulateurs.spec.mjs` : en
+      3 minutes sans message du serveur, aucun prix, volume, message, demande d'ami ni solde ne change ; zéro appel périodique.
 
 ### 3.3 Mode, passerelle, ordre de chargement
 
-- [ ] `js/api.js` : client Supabase (version fixée), `MODE`, événements, attente de session avant le premier rendu.
-- [ ] `boot.js` : planification des simulateurs conditionnée au mode ; inventaire des 35 minuteurs traité un par un
-      (piloté par le serveur, décor conservé, ou éteint — tableau dans `docs/ARCHITECTURE.md`).
-- [ ] Suppression de `js/supabase.js` (plus aucun remplacement de fonction après coup).
-      _Test_ `compte/passerelle.spec` : un seul fichier contient `createClient` ; aucun `window.x = function` de remplacement.
+- [x] `js/api.js` : seul fichier à toucher le client Supabase (2.118.0, figé dans `js/vendor/`, chargé à la demande) ; `SRV()` ;
+      événements ; le premier rendu attend la session (3 s au plus, puis repli local ; écran clair si le serveur est injoignable).
+- [x] `boot.js` : une seule table de minuteurs (`planifier`), lancée selon le mode ; les modules y déclarent les leurs ;
+      les décors de départ (messages d'exemple) passent par `SEMIS`, posés en mode local seulement.
+- [ ] Tableau des minuteurs et de leur sort dans `docs/ARCHITECTURE.md`.
+- [x] Suppression de `js/supabase.js` (plus aucun remplacement de fonction après coup) ; `js/serveur.js` porte la logique du
+      mode serveur sans jamais toucher le client. _Tests_ `tests/compte/simulateurs.spec.mjs` (aucun accès direct aux tables),
+      `tests/compte/garde.spec.mjs` (aucune action d'argent exécutée localement en mode serveur).
 
 ### 3.4 Une seule authentification, zéro mélange (B07)
 
-- [ ] Mode serveur = session Supabase, et rien d'autre. Les comptes `localStorage` ne servent qu'au mode Démo.
-- [ ] Changement de mode = état remis à neuf. _Test_ `compte/modes.spec` (recette 8) : Démo → Compte → Démo, aucun champ ne fuit.
+- [x] Mode serveur = session Supabase, et rien d'autre. Les comptes `localStorage` ne servent qu'au mode Démo.
+- [x] Changement de mode = rechargement, état remis à neuf. _Test_ `tests/compte/comptes.spec.mjs` (recette 8) :
+      Démo → Compte → Démo, aucun champ ne fuit ; une session serveur l'emporte toujours sur une session locale.
 
 ### 3.5 Annuaire de joueurs et robustesse (B11, B12, B17)
 
-- [ ] Registre `USERS`, `userOf()` jamais `undefined`, chargement par lots, cache.
-- [ ] Salon, marché ou jeu inconnu : ignoré et journalisé, jamais d'exception dans un rendu.
-      _Test_ `compte/robustesse.spec` : ami inconnu, message d'un UUID inconnu, salon privé inconnu, marché inconnu.
+- [x] Registre `USERS` alimenté par le serveur (clé = identifiant du joueur), `userOf()` jamais `undefined` (fiche de secours),
+      75 accès directs convertis.
+- [ ] Chargement par lots des fiches inconnues (`api_fiches`) et classement réel : avec le lot 4.6.
+- [x] Salon, marché ou joueur inconnu : ignoré et journalisé, jamais d'exception dans un rendu.
+      _Test_ `tests/compte/chargement.spec.mjs` : 26 écrans × 3 langues, ami et joueur inconnus, message d'un inconnu,
+      marché inconnu, carte de mise sur un marché disparu.
 
 ### 3.6 Mode Démo identique à `3a1d258`
 
@@ -125,25 +133,30 @@ Les douze décisions de la mission sont appliquées telles quelles. Précisions 
 
 ### 3.7 Textes (B18)
 
-- [ ] Toute chaîne ajoutée passe par `_t()` avec ses entrées anglaise et hébraïque.
-      _Test_ `i18n.spec` : aucune clé utilisée n'est absente d'un catalogue.
+- [x] Toute chaîne ajoutée passe par `_t()` avec ses entrées anglaise et hébraïque (`js/i18n-3.js`).
+      _Test_ `tests/i18n.spec.mjs` : les 2 500+ textes du code existent dans les deux catalogues ; aucun texte en dur dans
+      `api.js`, `serveur.js`, `boot.js`.
 
 ## Phase 4 — Back et câblage, domaine par domaine
 
 Pour chaque domaine : migration (tables, RPC, policies) → câblage via la passerelle → tests. On ne passe au suivant que si le précédent est vert.
 
 ### 4.1 Comptes
-- [ ] Inscription : pseudo unique vérifié côté serveur, transmis à `signUp` ; profil créé par trigger ; aucun compte local fantôme (B08, F22).
-- [ ] Écran « vérifie ta boîte mail » si la confirmation est active ; fonctionne dans les deux réglages.
-- [ ] Connexion par e-mail ou pseudo via un RPC qui n'expose aucun e-mail (B10). Texte de la page mis à jour.
-- [ ] Déconnexion propre (dernière sauvegarde attendue, F24, F25).
-- [ ] Mot de passe oublié complet, par code et par lien (B09). _Recette 4._
-- [ ] Onboarding réel des nouveaux comptes, piloté par l'état serveur (F21).
-- [ ] Profil : pseudo unique, bio, couleur, avatar (taille bornée), visibilité, langue, thème.
+- [x] Inscription : pseudo unique vérifié côté serveur, transmis à `signUp` ; profil créé par trigger ; aucun compte local fantôme (B08, F22).
+- [x] Écran « vérifie ta boîte mail » si la confirmation est active, avec renvoi ; fonctionne dans les deux réglages.
+- [x] Connexion par e-mail ou pseudo ; par pseudo, via l'Edge Function `connexion` qui n'expose aucun e-mail (B10). Texte de la page mis à jour.
+- [x] Déconnexion propre : réglages envoyés, session fermée, rechargement en visiteur (F24, F25).
+- [x] Mot de passe oublié par code à 6 chiffres (`verifyOtp` puis `updateUser`) et par lien (`PASSWORD_RECOVERY`) (B09).
+      Testé avec le faux serveur. **Reste à l'humain** : mettre le code dans le modèle d'e-mail (voir plus bas), puis _recette 4_ en vrai.
+- [x] Onboarding réel des nouveaux comptes, piloté par l'état serveur ; 100 XP de bienvenue donnés une seule fois (F21).
+- [x] Profil : pseudo unique, bio, couleur, avatar de la galerie, visibilité.
+- [ ] Profil : photo importée (stockage de fichiers), langue et thème synchronisés, portefeuille.
 
 ### 4.2 État et solde
-- [ ] `get_state()` et hydratation unique de `S.me` ; blob réduit aux préférences d'interface, versionné, écrit seulement s'il change (B05, B06, B19).
-- [ ] Rafraîchissement à la reprise de l'onglet. _Recette 3_ : même état sur deux navigateurs.
+- [x] `api_state()` et hydratation unique de `S.me` (`hydrater`) ; préférences d'interface dans `wm.user_prefs`, versionnées,
+      écrites seulement si elles changent ; plus aucune relecture ni écriture périodique (B05, B06, B14, B19).
+- [x] Rafraîchissement à la reprise de l'onglet. _Recette 3_ (comptes) : même état sur deux navigateurs, vérifié contre le vrai
+      back (`tests/e2e/comptes.spec.mjs`).
 
 ### 4.3 Marchés et paris
 - [ ] État des marchés, historique de prix, volume, participants depuis le serveur.
@@ -217,8 +230,14 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
    demande un accord manuel pour toute instruction qui supprime quelque chose, et la demande expire après 2 minutes.
    Deux opérations l'attendent : la migration `securite_urgence_nettoyage` (retrait de règles devenues inutiles) et la
    suppression des comptes de test `wimoro-e2e-…@example.com`.
-2. La liste se complétera au fil du chantier (modèle d'e-mail du code à 6 chiffres, URL de redirection, SMTP, mode de
-   publication GitHub Pages).
+2. **Modèle d'e-mail « mot de passe oublié »** : tableau de bord Supabase → Authentication → Emails → « Reset Password ».
+   Ajouter dans le texte la ligne `Ton code : {{ .Token }}` (le site demande un code à 6 chiffres). Sans cette ligne,
+   l'e-mail ne contient que le lien, qui marche aussi.
+3. **URL du site** : Authentication → URL Configuration → Site URL = `https://wimoro.com` ; Redirect URLs : ajouter
+   `https://wimoro.com/**`.
+4. **Envoi des e-mails** : le service intégré est limité à quelques e-mails par heure. Pour de vrais utilisateurs,
+   brancher un SMTP (Authentication → Emails → SMTP Settings).
+5. Plus tard : mode de publication GitHub Pages (à la livraison).
 
 ## Journal
 
@@ -226,5 +245,6 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 |---|---|---|
 | 15 nov. 2026 | Phase 0 : accès, tag, branche, export du back, sauvegarde. | commits `17ff4c5`, `9ed0350` ; migration `20261114234523_backup_avant_reparation` |
 | 15 nov. 2026 | Phase 1 : audit complet. Phase 2 : ce plan. | `docs/AUDIT.md`, `docs/audit/` |
+| 15 nov. 2026 | 3.3 à 3.5, 3.7, 4.1, 4.2 : passerelle `js/api.js`, mode Compte sans simulateurs, comptes réels (inscription, connexion par pseudo, mot de passe oublié, onboarding, profil), état du joueur servi par `api_state`. | 67 tests (24 SQL, 14 Démo, 27 Compte, traductions) ; 3 tests de bout en bout contre le vrai back |
 | 15 nov. 2026 | 3.2, 3.6 : `js/supabase.js` retiré ; mode Démo redevenu identique à `3a1d258` ; B01 et B02 corrigés. | 14 tests Playwright dans `tests/demo/` |
 | 15 nov. 2026 | 3.0 : trous de sécurité K01 à K13 fermés en production. Base de test embarquée. | migration `20261115032907_securite_urgence_droits` ; 13 tests SQL ; `tools/e2e/verif-securite.mjs` |

@@ -44,8 +44,8 @@ test('compte local : inscription, onboarding, crédit démo, achat puis vente', 
   await ticket.locator('[data-a="tmode"][data-v="sell"]').click();
   await ticket.locator('[data-a="preset"][data-v="1"]').click();
   await ticket.locator('[data-a="sell"]').click();
-  const apresVente = await lire(page, () => ({ solde: S.me.balance, pos: S.me.positions.length, hist: S.me.history[0] }));
-  expect(apresVente.pos).toBe(0);
+  const apresVente = await lire(page, () => ({ solde: S.me.balance, reste: S.me.positions.reduce((t, p) => t + p.sh, 0), hist: S.me.history[0] }));
+  expect(apresVente.reste).toBeLessThan(0.1);                                        // « tout vendre » arrondit au dixième de part
   expect(apresVente.solde).toBeGreaterThan(1e6 - 50);
   expect(apresVente.solde).toBeLessThan(1e6);                                        // acheter puis revendre ne rapporte jamais d'argent
   expect(apresVente.hist.k).toBe('sell');

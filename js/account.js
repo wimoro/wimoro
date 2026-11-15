@@ -21,7 +21,7 @@ function enterAccount(rec,fresh,quiet){S.epoch++;KEY=accKey(rec);S.me=rec.demo?d
  for(const d of GAMES){G(d.id).my=null;}
  checkBadges(true);flushSave();if(!quiet)updateHeader();}
 function leaveAccount(){if(!S.me.logged)return;for(const d of S.me.deps||[])if(d.conf<d.need){d.conf=d.need;S.me.balance+=d.usd;S.me.deposits++;}for(const x of S.me.wds||[])if(x.st!=='sent')x.st='sent';for(const d of GAMES){const g=G(d.id);if(g.my){S.me.balance+=g.my.amt;S.me.played=Math.max(0,S.me.played-1);g.my=null;}}delete S.me.fmy;flushSave();S.epoch++;}
-function logout(){leaveAccount();LS.r(SESK);S.auth={key:'',demo:false};KEY='wimoro-guest';S.me=guestMe();S.ui.auth=null;const u=$('#umenu');if(u)u.remove();const p=$('#npanel');if(p)p.remove();closeModal();updateHeader();toast({icon:'out',title:_t("Tu es déconnecté"),text:_t("À bientôt sur Wimoro.")});location.hash='#connexion';}
+function logout(){if(SRV()){srvDeconnexion();return;}leaveAccount();LS.r(SESK);S.auth={key:'',demo:false};KEY='wimoro-guest';S.me=guestMe();S.ui.auth=null;const u=$('#umenu');if(u)u.remove();const p=$('#npanel');if(p)p.remove();closeModal();updateHeader();toast({icon:'out',title:_t("Tu es déconnecté"),text:_t("À bientôt sur Wimoro.")});location.hash='#connexion';}
 function bootAuth(){const k=LS.g(SESK);S.auth={key:'',demo:false};
  if(k==='__demo__')enterAccount(DEMO_ACC,null,true);
  else if(k){const rec=AUTH.get(k);if(rec)enterAccount(rec,null,true);}
