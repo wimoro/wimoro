@@ -4,6 +4,8 @@ import { defineConfig, devices } from '@playwright/test';
 // CHROME=1 utilise le Chrome installé sur la machine au lieu du Chromium de Playwright.
 const useChrome = !!process.env.CHROME;
 const PORT = Number(process.env.PORT || 4173);
+// SITE=https://wimoro.com : les tests visent le site en ligne au lieu du site servi en local (vérification après une mise en ligne).
+const SITE = process.env.SITE || '';
 
 export default defineConfig({
   testDir: 'tests',
@@ -15,7 +17,7 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [['github'], ['list']] : [['list']],
   use: {
-    baseURL: `http://127.0.0.1:${PORT}`,
+    baseURL: SITE || `http://127.0.0.1:${PORT}`,
     locale: 'en-US',
     timezoneId: 'Europe/Paris',
     trace: 'retain-on-failure',
@@ -29,7 +31,7 @@ export default defineConfig({
     // Bout en bout contre le VRAI back, avec des comptes de test jetables : seulement sur demande (E2E=1).
     ...(process.env.E2E ? [{ name: 'e2e', testMatch: 'e2e/**/*.spec.mjs', fullyParallel: false, use: { ...devices['Desktop Chrome'], ...(useChrome ? { channel: 'chrome' } : {}) } }] : []),
   ],
-  webServer: {
+  webServer: SITE ? undefined : {
     command: `node tools/serve.mjs ${PORT}`,
     url: `http://127.0.0.1:${PORT}/index.html`,
     reuseExistingServer: !process.env.CI,

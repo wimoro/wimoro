@@ -343,3 +343,23 @@ test('recette 5 · sujet privé : une demande d’ami arrive en direct chez son 
   expect(erreursB).toEqual([]);
   await ctxB.close(); await ctxC.close();
 });
+
+test('recette 1 · mode Compte, trois langues : chaque écran s’ouvre sans erreur avec un vrai compte', async ({ page }) => {
+  test.setTimeout(200000);
+  const erreurs = await ouvrirReel(page, '#connexion');
+  await page.locator('#le').fill(PSEUDO); await page.locator('#lp').fill(MDP); await page.locator('form[data-form="login"] [type=submit]').click();
+  await expect(page).toHaveURL(/#accueil/, { timeout: 20000 }); await pret(page);
+  const ECRANS = ['accueil', 'marche-btc150k', 'marche-presid27', 'marche-presid27-roux', 'eclair', 'blitz', 'serie', 'chat', 'clans', 'classement', 'rang', 'profil', 'depot', 'retrait', 'creer', 'modifier', 'amis', 'copie', 'parrainage', 'responsable', 'duels', 'combines'];
+  for (const lang of ['fr', 'he', 'en']) {
+    await page.evaluate(l => { localStorage.setItem('wimoro-lang', l); }, lang);
+    await page.reload(); await pret(page);
+    const vu = await lire(page, () => ({ lang: document.documentElement.lang, rtl: document.documentElement.dir === 'rtl', srv: SRV(), connecte: S.me.logged }));
+    expect(vu).toEqual({ lang, rtl: lang === 'he', srv: true, connecte: true });
+    for (const ecran of ECRANS) {
+      await page.evaluate(h => { location.hash = '#' + h; }, ecran);
+      await page.waitForTimeout(150);
+      await expect(page.locator('#view > *').first(), lang + ' ' + ecran).toBeAttached();
+    }
+  }
+  expect(erreurs, 'zéro erreur console').toEqual([]);
+});
