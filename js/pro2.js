@@ -287,5 +287,5 @@ window.addEventListener('hashchange',()=>{if(PV.open)proClose(true);});
 window.addEventListener('resize',()=>proInval());
 new MutationObserver(()=>{PCSS=null;proInval();}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 addEventListener('pagehide',proStoreSave);document.addEventListener('visibilitychange',()=>{if(document.hidden)proStoreSave();else proInval();});
-setInterval(()=>{if(!document.hidden)proStoreSave();},20000);
+planifier('mode pro : mémoire locale du graphique',20000,()=>{if(!document.hidden)proStoreSave();},'tous');
 

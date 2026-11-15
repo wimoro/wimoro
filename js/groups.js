@@ -63,10 +63,10 @@ VIEWS.marche=id=>GK[id]?vGroup(id):vMarket(id);
  sellPos=function(ctx){const g=onGroup(ctx);sellPos1(ctx);if(g)render(false);};}
 
 /* ---------- Chat des groupes : quelques lignes au départ ---------- */
-{const t=now(),ids=USER_IDS.slice().sort(()=>R()-.5);const GL={
+SEMIS.push(()=>{const t=now(),ids=USER_IDS.slice().sort(()=>R()-.5);const GL={
  presid27:[_t("Roux prend 5 points en une semaine, le marché suit les sondages."),_t("Je garde Non sur Lefèvre à 73 ¢, c’est le meilleur rendement du marché."),_t("Quelqu’un a une source sur le retrait de Moreau ?")],
  ldc27:[_t("Le Real à 22 % c’est cher pour une équipe qui perd ses matchs de poule."),_t("City favori comme chaque année, et comme chaque année…"),_t("Le PSG à 15 ¢, je prends 100 $, on verra au printemps.")],
  crypto2:[_t("Ethereum à 61 %, ça reste le pari sûr."),_t("Solana a doublé son volume en six mois, 19 % c’est bas."),_t("XRP à 9 ¢ pour un simple retour au classement de 2025, pourquoi pas.")]};
  for(const g of GROUPS){const r=room('m:'+g.id);let k=0;(GL[g.id]||[]).forEach((txt,i)=>r.msgs.push(mkMsg({u:ids[k++],k:'msg',text:txt,at:t-(16-i*4)*60000,r:i===0?{'🔥':Math.round(3+R()*12)}:{}})));
-  const o=gSorted(g)[1];r.msgs.push(mkMsg({u:ids[k++],k:'bet',text:'',bet:{m:o.id,s:'oui',amt:pick([100,200,300,500]),price:Math.round(o.p)},followers:Math.round(R()*20),at:t-2*60000}));}}
+  const o=gSorted(g)[1];r.msgs.push(mkMsg({u:ids[k++],k:'bet',text:'',bet:{m:o.id,s:'oui',amt:pick([100,200,300,500]),price:Math.round(o.p)},followers:Math.round(R()*20),at:t-2*60000}));}});
 

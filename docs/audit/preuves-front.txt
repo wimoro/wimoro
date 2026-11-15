@@ -1,0 +1,87 @@
+Audit dynamique du front — commit 9ed0350 (code applicatif identique à 719cf76) — 2026-11-14T23:56:19.743Z
+Généré par tools/audit/reproduire.mjs (Chrome headless, faux client Supabase).
+
+B01 erreurs au chargement (visiteur) : ["TypeError: Assignment to constant variable. @ at /js/supabase.js:248:10"]
+B01 log « [SB] Initialized » présent : false ; ACT['switch-to-account']=undefined ; ACT['switch-to-demo']=undefined
+B02 même manche, appel direct de la fonction d'origine flashBet() : solde 1000248.5 → 1000238.5 ; mise enregistrée : true  (→ la fonction d'origine marche, c'est le remplacement de supabase.js:189 qui bloque)
+B02 mode Démo, clic sur un bouton de pari éclair : solde 1000248.5 → 1000248.5 ; mise enregistrée : null ; paris joués 213 → 213
+B03 mode Compte, pari éclair : RPC flash_bet appelé 1 fois {"p_game_id":"btc","p_side":"a","p_amount":10} ; solde 500 → 490 ; mise côté client G().my=null ; S.me.fmy=null ; XP 0 → 0 ; missions dep:0,flashbet:0,chat:0
+B04    setInterval 4000 ms @ copy.js:315:2
+B04    setInterval 20000 ms @ copy.js:315:36
+B04    setInterval 52000 ms @ copy.js:315:72
+B04    setInterval 2000 ms @ orders.js:186:49
+B04    setInterval 70000 ms @ referral.js:104:49
+B04    setInterval 30000 ms @ responsible.js:198:49
+B04    setInterval 7000 ms @ blitz.js:115:1
+B04    setInterval 1000 ms @ blitz.js:200:1
+B04    setInterval 20000 ms @ clans.js:229:1
+B04    setInterval 20000 ms @ pro2.js:290:1
+B04    setInterval 150000 ms @ demo.js:182:57
+B04    setInterval 90000 ms @ boot.js:17:66
+B04    setInterval 5200 ms @ boot.js:17:127
+B04    setInterval 650 ms @ boot.js:18:1
+B04    setInterval 3600 ms @ boot.js:18:30
+B04    setInterval 2600 ms @ boot.js:18:81
+B04    setInterval 26000 ms @ boot.js:18:136
+B04    setInterval 250 ms @ boot.js:19:1
+B04    setInterval 5000 ms @ boot.js:19:28
+B04    setInterval 240000 ms @ boot.js:19:55
+B04    setInterval 10000 ms @ boot.js:19:181
+B04    setInterval 1000 ms @ boot.js:19:218
+B04    setInterval 2200 ms @ boot.js:20:1
+B04    setInterval 15000 ms @ boot.js:21:28
+B04    setInterval 3000 ms @ boot.js:22:1
+B04    setInterval 1600 ms @ boot.js:24:1
+B04    setInterval 8000 ms @ boot.js:28:1
+B04    setInterval 15000 ms @ supabase.js:93:1
+B04    setInterval 17000 ms @ supabase.js:94:1
+B04    setInterval 20000 ms @ supabase.js:95:1
+B04 marchés dont le prix a bougé localement en 6 s : 15/27 ; dont le volume a monté : 6
+B04 minuteurs périodiques actifs en mode Compte : 30
+B04 mode Compte : prix serveur de btc150k = 70 ; 6 s plus tard, sans aucun message du serveur = 69.863 ; volume 9000000 → 9000573
+B05 mode Compte : solde 500 → retrait carte de 100 $ → 400 → 16 s plus tard → 500   (serveur : 500)
+B05 XP 0 → +50 XP et mission réclamée → 150 → 16 s plus tard → 0 ; le retrait reste affiché dans l'historique local : 1 ligne(s), alors que l'argent est revenu
+B06 mode Compte, achat de 50 $ : solde 500 → 450, positions locales : 1. Rechargement avant la sauvegarde du blob (échec simulé) : solde 450, positions affichées : 0, alors que la table positions du serveur en contient 1 (jamais lue)
+B07 17 s plus tard, blob envoyé au serveur pour le vrai compte : {"n":"realuser","pos":5,"bal":500}  (→ les 5 positions du compte démo sont écrites chez le vrai utilisateur)
+B07 session Supabase (realuser, 500 $) + session locale sur le compte démo → pseudo « realuser », solde 500, positions : [btc150k, clasico, eth6000, neige-noel, ia-olympiades], historique : 4 lignes, abonnements : [lea, maxou], S.auth.demo=true, clé de stockage local : wimoro-demo
+B07 variante : compte local « connecté » sans session Supabase → connecté=true, pseudo=ghost, solde=0 ; appels au back : ["auth:getSession","rpc:get_markets"]  (→ tout tourne en local, rien n'est sauvegardé)
+B08 arguments de signUp : [{"email":"taken@test.dev","options":null}] ; onboarded=true ; solde=0 ; premier dépôt affiché : « Crédit démo 1000000 »
+B08 inscription avec un e-mail déjà pris côté serveur (signUp échoue) : connecté=true, pseudo=newbie, compte local créé : ["taken@test.dev"]
+B08 pseudos considérés comme déjà pris (takenNames) : 17 → ["satoshi_fr","lea","kaizen","maxou","karim","orbital","ines","tomtom","jules","k.durand","sofia.b","mehdi","nina","user26","dan.h","admin","wemoro"]
+B08 si la confirmation d'e-mail est active (pas de session renvoyée) : connecté à l'écran=true, session Supabase=false, insert dans users tenté en anonyme : 1
+B09 arrivée par le lien de l'e-mail (#access_token=…&type=recovery) : écran affiché « accueil », champ mot de passe présent : false ; erreurs : []
+B09 occurrences dans js/ : PASSWORD_RECOVERY=0, updateUser=0, verifyOtp=0, resetPasswordForEmail=1
+B10 clé publique seule, sans connexion : GET users?select=email (un bot) → HTTP 200, e-mail renvoyé : ***@wimoro.internal
+B10 joker non échappé : username=ilike.% renvoie 3 lignes (le front fait ilike(username, saisie) sans échapper % ni _)
+B10 profils de vrais utilisateurs lisibles par un visiteur anonyme : content-range = 0-20/21  (la colonne email est lisible de la même façon)
+B11 actions amis : fr-add=function, fr-accept=function, fr-decline=function, fr-remove=function, fr-cancel=function ; appels RPC amis présents dans supabase.js : search_users=false, send_friend_request=false, accept_friend_request=false
+B11 mode Compte avec 1 ami réel (alice) → S.me.friends=["alice"] ; ouverture de #amis : ["TypeError: Cannot read properties of undefined (reading 'tone') @ at avH (/js/views.js:17:278)"]
+B12 appels liés au chat au démarrage : ["channel:chat-live.on {\"event\":\"INSERT\",\"schema\":\"public\",\"table\":\"chat_messages\"}"]  (aucun chargement d'historique, abonnement sans filtre)
+B12 message temps réel d'un vrai utilisateur (abonnés au canal : 1) → ["TypeError: Cannot read properties of undefined (reading 'tone') @ at avH (/js/views.js:17:278)"]
+B12 nouveau rendu de #chat ensuite : ERREUR Cannot read properties of undefined (reading 'tone') ; retour à l'accueil : []
+B12 room('dm:inconnu') → Cannot read properties of undefined (reading 'n') ; addMsg('m:inconnu') → Cannot read properties of undefined (reading 'msgs')
+B12 table chat_messages lisible sans connexion (tous salons) → HTTP 200
+B13 dans la surcharge startDeposit de supabase.js : appel à rgDepOk=false, à closeModal=false, à S.me.deps=false, message en cas d'erreur=false
+B13 dépôt crypto de 100 USDC en mode Compte : RPC [{"p_coin":"USDC","p_network":"Base","p_amount":100}] ; solde 500 → 600 ; lignes d'historique des dépôts 0 → 0 ; fenêtre encore ouverte : true
+B14 KYC validé → S.me.kyc=true ; après sauvegarde puis rechargement → S.me.kyc=false  (blob.kyc=true, colonne users.kyc_verified=false : jamais écrite, et c'est elle qui gagne)
+B15 achat de 600 $ en mode Démo   : XP 1840→1850, notifications 4→6, plus grosse mise 200→600, paris joués 213→214, annonce dans le chat du marché : 1, missions [0,0,0]→[1,0,0], badges 5→6
+B15 achat de 600 $ en mode Compte : XP 0→0, notifications 0→0, plus grosse mise 0→0, paris joués 0→1, annonce dans le chat du marché : 0, missions [0,0,0]→[0,0,0], badges 0→0
+B19 mode Compte, 35 s sans rien toucher : 2 écritures du blob complet (1318 octets chacune), 2 mises à jour de users, 3 lectures de user_stats, 2 appels get_friends
+B20 fonction d'administration appelée SANS connexion (admin_get_player, recherche limitée aux bots) → HTTP 200, 20 lignes, colonnes : user_id,username,email,balance_display,balance_raw,rank_name,rank_tier,xp,bets_placed,accuracy,flash_wins,profit_display,is_bot,created_at
+B20 vue admin_players_view lisible sans connexion → HTTP 200, e-mail renvoyé : ***@wimoro.internal
+ECRANS visiteur en : 1 erreur(s) au chargement, 0/26 écran(s) en erreur
+ECRANS visiteur fr : 1 erreur(s) au chargement, 0/26 écran(s) en erreur
+ECRANS visiteur he : 1 erreur(s) au chargement, 0/26 écran(s) en erreur
+ECRANS demo     en : 1 erreur(s) au chargement, 0/26 écran(s) en erreur
+ECRANS demo     fr : 1 erreur(s) au chargement, 0/26 écran(s) en erreur
+ECRANS demo     he : 1 erreur(s) au chargement, 0/26 écran(s) en erreur
+ECRANS compte   en : 1 erreur(s) au chargement, 0/26 écran(s) en erreur
+ECRANS compte   fr : 1 erreur(s) au chargement, 0/26 écran(s) en erreur
+ECRANS compte   he : 1 erreur(s) au chargement, 0/26 écran(s) en erreur
+ECRANS demo mobile 390px : 0 problème(s) []
+S1    ≠ core.js : 3 ligne(s) différente(s) → l.118 « …const demoB=()=>`<span class="demo-b">${_t('Mode démo')}</spa… » devient « …const demoB=()=>'';… » | l.119 « … demoHint=(txt,tag='p')=>`<${tag} class="demo-h">${demoB()}<span>${txt… » devient « … demoHint=(txt,tag='p')=>'';… » | l.196 « …:5,logged:true,onboarded:false,kyc:false,fmode:'free',falerts:[],contr… » devient « …:5,logged:true,onboarded:true,kyc:false,fmode:'free',falerts:[],contra… »
+S1    ≠ account.js : 1 ligne(s) différente(s) → l.17 « … if(!S.me.credit1m){S.me.balance+=1e6;S.me.cr… » devient « …… »
+S1    ≠ boot.js : 1 ligne(s) différente(s) → l.10 « …if(S.me.logged&&!S.me.onboarded&&location.has… » devient « …/* onboarding redirect handled by sbLoad */… »
+S1  css/main.css identique au <style> d'origine : true
+S1  fichiers identiques au bloc d'origine : 20/23
+S1  index.html d'origine (3a1d258) : 23 blocs <script> ; fichiers JS actuels hors supabase.js : 23

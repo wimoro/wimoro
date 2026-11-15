@@ -1,0 +1,20 @@
+{
+  "name": "wimoro",
+  "private": true,
+  "description": "Outils de test et d'audit de Wimoro. Le site lui-meme n'a besoin d'aucune installation.",
+  "type": "module",
+  "scripts": {
+    "serve": "node tools/serve.mjs",
+    "test": "playwright test",
+    "audit:inventaire": "node tools/audit/inventaire.mjs",
+    "version:site": "node tools/version.mjs",
+    "test:e2e": "playwright test --project=e2e"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.16",
+    "@playwright/test": "1.65.1",
+    "@supabase/supabase-js": "2.118.0",
+    "acorn": "8.19.0",
+    "acorn-walk": "8.3.5"
+  }
+}

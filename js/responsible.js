@@ -35,10 +35,12 @@ function rgDepNoteH(){const {room,bind}=rgDepRoom();if(room===Infinity)return ''
 
 /* ---------- Pause et auto-exclusion ---------- */
 function rgBlocked(kind){if(rgExcluded())return true;if(!rgPaused())return false;toast({tone:'amber',icon:'shield',title:_t("Tu es en pause"),text:`${_t("Les paris {0}sont bloqués jusqu’au {1}.",[kind==='dep'?_t("et les dépôts "):'',fmtDT(rg().pause)])}`,href:'#responsable'});return true;}
-function rgPauseStart(h){rg().pause=now()+h*HOUR;for(const c of (S.me.copies||[]))if(c.status==='active'){c.status='paused';c.byPause=1;}flushSave();closeModal();
- toast({icon:'shield',title:_t("Pause activée"),text:`${_t("Paris et dépôts bloqués jusqu’au {0}. Tes copies sont en pause.",[fmtDT(rg().pause)])}`,dur:5000});notif('shield',`${_t("Pause activée jusqu’au {0}.",[fmtDT(rg().pause)])}`,'#responsable');rgSync();if(S.ui.route==='responsable')render(false);}
+/* pause : écriture (locale, ou api_rg_pause en mode serveur), puis les mêmes effets */
+function rgPauseStart(h){if(SRV()){srvRg('api_rg_pause',{p_hours:h},rgPauseEffets);return;}
+ rg().pause=now()+h*HOUR;for(const c of (S.me.copies||[]))if(c.status==='active'){c.status='paused';c.byPause=1;}flushSave();notif('shield',`${_t("Pause activée jusqu’au {0}.",[fmtDT(rg().pause)])}`,'#responsable');rgPauseEffets();}
+function rgPauseEffets(){closeModal();toast({icon:'shield',title:_t("Pause activée"),text:`${_t("Paris et dépôts bloqués jusqu’au {0}. Tes copies sont en pause.",[fmtDT(rg().pause)])}`,dur:5000});rgSync();if(S.ui.route==='responsable')render(false);}
 function rgPauseEnd(){const g=rg();if(!g.pause)return;g.pause=0;for(const c of (S.me.copies||[]))if(c.byPause){c.status='active';delete c.byPause;}save();notif('shield',_t('Ta pause est terminée : tu peux de nouveau parier et déposer.'),'#responsable');rgSync();}
-function rgExcludeStart(months){const g=rg();g.excl=months?now()+months*30*86400e3:-1;g.pause=0;for(const c of (S.me.copies||[]))if(c.status!=='stopped'){c.status='stopped';c.why='excl';c.end=now();}
+function rgExcludeStart(months){if(SRV()){srvExclure(months);return;}const g=rg();g.excl=months?now()+months*30*86400e3:-1;g.pause=0;for(const c of (S.me.copies||[]))if(c.status!=='stopped'){c.status='stopped';c.why='excl';c.end=now();}
  const rec=accountOfMe();if(rec){rec.excl=g.excl;AUTH.set(rec.key,rec);}flushSave();closeModal();
  const msg=months?`${_t("Ton compte est fermé jusqu’au {0}.",[fmtD(g.excl)])}`:_t("Ton compte est fermé définitivement.");
  leaveAccount();LS.r(SESK);S.auth={key:'',demo:false};KEY='wimoro-guest';S.me=guestMe();S.ui.authNote=`${_t("Auto-exclusion enregistrée. {0}",[msg])}`;updateHeader();rgSync();if(location.hash!=='#connexion')location.hash='#connexion';else render(true);
@@ -69,10 +71,11 @@ function vRG(){const g=rg(),paused=rgPaused();
 function rgPauseModal(h){const l=RG.PAUSES.find(x=>x[0]===h)[1];openModal(`<div class="md"><div class="md-h"><div><h3>${_t("Faire une pause de {0} ?",[l])}</h3><p>${_t("Jusqu’au {0} : aucun pari, aucun dépôt, copies suspendues. Impossible d’écourter la pause une fois lancée.",[fmtDT(now()+h*HOUR)])}</p></div><button class="x" data-a="close" aria-label="${_t("Fermer")}">${ic('x')}</button></div><button class="btn b-ink lg full" data-a="rg-pause-do" data-h="${h}">${_t("Confirmer la pause de {0}",[l])}</button><button class="btn b-ghost lg full" data-a="close">${_t("Annuler")}</button></div>`);}
 function rgExclModal(mo){const l=RG.EXCL.find(x=>x[0]===mo)[1];openModal(`<div class="md"><div class="md-h"><div><h3>${_t("Auto-exclusion {0}",[mo?`${_t("de {0}",[l])}`:_t("définitive")])}</h3><p>${_t("{0} Tu seras déconnecté tout de suite et la connexion sera refusée pendant toute la durée. Cette décision ne peut pas être annulée.",[mo?`${_t("Ton compte sera fermé jusqu’au {0}.",[fmtD(now()+mo*30*86400e3)])}`:_t("Ton compte sera fermé pour toujours.")])}</p></div><button class="x" data-a="close" aria-label="${_t("Fermer")}">${ic('x')}</button></div><div class="field"><label for="rgx">${_t("Pour confirmer, écris <b>EXCLUSION</b>")}</label><input id="rgx" data-rgx autocomplete="off" autocapitalize="characters" placeholder="EXCLUSION"></div><button class="btn b-ink lg full" data-a="rg-excl-do" data-m="${mo}" data-rgxgo disabled>${_t("Fermer mon compte")}</button><button class="btn b-ghost lg full" data-a="close">${_t("Annuler")}</button></div>`);}
 document.addEventListener('input',e=>{if(e.target.dataset&&e.target.dataset.rgx!==undefined){const b=$('[data-rgxgo]');if(b)b.disabled=e.target.value.trim().toUpperCase()!=='EXCLUSION';}});
-FORMS.rglim=f=>{const k=f.dataset.k,v=F.parse(f.v.value),r=rgSetLimit(k,v);
+FORMS.rglim=f=>{const k=f.dataset.k,v=F.parse(f.v.value);if(SRV()){srvRg('api_rg_limit',{p_k:k,p_v:Math.max(0,Math.round(v))},r=>rgLimiteEffets(k,v,r.r));return;}rgLimiteEffets(k,v,rgSetLimit(k,v));};
+function rgLimiteEffets(k,v,r){
  if(r==='pending')toast({icon:'shield',title:_t("Changement enregistré"),text:`${_t("Il prendra effet le {0}, après {1} h de réflexion.",[fmtDT(rg().pend[k].at),RG.COOL])}`,dur:4500});
  else if(r==='now')toast({icon:'shield',title:v?`${_t("Limite {0} : {1}",[winTxt(k),F.usd0(v)])}`:_t("Limite retirée"),text:v?_t("Appliquée tout de suite."):'',dur:2600});
- render(false);};
+ render(false);}
 
 /* ---------- Export : données ---------- */
 function histKind(h){return h.k==='duel'?_t("Duel"):h.k==='blitz'?_t("Blitz Royale"):h.k==='serie'?_t("La Série"):h.k==='flash'?_t("Pari éclair"):h.k==='sell'?(h.via==='stop'?_t("Stop loss"):h.via==='tp'?_t("Take profit"):h.via==='limit'?_t("Vente limite"):h.via==='copy'?`${_t("Copie de {0}",[h.of||''])}`:_t("Revente")):_t("Marché réglé");}
@@ -191,11 +194,11 @@ async function rgExport(fmt){const bytes=fmt==='xlsx'?buildXlsx():buildPdf(),typ
 Object.assign(ACT,{
  'rg-pause':a=>rgPauseModal(+a.dataset.h),'rg-pause-do':a=>rgPauseStart(+a.dataset.h),
  'rg-excl':a=>rgExclModal(+a.dataset.m),'rg-excl-do':a=>{const i=$('[data-rgx]');if(!i||i.value.trim().toUpperCase()!=='EXCLUSION')return;rgExcludeStart(+a.dataset.m);},
- 'rg-pend-cancel':a=>{delete rg().pend[a.dataset.k];save();render(false);toast({icon:'shield',title:_t("Changement annulé"),dur:2000});},
+ 'rg-pend-cancel':a=>{const fin=()=>{render(false);toast({icon:'shield',title:_t("Changement annulé"),dur:2000});};if(SRV()){srvRg('api_rg_pend_cancel',{p_k:a.dataset.k},fin);return;}delete rg().pend[a.dataset.k];save();fin();},
  'rg-export':a=>rgExport(a.dataset.f)
 });
 Object.assign(VIEWS,{responsable:vRG});PROTECTED.add('responsable');TITLES.responsable=_t("Jeu responsable");
-{const live=fn=>()=>{if(!document.hidden)fn();};setInterval(live(rgTick),30000);}
+{const live=fn=>()=>{if(!document.hidden)fn();};planifier('jeu responsable : échéances locales',30000,live(rgTick));}
 
 /* ---------- Langue et réglages supplémentaires de l'onglet Paramètres ---------- */
 function langBtnsH(){return Object.keys(LANGS).map(k=>`<button type="button" class="${k===LANG?'on':''}" data-a="lang-set" data-v="${k}" lang="${k}" dir="${LANGS[k].dir}">${LANGS[k].n}</button>`).join('');}

@@ -21,7 +21,7 @@ const numIn=v=>F.parse(v);
 const mePrefs=()=>Object.assign({},PREF_DEF,S.me.prefs||{});
 const mePublic=()=>!!mePrefs().public;
 const meCopyOk=()=>{const p=mePrefs();return !!(p.public&&p.copyok);};
-const uPub=u=>u==='me'?mePublic():!!USERS[u]&&USERS[u].pub!==0;
+const uPub=u=>u==='me'?mePublic():!!USERS[u]&&userOf(u).pub!==0;
 const canSeeProfile=u=>uPub(u)||friendsOf().includes(u);
 /* Un joueur est copiable s'il est public, autorise la copie et a un historique suffisant. */
 function copyElig(u){const U=USERS[u];if(!U)return {ok:false,why:'none'};if(!uPub(u))return {ok:false,why:'private'};if(U.cp===0)return {ok:false,why:'off'};if(U.bets<COPY.MIN_BETS)return {ok:false,why:'few'};return {ok:true};}
@@ -55,7 +55,7 @@ function cUnreal(c){let v=0;for(const h of c.holds){const m=MK[h.m];if(!m)contin
 const cPnl=c=>c.status==='stopped'?c.endPnl:c.realized+cUnreal(c);
 const cFree=c=>Math.max(0,c.budget+c.realized-cOpen(c));
 const logC=(c,e)=>{e.at=now();c.log.unshift(e);c.log=c.log.slice(0,30);};
-function copyTagH(p){for(const c of copiesLive()){if(c.holds.some(h=>h.m===p.m&&h.s===p.s))return ` <span class="cptag">${ic('copy',10)} ${esc(USERS[c.u].n)}</span>`;}return '';}
+function copyTagH(p){for(const c of copiesLive()){if(c.holds.some(h=>h.m===p.m&&h.s===p.s))return ` <span class="cptag">${ic('copy',10)} ${esc(userOf(c.u).n)}</span>`;}return '';}
 const copyCats=()=>[...new Set(MARKETS.map(m=>m.cat))];
 const cModeTxt=c=>c.mode==='prop'?`${_t("{0} % de sa mise{1}",[c.pct,c.cap?`${_t(", {0} max",[F.usd0(c.cap)])}`:''])}`:`${_t("{0} par pari",[F.usd(c.per)])}`;
 const cCatsTxt=c=>!c.cats||!c.cats.length?_t("Toutes les catégories"):c.cats.map(x=>_t(x)).join(', ');
@@ -86,7 +86,7 @@ function copyFire(u,m,s,traderAmt){
  if(!S.me.logged)return;let any=false;
  for(const c of copiesAll()){
   if(c.u!==u||c.status!=='active')continue;
-  const U=USERS[u],side=s==='oui'?_t("Oui"):_t("Non"),r=copyExec(c,m,s,traderAmt);
+  const U=userOf(u),side=s==='oui'?_t("Oui"):_t("Non"),r=copyExec(c,m,s,traderAmt);
   if(r.ok){any=true;logC(c,{k:'open',m:m.id,s,amt:r.amt});
    toast({tone:'blue',icon:'copy',title:`${_t("Copie de {0}",[U.n])}`,text:`${_t("{0} sur {1}, {2}",[F.usd(r.amt),side,m.short])}`,href:'#copie'});
    notif('copy',`${_t("Copie de {0} : {1} sur {2}, {3}.",[U.n,F.usd(r.amt),side,m.short])}`,'#copie');}
@@ -98,7 +98,7 @@ function copyFire(u,m,s,traderAmt){
 }
 /* Vend (en tout ou partie) un lot copié ; renvoie le résultat net du lot. */
 function copySell(c,h){
- const m=MK[h.m],U=USERS[c.u],p=S.me.positions.find(x=>x.m===h.m&&x.s===h.s),sh=Math.min(h.sh,p?p.sh:0);
+ const m=MK[h.m],U=userOf(c.u),p=S.me.positions.find(x=>x.m===h.m&&x.s===h.s),sh=Math.min(h.sh,p?p.sh:0);
  let pnl;
  if(sh>1e-6){
   const q=quoteSell(m,h.s,sh),sold=q.sh;
@@ -118,7 +118,7 @@ function copySell(c,h){
 /* Le joueur copié vend : les copies actives qui détiennent ce lot le vendent aussi. */
 function traderExit(u){
  const cs=copiesAll().filter(c=>c.u===u&&c.status==='active'&&c.holds.length);if(!cs.length)return;
- const c0=pick(cs),h0=pick(c0.holds),m=MK[h0.m],U=USERS[u],side=h0.s==='oui'?_t("Oui"):_t("Non");
+ const c0=pick(cs),h0=pick(c0.holds),m=MK[h0.m],U=userOf(u),side=h0.s==='oui'?_t("Oui"):_t("Non");
  addMsg('m:'+m.id,mkMsg({k:'evt',text:`${_t("{0} a vendu ses parts {1}",[U.n,side])}`}));
  let any=false;
  for(const c of cs){const h=c.holds.find(x=>x.m===h0.m&&x.s===h0.s);if(!h)continue;const pnl=copySell(c,h);any=true;logC(c,{k:'exit',m:m.id,s:h0.s,pnl});
@@ -132,7 +132,7 @@ function copyStop(c,why,close){
  if(c.status==='stopped')return;
  if(close)for(const h of c.holds.slice())copySell(c,h);
  c.endPnl=c.realized+cUnreal(c);c.kept=c.holds.length;c.holds=[];c.status='stopped';c.why=why;c.end=now();
- const U=USERS[c.u];
+ const U=userOf(c.u);
  if(why==='stop'){notif('copy',`${_t("Arrêt de perte atteint sur la copie de {0} : positions vendues, {1}.",[U.n,F.signed(c.endPnl)])}`,'#copie');toast({tone:'red',icon:'copy',title:`${_t("Arrêt de perte : {0}",[U.n])}`,text:`${_t("Copie arrêtée et positions vendues, {0}.",[F.signed(c.endPnl)])}`,href:'#copie',dur:6000});}
  updateHeader();save();copyRefresh();
 }
@@ -162,13 +162,13 @@ function botCopier(){
  if(!meCopyOk())return;const st=stats();if(st.settled<COPY.MIN_BETS)return;
  if(R()>(st.acc>=60?.6:st.acc>=52?.3:.1))return;
  const n=S.me.copiers||0;if(n>=250)return;S.me.copiers=n+1;const u=pickUser();
- notif('copy',`${_t("{0} copie désormais tes paris.",[USERS[u].n])}`,'#copie');toast({icon:'copy',title:`${_t("{0} te copie",[USERS[u].n])}`,text:`${_t("{0} joueur{1} tes paris. Tu touches {2} % de leurs frais.",[F.int(n+1),n+1>1?'s copient':' copie',sharePct()])}`,href:'#copie'});save();
+ notif('copy',`${_t("{0} copie désormais tes paris.",[userOf(u).n])}`,'#copie');toast({icon:'copy',title:`${_t("{0} te copie",[userOf(u).n])}`,text:`${_t("{0} joueur{1} tes paris. Tu touches {2} % de leurs frais.",[F.int(n+1),n+1>1?'s copient':' copie',sharePct()])}`,href:'#copie'});save();
 }
 
 /* ---------- Carte « Copier » sur un profil ---------- */
-function copyKpiH(u){const U=USERS[u],[al,ac]=accLabel(U.acc),n=copiersOf(u);return `<div class="cp-kpis"><div><small>${_t("Précision")}</small><b class="num">${F.pct(U.acc)}</b><span class="cp-chip ${ac}">${al}</span></div><div><small>${_t("Paris joués")}</small><b class="num">${F.int(U.bets)}</b></div><div><small>${_t("Profit de la saison")}</small><b class="num pl-up">+${F.usd0(U.profit)}</b></div></div>${n?`<p class="sub cp-copiers">${_t("{0} Copié par {1} joueur{2}. Il touche {3} % des frais de ses copieurs, sans surcoût pour eux.",[ic('users',14),F.int(n),n>1?'s':'',sharePct()])}</p>`:''}`;}
+function copyKpiH(u){const U=userOf(u),[al,ac]=accLabel(U.acc),n=copiersOf(u);return `<div class="cp-kpis"><div><small>${_t("Précision")}</small><b class="num">${F.pct(U.acc)}</b><span class="cp-chip ${ac}">${al}</span></div><div><small>${_t("Paris joués")}</small><b class="num">${F.int(U.bets)}</b></div><div><small>${_t("Profit de la saison")}</small><b class="num pl-up">+${F.usd0(U.profit)}</b></div></div>${n?`<p class="sub cp-copiers">${_t("{0} Copié par {1} joueur{2}. Il touche {3} % des frais de ses copieurs, sans surcoût pour eux.",[ic('users',14),F.int(n),n>1?'s':'',sharePct()])}</p>`:''}`;}
 function copyCardInner(u){
- const U=USERS[u],head=(t,s2)=>`<div class="cpx-h"><span class="cp-ic">${ic('copy',18)}</span><div><b>${t}</b><small>${s2}</small></div></div>`;
+ const U=userOf(u),head=(t,s2)=>`<div class="cpx-h"><span class="cp-ic">${ic('copy',18)}</span><div><b>${t}</b><small>${s2}</small></div></div>`;
  if(!uPub(u))return head(_t("Copie impossible"),_t("Ce profil est privé. Tu le vois parce que vous êtes amis, mais seuls les profils publics peuvent être copiés."));
  const el=copyElig(u),c=copyOf(u);
  if(!el.ok)return head(_t("Copie indisponible"),el.why==='off'?`${_t("{0} n’autorise pas la copie de ses paris.",[esc(U.n)])}`:`${_t("{0} n’a pas encore assez de paris ({1} minimum) pour être copié.",[esc(U.n),COPY.MIN_BETS])}`)+copyKpiH(u);
@@ -181,7 +181,7 @@ function copyCardInner(u){
 const copyCardH=u=>`<section class="pn pad cp-card" data-cpcard="${u}">${copyCardInner(u)}</section>`;
 
 /* ---------- Profil privé vu par un autre joueur ---------- */
-function vPlayerLocked(u){const U=USERS[u];
+function vPlayerLocked(u){const U=userOf(u);
  return `<div class="wrap"><section class="pn" style="overflow:hidden"><div class="pf-top"><div class="pf-id">${avH(u,88,'span')}<div><h1>${esc(U.n)}</h1><div class="pf-meta">${rk(U.t,U.d)}<span class="vis-chip priv">${_t("{0} Profil privé",[ic('lock',12)])}</span></div></div></div><div class="hbtns pl3">${friendBtnH(u)}${gateBtn('dm',ic('send',15)+_t(" Message privé"),'b-white',`data-u="${u}"`)}</div></div>
  <div class="pf-stats" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div><small>${_t("Rang")}</small><b class="num">${rankName(U.t,U.d)}</b></div><div><small>${_t("Classement")}</small><b class="num">${F.ord(lbRank(u))}</b></div></div></section>
  <section class="pn pad priv-lock">${ic('lock',28,'#7A808C')}<h2>${_t("Ce profil est privé")}</h2><p>${_t("{0} garde ses statistiques, ses positions et son historique pour lui. Son pseudo, son rang et sa place au classement restent visibles.",[esc(U.n)])}</p><p>${_t("Ses amis voient tout. Un profil privé ne peut pas être copié.")}</p></section></div>`;}
@@ -211,8 +211,8 @@ function cpSumH(st){const k=cpCheck(st);if(k.err)return `<p class="note warn">${
 /* C24 : tout le réglage en une phrase, juste au-dessus du bouton */
 function cpOneH(st,k){const prop=st.mode==='prop',money=v=>Math.abs(v-Math.round(v))<.005?F.usd0(v):F.usd(v);
  const size=prop?_t('{0} de sa mise',[F.pct(k.pct)])+(k.cap?_t(', {0} max par pari',[money(k.cap)]):''):_t('{0} par pari',[money(k.p)]);
- return _t('Tu copies {0} : budget {1}, {2}, {3}, {4}.',[`<b>${esc(USERS[st.u].n)}</b>`,money(k.b),size,st.cats.length?st.cats.map(c=>esc(_t(c))).join(', '):_t('toutes catégories'),st.stop?_t('arrêt à {0}',[F.pct(st.stop)]):_t('sans arrêt de perte')]);}
-function copyModalH(){const st=S.ui.cp,U=USERS[st.u],k=cpCheck(st),prop=st.mode==='prop',cats=copyCats();
+ return _t('Tu copies {0} : budget {1}, {2}, {3}, {4}.',[`<b>${esc(userOf(st.u).n)}</b>`,money(k.b),size,st.cats.length?st.cats.map(c=>esc(_t(c))).join(', '):_t('toutes catégories'),st.stop?_t('arrêt à {0}',[F.pct(st.stop)]):_t('sans arrêt de perte')]);}
+function copyModalH(){const st=S.ui.cp,U=userOf(st.u),k=cpCheck(st),prop=st.mode==='prop',cats=copyCats();
  return `<div class="md cpm"><div class="md-h"><div><p>${_t("Copy trading")}</p><h3>${st.edit?_t("Réglages de la copie de"):_t("Copier")} ${esc(U.n)}</h3></div><button class="x" data-a="close" aria-label="${_t("Fermer")}">${ic('x')}</button></div>
  <div class="cpm-who">${avH(st.u,42,'span')}<div><b>${esc(U.n)}</b><small>${_t("{0} % de précision, {1} paris, {2}",[U.acc,F.int(U.bets),rankName(U.t,U.d)])}</small></div></div>
  <div class="cpf"><label class="cpl" for="cpb">${_t("Budget alloué à cette copie")}</label><label class="amt"><input id="cpb" data-cp="budget" inputmode="decimal" autocomplete="off" value="${esc(st.budget)}"><span>USDC</span></label><div class="presets">${[500,1000,5000,25000].map(v=>`<button type="button" class="btn b-ghost sm${+st.budget===v?' on':''}" data-a="cp-set" data-k="budget" data-v="${v}">${F.compact(v)}</button>`).join('')}</div></div>
@@ -242,7 +242,7 @@ function copyStart(){
  copiesAll().unshift(c);S.ui.cp=null;closeModal();
  let n=0;
  if(withOpen)for(const b of playerBets(u)){const r=copyExec(c,b.m,b.s,b.amt);if(r.ok){n++;logC(c,{k:'open',m:b.m.id,s:b.s,amt:r.amt});}}
- const U=USERS[u];
+ const U=userOf(u);
  toast({tone:'blue',icon:'copy',title:`${_t("Tu copies {0}",[U.n])}`,text:n?`${_t("{0} position{1} copiée{1}. Ses prochains paris seront copiés automatiquement.",[n,n>1?'s':''])}`:_t("Ses prochains paris seront copiés automatiquement."),href:'#copie'});
  notif('copy',`${_t("Tu copies maintenant {0} (budget {1}, {2}).",[U.n,F.usd0(k.b),cModeTxt(c)])}`,'#copie');
  if(!S.me.copyXP){S.me.copyXP=1;gainXP(15);}
@@ -250,7 +250,7 @@ function copyStart(){
 }
 
 /* ---------- Gérer / arrêter une copie ---------- */
-function copyManageH(c){const U=USERS[c.u],pnl=cPnl(c);
+function copyManageH(c){const U=userOf(c.u),pnl=cPnl(c);
  const holds=c.holds.map(h=>{const m=MK[h.m],pr=h.s==='oui'?m.p:100-m.p,v=h.sh*pr/100-h.cost;return `<a class="prow cp-hold" href="#marche-${m.id}" data-a="close"><span class="nm">${esc(m.short)}</span><span class="sub"><span class="sidechip ${h.s}">${h.s==='oui'?_t("Oui"):_t("Non")}</span> ${F.usd(h.cost)}</span><b class="num ${plc(v)}">${F.signed(v)}</b></a>`;}).join('');
  return `<div class="md cpm"><div class="md-h"><div><p>${_t("Copy trading, {0}",[c.status==='paused'?_t('en pause'):_t('active')])}</p><h3>${esc(U.n)}</h3></div><button class="x" data-a="close" aria-label="${_t("Fermer")}">${ic('x')}</button></div>
  <div class="cp-kpis"><div><small>${_t("Résultat")}</small><b class="num ${plc(pnl)}">${F.signed(pnl)}</b></div><div><small>${_t("Paris copiés")}</small><b class="num">${F.int(c.n)}</b></div><div><small>${_t("En jeu")}</small><b class="num">${F.usd0(cOpen(c))}</b></div></div>
@@ -260,7 +260,7 @@ function copyManageH(c){const U=USERS[c.u],pnl=cPnl(c);
 function copyManage(id){const c=copiesAll().find(x=>x.id===id);if(!c||c.status==='stopped')return;openModal(copyManageH(c),'wide');}
 
 /* ---------- Page « Copy trading » ---------- */
-function copyRowH(c){const U=USERS[c.u],pnl=cPnl(c),st=c.status,
+function copyRowH(c){const U=userOf(c.u),pnl=cPnl(c),st=c.status,
  stl=st==='active'?_t("Active"):st==='paused'?_t("En pause"):c.why==='stop'?_t("Arrêt de perte"):_t("Arrêtée"),
  last=c.log.find(e=>e.k==='open'||e.k==='exit'),lm=last&&MK[last.m]?`${F.kv(last.k==='open'?_t('Copié'):_t('Vendu'),esc(MK[last.m].short))}, ${ago(last.at)}`:_t("Aucun pari copié pour l’instant");
  return `<div class="cp-row ${st}"><a class="cp-who" href="#joueur-${c.u}">${avH(c.u,42,'span')}<span><b>${esc(U.n)}</b><small>${cModeTxt(c)} · ${cCatsTxt(c)}</small></span></a><span class="cp-st ${st}">${stl}</span>
@@ -272,11 +272,11 @@ function copiersSectionH(){const n=S.me.copiers||0,e=S.me.copyEarn||0,ok=meCopyO
 function copyBodyH(){
  const L=copiesAll(),live=L.filter(c=>c.status!=='stopped'),old=L.filter(c=>c.status==='stopped');
  const alloc=live.reduce((a,c)=>a+c.budget,0),pnl=L.reduce((a,c)=>a+cPnl(c),0);
- const top=USER_IDS.filter(u=>copyElig(u).ok&&!copyOf(u)).sort((a,b)=>USERS[b].acc-USERS[a].acc).slice(0,6);
+ const top=USER_IDS.filter(u=>copyElig(u).ok&&!copyOf(u)).sort((a,b)=>userOf(b).acc-userOf(a).acc).slice(0,6);
  return `<section class="pn pad"><div class="cp-kpis big"><div><small>${_t("Copies actives")}</small><b class="num">${live.length}</b></div><div><small>${_t("Budget alloué")}</small><b class="num">${F.usd0(alloc)}</b></div><div><small>${_t("Résultat total")}</small><b class="num ${plc(pnl)}">${F.signed(pnl)}</b></div></div></section>
  <section class="pn pad"><div class="h2" style="margin-bottom:6px">${_t("Mes copies")}</div>${live.length?live.map(copyRowH).join(''):`<div class="empty" style="padding:18px 0">${_t("Tu ne copies personne pour l’instant. Ouvre un profil public à forte précision et touche « Copier automatiquement ».")}<div class="emp-a"><a class="btn b-white sm" href="#classement">${_t("Voir le classement")}</a></div></div>`}</section>
  ${copiersSectionH()}
- <section class="pn pad"><div class="ph" style="margin-bottom:6px"><div><div class="h2">${_t("Joueurs à copier")}</div><div class="sub">${_t("Profils publics qui autorisent la copie, classés par précision.")}</div></div><a class="link" href="#classement" style="font-size:13px">${_t("Classement")}</a></div>${top.map(u=>{const U=USERS[u],[al,ac]=accLabel(U.acc);return `<a class="cp-pick" href="#joueur-${u}">${avH(u,38,'span')}<span class="cpk-n"><b>${esc(U.n)}</b>${rk(U.t,U.d)}</span><span class="cpk-a"><b class="num">${F.pct(U.acc)}</b><span class="cp-chip ${ac}">${al}</span></span><span class="cpk-p num pl-up">+${F.usd0(U.profit)}</span></a>`;}).join('')||`<p class="sub">${_t("Aucun joueur à copier pour l’instant.")}</p>`}</section>
+ <section class="pn pad"><div class="ph" style="margin-bottom:6px"><div><div class="h2">${_t("Joueurs à copier")}</div><div class="sub">${_t("Profils publics qui autorisent la copie, classés par précision.")}</div></div><a class="link" href="#classement" style="font-size:13px">${_t("Classement")}</a></div>${top.map(u=>{const U=userOf(u),[al,ac]=accLabel(U.acc);return `<a class="cp-pick" href="#joueur-${u}">${avH(u,38,'span')}<span class="cpk-n"><b>${esc(U.n)}</b>${rk(U.t,U.d)}</span><span class="cpk-a"><b class="num">${F.pct(U.acc)}</b><span class="cp-chip ${ac}">${al}</span></span><span class="cpk-p num pl-up">+${F.usd0(U.profit)}</span></a>`;}).join('')||`<p class="sub">${_t("Aucun joueur à copier pour l’instant.")}</p>`}</section>
  ${old.length?`<section class="pn pad"><div class="h2" style="margin-bottom:6px">${_t("Copies terminées")}</div>${old.slice(0,8).map(copyRowH).join('')}</section>`:''}`;}
 function vCopy(){
  const lock=!can('copy'),L=lock?conds(GATES.copy.t):[],r=myRank();
@@ -300,19 +300,19 @@ Object.assign(ACT,{
  'cp-stop-set':a=>{const st=S.ui.cp;if(!st)return;st.stop=+a.dataset.v;copyModalSync();},
  'cp-start':()=>copyStart(),
  'cp-manage':a=>copyManage(a.dataset.id),
- 'cp-pause':a=>{const c=copiesAll().find(x=>x.id===a.dataset.id);if(!c||c.status==='stopped')return;c.status=c.status==='paused'?'active':'paused';save();toast({icon:'copy',title:c.status==='paused'?`${_t("Copie de {0} en pause",[USERS[c.u].n])}`:`${_t("Copie de {0} reprise",[USERS[c.u].n])}`,text:c.status==='paused'?_t("Ses nouveaux paris ne sont plus copiés, tes positions restent ouvertes."):_t("Ses prochains paris seront copiés."),force:true,dur:2600});const md=a.closest('.modal');if(md){md.innerHTML=copyManageH(c);fixText(md);}copyRefresh();},
- 'cp-stop':a=>{const c=copiesAll().find(x=>x.id===a.dataset.id);if(!c||c.status==='stopped')return;const U=USERS[c.u],n=c.holds.length;
+ 'cp-pause':a=>{const c=copiesAll().find(x=>x.id===a.dataset.id);if(!c||c.status==='stopped')return;c.status=c.status==='paused'?'active':'paused';save();toast({icon:'copy',title:c.status==='paused'?`${_t("Copie de {0} en pause",[userOf(c.u).n])}`:`${_t("Copie de {0} reprise",[userOf(c.u).n])}`,text:c.status==='paused'?_t("Ses nouveaux paris ne sont plus copiés, tes positions restent ouvertes."):_t("Ses prochains paris seront copiés."),force:true,dur:2600});const md=a.closest('.modal');if(md){md.innerHTML=copyManageH(c);fixText(md);}copyRefresh();},
+ 'cp-stop':a=>{const c=copiesAll().find(x=>x.id===a.dataset.id);if(!c||c.status==='stopped')return;const U=userOf(c.u),n=c.holds.length;
   openModal(`<div class="md"><div class="md-h"><div><h3>${_t("Arrêter la copie de {0} ?",[esc(U.n)])}</h3><p>${n?`${_t("Ses prochains paris ne seront plus copiés. Que fais-tu des {0} position{1} copiée{1} encore ouverte{1} ?",[n,n>1?'s':''])}`:_t("Ses prochains paris ne seront plus copiés.")}</p></div><button class="x" data-a="close" aria-label="${_t("Fermer")}">${ic('x')}</button></div>
   ${n?`<button class="btn b-ink lg full" data-a="cp-stop-do" data-id="${c.id}" data-close="0">${_t("Arrêter et garder mes positions")}</button><button class="btn b-white lg full" data-a="cp-stop-do" data-id="${c.id}" data-close="1">${_t("Arrêter et tout vendre au prix du marché")}</button>`:`<button class="btn b-ink lg full" data-a="cp-stop-do" data-id="${c.id}" data-close="0">${_t("Arrêter la copie")}</button>`}
   <button class="btn b-ghost lg full" data-a="close">${_t("Annuler")}</button></div>`);},
- 'cp-stop-do':a=>{const c=copiesAll().find(x=>x.id===a.dataset.id);if(!c)return;const close=a.dataset.close==='1';copyStop(c,'manual',close);closeModal();toast({icon:'check',force:true,title:`${_t("Copie de {0} arrêtée",[USERS[c.u].n])}`,text:close?`${_t("Positions vendues, {0}.",[F.signed(c.endPnl)])}`:c.kept?`${_t("{0} position{1} dans ton portefeuille.",[c.kept,c.kept>1?'s restent ouvertes':' reste ouverte'])}`:'',dur:3200});},
+ 'cp-stop-do':a=>{const c=copiesAll().find(x=>x.id===a.dataset.id);if(!c)return;const close=a.dataset.close==='1';copyStop(c,'manual',close);closeModal();toast({icon:'check',force:true,title:`${_t("Copie de {0} arrêtée",[userOf(c.u).n])}`,text:close?`${_t("Positions vendues, {0}.",[F.signed(c.endPnl)])}`:c.kept?`${_t("{0} position{1} dans ton portefeuille.",[c.kept,c.kept>1?'s restent ouvertes':' reste ouverte'])}`:'',dur:3200});},
  'pe-vis':a=>{if(!S.ui.pe)return;S.ui.pe.prefs.public=a.dataset.v==='pub';const el=$('[data-pepriv]');if(el){el.outerHTML=privSectionH();fixText($('[data-pepriv]'));}peRefresh();}
 });
 Object.assign(VIEWS,{copie:vCopy});PROTECTED.add('copie');TITLES.copie=_t("Copy trading");
 
 /* Minuteurs : arrêts de perte, paris des joueurs copiés, nouveaux copieurs. */
 {const live=fn=>()=>{if(!document.hidden&&S.me.logged)fn();};
- setInterval(live(copyGuard),4000);setInterval(live(copyDriver),20000);setInterval(live(botCopier),52000);}
+ planifier('copie : arrêts de perte',4000,live(copyGuard));planifier('copie : mises des joueurs copiés',20000,live(copyDriver));planifier('copie : faux copieurs',52000,live(botCopier));}
 
 /* D10 : le bouton du montant choisi reste marqué, y compris quand le montant est saisi au clavier */
 function stkMark(sel,v){$$(sel).forEach(b=>b.classList.toggle('on',+b.dataset.v===+F.parse(String(v))));}
