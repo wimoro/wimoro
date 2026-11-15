@@ -81,3 +81,37 @@ test('un salon pas encore relié (clan, privé) est annoncé comme tel : aucun m
   expect(await appels(page, 'api_chat_send')).toEqual([]);
   expect(await lire(page, () => Object.values(S.rooms).reduce((n, r) => n + r.msgs.length, 0))).toBe(0);
 });
+
+test('K26 · message d’un bot : un gabarit et ses paramètres, composé dans la langue du lecteur', async ({ page }) => {
+  const BOT1 = '77777777-7777-4777-8777-000000000001', BOT2 = '77777777-7777-4777-8777-000000000002';
+  const bot = n => ({ ...FICHE, n, bot: true });
+  const histo = [{ id: 'b1', u: BOT1, k: 'msg', text: '', at: Date.now() - 120000, tpl: { g: 'G', i: 1, m: 'btc150k', p: 63, s: 1 } }];
+  const { erreurs } = await ouvrir(page, { mode: 'compte', hash: '#chat', faux: { chat: { general: histo }, fiches: { [BOT1]: bot('maxou_bot'), [BOT2]: bot('nina_bot') } } });
+  const textes = () => lire(page, () => room('general').msgs.map(x => [userOf(x.u).n, x.text]));
+  await expect.poll(async () => (await textes()).length).toBe(1);
+  const [[auteur, anglais]] = await textes();
+  expect(auteur).toBe('maxou_bot');
+  expect(anglais).toContain('#btc150k'); expect(anglais).toContain('63'); expect(anglais).not.toMatch(/[{}]/);
+  expect(anglais).not.toContain('c’est donné');                                              // anglais par défaut : pas le texte français
+  // en direct : un autre bot, un autre marché ; un gabarit sur un marché inconnu de l'écran est ignoré
+  await page.evaluate(([u, f]) => { __fakeSB.emit('salon:general', 'msg', { id: 'b2', u, k: 'msg', text: '', at: Date.now(), tpl: { g: 'G', i: 10002, m: 'clasico', p: 54.3, s: 0 }, f });
+    __fakeSB.emit('salon:general', 'msg', { id: 'b3', u, k: 'msg', text: '', at: Date.now(), tpl: { g: 'G', i: 3, m: 'marche-inconnu', p: 50, s: 0 }, f }); }, [BOT2, bot('nina_bot')]);
+  await expect.poll(async () => (await textes()).length).toBe(2);
+  expect((await textes())[1][0]).toBe('nina_bot'); expect((await textes())[1][1]).toContain('#clasico');
+  // le même historique, lu en français
+  await page.evaluate(() => { localStorage.setItem('wimoro-lang', 'fr'); }); await page.reload(); await pret(page);
+  await expect.poll(async () => (await textes()).length).toBe(1);
+  expect((await textes())[0][1]).toMatch(/^#btc150k à 63\s?%, c’est donné\.$/);
+  // un gabarit de salon de marché : phrases du marché puis phrases génériques, côté et prix fournis par le serveur
+  expect(await lire(page, () => [srvBotTexte({ g: 'M', i: MLINES.btc150k.length, m: 'btc150k', p: 63, s: 0 }), srvBotTexte({ g: 'M', i: MLINES.btc150k.length + 8, m: 'btc150k', p: 63, s: 1 })]))
+    .toEqual(['Je renforce Non ici.', 'Ceux qui ont vendu à 60 doivent regretter.']);
+  expect(erreurs).toEqual([]);
+});
+
+test('K26 · les salons regardés sont rappelés au serveur avec le signal de présence', async ({ page }) => {
+  await ouvrir(page, { mode: 'compte', hash: '#chat', horloge: Date.UTC(2026, 10, 15, 12) });
+  await page.clock.runFor(241000);
+  const vus = await appels(page, 'api_chat_seen');
+  expect(vus.length).toBeGreaterThan(0);
+  expect(vus[0].p_rooms).toContain('general');
+});

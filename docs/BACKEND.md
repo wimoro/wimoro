@@ -49,6 +49,7 @@ avec la même clé, l'opération n'est appliquée qu'une fois et renvoie le mêm
 | `api_rg_pause(heures)`, `api_rg_exclude(mois)` | joueur | pause ; auto-exclusion |
 | `api_mission_claim(id)` | joueur | récupérer les XP d'une mission terminée |
 | `api_chat_history(salon)` | joueur | les 60 derniers messages d'un salon public et la fiche de leurs auteurs |
+| `api_chat_seen(salons)` | joueur | « j'ai toujours ces salons à l'écran » : les bots ne parlent que là où quelqu'un lit |
 | `api_chat_send(salon, texte)` | joueur | écrire dans le salon général ou celui d'un marché ; anti-spam ; diffusé aux lecteurs du salon |
 | `api_dm_send(joueur, texte)`, `api_dm_history(joueur)`, `api_dm_list()` | joueur | messages privés entre amis (rang Bronze pour écrire) ; conversations de leurs deux participants seulement |
 | `api_leaderboard()` | joueur | les 50 meilleurs gains (fiches publiques, vrais joueurs et bots) |

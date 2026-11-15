@@ -203,8 +203,10 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 - [ ] Limite : écrire en privé demande le rang Bronze (300 XP et 3 paris réglés), comme à l'écran ; le scénario complet
       entre deux vrais comptes neufs n'a donc pas pu être joué de bout en bout (il l'est côté base et avec le faux serveur).
 - [ ] Cartes de mise et d'analyse, réactions, « suivre cette mise ». Mentions et citations de marché : affichées.
-- [ ] Messages des bots dans le chat (gabarit + paramètres, traduits chez le lecteur) : en mode Compte, le chat ne
-      contient pour l'instant que les messages des vrais joueurs.
+- [x] Messages des bots dans le chat (K26) : le serveur envoie un gabarit et ses paramètres, l'écran compose la phrase
+      dans la langue du lecteur. Les bots ne parlent que dans les salons qu'un joueur regarde ; un salon s'ouvre avec six
+      messages récents ; aucune ligne créée (anneau de 30 messages par salon). _Tests_ `tests/sql/chat-bots.spec.mjs`,
+      `tests/compte/chat.spec.mjs`, `tests/e2e/comptes.spec.mjs` (un message de bot arrive en direct, sur le vrai serveur).
 
 ### 4.6 Social
 - [x] Amis : recherche d'un joueur par son pseudo (`api_users_search`), demande, annulation, acceptation, refus, retrait
@@ -252,7 +254,7 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
       durée » : 3 échecs sur 3 sans le correctif, 3 succès sur 3 avec). Migration `bots_ancres`.
 - [ ] Purge du journal de pg_cron (30 000 lignes, 6 Mo par jour) : migration `purge_journal_cron` prête, **attend ta
       confirmation** (voir « À faire par l'humain »).
-- [ ] Messages des bots dans le chat, en gabarit + paramètres (K26) : voir 4.5.
+- [x] Messages des bots dans le chat, en gabarit + paramètres (K26) : voir 4.5.
 - [ ] Marche/arrêt et intensité depuis le panel admin. _Recette 9._ Le réglage existe déjà côté serveur
       (`wm.config`, clé « bots » : `actif`, `intensite` de 0 à 3) ; il reste à le poser dans le panel.
 
@@ -304,6 +306,7 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 | Comptes de test | 27 supprimés au lieu des 21 annoncés. | Les 6 de plus venaient de mes deux vérifications du jour, même adresse `wimoro-e2e-…@example.com`. Aucun vrai compte touché (20 avant, 20 après). |
 | Comptes de test à l'avenir | Chaque compte de test se supprime lui-même à la fin de la suite (`api_test_end`). | Plus rien ne s'accumule dans la vraie base ; la fonction refuse toute adresse qui n'est pas une adresse de test. |
 | Branche de travail | On garde `fix/harmonisation-front-back` ; une pull request par lot. | C'est la branche fixée au départ ; chaque fusion reste annulable séparément. |
+| Bots dans le chat | Ils ne parlent que dans les salons regardés (signalés par l'écran), environ un message toutes les 7 secondes ; leurs messages vivent dans un anneau de 30 par salon, pas dans la table des messages. | Un chat vivant là où quelqu'un lit, sans faire grossir la base ni exiger de purge. |
 | Protection de `main` | Non activée. | Elle changerait ta façon de publier ; elle reste proposée, facultative. |
 
 ## À faire par l'humain
@@ -334,3 +337,4 @@ Rien d'obligatoire. Le détail et les constats sont dans `docs/EXPLOITATION.md`,
 | 15 nov. 2026 | 4.5 (suite) : messages privés entre amis et sujet temps réel privé par joueur ; notifications en direct. | migration `messages_prives` (empreinte identique) ; 166 tests (73 SQL) ; 8 tests de bout en bout contre le vrai back |
 | 15 nov. 2026 | 4.6 (suite) : classement servi par le serveur. | migration `classement` (empreinte identique) ; 168 tests (74 SQL) |
 | 15 nov. 2026 | Mise en ligne : pull request n° 1 fusionnée, wimoro.com vérifié (Démo, Compte, trois langues). Ancienne API fermée après contrôle des journaux. Purge horaire du journal de pg_cron. 27 comptes de test supprimés ; la suite nettoie désormais derrière elle. | fusion `13f224e` ; migrations `purge_journal_cron`, `fermeture_ancienne_api`, `comptes_test` (empreintes identiques) ; 174 tests (77 SQL) ; 9 scénarios contre le site en ligne, avant et après la fermeture |
+| 16 nov. 2026 | 4.5 (fin) : messages des bots dans le chat, en gabarit + paramètres. | migration `chat_bots` (empreinte identique) ; 180 tests (81 SQL) ; 9 scénarios de bout en bout contre le vrai back |

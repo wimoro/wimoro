@@ -234,6 +234,13 @@ test('recette 5 · chat : A écrit dans le salon général puis dans celui d’u
   await expect(b.locator('.feed[data-room="m:clasico"] .msg', { hasText: marche })).toHaveCount(1, { timeout: 15000 });
   await expect(b.locator('.feed[data-room="m:clasico"] .msg', { hasText: marche }).locator('.un')).toHaveText(PSEUDO);
 
+  // K26 : les bots parlent dans le salon regardé — six messages d'amorce au moins, en vraies phrases, puis un nouveau en direct
+  const bots = () => lire(b, () => room('m:clasico').msgs.filter(x => x.u !== 'me' && (USERS[x.u] || {}).bot).map(x => x.text));
+  await expect.poll(async () => (await bots()).length, { timeout: 15000 }).toBeGreaterThanOrEqual(6);
+  const dejaLa = await bots();
+  for (const t of dejaLa) { expect(t.length).toBeGreaterThan(3); expect(t).not.toMatch(/[{}]/); }
+  await expect.poll(async () => (await bots()).length, { timeout: 60000 }).toBeGreaterThan(dejaLa.length);
+
   // l'anti-spam du serveur : deux messages coup sur coup, le second est refusé
   const refus = await a.evaluate(async () => { try { await API.call('api_chat_send', { p_room: 'm:clasico', p_text: 'trop vite' }); await API.call('api_chat_send', { p_room: 'm:clasico', p_text: 'trop vite, encore' }); return 'accepté'; } catch (e) { return e.code; } });
   expect(['trop_vite', 'accepté']).toContain(refus); expect(refus).toBe('trop_vite');
