@@ -54,3 +54,12 @@ export async function aller(page, ecran) {
 
 /** Lit une valeur de l'application (S, MK, G… sont des variables globales du site). */
 export const lire = (page, fn, arg) => page.evaluate(fn, arg);
+
+/**
+ * Ferme le popup « nouveau rang » s'il s'affiche. Il arrive 450 ms après un gain d'XP et recouvre la page : sur une
+ * machine lente, il peut tomber juste avant un clic du test.
+ */
+export async function fermerRang(page, attente = 1500) {
+  await page.locator('.rankup').waitFor({ state: 'visible', timeout: attente }).catch(() => {});
+  if (await page.locator('.rankup').count()) { await page.keyboard.press('Escape'); await expect(page.locator('.rankup')).toHaveCount(0); }
+}

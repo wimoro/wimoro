@@ -45,7 +45,6 @@ const GAMES=[
 ];
 const GM={};GAMES.forEach((d,i)=>{GM[d.id]=d;d.i=i;});
 const FCL={'Sport live':'Sport'};
-function mkPool(d){const ev=d.kind==='event',tot=300+Math.round(FRND()*200);let o,n;if(ev){o=Math.round(tot*d.p);n=tot-o;}else{o=140+Math.round(FRND()*220);n=140+Math.round(FRND()*220);}const e=Math.max(8,Math.round((o+n)*(ev?d.bep:.035)*(.7+FRND()*.6)));return {o,n,e};}
 /* probabilité du break even d'un jeu : événement = bep annoncé ; prix = marche aléatoire (pas de 250 ms sur 45 s) dans la bande ±be */
 const beP=d=>d.kind==='event'?d.bep:beProb(d.be,d.kind==='vol'?GM.btc.k:d.k,FDUR/250);
 /* cote break even du jeu (bloquée à la mise), et texte « ×24 » */
@@ -65,21 +64,16 @@ const FEPOCH=Date.UTC(2026,10,1),FTICK=250,FK=FDUR/FTICK,FPHI=.985,FJ=1200;
 let FSKEW=0;/* décalage d'horloge, réservé aux tests */
 const fNow=()=>now()+FSKEW;
 const fRound=t=>Math.floor((t-FEPOCH)/FDUR)+1,fT0=r=>FEPOCH+(r-1)*FDUR;
-const FHS={};
-const fSeed=(d,r,salt)=>((FHS[d.id+salt]||(FHS[d.id+salt]=hash(d.id+salt)))^Math.imul(r|0,0x9E3779B1))>>>0;
-const fZ=(d,r)=>{const g=rng(fSeed(d,r,'z'));return (g()+g()+g()+g()-2)*1.7320508;};
+/* Le calcul déterministe (graines, niveaux, trajectoires, issues, cagnottes) vit dans js/moteur-eclair.js, module pur que
+   le serveur utilise à l'identique pour régler les mises en mode Compte. Ce fichier-ci garde l'affichage et l'état. */
+const fSeed=MoteurEclair.graine;
 /* niveau d'un actif (logarithme du prix rapporté à son prix de base) au début de la manche r :
    somme amortie des aléas des manches précédentes, donc bornée et identique pour tous */
-const FLV={};
-function fLevel(d,r){const c=FLV[d.id]||(FLV[d.id]={});if(c[r]!==undefined)return c[r];const sd=d.k*Math.sqrt(FK/12);let L;
- if(c[r-1]!==undefined)L=FPHI*c[r-1]+sd*fZ(d,r);else{L=0;let w=1;for(let j=0;j<FJ;j++){L+=w*fZ(d,r-j);w*=FPHI;}L*=sd;}
- c[r]=L;return L;}
+const fLevel=MoteurEclair.niveau;
 /* trajectoire d'une manche (un prix par tick de 250 ms) : marche aléatoire semée, recalée pour finir au niveau de la manche suivante */
-function fPlan(d,r){const g=rng(fSeed(d,r,'w')),W=new Float64Array(FK+1);for(let k=1;k<=FK;k++)W[k]=W[k-1]+(g()-.5)*d.k;
- const a=fLevel(d,r),b=fLevel(d,r+1),P=new Float64Array(FK+1);for(let k=0;k<=FK;k++)P[k]=d.p0*Math.exp(a+(b-a)*k/FK+W[k]-W[FK]*k/FK);return P;}
+const fPlan=MoteurEclair.plan;
 /* issue d'une manche : 1 = premier côté, 0 = second, 2 = break even */
-function fOutcome(d,r){if(d.kind==='event'){const g=rng(fSeed(d,r,'o'));return g()<d.bep?2:(g()<d.p?1:0);}
- const s=d.kind==='vol'?GM.btc:d,a=fLevel(s,r),b=fLevel(s,r+1),m=Math.abs(Math.exp(b-a)-1);if(m<=d.be)return 2;return d.kind==='vol'?(m>FVOL?1:0):(b>a?1:0);}
+const fOutcome=MoteurEclair.issue;
 function fHistEntry(d,r){const out=fOutcome(d,r);let ch,path;
  if(d.kind==='event'){ch=out===1?.5:-.5;const g=rng(fSeed(d,r,'h'));let v=0;path=[0];for(let k=1;k<23;k++){v+=(g()-.5)*.3+ch/23;path.push(v);}path.push(ch);}
  else{const P=fPlan(d.kind==='vol'?GM.btc:d,r),st=Math.floor(FK/24);path=[];for(let k=0;k<FK;k+=st)path.push((P[k]/P[0]-1)*100);ch=(P[FK]/P[0]-1)*100;path.push(ch);}
@@ -87,7 +81,7 @@ function fHistEntry(d,r){const out=fOutcome(d,r);let ch,path;
 /* met un pari au début de la manche r : trajectoire, cagnotte de départ et tableau de score semés par la manche */
 const FPRE=40;/* ticks de la manche précédente rappelés au début du graphique (10 secondes) */
 function fTail(d){const g=G(d.id);if(!g.tail){const P=fPlan(d,S.flash.round-1);g.tail=Array.from(P.slice(FK-FPRE,FK));}return g.tail;}
-function fRoundInit(g,d,r){FRND=rng(fSeed(d,r,'p'));g.pool=mkPool(d);g.players=60+Math.floor(FRND()*70);g.my=null;g.bets=[];g.tk=0;g.tail=null;
+function fRoundInit(g,d,r){const dep=MoteurEclair.depart(d,r);FRND=dep.alea;g.pool=dep.pool;g.players=dep.players;g.my=null;g.bets=[];g.tk=0;g.tail=null;
  if(d.kind==='dir'){g.plan=fPlan(d,r);g.start=g.price=g.plan[0];g.path=[g.start];}
  if(d.mk){const b=d.mk();g.board=b.board;g.sub=b.sub;}
  FRND=Math.random;
@@ -96,10 +90,7 @@ function fRoundInit(g,d,r){FRND=rng(fSeed(d,r,'p'));g.pool=mkPool(d);g.players=6
 function fAdvance(d,g,r,k,live){
  for(let i=g.tk+1;i<=k;i++){
   if(d.kind==='dir'){g.price=g.plan[i];g.path.push(g.price);}
-  if(i*FTICK<FOPEN){const rr=rng((fSeed(d,r,'b')+i*7919)>>>0);
-   if(rr()<.5){let s;if(rr()<.05)s=2;else if(d.kind==='event')s=rr()<d.p?1:0;else{const P=(d.kind==='vol'?G('btc'):g).plan,m=Math.abs(P[i]/P[0]-1),o=m<=d.be?2:d.kind==='vol'?(m>FVOL?1:0):(P[i]>P[0]?1:0);s=rr()<.5+(o===1?.07:o===0?-.07:0)?1:0;}
-    const a=s===2?.1+rr()*.3:Math.pow(rr(),2);if(s===2){const st=Math.round(2+rr()*10),M=beMult(d);if(st*M>beRoom(g))s=rr()<.5?1:0;else{g.pool.e+=st;g.pool.eProm=(g.pool.eProm||0)+st*M;}}if(s!==2)g.pool[s?'o':'n']+=Math.round(5+a*260);if(rr()<.55)g.players++;
-    const b={s,a,me:0};g.bets.push(b);if(live&&d.id===S.ui.fgame)trailPush('flash',b);}}
+  {const b=MoteurEclair.mises(d,g,r,i,d.kind==='event'?null:(d.kind==='vol'?G('btc'):g).plan);if(b){g.bets.push(b);if(live&&d.id===S.ui.fgame)trailPush('flash',b);}}
   if(d.kind==='event')g.path.push(flashOdds(g));
  }
  if(k>g.tk)g.tk=k;}

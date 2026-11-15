@@ -1,7 +1,7 @@
 // Mode Démo, parcours complet d'un compte local : inscription simulée par portefeuille → onboarding en 5 étapes →
 // crédit de démonstration de 1 000 000 $ → achat → vente. C'est le comportement de référence du commit 3a1d258.
 import { test, expect } from '@playwright/test';
-import { ouvrir, lire } from '../helpers/app.mjs';
+import { ouvrir, lire, fermerRang } from '../helpers/app.mjs';
 
 test('compte local : inscription, onboarding, crédit démo, achat puis vente', async ({ page }) => {
   const { erreurs } = await ouvrir(page, { mode: 'visiteur', hash: '#inscription' });
@@ -22,6 +22,7 @@ test('compte local : inscription, onboarding, crédit démo, achat puis vente', 
   await suivant.click();
   await suivant.click();                                                             // « Récupérer mes 100 XP »
   await expect.poll(() => lire(page, () => S.me.xp)).toBe(100);
+  await fermerRang(page);                                                            // 100 XP : passage de rang
   await page.locator('[data-a="ob-next"]').click({ timeout: 4000 });                 // « Découvrir les marchés »
   await expect(page).toHaveURL(/#accueil/);
   expect(await lire(page, () => S.me.onboarded)).toBe(true);
@@ -41,6 +42,7 @@ test('compte local : inscription, onboarding, crédit démo, achat puis vente', 
   expect(apresAchat.prix).toBeGreaterThan(prixAvant);                                // l'achat de Oui fait monter le prix
 
   // Vente de toute la position
+  await fermerRang(page, 800);
   await ticket.locator('[data-a="tmode"][data-v="sell"]').click();
   await ticket.locator('[data-a="preset"][data-v="1"]').click();
   await ticket.locator('[data-a="sell"]').click();
