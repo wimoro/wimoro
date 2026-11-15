@@ -89,7 +89,7 @@ Les douze décisions de la mission sont appliquées telles quelles. Précisions 
 - [x] `tests/helpers/app.mjs` : ouvrir le site dans un mode et une langue donnés, collecter les erreurs console, figer l'horloge.
 - [x] Base embarquée pour les tests SQL (`tests/sql/base.mjs`, PGlite) : bouchons Supabase → baseline → migrations, en moins d'une seconde.
 - [x] Faux serveur aligné sur le contrat `api_*` ; tests de bout en bout contre le vrai back sur demande (`E2E=1`, projet `e2e`).
-- [ ] Intégration continue : `.github/workflows/tests.yml` sur chaque pull request.
+- [x] Intégration continue : `.github/workflows/tests.yml` sur chaque pull request (aucun secret nécessaire, actions épinglées).
 
 ### 3.2 Les trois bloquants
 
@@ -104,7 +104,7 @@ Les douze décisions de la mission sont appliquées telles quelles. Précisions 
       événements ; le premier rendu attend la session (3 s au plus, puis repli local ; écran clair si le serveur est injoignable).
 - [x] `boot.js` : une seule table de minuteurs (`planifier`), lancée selon le mode ; les modules y déclarent les leurs ;
       les décors de départ (messages d'exemple) passent par `SEMIS`, posés en mode local seulement.
-- [ ] Tableau des minuteurs et de leur sort dans `docs/ARCHITECTURE.md`.
+- [x] Tableau des minuteurs et de leur sort dans `docs/ARCHITECTURE.md` (§ 5).
 - [x] Suppression de `js/supabase.js` (plus aucun remplacement de fonction après coup) ; `js/serveur.js` porte la logique du
       mode serveur sans jamais toucher le client. _Tests_ `tests/compte/simulateurs.spec.mjs` (aucun accès direct aux tables),
       `tests/compte/garde.spec.mjs` (aucune action d'argent exécutée localement en mode serveur).
@@ -201,8 +201,11 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
       (1 000 000 $ par dépôt fictif). À resserrer quand le moteur éclair tournera aussi côté serveur (4.4).
 
 ### 4.8 Progression
-- [ ] XP, rangs, missions, badges, séries, notifications attribués par le serveur dans les RPC d'action.
-- [ ] Popup de rang une seule fois par rang et par compte.
+- [x] XP, rangs, missions, badges, notifications attribués par le serveur dans chaque fonction d'action déjà reliée
+      (bienvenue, pari, dépôt, mission réclamée) ; le navigateur n'en calcule plus aucun en mode Compte.
+- [x] Mission réclamée : `api_mission_claim`, une seule fois. _Recette 6._ _Tests_ `tests/sql/missions.spec.mjs`, `tests/compte/etat.spec.mjs`.
+- [x] Popup de rang une seule fois par rang et par compte (`api_rank_seen`).
+- [ ] Missions quotidiennes renouvelées chaque jour, séries de jours consécutifs : pas encore côté serveur.
 
 ## Phase 5 — Les 10 000 bots et le market making
 - [ ] Un seul peuple de bots, marqué comme tel, sans e-mail ; les 13 personnages d'origine en font partie (K27).
@@ -225,23 +228,30 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
       marchés ; modération du chat ; bots ; chiffres.
 
 ## Phase 7 — Sécurité
-- [ ] Relecture des policies une à une ; aucune écriture directe du client sur solde, positions, statistiques, marchés.
+- [x] Aucune écriture directe du client sur solde, positions, statistiques, dépôts, marchés (migration `securite_urgence_droits`,
+      tests `tests/sql/securite*.spec.mjs`, `argent.spec.mjs`). Le nettoyage des règles devenues inutiles attend ta confirmation.
 - [ ] Limites de fréquence sur le chat et les actions d'argent.
-- [ ] Advisors sans alerte ouverte, ou alertes restantes justifiées.
+- [ ] Advisors (relevé du 15 nov. 2026) : 50 alertes « fonction SECURITY DEFINER appelable » qui portent toutes sur les
+      **anciennes** fonctions, encore nécessaires à l'ancien site → fermées à la livraison par
+      `supabase/livraison/fermeture_ancienne_api.sql` ; 52 notes « RLS sans règle » volontaires (schéma `wm`, sauvegarde :
+      aucun accès client) ; 1 alerte « mots de passe compromis » (réglage du tableau de bord, offre payante).
 
 ## Phase 8 — Optimisation du front
-- [ ] Cache-busting systématique ; catalogue de la seule langue active ; Mode Pro chargé à la demande.
+- [x] Cache-busting systématique : `tools/version.mjs` (empreinte du contenu dans l'adresse de chaque fichier), vérifié par
+      l'intégration continue. Client Supabase en version précise, chargé seulement en mode Compte.
+- [ ] Catalogue de la seule langue active ; Mode Pro chargé à la demande.
 - [ ] Regroupement et minification pour la production, sans build en développement.
 - [ ] Mesure avant/après sur mobile.
 
 ## Phase 9 — Tests et recette
-- [ ] Suite Playwright sur chaque pull request ; comptes de test marqués et nettoyés.
-- [ ] Tests SQL des invariants : solde jamais négatif, paris simultanés, rejeu d'une même clé.
+- [x] Suite Playwright sur chaque pull request. Comptes de test marqués ; leur suppression attend ta confirmation.
+- [x] Tests SQL des invariants : solde jamais négatif, paris et retraits simultanés, rejeu d'une même clé, argent ni créé ni perdu.
 - [ ] Recette finale, 10 points, dans les deux modes.
 
 ## Phase 10 — Livraison
-- [ ] `README.md`, `docs/ARCHITECTURE.md`, `docs/BACKEND.md`, `docs/EXPLOITATION.md`.
-- [ ] Pull request vers `main`. Fusion seulement si la recette est verte.
+- [x] `README.md`, `docs/ARCHITECTURE.md`, `docs/BACKEND.md`, `docs/EXPLOITATION.md`.
+- [x] Pull request vers `main` ouverte. **Pas fusionnée** : la recette n'est pas entièrement verte (pari éclair, chat et
+      social ne sont pas encore reliés au serveur en mode Compte ; ils y sont annoncés comme indisponibles).
 - [ ] Vérification en production, en navigation privée.
 
 ---
@@ -260,7 +270,9 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
    `https://wimoro.com/**`.
 4. **Envoi des e-mails** : le service intégré est limité à quelques e-mails par heure. Pour de vrais utilisateurs,
    brancher un SMTP (Authentication → Emails → SMTP Settings).
-5. Plus tard : mode de publication GitHub Pages (à la livraison).
+5. **À la mise en ligne du nouveau site** : faire appliquer `supabase/livraison/fermeture_ancienne_api.sql` (voir
+   `docs/EXPLOITATION.md`, § 1).
+6. Facultatif : protéger la branche `main` sur GitHub (pull request et tests obligatoires).
 
 ## Journal
 
@@ -273,3 +285,4 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 | 15 nov. 2026 | 3.0 : trous de sécurité K01 à K13 fermés en production. Base de test embarquée. | migration `20261115032907_securite_urgence_droits` ; 13 tests SQL ; `tools/e2e/verif-securite.mjs` |
 | 15 nov. 2026 | 4.3 et phase 5 : moteur de marché côté serveur (portage exact de `js/engine.js`), achat et vente reliés, bots teneurs de marché avec veille, prix diffusés en direct. Les 27 marchés sont revenus à des prix sains. | migrations `marches_moteur`, `bots_marche`, `marches_precision`, `bots_veille` (empreintes identiques au dépôt) ; 99 tests (42 SQL) ; 4 tests de bout en bout contre le vrai back |
 | 15 nov. 2026 | 4.7 : argent fictif et KYC écrits par le serveur ; jeu responsable appliqué par le serveur. Recette 3 complète contre le vrai back : inscription → onboarding → dépôt → achat → rechargement → vente → reconnexion par pseudo depuis un autre navigateur. | migration `argent_demo` (empreinte identique) ; 117 tests (52 SQL) ; 4 tests de bout en bout |
+| 15 nov. 2026 | Mission réclamée côté serveur ; droits d'appel dérivés des fonctions `api_`. Anti-cache, intégration continue, documentation (README, architecture, back, exploitation). | migration `missions` ; `tools/version.mjs` ; `.github/workflows/tests.yml` ; 120 tests (54 SQL) |
