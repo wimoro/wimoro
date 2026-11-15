@@ -399,3 +399,37 @@ test('panel d’administration : un compte ordinaire est refusé par le vrai ser
   expect(await page.evaluate(async () => (await API.call('api_markets')).m.btc150k.st)).toBe('open');   // rien n'a bougé
   expect(erreurs).toEqual([]);
 });
+
+test('La Série : lancée, jouée et réglée par le vrai serveur ; la manche gagnée paie ce que l’écran annonce, l’encaissement arrive sur le solde', async ({ page }) => {
+  test.setTimeout(180000);
+  const erreurs = await ouvrirReel(page, '#connexion');
+  await page.locator('#le').fill(EMAIL); await page.locator('#lp').fill(MDP); await page.locator('form[data-form="login"] [type=submit]').click();
+  await expect(page).toHaveURL(/#accueil/, { timeout: 20000 }); await pret(page);
+  await page.evaluate(() => { location.hash = '#serie'; });
+  const solde0 = await lire(page, () => S.me.balance);
+  expect(solde0, 'le compte de test a encore de quoi miser').toBeGreaterThan(10);
+  await page.locator('[data-a="sr-stake"][data-v="5"]').click();
+  await page.locator('[data-a="sr-start"]').click();
+  await expect.poll(() => lire(page, () => S.me.serie && S.me.serie.state), { timeout: 20000 }).toBe('running');
+  expect(await lire(page, () => S.me.balance)).toBeCloseTo(solde0 - 5, 2);
+  // Le moteur est déterministe : l'écran peut calculer l'issue de la manche à partir de l'heure de début donnée par le serveur.
+  const prevu = await lire(page, () => { const s = S.me.serie, d = MoteurEclair.JEUX[s.gid]; return MoteurEclair.serieIssue(d, s.rStart + FSKEW); });
+  expect(prevu.p0, 'même prix de départ sur l’écran et sur le serveur').toBeCloseTo(await lire(page, () => S.me.serie.p0), 6);
+  await page.locator('[data-a="sr-play"][data-v="' + prevu.out + '"]').click();
+  await expect.poll(() => lire(page, () => S.me.serie.choice), { timeout: 20000 }).toBe(prevu.out);
+  const { mult, fee } = await lire(page, () => ({ mult: S.me.serie.mult, fee: S.me.serie.fee }));
+  expect(mult).toBeGreaterThan(1);
+  await page.reload(); await pret(page);                                                     // la série en cours survit au rechargement
+  expect(await lire(page, () => ({ etat: S.me.serie.state, choix: S.me.serie.choice }))).toEqual({ etat: 'running', choix: prevu.out });
+  await expect.poll(() => lire(page, () => S.me.serie.step), { timeout: 90000, intervals: [2000] }).toBe(2);   // fin de la manche : réglée par le serveur
+  const stack = await lire(page, () => S.me.serie.stack);
+  expect(stack).toBeCloseTo(Math.round((5 - fee) * mult * 100) / 100, 2);
+  expect(await lire(page, () => S.me.balance), 'rien n’est versé tant que la série continue').toBeCloseTo(solde0 - 5, 2);
+  await page.locator('[data-a="sr-cash"]').click();
+  await expect.poll(() => lire(page, () => S.me.serie.state), { timeout: 20000 }).toBe('cashed');
+  expect(await lire(page, () => S.me.balance)).toBeCloseTo(solde0 - 5 + stack, 2);
+  await page.reload(); await pret(page);
+  expect(await lire(page, () => ({ solde: S.me.balance, k: S.me.history[0].k, win: S.me.history[0].win }))).toMatchObject({ k: 'serie', win: true });
+  expect(await lire(page, () => S.me.balance)).toBeCloseTo(solde0 - 5 + stack, 2);
+  expect(erreurs).toEqual([]);
+});

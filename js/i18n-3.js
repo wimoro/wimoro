@@ -133,3 +133,13 @@ I18N_ADD("he",{
 "Ton solde a été crédité de {0} par l’équipe Wimoro.":"צוות Wimoro זיכה את היתרה שלך ב-{0}.",
 "Ton solde a été débité de {0} par l’équipe Wimoro.":"צוות Wimoro חייב את היתרה שלך ב-{0}."
 });
+I18N_ADD("en",{
+"Tu as déjà une série en cours.":"You already have a streak in progress.",
+"Cette série est terminée.":"This streak is over.",
+"Ton choix est déjà fait pour cette manche.":"You've already made your pick for this round."
+});
+I18N_ADD("he",{
+"Tu as déjà une série en cours.":"כבר יש לך רצף פעיל.",
+"Cette série est terminée.":"הרצף הזה הסתיים.",
+"Ton choix est déjà fait pour cette manche.":"כבר בחרת בסיבוב הזה."
+});

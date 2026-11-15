@@ -128,8 +128,10 @@ function serieStart(gid,stake){if(!S.me.logged)return false;if(typeof rgBlocked=
  if(stake>S.me.balance){toast({tone:'amber',icon:'wallet',title:_t("Solde insuffisant"),text:_t("Dépose des fonds pour continuer."),href:'#depot'});return false;}
  S.me.balance-=stake;S.me.played++;S.me.serie={gid,stake,stack:stake,step:0,state:'running',hist:[],at:now()};serieRoundStart(S.me.serie);updateHeader();save();gainXP(10);return true;}
 /* choisir Haut / Bas / Break even : seulement pendant la fenêtre de choix de la manche en cours */
-function seriePlay(side){const s=serieCur();if(!s||s.state!=='running'||s.choice!==null)return;if(!serieOpen(s)){toast({tone:'amber',icon:'lock',title:_t("Choix fermés"),text:`${_t("Le choix se fait dans les {0} premières secondes de la manche.",[SERIE.CHOICE_MS/1000])}`});return;}const d=GM[s.gid],M=serieMults(s.gid),rate=wmRate(d.cat,myRank().t>=5)*.5;s.choice=side;s.mult=M[side];s.fee=s.stack*rate;save();serieRefresh();}
-function serieEnd(){const s=serieCur();if(!s||s.state!=='running')return;const d=GM[s.gid],g=G(s.gid);
+function seriePlay(side){const s=serieCur();if(!s||s.state!=='running'||s.choice!==null)return;if(!serieOpen(s)){toast({tone:'amber',icon:'lock',title:_t("Choix fermés"),text:`${_t("Le choix se fait dans les {0} premières secondes de la manche.",[SERIE.CHOICE_MS/1000])}`});return;}if(SRV()){srvSerieChoisir(side);return;}                       /* mode Compte : la cote et les frais sont fixés par le serveur */
+ const d=GM[s.gid],M=serieMults(s.gid),rate=wmRate(d.cat,myRank().t>=5)*.5;s.choice=side;s.mult=M[side];s.fee=s.stack*rate;save();serieRefresh();}
+function serieEnd(){const s=serieCur();if(!s||s.state!=='running')return;if(SRV()){srvSerieRegler();return;}    /* mode Compte : l'issue est calculée et payée par le serveur */
+ const d=GM[s.gid],g=G(s.gid);
  if(s.choice===null){s.step--;if(s.step<=0){s.state='cashed';s.endAt=now();S.me.balance+=s.stake;S.me.settled++;toast({tone:'amber',icon:'wallet',force:true,title:_t("Série annulée"),text:_t("Aucun choix dans les 30 secondes : ta mise t’est rendue."),href:'#serie'});updateHeader();save();serieRefresh();return;}
   toast({tone:'amber',icon:'wallet',force:true,title:_t("Encaissement automatique"),text:`${_t("Aucun choix dans les {0} secondes : {1} encaissés.",[SERIE.CHOICE_MS/1000,F.usd(s.stack)])}`,href:'#serie'});serieCash(true);return;}
  const m=Math.abs(g.price/s.p0-1),out=m<=d.be?'be':g.price>s.p0?'oui':'non';const win=out===s.choice;
@@ -138,7 +140,8 @@ function serieEnd(){const s=serieCur();if(!s||s.state!=='running')return;const d
  else{s.state='lost';s.stack=0;s.endAt=now();S.me.settled++;S.me.realized-=s.stake;S.me.history.unshift({k:'serie',q:`${_t("La Série {0} : {1} sur {2}",[d.name,s.step-1,s.step])}`,s:'non',win:false,pnl:-s.stake,at:now()});toast({tone:'red',icon:'bolt',flash:true,title:`${_t("Série perdue à la manche {0}",[s.step])}`,text:`${_t("C’était {0}. Mise perdue : {1}.",[out==='be'?'break even':out==='oui'?_t("Haut"):_t("Bas"),F.usd(s.stake)])}`,href:'#serie'});}
  save();serieRefresh();}
 /* encaisser : pendant la fenêtre de choix, après au moins une manche gagnée */
-function serieCash(auto){const s=serieCur();if(!s||s.state!=='running'||(s.choice!==null&&!auto))return;const won=s.hist.filter(h=>h.win).length;if(!won){s.state='cashed';s.endAt=now();S.me.balance+=s.stake;S.me.settled++;updateHeader();save();serieRefresh();return;}const d=GM[s.gid],before=myRank();const tot=s.stack/s.stake;s.state='cashed';s.endAt=now();s.step=won;S.me.balance+=s.stack;S.me.settled++;S.me.wins++;S.me.realized+=s.stack-s.stake;
+function serieCash(auto){const s=serieCur();if(!s||s.state!=='running'||(s.choice!==null&&!auto))return;if(SRV()){if(!auto)srvSerieEncaisser();return;}
+ const won=s.hist.filter(h=>h.win).length;if(!won){s.state='cashed';s.endAt=now();S.me.balance+=s.stake;S.me.settled++;updateHeader();save();serieRefresh();return;}const d=GM[s.gid],before=myRank();const tot=s.stack/s.stake;s.state='cashed';s.endAt=now();s.step=won;S.me.balance+=s.stack;S.me.settled++;S.me.wins++;S.me.realized+=s.stack-s.stake;
  S.me.history.unshift({k:'serie',q:`${_t("La Série {0} : {1} sur {1}, encaissé à ×{2}",[d.name,s.step,F.d1(tot)])}`,s:'oui',win:true,pnl:s.stack-s.stake,at:now()});
  const e={u:'me',steps:s.step,mult:tot,cashed:s.stack,at:now()};serieToday().unshift(e);S.me.serieBest=Math.max(S.me.serieBest||0,s.step);gainXP(20+s.step*10);
  toast({tone:'green',icon:'trophy',force:true,title:`${_t("Encaissé : {0} (×{1})",[F.usd(s.stack),F.d1(tot)])}`,text:`${_t("{0} sur {0} sur {1}. Bravo.",[s.step,d.name])}`,href:'#serie'});if(!auto)confetti(36);checkRank(before);checkBadges();updateHeader();save();serieRefresh();}
@@ -192,7 +195,7 @@ Object.assign(ACT,{
  'bz-choose':a=>{if(!S.me.logged){needLogin(_t("Connecte-toi pour jouer."));return;}bzChoose(a.dataset.v==='oui'?1:a.dataset.v==='non'?0:2);},
  'sr-gid':a=>{S.ui.serie=S.ui.serie||{gid:'btc',stake:10};S.ui.serie.gid=a.dataset.v;serieRefresh();},
  'sr-stake':a=>{S.ui.serie=S.ui.serie||{gid:'btc',stake:10};S.ui.serie.stake=+a.dataset.v;serieRefresh();},
- 'sr-start':()=>{if(!S.me.logged){needLogin(_t("Connecte-toi pour lancer une série."));return;}const st=S.ui.serie||{gid:'btc',stake:10};if(serieStart(st.gid,st.stake)){toast({tone:'blue',icon:'bolt',force:true,title:`${_t("Série lancée à {0}",[F.usd0(st.stake)])}`,text:_t("Choisis Haut, Bas ou Break even pour la première manche.")});serieRefresh();}},
+ 'sr-start':()=>{if(!S.me.logged){needLogin(_t("Connecte-toi pour lancer une série."));return;}const st=S.ui.serie||{gid:'btc',stake:10};if(SRV()){srvSerieLancer(st.gid,st.stake);return;}if(serieStart(st.gid,st.stake)){toast({tone:'blue',icon:'bolt',force:true,title:`${_t("Série lancée à {0}",[F.usd0(st.stake)])}`,text:_t("Choisis Haut, Bas ou Break even pour la première manche.")});serieRefresh();}},
  'sr-play':a=>seriePlay(a.dataset.v),
  'sr-cash':()=>serieCash(false),
  'sr-share':()=>serieShare()

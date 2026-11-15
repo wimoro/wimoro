@@ -56,7 +56,7 @@ avec la même clé, l'opération n'est appliquée qu'une fois et renvoie le mêm
 | `api_users_search(texte)` | joueur | dix joueurs au plus dont le pseudo contient le texte (fiches publiques, jamais d'e-mail) |
 | `api_friend(action, joueur)` | joueur | `add`, `accept`, `cancel`, `decline`, `remove` ; rend les trois listes à jour |
 | Edge Function `connexion` | visiteur | connexion par pseudo, sans jamais révéler d'e-mail ; limite les tentatives |
-| Edge Function `eclair` | joueur | pari éclair : `bet` (miser) et `settle` (régler les manches terminées) |
+| Edge Function `eclair` | joueur | pari éclair : `bet` (miser) et `settle` (régler les manches terminées). La Série : `serie_start`, `serie_play`, `serie_cash`, `serie_settle` — le moteur du serveur fixe l'heure de début, le prix de départ, la cote et l'issue ; l'argent et l'état sont tenus par `srv_serie_…` (clé de service seulement, table `wm.series`) |
 
 | `api_admin(action, paramètres)` | administrateur | la seule porte du panel d'administration : `moi`, `chiffres`, `joueurs`, `joueur`, `solde`, `xp`, `rang`, `kyc`, `suspendre`, `marches`, `marche`, `marche_etat`, `resoudre`, `chat`, `masquer`, `bots`, `journal`. Refusée (`interdit`) à tout compte absent de `public.admin_users` ; chaque modification est écrite dans `wm.admin_journal` |
 | `api_test_end()` | compte de test | un compte `wimoro-e2e-…@example.com` se supprime lui-même à la fin des tests ; refusée à tout autre compte |

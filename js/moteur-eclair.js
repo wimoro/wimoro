@@ -113,6 +113,16 @@
     const win = (my.s === 'oui' ? 1 : my.s === 'non' ? 0 : 2) === out, pay = win ? gain(g, my) : 0;
     return { out, win, pay, pnl: pay - my.amt, part: Math.round(g.pool[k] / total(g) * 100) }; }
 
+  /* ----- La Série : manches de 60 secondes sur un actif à trajectoire, adossées à la cagnotte éclair du moment ----- */
+  const SERIE_MS = 60000, SERIE_CHOIX = 30000, SERIE_MAX = 12;
+  /* prix d'un actif à l'instant t */
+  const prixAu = (d, t) => plan(d, round(t))[tick(t)];
+  /* cotes offertes à l'instant t : Haut et Bas selon la cagnotte éclair en cours, break even à sa cote juste (marge 5 %) */
+  function serieCotes(d, t) { const pr = prix(d, etat(d, round(t), tick(t))); return { oui: 100 / pr.o, non: 100 / pr.n, be: beMultFair(beProb(d.be, d.k, SERIE_MS / FTICK)) }; }
+  /* manche commencée à l'instant `debut` : prix de départ, prix d'arrivée, issue */
+  function serieIssue(d, debut) { const p0 = prixAu(d, debut), p1 = prixAu(d, debut + SERIE_MS), m = Math.abs(p1 / p0 - 1); return { p0, p1, out: m <= d.be ? 'be' : p1 > p0 ? 'oui' : 'non' }; }
+
   racine.MoteurEclair = { FCAL, FDUR, FOPEN, FVOL, FEPOCH, FTICK, FK, CAP_BE, JEUX, LISTE, hash, rng, round, t0, tick, ouvert, graine, niveau, plan, issue,
-    depart, mises, poser, etat, regler, beP, beMult, beRoom, beMax, frais, prix, gain, cle, total, taux };
+    depart, mises, poser, etat, regler, beP, beMult, beRoom, beMax, frais, prix, gain, cle, total, taux,
+    SERIE_MS, SERIE_CHOIX, SERIE_MAX, prixAu, serieCotes, serieIssue, beProb, beMultFair };
 })(typeof globalThis !== 'undefined' ? globalThis : this);
