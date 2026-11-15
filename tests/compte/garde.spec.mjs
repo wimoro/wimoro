@@ -79,7 +79,7 @@ test('une action pas encore reliée est clairement indisponible : message, et ri
   const apres = await lire(page, () => JSON.stringify({ solde: S.me.balance, xp: S.me.xp, pos: S.me.positions, hist: S.me.history, notifs: S.me.notifs.length, prix: MK.btc150k.p, messages: Object.values(S.rooms).reduce((n, r) => n + r.msgs.filter(x => x.k !== 'evt').length, 0) }));
   expect(apres).toBe(avant);
   // seules des lectures ont eu lieu (ouverture du salon général) : aucune écriture
-  expect(await lire(page, n => __fakeSB.calls.slice(n).map(c => c.name).filter(nom => !['api_chat_history', 'api_dm_list'].includes(nom) && !nom.startsWith('salon:')), n0), 'aucune écriture sur le serveur').toEqual([]);
+  expect(await lire(page, n => __fakeSB.calls.slice(n).map(c => c.name).filter(nom => !['api_chat_history', 'api_dm_list', 'api_leaderboard'].includes(nom) && !nom.startsWith('salon:')), n0), 'aucune écriture sur le serveur').toEqual([]);
   expect(erreurs).toEqual([]);
 });
 

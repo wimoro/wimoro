@@ -79,3 +79,16 @@ test('mode Démo : les amis restent locaux (demande acceptée par un personnage 
   expect(await lire(page, () => ({ amis: friendsOf().length, envoyees: fOut().length }))).toEqual({ amis: avant.amis + 1, envoyees: avant.envoyees });
   expect(await lire(page, () => typeof __fakeSB === 'undefined' ? 0 : __fakeSB.calls.filter(c => c.kind === 'rpc').length)).toBe(0);
 });
+
+test('B17 · classement : rempli par le serveur (vrais joueurs et bots), une seule lecture, plus d’écran vide', async ({ page }) => {
+  const fiches = {};
+  for (let i = 1; i <= 12; i++) fiches['55555555-5555-4555-8555-' + String(i).padStart(12, '0')] = fiche('joueur_' + i, { profit: i * 1000, bets: 10 + i, acc: 50 + i, bot: i % 2 === 0 });
+  const { erreurs } = await ouvrir(page, { mode: 'compte', hash: '#classement', faux: { fiches } });
+  await expect.poll(() => lire(page, () => lbRows('Saison').length)).toBe(12);
+  expect(await lire(page, () => lbRows('Saison').slice(0, 3).map(r => userOf(r.u).n))).toEqual(['joueur_12', 'joueur_11', 'joueur_10']);
+  await expect(page.locator('#view')).toContainText('joueur_12');
+  await page.evaluate(() => { location.hash = '#profil'; }); await page.waitForTimeout(150);
+  await page.evaluate(() => { location.hash = '#classement'; }); await page.waitForTimeout(300);
+  expect(await appels(page, 'api_leaderboard')).toHaveLength(1);                             // pas relu à chaque visite
+  expect(erreurs).toEqual([]);
+});

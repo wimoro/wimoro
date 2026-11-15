@@ -119,7 +119,7 @@ Les douze décisions de la mission sont appliquées telles quelles. Précisions 
 
 - [x] Registre `USERS` alimenté par le serveur (clé = identifiant du joueur), `userOf()` jamais `undefined` (fiche de secours),
       75 accès directs convertis.
-- [ ] Chargement par lots des fiches inconnues (`api_fiches`) et classement réel : avec le lot 4.6.
+- [x] Les fiches arrivent par lots avec ce qui les utilise (état, chat, recherche, amis, classement) ; le classement vient du serveur (lot 4.6).
 - [x] Salon, marché ou joueur inconnu : ignoré et journalisé, jamais d'exception dans un rendu.
       _Test_ `tests/compte/chargement.spec.mjs` : 26 écrans × 3 langues, ami et joueur inconnus, message d'un inconnu,
       marché inconnu, carte de mise sur un marché disparu.
@@ -212,7 +212,8 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
       accepte tout de suite ; 30 demandes par heure au plus. _Recette 5 (partie amis)._ _Tests_ `tests/sql/amis.spec.mjs`,
       `tests/compte/amis.spec.mjs`, `tests/e2e/comptes.spec.mjs` (deux vrais comptes).
 - [x] La demande reçue apparaît à la seconde, par le sujet privé du joueur (voir 4.5).
-- [ ] Suivre un joueur, profils, classement réel par période (B17, K46).
+- [x] Classement servi par le serveur (`api_leaderboard` : 50 fiches publiques, vrais joueurs et bots) : l'écran n'est plus vide en mode Compte (B17). _Tests_ `tests/sql/classement.spec.mjs`, `tests/compte/amis.spec.mjs`. Vérifié avec le faux serveur et par requête sur la base, pas encore par un test de bout en bout.
+- [ ] Classement par période tenu par le serveur (K46) : aujourd'hui « Semaine » et « Mois » sont déduits du total, comme en mode Démo. Suivre un joueur.
 - [ ] Duels, clans, copy trading, parrainage.
 
 ### 4.7 Argent fictif et KYC
@@ -328,3 +329,4 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 | 15 nov. 2026 | 4.4 : pari éclair par le serveur. Moteur extrait dans un module pur, Edge Function `eclair`, mise et règlement. Test du mode Démo rendu stable dans l'intégration continue. | migration `eclair` (empreinte identique) ; 151 tests (65 SQL) ; 6 tests de bout en bout contre le vrai back |
 | 15 nov. 2026 | 4.6 (début) : amis par le serveur. Bots : rappel des ancres renforcé et réglable. | migrations `amis`, `bots_rappel` (empreintes identiques) ; 159 tests (69 SQL) ; 7 tests de bout en bout contre le vrai back |
 | 15 nov. 2026 | 4.5 (suite) : messages privés entre amis et sujet temps réel privé par joueur ; notifications en direct. | migration `messages_prives` (empreinte identique) ; 166 tests (73 SQL) ; 8 tests de bout en bout contre le vrai back |
+| 15 nov. 2026 | 4.6 (suite) : classement servi par le serveur. | migration `classement` (empreinte identique) ; 168 tests (74 SQL) |
