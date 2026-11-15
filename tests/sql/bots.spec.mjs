@@ -13,7 +13,8 @@ test.beforeAll(async () => {
       ('g-a', 'Politique', 'A ?', 'open', 'g', 2), ('g-b', 'Politique', 'B ?', 'open', 'g', 1.5), ('g-c', 'Politique', 'C ?', 'open', 'g', 1), ('ferme', 'Sport', 'Fermé ?', 'resolved', null, 3);
     insert into public.market_live_state (market_id, current_probability, anchor_probability, volume_total, participants_count, liquidity_depth) values
       ('g-a', 50, 50, 2000000, 10, 12000), ('g-b', 30, 30, 1500000, 10, 9000), ('g-c', 20, 20, 1000000, 10, 6000), ('ferme', 40, 40, 100000, 1, 600);
-    update public.markets set heat_level = 3 where id = 'btc150k';`);
+    update public.markets set heat_level = 3 where id = 'btc150k';
+    select wm.present();`);                                                           // un joueur est là : rythme normal et diffusions
 });
 test.afterAll(async () => { await db.close(); });
 const etat = async () => Object.fromEntries((await q(db, `select market_id, current_probability::float8 as p, anchor_probability::float8 as anchor, volume_total::float8 as vol, liquidity_depth::float8 as liq, jsonb_array_length(coalesce(price_history, '[]'::jsonb)) as ph from public.market_live_state`)).map(r => [r.market_id, r]));
@@ -21,8 +22,9 @@ const ticks = async n => { for (let i = 0; i < n; i++) await q(db, 'select wm.bo
 
 test('planification : un tick toutes les 3 secondes, les anciennes tâches de bots sont arrêtées', async () => {
   const jobs = await q(db, 'select jobname, schedule, command from cron.job order by jobname');
-  expect(jobs.map(j => j.jobname)).toEqual(['flash-tick-server', 'wm-bots']);
+  expect(jobs.map(j => j.jobname)).toEqual(['flash-tick-server', 'wm-bots', 'wm-purge-cron']);
   expect(jobs[1]).toMatchObject({ schedule: '3 seconds', command: 'select wm.bots_tick()' });
+  expect(jobs[2].command, 'le journal de pg_cron est purgé').toMatch(/cron.job_run_details/);
 });
 
 test('K20 · les prix restent autour de l’ancre au lieu de filer vers 2 % ou 98 %', async () => {
@@ -90,6 +92,33 @@ test('réglage : les bots se coupent et se règlent sans toucher au code', async
   const fort = (await etat()).clasico.vol - v1;
   expect(fort).toBeGreaterThan(calme * 2);
   await q(db, `update wm.config set value = '{"actif": true, "intensite": 1}' where key = 'bots'`);
+});
+
+test('K24, K25 · veille : sans joueur présent, aucune diffusion et dix fois moins de mouvements ; le retour d’un joueur réveille les bots', async () => {
+  const volume = async () => (await q(db, 'select sum(volume_total)::float8 as v from public.market_live_state'))[0].v;
+  const diffusions = async () => (await q(db, 'select count(*)::int as n from realtime.messages'))[0].n;
+  await q(db, 'truncate realtime.messages');
+  const v0 = await volume(); await ticks(300);
+  const actif = await volume() - v0;
+  expect(await diffusions()).toBeGreaterThan(280);                                  // un joueur est là : presque un message par tick
+  // plus personne depuis 7 minutes
+  await q(db, `update wm.config set updated_at = now() - interval '7 minutes' where key = 'presence'`);
+  await q(db, 'truncate realtime.messages');
+  const v1 = await volume(); await ticks(300);
+  const veille = await volume() - v1;
+  expect(await diffusions(), 'aucune diffusion en veille').toBe(0);
+  expect(veille).toBeGreaterThan(0);                                               // les prix continuent de vivre…
+  expect(veille).toBeLessThan(actif * 0.25);                                       // … mais au ralenti (un tick sur dix)
+  // un joueur ouvre le site : lire les marchés suffit à réveiller les bots
+  await q(db, 'select public.api_markets()');
+  await ticks(20);
+  expect(await diffusions()).toBeGreaterThan(15);
+  // le signal de présence périodique n'écrit qu'une fois toutes les 30 secondes
+  const joueur = await creerJoueur(db, 'veilleur');
+  const avant = (await q(db, `select updated_at from wm.config where key = 'presence'`))[0].updated_at;
+  for (let i = 0; i < 5; i++) expect(await refus(db, joueur, 'select public.api_present()')).toBeNull();
+  expect((await q(db, `select updated_at from wm.config where key = 'presence'`))[0].updated_at).toEqual(avant);
+  expect(await refus(db, null, 'select public.api_present()'), 'réservé aux joueurs connectés').toMatch(/permission denied/);
 });
 
 test('durée d’un tick : très en dessous de sa période de 3 secondes', async () => {

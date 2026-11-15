@@ -7,7 +7,8 @@
    du navigateur ne tourne : prix, volumes, messages et joueurs viennent du serveur, les mêmes pour tout le monde. */
 /* Les minuteurs lourds se mettent en pause quand l'onglet est caché (le pari éclair garde son horloge). */
 const vis=fn=>()=>{if(!document.hidden)fn();};
-/* planifier(nom, délai, fonction, quand) — 'local' (par défaut) : simulateur d'état partagé ; 'tous' : affichage ou décor.
+/* planifier(nom, délai, fonction, quand) — 'local' (par défaut) : simulateur d'état partagé ; 'tous' : affichage ou décor ;
+   'serveur' : seulement en mode serveur (signal de présence).
    Les modules (copy, orders, referral, responsible, blitz, clans, pro) déclarent les leurs de la même façon. */
 planifier('bots : mises',650,vis(botBet));
 planifier('bots : messages',3600,vis(()=>{if(R()<.85)botChat();}));
@@ -51,7 +52,7 @@ async function demarrer(){
  i18nStatic(document.body);const md=document.querySelector('meta[name=description]');if(md&&LANG!=='fr'&&I18N[LANG][md.content])md.content=I18N[LANG][md.content];
  if(!srv){if(typeof duelSeed==='function'){duelSeed();duelLinkBoot();}if(typeof clanSeed==='function')clanSeed();if(typeof comboSeed==='function')comboSeed();if(typeof proBoot==='function')proBoot();}
  PRET=true;updateHeader();render(true);navMark();
- for(const t of PLAN)if(t.quand==='tous'||!srv)setInterval(t.fn,t.ms);
+ for(const t of PLAN)if(t.quand==='tous'||(t.quand==='serveur'?srv:!srv))setInterval(t.fn,t.ms);
  if(!srv){setTimeout(catchUpVotes,1200);setTimeout(botFriendRequest,45000);setTimeout(burst,9000);setTimeout(()=>{if(S.me.logged&&!duelIncoming().length)duelBotChallenge();},150000);}
  MARKETS.forEach(bookDepth);
  document.addEventListener('visibilitychange',()=>{if(!document.hidden){flashTick();if(!srv)duelTick();updateFlash(true);refreshLive();if(typeof bzRefresh==='function')bzRefresh();if(typeof serieRefresh==='function')serieRefresh();if(!XH)refreshCharts();}});

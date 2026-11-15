@@ -85,3 +85,39 @@ test('une action pas encore reliée au serveur est annoncée comme telle, et le 
   await page.waitForTimeout(20000);                                                          // B05 : avant, tout était écrasé au bout de 15 s
   expect(await lire(page, () => ({ solde: S.me.balance, xp: S.me.xp, pos: S.me.positions.length }))).toEqual({ solde: 0, xp: 100, pos: 0 });
 });
+
+test('marchés en direct : les prix viennent des diffusions du serveur, identiques dans deux navigateurs, sans aucune requête', async ({ browser }) => {
+  const ouvrirConnecte = async () => {
+    const ctx = await browser.newContext(), page = await ctx.newPage();
+    const erreurs = await ouvrirReel(page, '#connexion');
+    await page.locator('#le').fill(PSEUDO); await page.locator('#lp').fill(MDP); await page.locator('form[data-form="login"] [type=submit]').click();
+    await expect(page).toHaveURL(/#accueil/, { timeout: 20000 }); await pret(page);
+    const requetes = []; page.on('request', r => { const u = new URL(r.url()); if (u.hostname.endsWith('.supabase.co') && ['rest', 'functions', 'auth'].includes(u.pathname.split('/')[1])) requetes.push(u.pathname); });
+    await page.evaluate(() => { window.__n = 0; const t0 = srvTick; srvTick = d => { window.__n++; window.__dernier = d; t0(d); }; });
+    return { ctx, page, erreurs, requetes };
+  };
+  const a = await ouvrirConnecte(), b = await ouvrirConnecte();
+  const prix0 = await lire(a.page, () => MARKETS.map(m => m.p));
+  await expect.poll(() => lire(a.page, () => window.__n), { timeout: 30000 }).toBeGreaterThanOrEqual(4);   // un tick toutes les 3 secondes
+  await expect.poll(() => lire(b.page, () => window.__n), { timeout: 30000 }).toBeGreaterThanOrEqual(3);
+  // même tick reçu des deux côtés → mêmes prix à l'écran
+  let pareil = false;
+  for (let i = 0; i < 8 && !pareil; i++) {
+    const [x, y] = await Promise.all([a, b].map(o => lire(o.page, () => ({ t: window.__dernier.t, p: MARKETS.map(m => m.p), vol: MARKETS.map(m => m.vol) }))));
+    pareil = x.t === y.t && JSON.stringify(x) === JSON.stringify(y);
+    if (!pareil) await a.page.waitForTimeout(700);
+  }
+  expect(pareil, 'les deux navigateurs affichent les mêmes prix').toBe(true);
+  const prix1 = await lire(a.page, () => MARKETS.map(m => m.p));
+  expect(prix1).not.toEqual(prix0);                                                          // les bots du serveur animent les marchés
+  for (const p of prix1) { expect(p).toBeGreaterThanOrEqual(1); expect(p).toBeLessThanOrEqual(99); }
+  const groupes = await lire(a.page, () => GROUPS.map(g => g.outcomes.reduce((n, o) => n + o.p, 0)));
+  for (const t of groupes) expect(t).toBeCloseTo(100, 4);                                    // issues multiples : 100 %
+  expect(a.requetes, 'aucune requête périodique : tout arrive par la diffusion').toEqual([]);
+  // le serveur refuse un pari sans solde (le ticket, lui, propose de déposer)
+  const refus = await a.page.evaluate(async () => { try { await API.call('api_buy', { p_market: 'btc150k', p_side: 'oui', p_total: 5, p_key: crypto.randomUUID(), p_opts: {} }); return 'accepté'; } catch (e) { return e.code; } });
+  expect(refus).toBe('solde_insuffisant');
+  expect(await lire(a.page, () => ({ solde: S.me.balance, pos: S.me.positions.length }))).toEqual({ solde: 0, pos: 0 });
+  expect(a.erreurs).toEqual([]); expect(b.erreurs).toEqual([]);
+  await a.ctx.close(); await b.ctx.close();
+});

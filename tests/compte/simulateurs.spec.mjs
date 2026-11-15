@@ -21,7 +21,8 @@ test('B04 · mode Compte : 3 minutes sans message du serveur, rien ne change', a
   const apres = await photo(page);
   expect(apres).toEqual(avant);
   expect(apres.local, 'les prix ne sont pas mémorisés localement').toBeNull();
-  const plan = await lire(page, () => ({ lances: PLAN.filter(t => t.quand === 'tous').map(t => t.nom), eteints: PLAN.filter(t => t.quand !== 'tous').length }));
+  const plan = await lire(page, () => ({ lances: PLAN.filter(t => t.quand === 'tous').map(t => t.nom), eteints: PLAN.filter(t => (t.quand || 'local') === 'local').length, serveur: PLAN.filter(t => t.quand === 'serveur').map(t => t.nom) }));
+  expect(plan.serveur).toEqual(['serveur : présence']);
   expect(plan.lances.length).toBeGreaterThanOrEqual(4);
   expect(plan.eteints).toBeGreaterThanOrEqual(15);
   expect(erreurs).toEqual([]);
@@ -44,13 +45,18 @@ test('mode Démo : les simulateurs tournent toujours (prix, chat, grosses mises)
   expect(apres.local).not.toBeNull();
 });
 
-test('en mode Compte, le site ne lit ni n’écrit plus rien tout seul : zéro appel périodique', async ({ page }) => {
+test('en mode Compte, le site ne lit ni n’écrit plus rien tout seul : seulement un signal de présence toutes les 4 minutes', async ({ page }) => {
   await ouvrir(page, { mode: 'compte', faux: { marches: MARCHES }, horloge: debutManche() + 2000 });
   const n0 = await lire(page, () => __fakeSB.calls.length);
   await page.clock.runFor(120000);                                          // B05, B19 : avant, 16 lectures et 14 écritures en 2 minutes
   const appels = await lire(page, n => __fakeSB.calls.slice(n).map(c => c.kind + ':' + c.name), n0);
   expect(appels).toEqual([]);
+  await page.clock.runFor(8 * 60000);                                       // 10 minutes en tout : deux signaux de présence, rien d'autre
+  expect(await lire(page, n => __fakeSB.calls.slice(n).map(c => c.kind + ':' + c.name), n0)).toEqual(['rpc:api_present', 'rpc:api_present']);
+  await page.evaluate(() => { Object.defineProperty(document, 'hidden', { value: true, configurable: true }); });
+  await page.clock.runFor(10 * 60000);                                      // onglet caché : plus aucun signal
+  expect(await lire(page, n => __fakeSB.calls.slice(n).length, n0)).toBe(2);
   const demarrage = await lire(page, n => __fakeSB.calls.slice(0, n).map(c => c.kind + ':' + c.name), n0);
-  expect(demarrage.filter(c => c.startsWith('rpc:')).sort()).toEqual(['rpc:api_state', 'rpc:get_markets']);
+  expect(demarrage.filter(c => c.startsWith('rpc:')).sort()).toEqual(['rpc:api_markets', 'rpc:api_state']);
   expect(demarrage.filter(c => c.startsWith('from:'))).toEqual([]);          // plus aucun accès direct aux tables
 });

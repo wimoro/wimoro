@@ -17,6 +17,8 @@ const RELIEES = {
   'ACT.ob-done': 'api_onboarding — tests/compte/comptes.spec.mjs',
   'ACT.np-del': 'api_notif_hide — tests/compte/etat.spec.mjs',
   'ACT.np-clear': 'api_notif_hide — tests/compte/etat.spec.mjs',
+  'ACT.buy': 'api_buy (écriture comptable faite par le serveur) — tests/compte/paris.spec.mjs',
+  'ACT.sell': 'api_sell — tests/compte/paris.spec.mjs',
   'ACT.pro-sh-dst': 'lecture seule de la liste d’amis (choix du destinataire)',
   'ACT.pro-sh-dm': 'lecture seule de la liste d’amis (choix du destinataire)',
   'FORMS.settings': 'api_profile_update (pseudo unique) — tests/compte/etat.spec.mjs',
@@ -50,13 +52,13 @@ test('une action pas encore reliée est clairement indisponible : message, et ri
   const { erreurs } = await ouvrir(page, { mode: 'compte', hash: '#marche-btc150k', faux: { marches: [{ market_id: 'btc150k', current_probability: 60, anchor_probability: 60, volume_total: 5e6, liquidity_depth: 30000 }] } });
   const avant = await lire(page, () => JSON.stringify({ solde: S.me.balance, xp: S.me.xp, pos: S.me.positions, hist: S.me.history, notifs: S.me.notifs.length, prix: MK.btc150k.p, messages: Object.values(S.rooms).reduce((n, r) => n + r.msgs.length, 0) }));
   const n0 = await lire(page, () => __fakeSB.calls.length);
-  await page.locator('[data-ticket="page"] [data-a="buy"]').click();                       // acheter
-  await expect(page.locator('.toast').first()).toContainText('Coming soon for accounts');
+  await page.locator('[data-a="limit-place"], [data-a="otype"][data-v="limit"]').first().click({ force: true }).catch(() => {});
   await page.evaluate(() => { location.hash = '#chat'; });
   await page.locator('.composer input[data-in="general"]').fill('bonjour');                  // écrire dans le chat
   await page.locator('.composer input[data-in="general"]').press('Enter');
   await page.evaluate(() => { location.hash = '#eclair'; });
   await page.locator('[data-a="flash-bet"]').first().click({ force: true });                 // pari éclair
+  await expect(page.locator('.toast').first()).toContainText('Coming soon for accounts');
   await page.evaluate(() => { ACT.withdraw && document.dispatchEvent(new Event('x')); });
   for (const a of ['withdraw', 'fiat-dep', 'claim', 'dl-create', 'cb-place', 'cl-join', 'fr-add', 'cp-start', 'limit-place', 'bz-join', 'sr-start'])
     await page.evaluate(nom => { const b = document.createElement('button'); b.dataset.a = nom; b.dataset.u = 'x'; b.dataset.m = 'btc150k'; document.body.appendChild(b); b.click(); b.remove(); }, a);

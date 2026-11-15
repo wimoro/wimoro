@@ -159,9 +159,15 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
       back (`tests/e2e/comptes.spec.mjs`).
 
 ### 4.3 Marchés et paris
-- [ ] État des marchés, historique de prix, volume, participants depuis le serveur.
-- [ ] Acheter et vendre : parité complète des effets (B15), aperçu = exécution (K40, K41, F23), clé d'idempotence.
-- [ ] Issues multiples : total à 100 % garanti par le serveur, pas de double rééquilibrage (B16, K21).
+- [x] État des marchés, historique de prix, volume, participants depuis le serveur : `api_markets` au démarrage, puis les
+      diffusions du sujet public « marches » (aucune requête périodique). _Tests_ `tests/compte/paris.spec.mjs`,
+      `tests/e2e/comptes.spec.mjs` (deux navigateurs, mêmes prix).
+- [x] Acheter et vendre : le serveur fait l'écriture (`api_buy`, `api_sell`), l'écran affiche ce qui a été exécuté ; parité
+      des effets (B15), aperçu = exécution (K40, K41, F23 : 600 cas comparés, écart < 1e-9), clé d'idempotence, un seul
+      ordre à la fois, refus clairs. Le code d'achat est en trois temps (validation, écriture, effets) : seul le deuxième
+      change selon le mode. _Tests_ `tests/sql/moteur.spec.mjs`, `tests/compte/paris.spec.mjs`.
+- [x] Issues multiples : total à 100 % garanti par le serveur, pas de double rééquilibrage (B16, K21).
+- [x] Prix à 6 décimales : un petit ordre fait bouger le prix, un ordre découpé paie le même impact.
 - [ ] Ordres limites, stop, take-profit exécutés côté serveur.
 - [ ] Combinés.
 - [ ] Propositions de marché, votes, mise en ligne.
@@ -192,11 +198,19 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 
 ## Phase 5 — Les 10 000 bots et le market making
 - [ ] Un seul peuple de bots, marqué comme tel, sans e-mail ; les 13 personnages d'origine en font partie (K27).
-- [ ] Tick serveur : ancre, retour vers l'ancre, rafales et signaux de foule ; issues multiples cohérentes (K20, K21).
-- [ ] Contrepartie des paris des joueurs dans la limite de la liquidité (K22).
-- [ ] Budget mesuré : durée d'un tick, écritures par tick, messages par seconde, croissance par jour ; purges (K24, K25).
+- [x] Tick serveur (`wm.bots_tick`, toutes les 3 s) : ancre, retour vers l'ancre, rafales et signaux de foule ; issues
+      multiples cohérentes (K20, K21). Les deux anciennes tâches, qui collaient 24 marchés sur 27 à 2 % ou 98 %, sont
+      arrêtées. _Tests_ `tests/sql/bots.spec.mjs`.
+- [x] Contrepartie des paris des joueurs dans la limite de la liquidité (K22) : `open_yes`, `open_no`, `mm_cash`.
+- [x] Budget mesuré en production (K24, K25) : tick de 22 ms en moyenne (132 ms au pire) ; aucune ligne créée par action
+      de bot ; un message par tick, 920 octets en moyenne. Diffuser en permanence aurait coûté environ 150 Mo sur les
+      500 Mo gratuits : les bots passent donc en **veille** quand aucun joueur n'est présent depuis 6 minutes (un tick
+      sur dix, aucune diffusion) et se réveillent dès qu'un joueur charge les marchés.
+- [ ] Purge du journal de pg_cron (30 000 lignes, 6 Mo par jour) : migration `purge_journal_cron` prête, **attend ta
+      confirmation** (voir « À faire par l'humain »).
 - [ ] Messages des bots stockés en gabarit + paramètres (K26).
-- [ ] Marche/arrêt et intensité depuis le panel admin. _Recette 9._
+- [ ] Marche/arrêt et intensité depuis le panel admin. _Recette 9._ Le réglage existe déjà côté serveur
+      (`wm.config`, clé « bots » : `actif`, `intensite` de 0 à 3) ; il reste à le poser dans le panel.
 
 ## Phase 6 — Panel d'administration
 - [ ] Page séparée, contrôle `is_admin()` dans chaque RPC : joueurs, soldes (motif journalisé), rang, KYC, suspension ;
@@ -228,8 +242,9 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 
 1. **Accepter la confirmation Supabase** quand elle s'affiche pendant une session de travail : l'outil de base de données
    demande un accord manuel pour toute instruction qui supprime quelque chose, et la demande expire après 2 minutes.
-   Deux opérations l'attendent : la migration `securite_urgence_nettoyage` (retrait de règles devenues inutiles) et la
-   suppression des comptes de test `wimoro-e2e-…@example.com`.
+   Trois opérations l'attendent : la migration `securite_urgence_nettoyage` (retrait de règles devenues inutiles), la
+   migration `purge_journal_cron` (nettoyage horaire du journal technique des tâches planifiées, qui grossit de 6 Mo
+   par jour) et la suppression des comptes de test `wimoro-e2e-…@example.com`.
 2. **Modèle d'e-mail « mot de passe oublié »** : tableau de bord Supabase → Authentication → Emails → « Reset Password ».
    Ajouter dans le texte la ligne `Ton code : {{ .Token }}` (le site demande un code à 6 chiffres). Sans cette ligne,
    l'e-mail ne contient que le lien, qui marche aussi.
@@ -248,3 +263,4 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 | 15 nov. 2026 | 3.3 à 3.5, 3.7, 4.1, 4.2 : passerelle `js/api.js`, mode Compte sans simulateurs, comptes réels (inscription, connexion par pseudo, mot de passe oublié, onboarding, profil), état du joueur servi par `api_state`. | 67 tests (24 SQL, 14 Démo, 27 Compte, traductions) ; 3 tests de bout en bout contre le vrai back |
 | 15 nov. 2026 | 3.2, 3.6 : `js/supabase.js` retiré ; mode Démo redevenu identique à `3a1d258` ; B01 et B02 corrigés. | 14 tests Playwright dans `tests/demo/` |
 | 15 nov. 2026 | 3.0 : trous de sécurité K01 à K13 fermés en production. Base de test embarquée. | migration `20261115032907_securite_urgence_droits` ; 13 tests SQL ; `tools/e2e/verif-securite.mjs` |
+| 15 nov. 2026 | 4.3 et phase 5 : moteur de marché côté serveur (portage exact de `js/engine.js`), achat et vente reliés, bots teneurs de marché avec veille, prix diffusés en direct. Les 27 marchés sont revenus à des prix sains. | migrations `marches_moteur`, `bots_marche`, `marches_precision`, `bots_veille` (empreintes identiques au dépôt) ; 99 tests (42 SQL) ; 4 tests de bout en bout contre le vrai back |

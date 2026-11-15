@@ -34,7 +34,12 @@ I18N_ADD("en",{
 "Choisis un nouveau mot de passe pour ton compte.":"Choose a new password for your account.",
 "Simulation : un compte de démonstration est créé dans ce navigateur.":"Simulation: a demo account is created in this browser.",
 "Photo importée non enregistrée":"Uploaded photo not saved",
-"Pour l’instant, les comptes utilisent les avatars de la galerie.":"For now, accounts use the gallery avatars."
+"Pour l’instant, les comptes utilisent les avatars de la galerie.":"For now, accounts use the gallery avatars.",
+"Solde insuffisant. Dépose des fonds pour continuer.":"Insufficient balance. Deposit funds to continue.",
+"Pas assez de liquidité sur ce marché pour ce montant.":"Not enough liquidity on this market for that amount.",
+"Ce marché est fermé.":"This market is closed.",
+"La mise minimale est de 1 $.":"The minimum bet is $1.",
+"Tu n’as plus cette position.":"You no longer hold this position."
 });
 I18N_ADD("he",{
 "Connexion au serveur impossible. Vérifie ta connexion et réessaie.":"לא ניתן להתחבר לשרת. בדוק את החיבור ונסה שוב.",
@@ -69,5 +74,10 @@ I18N_ADD("he",{
 "Choisis un nouveau mot de passe pour ton compte.":"בחר סיסמה חדשה לחשבון שלך.",
 "Simulation : un compte de démonstration est créé dans ce navigateur.":"סימולציה: נוצר חשבון הדגמה בדפדפן הזה.",
 "Photo importée non enregistrée":"התמונה שהועלתה לא נשמרה",
-"Pour l’instant, les comptes utilisent les avatars de la galerie.":"בינתיים חשבונות משתמשים באווטארים מהגלריה."
+"Pour l’instant, les comptes utilisent les avatars de la galerie.":"בינתיים חשבונות משתמשים באווטארים מהגלריה.",
+"Solde insuffisant. Dépose des fonds pour continuer.":"היתרה אינה מספיקה. הפקד כסף כדי להמשיך.",
+"Pas assez de liquidité sur ce marché pour ce montant.":"אין מספיק נזילות בשוק הזה לסכום הזה.",
+"Ce marché est fermé.":"השוק הזה סגור.",
+"La mise minimale est de 1 $.":"ההימור המינימלי הוא $1.",
+"Tu n’as plus cette position.":"הפוזיציה הזו כבר לא ברשותך."
 });

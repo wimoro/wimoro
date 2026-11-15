@@ -61,7 +61,7 @@ test('B15 · achat : débit exact, position, prix, effets (XP, notification, bad
   expect(r.ev.filter(e => e.k === 'badge').map(e => e.id)).toEqual(['first', 'whale']);
   expect(r.ev.filter(e => e.k === 'notif').map(e => e.n.code)).toEqual(['badge', 'badge', 'bet_placed']);
   const m1 = await marche('btc150k');
-  expect(m1.p).toBeCloseTo(Math.round((m0.p + attendu.impact) * 100) / 100, 2);     // le prix monte de l'impact de l'ordre
+  expect(m1.p).toBeCloseTo(m0.p + attendu.impact, 5);                               // le prix monte de l'impact de l'ordre, sans arrondi au centième
   expect(m1.vol).toBeCloseTo(m0.vol + attendu.a, 1);
   expect(m1.anchor).toBeCloseTo(m0.anchor + attendu.impact * 0.7, 1);
   expect(m1.people).toBe(m0.people + 1);
@@ -136,6 +136,26 @@ test('invariants : le solde ne devient jamais négatif, et chaque mouvement est 
   expect(await refus(db, erin, 'update public.user_stats set balance = -1 where user_id = auth.uid()')).toMatch(/permission denied/);
 });
 
+test('un ordre découpé en petits paie le même impact : le prix garde toute sa précision', async () => {
+  // marché profond : un pari de 50 $ déplace le prix de moins de 0,005 point (avec 2 décimales, il ne bougeait pas du tout)
+  await db.exec(`insert into public.markets (id, category, question, status) values ('profond', 'Sport', 'Profond ?', 'open');
+    insert into public.market_live_state (market_id, current_probability, anchor_probability, volume_total, participants_count, liquidity_depth) values ('profond', 60, 60, 5000000, 10, 30000);`);
+  const dan = await creerJoueur(db, 'dan', 5000);
+  const unSeul = ENGINE.quoteBuy({ p: 60, vol: 5e6, liq: 30000, cat: 'Sport' }, 'oui', 1000, false);
+  const petit = ENGINE.quoteBuy({ p: 60, vol: 5e6, liq: 30000, cat: 'Sport' }, 'oui', 50, false);
+  expect(petit.impact).toBeLessThan(0.005);
+  const r1 = await api(dan, `public.api_buy('profond', 'oui', 50, $1)`, [randomUUID()]);
+  expect(r1.marches.profond[0]).toBeCloseTo(60 + petit.impact, 5);                    // le premier petit ordre fait déjà bouger le prix
+  for (let i = 0; i < 19; i++) await api(dan, `public.api_buy('profond', 'oui', 50, $1)`, [randomUUID()]);
+  const m = await marche('profond');
+  expect(m.p - 60).toBeGreaterThan(unSeul.impact * 0.97);                             // 20 × 50 $ déplacent le prix comme 1 × 1 000 $
+  expect(m.p - 60).toBeLessThan(unSeul.impact * 1.03);
+  const e = await api(dan, 'public.api_state()');
+  expect(e.positions[0].sh).toBeLessThan(unSeul.sh * 1.0005);                         // et ne donnent pas plus de parts
+  expect(e.me.balance).toBe(4000);
+  expect(JSON.stringify(r1.marches.profond[0]).length, 'prix diffusé sans zéros inutiles').toBeLessThan(10);
+});
+
 test('B16, K21 · issues multiples : le total reste à 100 % après chaque achat et chaque vente', async () => {
   const total = async () => Number((await q(db, `select sum(current_probability)::float8 as t from public.market_live_state where market_id like 'g-%'`))[0].t);
   expect(await total()).toBe(100);
@@ -164,5 +184,5 @@ test('la plateforme n’est jamais exposée : ce qui est dû aux joueurs est cou
   }
   // l'argent ne se crée pas : ce que les joueurs ont en moins = ce que le teneur de marché et les frais ont reçu
   const [j] = await q(db, `select (select -sum(amount) from public.balance_ledger where kind in ('bet', 'sell'))::float8 as joueurs, (select sum(mm_cash + fees) from public.market_live_state)::float8 as recu`);
-  expect(Math.abs(j.joueurs - j.recu)).toBeLessThan(0.5);                            // au centime près par opération
+  expect(Math.abs(j.joueurs - j.recu)).toBeLessThan(0.005);                          // exactement : débit = coût + frais, au centime
 });

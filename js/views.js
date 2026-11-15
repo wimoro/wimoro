@@ -171,19 +171,30 @@ function updNums(ctx){const box=$(`[data-tcalc="${ctx}"]`);if(!box)return;const 
 function rerenderTicket(){const t=$('[data-ticket="page"]');if(t){t.innerHTML=ticketInner('page');fixText(t);}const pb=$('[data-posbox]');if(pb){pb.outerHTML=posBoxH(MK[S.ui.ticket.m]);const n=$('[data-posbox]');fixText(n);}const ob=$('[data-ordbox]');if(ob){ob.outerHTML=ordersBoxH(MK[S.ui.ticket.m]);const n2=$('[data-ordbox]');if(n2)fixText(n2);}}
 function openBet(mid,side,amt,opt={}){const m=MK[mid];closeModal();S.ui.sheet={m:mid,side,mode:'buy',amt:String(amt||25),announce:true,followOf:opt.followOf||null};
  openModal(`<div class="md"><div class="md-h"><div><p>${_t(m.cat)}${opt.followUser?`${_t(", tu suis la mise de {0}",[esc(userOf(opt.followUser).n)])}`:''}</p><h3>${esc(m.q)}</h3></div><button class="x" data-a="close" aria-label="${_t("Fermer")}">${ic('x')}</button></div><div class="ticket" style="box-shadow:none" data-ticket="sheet">${ticketInner('sheet')}</div><a class="link" href="#marche-${mid}" data-a="close" style="font-size:13px;text-align:center">${_t("Voir le marché et son chat")}</a></div>`,'wide');}
-function placeBet(ctx,ev){const st=tState(ctx),m=MK[st.m],c=calcT(st);if(!c.ok)return;if(typeof rgBlocked==='function'&&rgBlocked('bet'))return;const before=myRank();
+/* Parier se fait en trois temps : 1. validation et aperçu (calcT) ; 2. écriture comptable — ici en mode local, par le
+   serveur en mode serveur (srvAcheter) ; 3. effets d'interface, les mêmes dans les deux modes (betEffets). */
+function placeBet(ctx,ev){const st=tState(ctx),m=MK[st.m],c=calcT(st);if(!c.ok)return;if(typeof rgBlocked==='function'&&rgBlocked('bet'))return;
+ if(SRV()){srvAcheter(ctx,ev,st,m,c);return;}
+ const before=myRank();
  S.me.balance-=c.amt;const p=S.me.positions.find(x=>x.m===m.id&&x.s===st.side);if(p){p.avg=(p.avg*p.sh+c.price*c.sh)/(p.sh+c.sh);p.sh+=c.sh;}else S.me.positions.push({m:m.id,s:st.side,sh:c.sh,avg:c.price});
  S.me.played++;S.me.maxBet=Math.max(S.me.maxBet,c.amt);S.me.realized-=c.fee;if(typeof copierFees==='function')copierFees(c.amt,c.fr);
  const old=m.p;applyBuy(m,c.q);m.anchor=clamp(m.anchor+c.q.impact*(st.side==='oui'?1:-1)*.7,5,95);m.people++;addBet(m,{s:st.side==='oui'?1:0,a:Math.min(1,c.amt/300),me:1});updateMarket(m,old);
+ betEffets(ctx,ev,st,m,c,before);}
+function betEffets(ctx,ev,st,m,c,before){
  updateHeader();gainXP(10,ev);mission('bet');
+ if(!SRV()){/* suivre une mise et l'annoncer dans le chat : en mode serveur, ces effets arrivent avec le lot « chat » */
  if(st.followOf){const x=MSG[st.followOf];if(x){x.followers++;setFc(x);setTimeout(()=>gainXP(5),550);}}
  if(st.announce&&can('share')){const x=mkMsg({u:'me',k:'bet',text:'',bet:{m:m.id,s:st.side,amt:Math.round(c.amt),price:Math.round(c.price)}});addMsg('m:'+m.id,x);setTimeout(()=>gainXP(5),800);scheduleFollowers(x,'m:'+m.id);}
+ }
  toast({tone:'blue',icon:'check',title:_t("Pari placé"),text:`${_t("{0} parts {1} sur {2}",[F.d2(c.sh),st.side==='oui'?_t("Oui"):_t("Non"),m.short])}`,sub:typeof clanToastTxt==='function'?clanToastTxt(clanCount(m.id,c.amt)):'',href:'#marche-'+m.id});
- notif('check',`${_t("Pari placé : {0} sur {1}, {2}.",[F.usd(c.amt),st.side==='oui'?_t("Oui"):_t("Non"),m.short])}`,'#profil');checkBadges();checkRank(before);save();
+ notif('check',`${_t("Pari placé : {0} sur {1}, {2}.",[F.usd(c.amt),st.side==='oui'?_t("Oui"):_t("Non"),m.short])}`,'#profil');checkBadges();if(before)checkRank(before);save();
  if(ctx==='sheet')closeModal();else rerenderTicket();}
 function scheduleFollowers(x,rid){const n=1+Math.floor(R()*3),ep=S.epoch;for(let i=0;i<n;i++)setTimeout(()=>{if(ep!==S.epoch)return;const u=pickUser(),before=myRank();x.followers++;setFc(x);S.me.followed++;addMsg(rid,mkMsg({k:'evt',text:`${_t("{0} a suivi ta mise",[userOf(u).n])}`}));toast({icon:'users',title:`${_t("{0} a suivi ta mise",[userOf(u).n])}`,text:'+20 XP',href:rid.startsWith('m:')?'#marche-'+rid.slice(2):'#chat'});gainXP(20);checkRank(before);checkBadges();save();},4000+i*5200+R()*3500);}
-function sellPos(ctx){const st=tState(ctx),c=calcT(st);if(!c.ok)return;const p=posOf(st.m,st.side);p.sh-=c.sh;S.me.balance+=c.pro;S.me.realized+=c.pnl;if(p.sh<.05){S.me.positions=S.me.positions.filter(x=>x!==p);if(typeof dropGuard==='function')dropGuard(st.m,st.side);}S.me.history.unshift({k:'sell',m:st.m,q:MK[st.m].q,s:st.side,win:c.pnl>=0,pnl:c.pnl,at:now()});
+/* Vendre : même découpage que parier. */
+function sellPos(ctx){const st=tState(ctx),c=calcT(st);if(!c.ok)return;if(SRV()){srvVendre(ctx,st,c);return;}const p=posOf(st.m,st.side);p.sh-=c.sh;S.me.balance+=c.pro;S.me.realized+=c.pnl;if(p.sh<.05){S.me.positions=S.me.positions.filter(x=>x!==p);if(typeof dropGuard==='function')dropGuard(st.m,st.side);}S.me.history.unshift({k:'sell',m:st.m,q:MK[st.m].q,s:st.side,win:c.pnl>=0,pnl:c.pnl,at:now()});
  const m=MK[st.m],old=m.p;applySell(m,c.q);addBet(m,{s:st.side==='oui'?0:1,a:Math.min(1,c.pro/300),me:1});updateMarket(m,old);
+ sellEffets(st,c);}
+function sellEffets(st,c){
  updateHeader();toast({tone:c.pnl>0.004?'green':c.pnl<-0.004?'red':'',icon:'check',title:c.pnl>0.004?`${_t("Vendu avec {0} de gain",[F.signed(c.pnl)])}`:c.pnl<-0.004?`${_t("Vendu avec {0} de perte",[F.signed(c.pnl)])}`:_t("Vendu au prix d’achat"),text:`${_t("{0} crédités sur ton solde",[F.usd(c.pro)])}`});st.amt='';rerenderTicket();save();}
 
 /* ===================== Accueil ===================== */

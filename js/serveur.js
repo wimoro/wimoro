@@ -26,7 +26,14 @@ const ERR_TXT={
  inscriptions_fermees:()=>_t("Les inscriptions sont fermées pour le moment."),
  pseudo_pris:()=>_t("Ce pseudo est déjà pris."),
  pseudo_invalide:()=>_t("3 à 20 caractères : lettres, chiffres, point ou tiret bas."),
- bio_trop_longue:()=>_t("Ta bio est trop longue (160 caractères au plus).")
+ bio_trop_longue:()=>_t("Ta bio est trop longue (160 caractères au plus)."),
+ solde_insuffisant:()=>_t("Solde insuffisant. Dépose des fonds pour continuer."),
+ liquidite:()=>_t("Pas assez de liquidité sur ce marché pour ce montant."),
+ marche_ferme:()=>_t("Ce marché est fermé."),
+ marche_inconnu:()=>_t("Ce marché est fermé."),
+ montant_min:()=>_t("La mise minimale est de 1 $."),
+ position_absente:()=>_t("Tu n’as plus cette position."),
+ quantite_invalide:()=>_t("Tu n’as plus cette position.")
 };
 const errTxt=e=>{const c=e&&e.code||'';return ERR_TXT[c]?ERR_TXT[c]():_t("Une erreur est survenue. Réessaie.");};
 const srvErreur=e=>{if(e&&e.code==='session'){srvSessionPerdue();return;}toast({tone:'red',icon:'info',force:true,title:_t("Action impossible"),text:errTxt(e)});};
@@ -34,7 +41,7 @@ const srvErreur=e=>{if(e&&e.code==='session'){srvSessionPerdue();return;}toast({
 /* ----- Ce qui n'est pas encore relié au serveur est clairement indisponible en mode serveur -----
    La liste se vide au fil des lots (voir docs/PLAN.md). Le test tests/compte/garde.spec.mjs vérifie qu'aucune action
    qui touche au solde, à l'XP ou à un état partagé n'est exécutée localement quand le serveur fait autorité. */
-const SRV_BLOQUE=new Set(('buy sell flash-bet share-pick claim withdraw vote fr-add fr-accept fr-cancel fr-decline fr-remove fiat-dep fiat-wd sim-dep '
+const SRV_BLOQUE=new Set(('flash-bet share-pick claim withdraw vote fr-add fr-accept fr-cancel fr-decline fr-remove fiat-dep fiat-wd sim-dep '
  +'cp-start cp-stop-do cp-edit cp-manage cp-pause cp-stop cp-open limit-place ord-cancel guard guard-save guard-del dl-create dl-cancel dl-accept dl-share dl-decline duel-open stk-create stack-open '
  +'bz-join bz-rebuy bz-choose sr-start sr-cash sr-play sr-share cl-war-join cl-sim cl-join cl-apply cl-leave-do cl-share cl-promote cl-kick cl-invite cl-call-do cl-war cl-feedopt cl-create-open cl-leave cl-call-open cl-war-open '
  +'cb-place cb-cash cb-add cb-clear cb-rm cb-stake pro-sh-send pro-share follow-user follow-bet follow-pbet share dm ref-copy ref-share rg-pause-do rg-excl-do rg-pend-cancel rg-pause rg-excl kyc propose react '
@@ -54,7 +61,8 @@ const badgeNom=id=>{const b=BADGES.find(x=>x.id===id);return b?b.n:id;};
 const NOTIF_T={
  rank_up:p=>_t("Tu passes {0}.",[rankName(p.t,p.d)]),
  mission_done:p=>_t("Mission terminée : {0}. Récupère tes {1} XP.",[missionLabel(p.id),p.xp]),
- badge:p=>_t("Badge débloqué : {0}.",[badgeNom(p.id)])
+ badge:p=>_t("Badge débloqué : {0}.",[badgeNom(p.id)]),
+ bet_placed:p=>_t("Pari placé : {0} sur {1}, {2}.",[F.usd(+p.amt),p.s==='oui'?_t("Oui"):_t("Non"),MK[p.m]?MK[p.m].short:p.m])
 };
 const notifDe=n=>{let text=n.text||'';if(n.code&&NOTIF_T[n.code]){try{text=NOTIF_T[n.code](n.p||{});}catch(e){console.warn('[srv] notification illisible',n.code);}}return {id:n.id,ic:n.ic||'info',text,href:n.href||'',at:n.at,read:!!n.read};};
 const missionDe=m=>({id:m.id,type:m.type,label:missionLabel(m.id),goal:m.goal,have:m.have,xp:m.xp,go:m.go||'#rang',claimed:!!m.claimed,day:today()});
@@ -92,9 +100,13 @@ function hydrater(e){
 }
 
 /* ----- Réponse d'une action : { me, ev, … } ----- */
-function srvAppliquer(r,ev){
- if(!r)return;
+function srvAppliquer(r,ev){if(!r)return;srvEtat(r);srvEvenements(r,ev);}
+/* 1. l'état : ce que dit le serveur remplace ce que l'écran croyait */
+function srvEtat(r){
  if(r.me){const garde={since:S.me.since,createdAt:S.me.createdAt,logged:true,interests:(r.me.interests||S.me.interests||[]).slice()};Object.assign(S.me,r.me,garde);}
+}
+/* 2. les événements : XP gagnée, notification, badge, mission, passage de rang */
+function srvEvenements(r,ev){
  for(const e of r.ev||[]){
   if(e.k==='xp')floatXP('+'+e.n+' XP',ev);
   else if(e.k==='notif'){S.me.notifs.unshift(notifDe(e.n));S.me.notifs=S.me.notifs.slice(0,30);}
@@ -117,21 +129,81 @@ function srvEnvoyer(){
  if(fj!==SRV_VU.profil){const avant=SRV_VU.profil;SRV_VU.profil=fj;API.call('api_profile_update',{p:{color:S.me.color,interests:S.me.interests}}).catch(e=>{SRV_VU.profil=avant;console.warn('[srv] profil non enregistré',e.code);});}
 }
 
-/* ----- Marchés : état partagé, lu sur le serveur ----- */
+/* ----- Marchés : état partagé, lu sur le serveur et tenu à jour par ses diffusions ----- */
 async function srvMarches(){
- const rows=await API.call('get_markets');
- for(const row of rows||[]){const m=MK[row.market_id];if(!m)continue;
-  m.p=clamp(+row.current_probability,1,99);if(row.anchor_probability!=null)m.anchor=clamp(+row.anchor_probability,5,95);
-  if(row.volume_total!=null)m.vol=+row.volume_total;if(row.participants_count!=null)m.people=row.participants_count|0;
-  if(row.liquidity_depth!=null)m.liq=+row.liquidity_depth;
-  const ph=row.price_history;if(Array.isArray(ph)&&ph.length>10){m.ph=ph.slice(-160).map(Number);m.ph[m.ph.length-1]=m.p;m.d0=m.ph[0];}}
+ const r=await API.call('api_markets');
+ for(const id in r.m||{}){const m=MK[id],x=r.m[id];if(!m)continue;
+  m.p=+x.p;m.anchor=m.p;if(x.d0!=null)m.d0=+x.d0;m.vol=+x.vol;m.people=x.people|0;if(x.liq!=null)m.liq=+x.liq;m.hotUntil=x.hot||0;
+  if(Array.isArray(x.ph)&&x.ph.length>1){m.ph=x.ph.slice(-160).map(Number);m.ph[m.ph.length-1]=m.p;}}
 }
+/* map : identifiant du marché → [prix, volume, participants, profondeur]. Le serveur a déjà recalculé les issues sœurs :
+   updateMarket reçoit donc noGroup=true, pour ne pas rééquilibrer une seconde fois dans le navigateur (B16). */
+function srvMarchesMaj(map){
+ const vus=[];
+ for(const id in map||{}){const m=MK[id],v=map[id];if(!m||!v)continue;const old=m.p,bouge=+v[0]!==m.p||+v[1]!==m.vol;m.p=+v[0];m.vol=+v[1];m.people=v[2]|0;if(v[3]!=null)m.liq=+v[3];
+  if(bouge)vus.push([m,old]);else $$(`[data-liq="${id}"]`).forEach(e=>e.textContent=F.compact(bookDepth(m)*10));}   /* seule la profondeur a changé : pas de nouveau point sur la courbe */
+ for(const [m,old] of vus)updateMarket(m,old,true);
+ if(typeof groupRefresh==='function')for(const g of new Set(vus.map(x=>x[0].parent).filter(Boolean)))if(GK[g])groupRefresh(GK[g]);
+}
+/* un tick du serveur : marchés modifiés, traînée des mises des bots, signal de foule éventuel */
+function srvTick(d){
+ srvMarchesMaj(d.m);
+ for(const b of d.b||[]){const m=MK[b[0]];if(m)addBet(m,{s:b[1]>0?1:0,a:+b[2]||0,me:0});}
+ if(d.sig)srvSignal(d.sig);
+}
+function srvSignal(sig){const m=MK[sig.m];if(!m)return;m.hotUntil=now()+90000;
+ for(let i=0;i<12;i++)addBet(m,{s:sig.s==='oui'?1:0,a:.25+Math.random()*.75,me:0});   /* la rafale laisse sa traînée, comme en mode local */
+ addMsg('general',mkMsg({k:'sig',sig}));addMsg('m:'+m.id,mkMsg({k:'sig',sig}));markHot(m);
+ toast({tone:sig.s==='oui'?'blue':'amber',icon:'flame',title:_t("Signal de foule"),text:_t("{0} personnes sur {1} : {2}",[sig.n,sig.s==='oui'?_t("Oui"):_t("Non"),m.short]),href:'#marche-'+m.id});}
+
+/* ----- Acheter et vendre : l'écriture comptable est faite par le serveur, les effets d'interface sont ceux du mode local ----- */
+const cleOp=()=>(typeof crypto!=='undefined'&&crypto.randomUUID)?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g,()=>Math.floor(Math.random()*16).toString(16));
+function srvPosition(pos){const L=S.me.positions,i=L.findIndex(p=>p.m===pos.m&&p.s===pos.s);
+ if(!(+pos.sh>0)){if(i>=0)L.splice(i,1);if(typeof dropGuard==='function')dropGuard(pos.m,pos.s);return;}
+ if(i>=0){L[i].sh=+pos.sh;L[i].avg=+pos.avg;}else L.push({m:pos.m,s:pos.s,sh:+pos.sh,avg:+pos.avg});}
+let srvOccupe=false;
+const srvBoutons=oui=>$$('[data-a="buy"],[data-a="sell"]').forEach(b=>{b.disabled=!!oui;});
+/* un seul ordre à la fois : les boutons restent grisés jusqu'à la réponse, même si l'écran est redessiné entre-temps */
+const srvDebut=()=>{if(srvOccupe)return false;srvOccupe=true;srvBoutons(true);queueMicrotask(()=>{if(srvOccupe)srvBoutons(true);});return true;};
+const srvFin=()=>{srvOccupe=false;updTicket('page');updTicket('sheet');};   /* le ticket recalcule l'état de ses boutons */
+const surGroupe=m=>m&&m.parent&&(S.ui.route||'')==='marche-'+m.parent;
+async function srvAcheter(ctx,ev,st,m,c){
+ if(!srvDebut())return;
+ try{
+  const r=await API.call('api_buy',{p_market:m.id,p_side:st.side,p_total:Math.round(c.amt*100)/100,p_key:cleOp(),p_opts:{}});
+  srvPosition(r.pos);
+  /* le ticket affiche ce qui a réellement été exécuté */
+  c.amt=+r.q.total;c.sh=+r.q.sh;c.price=+r.q.avg;c.fee=+r.q.fee;
+  addBet(m,{s:st.side==='oui'?1:0,a:Math.min(1,c.amt/300),me:1});
+  srvMarchesMaj(r.marches);srvEtat(r);
+  betEffets(ctx,ev,st,m,c,null);srvEvenements(r,ev);                 /* même ordre qu'en mode local : « Pari placé », puis XP, badge, rang */
+  if(surGroupe(m))render(false);
+ }catch(e){srvErreur(e);}
+ finally{srvFin();}
+}
+async function srvVendre(ctx,st,c){
+ if(!srvDebut())return;
+ try{
+  const m=MK[st.m],r=await API.call('api_sell',{p_market:st.m,p_side:st.side,p_shares:c.sh,p_key:cleOp()});
+  srvPosition(r.pos);S.me.history.unshift(histDe(r.hist));
+  addBet(m,{s:st.side==='oui'?0:1,a:Math.min(1,(+r.q.pro)/300),me:1});
+  srvMarchesMaj(r.marches);srvEtat(r);
+  sellEffets(st,{pnl:+r.q.pnl,pro:+r.q.pro});srvEvenements(r);
+  if(surGroupe(m))render(false);
+ }catch(e){srvErreur(e);}
+ finally{srvFin();}
+}
+
+/* Présence : tant que l'onglet est visible, le site dit au serveur qu'un joueur regarde (toutes les 4 minutes). Sans joueur
+   présent, les bots du serveur passent en veille et ne diffusent plus rien (voir supabase/migrations/…_bots_veille.sql). */
+planifier('serveur : présence',240000,()=>{if(!document.hidden&&S.me.logged)API.call('api_present').catch(()=>{});},'serveur');
 
 /* ----- Démarrage en mode serveur ----- */
 async function bootServeur(){
  const [etat]=await Promise.all([API.loadState(),srvMarches().catch(e=>console.warn('[srv] marchés indisponibles',e.code))]);
  hydrater(etat);
  API.on('session',()=>srvSessionPerdue());
+ API.subscribe('marches',(evt,d)=>{if(evt==='tick')srvTick(d);}).catch(e=>console.warn('[srv] temps réel indisponible',e.code));
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)srvRafraichir();});
 }
 /* au retour sur l'onglet : on relit l'état (un autre appareil a pu jouer entre-temps) */
