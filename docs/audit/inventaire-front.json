@@ -1,0 +1,5257 @@
+{
+ "rows": [
+  {
+   "reg": "ACT",
+   "key": "bet",
+   "file": "views.js",
+   "line": 411,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "tside",
+   "file": "views.js",
+   "line": 412,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "tmode",
+   "file": "views.js",
+   "line": 413,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "preset",
+   "file": "views.js",
+   "line": 414,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [
+    "prix/volume des marchés"
+   ],
+   "compte": "local à ce navigateur, non partagé",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "buy",
+   "file": "views.js",
+   "line": 415,
+   "redef": [],
+   "me": [
+    "badges",
+    "balance",
+    "blockedShown",
+    "clanLive",
+    "clanSkipped",
+    "clanVol",
+    "clanXP",
+    "combos",
+    "copyEarn",
+    "followed",
+    "guards",
+    "history",
+    "maxBet",
+    "notifs",
+    "orders",
+    "played",
+    "positions",
+    "realized",
+    "rg",
+    "xp"
+   ],
+   "money": true,
+   "xp": true,
+   "shared": [
+    "prix/volume des marchés",
+    "messages de chat"
+   ],
+   "compte": "RPC place_bet (partiel)",
+   "net": true
+  },
+  {
+   "reg": "ACT",
+   "key": "sell",
+   "file": "views.js",
+   "line": 415,
+   "redef": [],
+   "me": [
+    "badges",
+    "balance",
+    "clanLive",
+    "combos",
+    "guards",
+    "history",
+    "maxBet",
+    "notifs",
+    "orders",
+    "played",
+    "positions",
+    "realized"
+   ],
+   "money": true,
+   "xp": false,
+   "shared": [
+    "prix/volume des marchés"
+   ],
+   "compte": "RPC sell_position (partiel)",
+   "net": true
+  },
+  {
+   "reg": "ACT",
+   "key": "cat",
+   "file": "views.js",
+   "line": 416,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "tf",
+   "file": "views.js",
+   "line": 417,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pin",
+   "file": "views.js",
+   "line": 418,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "hroom",
+   "file": "views.js",
+   "line": 419,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "troom",
+   "file": "views.js",
+   "line": 420,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "mtab",
+   "file": "views.js",
+   "line": 421,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "react",
+   "file": "views.js",
+   "line": 422,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "react-pal",
+   "file": "views.js",
+   "line": 423,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "follow-bet",
+   "file": "views.js",
+   "line": 424,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "follow-pbet",
+   "file": "views.js",
+   "line": 425,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "share",
+   "file": "views.js",
+   "line": 426,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "share-pick",
+   "file": "views.js",
+   "line": 427,
+   "redef": [],
+   "me": [
+    "badges",
+    "blockedShown",
+    "clanLive",
+    "followed",
+    "notifs",
+    "xp"
+   ],
+   "money": false,
+   "xp": true,
+   "shared": [
+    "messages de chat"
+   ],
+   "compte": "ANNULÉ en 15 s max (B05)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cite",
+   "file": "views.js",
+   "line": 428,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cite-pick",
+   "file": "views.js",
+   "line": 429,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "lock",
+   "file": "views.js",
+   "line": 430,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "tier",
+   "file": "views.js",
+   "line": 430,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "claim",
+   "file": "views.js",
+   "line": 431,
+   "redef": [],
+   "me": [
+    "badges",
+    "blockedShown",
+    "clanLive",
+    "notifs",
+    "xp"
+   ],
+   "money": false,
+   "xp": true,
+   "shared": [],
+   "compte": "ANNULÉ en 15 s max (B05)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "propose",
+   "file": "views.js",
+   "line": 432,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "stats",
+   "file": "views.js",
+   "line": 432,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "dm",
+   "file": "views.js",
+   "line": 433,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [
+    "messages de chat"
+   ],
+   "compte": "local à ce navigateur, non partagé",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "follow-user",
+   "file": "views.js",
+   "line": 434,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "following"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "lbp",
+   "file": "views.js",
+   "line": 435,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "ptab",
+   "file": "views.js",
+   "line": 435,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "watch",
+   "file": "views.js",
+   "line": 436,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "watch"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "copylink",
+   "file": "views.js",
+   "line": 437,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "search-open",
+   "file": "views.js",
+   "line": 437,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "search-close",
+   "file": "views.js",
+   "line": 437,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "copy",
+   "file": "views.js",
+   "line": 437,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "coin",
+   "file": "views.js",
+   "line": 438,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "net",
+   "file": "views.js",
+   "line": 438,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "sim-dep",
+   "file": "views.js",
+   "line": 438,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "wnet",
+   "file": "views.js",
+   "line": 439,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "wd-test",
+   "file": "views.js",
+   "line": 439,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "wd-max",
+   "file": "views.js",
+   "line": 440,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "withdraw",
+   "file": "views.js",
+   "line": 441,
+   "redef": [],
+   "me": [
+    "balance",
+    "clanLive",
+    "notifs",
+    "wds"
+   ],
+   "money": true,
+   "xp": false,
+   "shared": [],
+   "compte": "ANNULÉ en 15 s max (B05)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "notifs",
+   "file": "views.js",
+   "line": 442,
+   "redef": [],
+   "me": [
+    "clanLive"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "npanel-close",
+   "file": "views.js",
+   "line": 442,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "close",
+   "file": "views.js",
+   "line": 443,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "feed-down",
+   "file": "views.js",
+   "line": 443,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "rankup-close",
+   "file": "views.js",
+   "line": 443,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "reset",
+   "file": "views.js",
+   "line": 444,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "noop",
+   "file": "views.js",
+   "line": 444,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cr-tab",
+   "file": "auth.js",
+   "line": 37,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cr-cat",
+   "file": "auth.js",
+   "line": 38,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cr-rules",
+   "file": "auth.js",
+   "line": 39,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "vote",
+   "file": "auth.js",
+   "line": 40,
+   "redef": [],
+   "me": [
+    "badges",
+    "blockedShown",
+    "clanLive",
+    "notifs",
+    "voted",
+    "xp"
+   ],
+   "money": false,
+   "xp": true,
+   "shared": [],
+   "compte": "ANNULÉ en 15 s max (B05)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "auth-mode",
+   "file": "auth.js",
+   "line": 81,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pw-toggle",
+   "file": "auth.js",
+   "line": 82,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "forgot",
+   "file": "auth.js",
+   "line": 83,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "wallet",
+   "file": "auth.js",
+   "line": 84,
+   "redef": [],
+   "me": [
+    "(objet entier)",
+    "balance",
+    "clan",
+    "clanLive",
+    "clanSeeded",
+    "clanVol",
+    "clanXP",
+    "comboSeeded",
+    "combos",
+    "createdAt",
+    "deps",
+    "duelSeedLang",
+    "duelSeeded",
+    "duelWins",
+    "duels",
+    "history",
+    "logged",
+    "notifs",
+    "refBy",
+    "refCode",
+    "rg",
+    "stacks"
+   ],
+   "money": true,
+   "xp": false,
+   "shared": [
+    "messages de chat",
+    "fiches joueurs"
+   ],
+   "compte": "ANNULÉ en 15 s max (B05)",
+   "net": true
+  },
+  {
+   "reg": "ACT",
+   "key": "wallet-modal",
+   "file": "auth.js",
+   "line": 85,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "demo-login",
+   "file": "auth.js",
+   "line": 86,
+   "redef": [],
+   "me": [
+    "(objet entier)",
+    "clan",
+    "clanLive",
+    "clanSeeded",
+    "clanVol",
+    "clanXP",
+    "comboSeeded",
+    "combos",
+    "createdAt",
+    "duelSeedLang",
+    "duelSeeded",
+    "duelWins",
+    "duels",
+    "history",
+    "logged",
+    "notifs",
+    "rg",
+    "stacks",
+    "welcomed"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [
+    "messages de chat",
+    "fiches joueurs"
+   ],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "logout",
+   "file": "auth.js",
+   "line": 87,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "ob-color",
+   "file": "auth.js",
+   "line": 102,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "color"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "ob-int",
+   "file": "auth.js",
+   "line": 103,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "interests"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "ob-back",
+   "file": "auth.js",
+   "line": 104,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "ob-kpick",
+   "file": "auth.js",
+   "line": 105,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "ob-kyc",
+   "file": "auth.js",
+   "line": 106,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "ob-next",
+   "file": "auth.js",
+   "line": 107,
+   "redef": [],
+   "me": [
+    "badges",
+    "blockedShown",
+    "clanLive",
+    "notifs",
+    "obBonus",
+    "onboarded",
+    "xp"
+   ],
+   "money": false,
+   "xp": true,
+   "shared": [],
+   "compte": "ANNULÉ en 15 s max (B05)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "ob-done",
+   "file": "auth.js",
+   "line": 108,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "onboarded"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "ctype",
+   "file": "auth.js",
+   "line": 176,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "ctype"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pe-color",
+   "file": "auth.js",
+   "line": 229,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pe-int",
+   "file": "auth.js",
+   "line": 230,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pe-wallet",
+   "file": "auth.js",
+   "line": 231,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pe-pw",
+   "file": "auth.js",
+   "line": 232,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "np-mode",
+   "file": "auth.js",
+   "line": 290,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "tmode"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "np-del",
+   "file": "auth.js",
+   "line": 291,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "notifs"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "np-clear",
+   "file": "auth.js",
+   "line": 292,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "notifs"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "fr-add",
+   "file": "auth.js",
+   "line": 321,
+   "redef": [],
+   "me": [
+    "badges",
+    "blockedShown",
+    "clanLive",
+    "freqIn",
+    "freqOut",
+    "friends",
+    "notifs",
+    "xp"
+   ],
+   "money": false,
+   "xp": true,
+   "shared": [],
+   "compte": "ANNULÉ en 15 s max (B05)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "fr-cancel",
+   "file": "auth.js",
+   "line": 322,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "freqOut"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "fr-accept",
+   "file": "auth.js",
+   "line": 323,
+   "redef": [],
+   "me": [
+    "badges",
+    "blockedShown",
+    "clanLive",
+    "freqIn",
+    "friends",
+    "notifs",
+    "xp"
+   ],
+   "money": false,
+   "xp": true,
+   "shared": [],
+   "compte": "ANNULÉ en 15 s max (B05)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "fr-decline",
+   "file": "auth.js",
+   "line": 324,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "freqIn",
+    "friends"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "fr-remove",
+   "file": "auth.js",
+   "line": 325,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "friends"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "fr-menu",
+   "file": "auth.js",
+   "line": 326,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "fr-invite",
+   "file": "auth.js",
+   "line": 327,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pe-photo",
+   "file": "avatars.js",
+   "line": 51,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "umenu",
+   "file": "account.js",
+   "line": 76,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "uclose",
+   "file": "account.js",
+   "line": 77,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "kyc",
+   "file": "account.js",
+   "line": 78,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "kycdoc",
+   "file": "account.js",
+   "line": 79,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "theme",
+   "file": "account.js",
+   "line": 80,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "tm-cycle",
+   "file": "account.js",
+   "line": 81,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "tmode"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cmode",
+   "file": "account.js",
+   "line": 82,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "dmethod",
+   "file": "account.js",
+   "line": 83,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "wmethod",
+   "file": "account.js",
+   "line": 83,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "fiat-q",
+   "file": "account.js",
+   "line": 84,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "fiat-dep",
+   "file": "account.js",
+   "line": 84,
+   "redef": [],
+   "me": [
+    "badges",
+    "balance",
+    "blockedShown",
+    "clanLive",
+    "depDay",
+    "deposits",
+    "deps",
+    "notifs",
+    "rg",
+    "xp"
+   ],
+   "money": true,
+   "xp": true,
+   "shared": [
+    "messages de chat"
+   ],
+   "compte": "ANNULÉ en 15 s max (B05)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "fiat-wd",
+   "file": "account.js",
+   "line": 84,
+   "redef": [],
+   "me": [
+    "balance",
+    "clanLive",
+    "notifs",
+    "wds"
+   ],
+   "money": true,
+   "xp": false,
+   "shared": [],
+   "compte": "ANNULÉ en 15 s max (B05)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "fiat-max",
+   "file": "account.js",
+   "line": 85,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "flash-bet",
+   "file": "supabase.js",
+   "line": 189,
+   "redef": [
+    "flash.js:304"
+   ],
+   "me": [
+    "balance",
+    "played"
+   ],
+   "money": true,
+   "xp": false,
+   "shared": [],
+   "compte": "RPC flash_bet (partiel)",
+   "net": true
+  },
+  {
+   "reg": "ACT",
+   "key": "flash-amt",
+   "file": "flash.js",
+   "line": 305,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "flres-close",
+   "file": "flash.js",
+   "line": 306,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "fhelp",
+   "file": "flash.js",
+   "line": 307,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "fopen",
+   "file": "flash.js",
+   "line": 308,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "fcat",
+    "fmode"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [
+    "état éclair"
+   ],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "fgame",
+   "file": "flash.js",
+   "line": 309,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "fmode",
+   "file": "flash.js",
+   "line": 310,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "fmode"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "fcat",
+   "file": "flash.js",
+   "line": 311,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "fcat"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [
+    "état éclair"
+   ],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "falert",
+   "file": "flash.js",
+   "line": 312,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "falerts"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "tscroll",
+   "file": "flash.js",
+   "line": 326,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cp-open",
+   "file": "copy.js",
+   "line": 294,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cp-edit",
+   "file": "copy.js",
+   "line": 295,
+   "redef": [],
+   "me": [
+    "copies"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cp-set",
+   "file": "copy.js",
+   "line": 296,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cp-mode",
+   "file": "copy.js",
+   "line": 297,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cp-pct",
+   "file": "copy.js",
+   "line": 298,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cp-cat",
+   "file": "copy.js",
+   "line": 299,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cp-stop-set",
+   "file": "copy.js",
+   "line": 300,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cp-start",
+   "file": "copy.js",
+   "line": 301,
+   "redef": [],
+   "me": [
+    "badges",
+    "balance",
+    "blockedShown",
+    "clanLive",
+    "combos",
+    "copies",
+    "copyXP",
+    "guards",
+    "history",
+    "maxBet",
+    "notifs",
+    "orders",
+    "played",
+    "positions",
+    "realized",
+    "xp"
+   ],
+   "money": true,
+   "xp": true,
+   "shared": [
+    "prix/volume des marchés"
+   ],
+   "compte": "ANNULÉ en 15 s max (B05)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cp-manage",
+   "file": "copy.js",
+   "line": 302,
+   "redef": [],
+   "me": [
+    "copies"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cp-pause",
+   "file": "copy.js",
+   "line": 303,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "copies"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cp-stop",
+   "file": "copy.js",
+   "line": 304,
+   "redef": [],
+   "me": [
+    "copies"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cp-stop-do",
+   "file": "copy.js",
+   "line": 308,
+   "redef": [],
+   "me": [
+    "badges",
+    "balance",
+    "clanLive",
+    "combos",
+    "copies",
+    "guards",
+    "history",
+    "maxBet",
+    "notifs",
+    "orders",
+    "played",
+    "positions",
+    "realized"
+   ],
+   "money": true,
+   "xp": false,
+   "shared": [
+    "prix/volume des marchés"
+   ],
+   "compte": "ANNULÉ en 15 s max (B05)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pe-vis",
+   "file": "copy.js",
+   "line": 309,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "otype",
+   "file": "orders.js",
+   "line": 175,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "lpset",
+   "file": "orders.js",
+   "line": 176,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "lpstep",
+   "file": "orders.js",
+   "line": 177,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "limit-place",
+   "file": "orders.js",
+   "line": 178,
+   "redef": [],
+   "me": [
+    "badges",
+    "balance",
+    "blockedShown",
+    "clanLive",
+    "combos",
+    "guards",
+    "history",
+    "limitXP",
+    "maxBet",
+    "notifs",
+    "orders",
+    "played",
+    "positions",
+    "realized",
+    "rg",
+    "xp"
+   ],
+   "money": true,
+   "xp": true,
+   "shared": [
+    "prix/volume des marchés"
+   ],
+   "compte": "ANNULÉ en 15 s max (B05)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "ord-cancel",
+   "file": "orders.js",
+   "line": 179,
+   "redef": [],
+   "me": [
+    "balance",
+    "clanLive",
+    "orders"
+   ],
+   "money": true,
+   "xp": false,
+   "shared": [],
+   "compte": "ANNULÉ en 15 s max (B05)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "guard",
+   "file": "orders.js",
+   "line": 180,
+   "redef": [],
+   "me": [
+    "guards"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "guard-set",
+   "file": "orders.js",
+   "line": 181,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "guard-save",
+   "file": "orders.js",
+   "line": 182,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "guards"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "guard-del",
+   "file": "orders.js",
+   "line": 184,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "guards"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "share-open",
+   "file": "referral.js",
+   "line": 95,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "refCode",
+    "refShared"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "share-send",
+   "file": "referral.js",
+   "line": 96,
+   "redef": [],
+   "me": [
+    "refCode"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "share-save",
+   "file": "referral.js",
+   "line": 97,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "share-copy",
+   "file": "referral.js",
+   "line": 98,
+   "redef": [],
+   "me": [
+    "refCode"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "ref-copy",
+   "file": "referral.js",
+   "line": 99,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "refShared"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "ref-share",
+   "file": "referral.js",
+   "line": 100,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "refCode",
+    "refShared"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "rg-pause",
+   "file": "responsible.js",
+   "line": 192,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "rg-pause-do",
+   "file": "responsible.js",
+   "line": 192,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "notifs",
+    "rg"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "rg-excl",
+   "file": "responsible.js",
+   "line": 193,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "rg-excl-do",
+   "file": "responsible.js",
+   "line": 193,
+   "redef": [],
+   "me": [
+    "(objet entier)",
+    "rg"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "rg-pend-cancel",
+   "file": "responsible.js",
+   "line": 194,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "rg"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "rg-export",
+   "file": "responsible.js",
+   "line": 195,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "lang-set",
+   "file": "responsible.js",
+   "line": 207,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "lang-pick",
+   "file": "responsible.js",
+   "line": 207,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "duel-open",
+   "file": "duels.js",
+   "line": 192,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "dl-side",
+   "file": "duels.js",
+   "line": 193,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "dl-stake",
+   "file": "duels.js",
+   "line": 194,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "dl-opp",
+   "file": "duels.js",
+   "line": 195,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "dl-create",
+   "file": "duels.js",
+   "line": 196,
+   "redef": [],
+   "me": [
+    "badges",
+    "balance",
+    "clanLive",
+    "combos",
+    "duels",
+    "duelsMade",
+    "friends",
+    "guards",
+    "history",
+    "maxBet",
+    "notifs",
+    "orders",
+    "played",
+    "positions",
+    "realized",
+    "rg"
+   ],
+   "money": true,
+   "xp": false,
+   "shared": [
+    "prix/volume des marchés"
+   ],
+   "compte": "ANNULÉ en 15 s max (B05)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "dl-share",
+   "file": "duels.js",
+   "line": 197,
+   "redef": [],
+   "me": [
+    "duels"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "dl-cancel",
+   "file": "duels.js",
+   "line": 198,
+   "redef": [],
+   "me": [
+    "balance",
+    "clanLive",
+    "duels"
+   ],
+   "money": true,
+   "xp": false,
+   "shared": [],
+   "compte": "ANNULÉ en 15 s max (B05)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "dl-accept",
+   "file": "duels.js",
+   "line": 199,
+   "redef": [],
+   "me": [
+    "badges",
+    "balance",
+    "blockedShown",
+    "clanLive",
+    "combos",
+    "duels",
+    "guards",
+    "history",
+    "maxBet",
+    "notifs",
+    "orders",
+    "played",
+    "positions",
+    "realized",
+    "rg",
+    "xp"
+   ],
+   "money": true,
+   "xp": true,
+   "shared": [
+    "prix/volume des marchés"
+   ],
+   "compte": "ANNULÉ en 15 s max (B05)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "dl-login",
+   "file": "duels.js",
+   "line": 201,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "dl-decline",
+   "file": "duels.js",
+   "line": 202,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "duels"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "dtab",
+   "file": "duels.js",
+   "line": 203,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "stack-open",
+   "file": "duels.js",
+   "line": 204,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "stk-buyin",
+   "file": "duels.js",
+   "line": 205,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "stk-opp",
+   "file": "duels.js",
+   "line": 206,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "stk-create",
+   "file": "duels.js",
+   "line": 207,
+   "redef": [],
+   "me": [
+    "balance",
+    "clanLive",
+    "notifs",
+    "rg",
+    "stacks"
+   ],
+   "money": true,
+   "xp": false,
+   "shared": [],
+   "compte": "ANNULÉ en 15 s max (B05)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "bz-join",
+   "file": "blitz.js",
+   "line": 190,
+   "redef": [],
+   "me": [
+    "badges",
+    "balance",
+    "blockedShown",
+    "bzPlayed",
+    "clanLive",
+    "notifs",
+    "played",
+    "rg",
+    "xp"
+   ],
+   "money": true,
+   "xp": true,
+   "shared": [],
+   "compte": "ANNULÉ en 15 s max (B05)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "bz-rebuy",
+   "file": "blitz.js",
+   "line": 191,
+   "redef": [],
+   "me": [
+    "balance",
+    "clanLive",
+    "rg"
+   ],
+   "money": true,
+   "xp": false,
+   "shared": [],
+   "compte": "ANNULÉ en 15 s max (B05)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "bz-choose",
+   "file": "blitz.js",
+   "line": 192,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "sr-gid",
+   "file": "blitz.js",
+   "line": 193,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "sr-stake",
+   "file": "blitz.js",
+   "line": 194,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "sr-start",
+   "file": "blitz.js",
+   "line": 195,
+   "redef": [],
+   "me": [
+    "badges",
+    "balance",
+    "blockedShown",
+    "clanLive",
+    "notifs",
+    "played",
+    "rg",
+    "serie",
+    "xp"
+   ],
+   "money": true,
+   "xp": true,
+   "shared": [],
+   "compte": "ANNULÉ en 15 s max (B05)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "sr-play",
+   "file": "blitz.js",
+   "line": 196,
+   "redef": [],
+   "me": [
+    "clanLive"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "sr-cash",
+   "file": "blitz.js",
+   "line": 197,
+   "redef": [],
+   "me": [
+    "badges",
+    "balance",
+    "blockedShown",
+    "clanLive",
+    "history",
+    "notifs",
+    "realized",
+    "serieBest",
+    "serieToday",
+    "settled",
+    "wins",
+    "xp"
+   ],
+   "money": true,
+   "xp": true,
+   "shared": [],
+   "compte": "ANNULÉ en 15 s max (B05)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "sr-share",
+   "file": "blitz.js",
+   "line": 198,
+   "redef": [],
+   "me": [
+    "refCode"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cl-tab",
+   "file": "clans.js",
+   "line": 232,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cl-div",
+   "file": "clans.js",
+   "line": 233,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cl-ctab",
+   "file": "clans.js",
+   "line": 234,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cl-create-open",
+   "file": "clans.js",
+   "line": 235,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "clc-ic",
+   "file": "clans.js",
+   "line": 236,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "clc-col",
+   "file": "clans.js",
+   "line": 236,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "clc-lang",
+   "file": "clans.js",
+   "line": 237,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "clc-cat",
+   "file": "clans.js",
+   "line": 238,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "clc-access",
+   "file": "clans.js",
+   "line": 239,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cl-sim",
+   "file": "clans.js",
+   "line": 240,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "clanSim"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cl-join",
+   "file": "clans.js",
+   "line": 241,
+   "redef": [],
+   "me": [
+    "clan",
+    "clanLive",
+    "clanVol",
+    "clanXP",
+    "notifs"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [
+    "messages de chat"
+   ],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cl-apply",
+   "file": "clans.js",
+   "line": 242,
+   "redef": [],
+   "me": [
+    "clan",
+    "clanApps",
+    "clanLive",
+    "clanVol",
+    "clanXP",
+    "notifs"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [
+    "messages de chat"
+   ],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cl-leave",
+   "file": "clans.js",
+   "line": 243,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cl-leave-do",
+   "file": "clans.js",
+   "line": 244,
+   "redef": [],
+   "me": [
+    "clan",
+    "clanLeftAt",
+    "clanLive",
+    "clanVol"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cl-share",
+   "file": "clans.js",
+   "line": 245,
+   "redef": [],
+   "me": [
+    "refCode"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cl-promote",
+   "file": "clans.js",
+   "line": 246,
+   "redef": [],
+   "me": [
+    "clanLive"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cl-kick",
+   "file": "clans.js",
+   "line": 247,
+   "redef": [],
+   "me": [
+    "clanLive"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [
+    "fiches joueurs"
+   ],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cl-invite",
+   "file": "clans.js",
+   "line": 248,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "friends"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [
+    "fiches joueurs"
+   ],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cl-call-open",
+   "file": "clans.js",
+   "line": 249,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cl-call-do",
+   "file": "clans.js",
+   "line": 250,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "notifs"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [
+    "messages de chat"
+   ],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cl-war",
+   "file": "clans.js",
+   "line": 251,
+   "redef": [],
+   "me": [
+    "clanLive"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [
+    "messages de chat"
+   ],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cl-war-open",
+   "file": "clans.js",
+   "line": 252,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cl-war-join",
+   "file": "clans.js",
+   "line": 253,
+   "redef": [],
+   "me": [
+    "balance",
+    "clanLive",
+    "rg"
+   ],
+   "money": true,
+   "xp": false,
+   "shared": [],
+   "compte": "ANNULÉ en 15 s max (B05)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cl-feedopt",
+   "file": "clans.js",
+   "line": 254,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "prefs"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cb-add",
+   "file": "combos.js",
+   "line": 98,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "slip"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cb-open",
+   "file": "combos.js",
+   "line": 99,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cb-clear",
+   "file": "combos.js",
+   "line": 100,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "slip"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cb-rm",
+   "file": "combos.js",
+   "line": 101,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "slip"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cb-stake",
+   "file": "combos.js",
+   "line": 102,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "slip"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cb-place",
+   "file": "combos.js",
+   "line": 103,
+   "redef": [],
+   "me": [
+    "badges",
+    "balance",
+    "blockedShown",
+    "cbPlayed",
+    "clanLive",
+    "clanSkipped",
+    "clanVol",
+    "clanXP",
+    "combos",
+    "notifs",
+    "played",
+    "rg",
+    "slip",
+    "xp"
+   ],
+   "money": true,
+   "xp": true,
+   "shared": [],
+   "compte": "ANNULÉ en 15 s max (B05)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cb-cash",
+   "file": "combos.js",
+   "line": 104,
+   "redef": [],
+   "me": [
+    "badges",
+    "balance",
+    "blockedShown",
+    "clanLive",
+    "combos",
+    "history",
+    "notifs",
+    "realized",
+    "settled",
+    "wins",
+    "xp"
+   ],
+   "money": true,
+   "xp": true,
+   "shared": [],
+   "compte": "ANNULÉ en 15 s max (B05)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "cb-tab",
+   "file": "combos.js",
+   "line": 105,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pro-open",
+   "file": "pro2.js",
+   "line": 239,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "pro"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [
+    "prix/volume des marchés"
+   ],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pro-close",
+   "file": "pro2.js",
+   "line": 240,
+   "redef": [],
+   "me": [
+    "clanLive"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pro-goto",
+   "file": "pro2.js",
+   "line": 240,
+   "redef": [],
+   "me": [
+    "clanLive"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pro-sell",
+   "file": "pro2.js",
+   "line": 241,
+   "redef": [],
+   "me": [
+    "clanLive"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pro-iv",
+   "file": "pro2.js",
+   "line": 242,
+   "redef": [],
+   "me": [
+    "clanLive"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pro-type",
+   "file": "pro2.js",
+   "line": 245,
+   "redef": [],
+   "me": [
+    "clanLive"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pro-side",
+   "file": "pro2.js",
+   "line": 246,
+   "redef": [],
+   "me": [
+    "clanLive"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pro-panel",
+   "file": "pro2.js",
+   "line": 247,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pro-ind-add",
+   "file": "pro2.js",
+   "line": 248,
+   "redef": [],
+   "me": [
+    "clanLive"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [
+    "prix/volume des marchés"
+   ],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pro-ind-swap",
+   "file": "pro2.js",
+   "line": 249,
+   "redef": [],
+   "me": [
+    "clanLive"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [
+    "prix/volume des marchés"
+   ],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pro-ind-del",
+   "file": "pro2.js",
+   "line": 250,
+   "redef": [],
+   "me": [
+    "clanLive"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pro-ind-eye",
+   "file": "pro2.js",
+   "line": 251,
+   "redef": [],
+   "me": [
+    "clanLive"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pro-ind-col",
+   "file": "pro2.js",
+   "line": 252,
+   "redef": [],
+   "me": [
+    "clanLive"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pro-ind-w",
+   "file": "pro2.js",
+   "line": 253,
+   "redef": [],
+   "me": [
+    "clanLive"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pro-leg-more",
+   "file": "pro2.js",
+   "line": 254,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pro-ind-anc",
+   "file": "pro2.js",
+   "line": 255,
+   "redef": [],
+   "me": [
+    "clanLive"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [
+    "prix/volume des marchés"
+   ],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pro-perks",
+   "file": "pro2.js",
+   "line": 257,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pro-tool",
+   "file": "pro2.js",
+   "line": 258,
+   "redef": [],
+   "me": [
+    "clanLive"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pro-tools-toggle",
+   "file": "pro2.js",
+   "line": 259,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pro-hide-all",
+   "file": "pro2.js",
+   "line": 260,
+   "redef": [],
+   "me": [
+    "clanLive"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pro-clear",
+   "file": "pro2.js",
+   "line": 261,
+   "redef": [],
+   "me": [
+    "clanLive"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pro-obj-sel",
+   "file": "pro2.js",
+   "line": 264,
+   "redef": [],
+   "me": [
+    "clanLive"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pro-obj-eye",
+   "file": "pro2.js",
+   "line": 265,
+   "redef": [],
+   "me": [
+    "clanLive"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pro-obj-del",
+   "file": "pro2.js",
+   "line": 266,
+   "redef": [],
+   "me": [
+    "clanLive"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pro-dr-col",
+   "file": "pro2.js",
+   "line": 267,
+   "redef": [],
+   "me": [
+    "clanLive"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pro-dr-w",
+   "file": "pro2.js",
+   "line": 268,
+   "redef": [],
+   "me": [
+    "clanLive"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pro-dr-txt",
+   "file": "pro2.js",
+   "line": 269,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pro-dr-eye",
+   "file": "pro2.js",
+   "line": 270,
+   "redef": [],
+   "me": [
+    "clanLive"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pro-dr-del",
+   "file": "pro2.js",
+   "line": 271,
+   "redef": [],
+   "me": [
+    "clanLive"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pro-dr-none",
+   "file": "pro2.js",
+   "line": 272,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pro-tip-x",
+   "file": "pro2.js",
+   "line": 272,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pro-zoom",
+   "file": "pro2.js",
+   "line": 273,
+   "redef": [],
+   "me": [
+    "clanLive"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pro-share",
+   "file": "demo.js",
+   "line": 144,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pro-sh-dst",
+   "file": "demo.js",
+   "line": 145,
+   "redef": [],
+   "me": [
+    "friends"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pro-sh-dm",
+   "file": "demo.js",
+   "line": 146,
+   "redef": [],
+   "me": [
+    "friends"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pro-sh-send",
+   "file": "demo.js",
+   "line": 147,
+   "redef": [],
+   "me": [
+    "badges",
+    "blockedShown",
+    "chatDay",
+    "chatXP",
+    "clanLive",
+    "friends",
+    "msgsTotal",
+    "notifs",
+    "pro",
+    "xp"
+   ],
+   "money": false,
+   "xp": true,
+   "shared": [
+    "prix/volume des marchés",
+    "messages de chat"
+   ],
+   "compte": "ANNULÉ en 15 s max (B05)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pro-sh-img",
+   "file": "demo.js",
+   "line": 150,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "refCode",
+    "refShared"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pro-sh-back",
+   "file": "demo.js",
+   "line": 151,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pro-view",
+   "file": "demo.js",
+   "line": 152,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "pro"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [
+    "prix/volume des marchés"
+   ],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "pro-fork",
+   "file": "demo.js",
+   "line": 153,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "pro"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [
+    "prix/volume des marchés"
+   ],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "demo-rank",
+   "file": "demo.js",
+   "line": 212,
+   "redef": [],
+   "me": [
+    "[]",
+    "badges",
+    "blockedShown",
+    "clanLive",
+    "deposits",
+    "flashWins",
+    "followed",
+    "notifs",
+    "pos",
+    "rank0",
+    "settled",
+    "wins",
+    "xp"
+   ],
+   "money": false,
+   "xp": true,
+   "shared": [],
+   "compte": "ANNULÉ en 15 s max (B05)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "demo-rank-reset",
+   "file": "demo.js",
+   "line": 212,
+   "redef": [],
+   "me": [
+    "[]",
+    "badges",
+    "blockedShown",
+    "clanLive",
+    "notifs",
+    "rank0"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "demo-rank-open",
+   "file": "demo.js",
+   "line": 212,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "switch-to-account",
+   "file": "supabase.js",
+   "line": 262,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "ACT",
+   "key": "switch-to-demo",
+   "file": "supabase.js",
+   "line": 263,
+   "redef": [],
+   "me": [
+    "(objet entier)",
+    "clan",
+    "clanLive",
+    "clanSeeded",
+    "clanVol",
+    "clanXP",
+    "comboSeeded",
+    "combos",
+    "createdAt",
+    "duelSeedLang",
+    "duelSeeded",
+    "duelWins",
+    "duels",
+    "history",
+    "logged",
+    "notifs",
+    "rg",
+    "stacks",
+    "welcomed"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [
+    "messages de chat",
+    "fiches joueurs"
+   ],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "FORMS",
+   "key": "settings",
+   "file": "views.js",
+   "line": 451,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "n"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "FORMS",
+   "key": "simdep",
+   "file": "views.js",
+   "line": 452,
+   "redef": [],
+   "me": [
+    "badges",
+    "balance",
+    "blockedShown",
+    "clanLive",
+    "depDay",
+    "deposits",
+    "deps",
+    "notifs",
+    "rg",
+    "xp"
+   ],
+   "money": true,
+   "xp": true,
+   "shared": [
+    "messages de chat"
+   ],
+   "compte": "RPC demo_deposit (partiel)",
+   "net": true
+  },
+  {
+   "reg": "FORMS",
+   "key": "create",
+   "file": "auth.js",
+   "line": 29,
+   "redef": [],
+   "me": [
+    "badges",
+    "blockedShown",
+    "clanLive",
+    "notifs",
+    "props",
+    "xp"
+   ],
+   "money": false,
+   "xp": true,
+   "shared": [],
+   "compte": "ANNULÉ en 15 s max (B05)",
+   "net": false
+  },
+  {
+   "reg": "FORMS",
+   "key": "login",
+   "file": "supabase.js",
+   "line": 99,
+   "redef": [
+    "auth.js:73"
+   ],
+   "me": [
+    "(objet entier)",
+    "balance",
+    "bestStreak",
+    "clan",
+    "clanLive",
+    "clanSeeded",
+    "clanVol",
+    "clanXP",
+    "color",
+    "comboSeeded",
+    "combos",
+    "contraWins",
+    "copiers",
+    "createdAt",
+    "deposits",
+    "duelSeedLang",
+    "duelSeeded",
+    "duelWins",
+    "duels",
+    "email",
+    "flashBest",
+    "flashProfit",
+    "flashStreak",
+    "flashWins",
+    "followed",
+    "followers",
+    "freqIn",
+    "freqOut",
+    "friends",
+    "history",
+    "kyc",
+    "logged",
+    "msgsTotal",
+    "n",
+    "notifs",
+    "onboarded",
+    "photo",
+    "played",
+    "realized",
+    "rg",
+    "settled",
+    "stacks",
+    "streak",
+    "wins",
+    "xp"
+   ],
+   "money": true,
+   "xp": true,
+   "shared": [
+    "messages de chat",
+    "fiches joueurs"
+   ],
+   "compte": "ANNULÉ en 15 s max (B05)",
+   "net": true
+  },
+  {
+   "reg": "FORMS",
+   "key": "signup",
+   "file": "auth.js",
+   "line": 74,
+   "redef": [],
+   "me": [
+    "balance",
+    "deps",
+    "notifs",
+    "refBy",
+    "refCode"
+   ],
+   "money": true,
+   "xp": false,
+   "shared": [],
+   "compte": "ANNULÉ en 15 s max (B05)",
+   "net": true
+  },
+  {
+   "reg": "FORMS",
+   "key": "forgot",
+   "file": "supabase.js",
+   "line": 137,
+   "redef": [
+    "auth.js:77"
+   ],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "interface seule",
+   "net": false
+  },
+  {
+   "reg": "FORMS",
+   "key": "pwchange",
+   "file": "auth.js",
+   "line": 224,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "notifs"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "FORMS",
+   "key": "profile",
+   "file": "copy.js",
+   "line": 46,
+   "redef": [
+    "auth.js:225"
+   ],
+   "me": [
+    "clanLive",
+    "copiers"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "ANNULÉ en 15 s max (B05)",
+   "net": false
+  },
+  {
+   "reg": "FORMS",
+   "key": "kyc",
+   "file": "account.js",
+   "line": 59,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "kyc",
+    "kycAt",
+    "notifs"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "FORMS",
+   "key": "rglim",
+   "file": "responsible.js",
+   "line": 72,
+   "redef": [],
+   "me": [
+    "clanLive",
+    "rg"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "FORMS",
+   "key": "clcode",
+   "file": "clans.js",
+   "line": 175,
+   "redef": [],
+   "me": [
+    "clan",
+    "clanLive",
+    "clanVol",
+    "clanXP",
+    "notifs"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [
+    "messages de chat"
+   ],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "FORMS",
+   "key": "clan",
+   "file": "clans.js",
+   "line": 176,
+   "redef": [],
+   "me": [
+    "balance",
+    "clan",
+    "clanCreated",
+    "clanLive",
+    "clanVol",
+    "clanXP",
+    "notifs",
+    "realized"
+   ],
+   "money": true,
+   "xp": false,
+   "shared": [
+    "messages de chat"
+   ],
+   "compte": "ANNULÉ en 15 s max (B05)",
+   "net": false
+  },
+  {
+   "reg": "FORMS",
+   "key": "pro-txt",
+   "file": "pro2.js",
+   "line": 275,
+   "redef": [],
+   "me": [
+    "clanLive"
+   ],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "blob JSON toutes les 17 s (fragile : B06, B07)",
+   "net": false
+  },
+  {
+   "reg": "VIEWS",
+   "key": "accueil",
+   "file": "views.js",
+   "line": 366,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "affichage",
+   "net": false
+  },
+  {
+   "reg": "VIEWS",
+   "key": "marche",
+   "file": "groups.js",
+   "line": 59,
+   "redef": [
+    "views.js:366"
+   ],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "affichage",
+   "net": false
+  },
+  {
+   "reg": "VIEWS",
+   "key": "eclair",
+   "file": "views.js",
+   "line": 366,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "affichage",
+   "net": false
+  },
+  {
+   "reg": "VIEWS",
+   "key": "chat",
+   "file": "views.js",
+   "line": 366,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "affichage",
+   "net": false
+  },
+  {
+   "reg": "VIEWS",
+   "key": "classement",
+   "file": "views.js",
+   "line": 366,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "affichage",
+   "net": false
+  },
+  {
+   "reg": "VIEWS",
+   "key": "rang",
+   "file": "views.js",
+   "line": 366,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "affichage",
+   "net": false
+  },
+  {
+   "reg": "VIEWS",
+   "key": "profil",
+   "file": "views.js",
+   "line": 366,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "affichage",
+   "net": false
+  },
+  {
+   "reg": "VIEWS",
+   "key": "joueur",
+   "file": "views.js",
+   "line": 366,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "affichage",
+   "net": false
+  },
+  {
+   "reg": "VIEWS",
+   "key": "depot",
+   "file": "views.js",
+   "line": 366,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "affichage",
+   "net": false
+  },
+  {
+   "reg": "VIEWS",
+   "key": "retrait",
+   "file": "views.js",
+   "line": 366,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "affichage",
+   "net": false
+  },
+  {
+   "reg": "VIEWS",
+   "key": "creer",
+   "file": "auth.js",
+   "line": 112,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "affichage",
+   "net": false
+  },
+  {
+   "reg": "VIEWS",
+   "key": "connexion",
+   "file": "auth.js",
+   "line": 112,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "affichage",
+   "net": false
+  },
+  {
+   "reg": "VIEWS",
+   "key": "inscription",
+   "file": "auth.js",
+   "line": 112,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "affichage",
+   "net": false
+  },
+  {
+   "reg": "VIEWS",
+   "key": "bienvenue",
+   "file": "auth.js",
+   "line": 112,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "affichage",
+   "net": false
+  },
+  {
+   "reg": "VIEWS",
+   "key": "modifier",
+   "file": "auth.js",
+   "line": 234,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "affichage",
+   "net": false
+  },
+  {
+   "reg": "VIEWS",
+   "key": "amis",
+   "file": "auth.js",
+   "line": 332,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "affichage",
+   "net": false
+  },
+  {
+   "reg": "VIEWS",
+   "key": "copie",
+   "file": "copy.js",
+   "line": 311,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "affichage",
+   "net": false
+  },
+  {
+   "reg": "VIEWS",
+   "key": "parrainage",
+   "file": "referral.js",
+   "line": 103,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "affichage",
+   "net": false
+  },
+  {
+   "reg": "VIEWS",
+   "key": "responsable",
+   "file": "responsible.js",
+   "line": 197,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "affichage",
+   "net": false
+  },
+  {
+   "reg": "VIEWS",
+   "key": "duels",
+   "file": "duels.js",
+   "line": 190,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "affichage",
+   "net": false
+  },
+  {
+   "reg": "VIEWS",
+   "key": "duel",
+   "file": "duels.js",
+   "line": 190,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "affichage",
+   "net": false
+  },
+  {
+   "reg": "VIEWS",
+   "key": "blitz",
+   "file": "blitz.js",
+   "line": 188,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "affichage",
+   "net": false
+  },
+  {
+   "reg": "VIEWS",
+   "key": "serie",
+   "file": "blitz.js",
+   "line": 188,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "affichage",
+   "net": false
+  },
+  {
+   "reg": "VIEWS",
+   "key": "clans",
+   "file": "clans.js",
+   "line": 230,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "affichage",
+   "net": false
+  },
+  {
+   "reg": "VIEWS",
+   "key": "clan",
+   "file": "clans.js",
+   "line": 230,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "affichage",
+   "net": false
+  },
+  {
+   "reg": "VIEWS",
+   "key": "combines",
+   "file": "combos.js",
+   "line": 91,
+   "redef": [],
+   "me": [],
+   "money": false,
+   "xp": false,
+   "shared": [],
+   "compte": "affichage",
+   "net": false
+  }
+ ],
+ "timers": [
+  {
+   "kind": "setTimeout",
+   "file": "core.js",
+   "line": 210,
+   "ms": "400",
+   "what": "()=>{try{localStorage.setItem(KEY,JSON.stringify(S.me));}catch(e){}}"
+  },
+  {
+   "kind": "setInterval",
+   "file": "core.js",
+   "line": 308,
+   "ms": "170",
+   "what": "()=>{addBet(m,{s:side==='oui'?1:0,a:.25+R()*.75,me:0});const old=m.p;m.p=clamp(m.p+(side=="
+  },
+  {
+   "kind": "setTimeout",
+   "file": "core.js",
+   "line": 317,
+   "ms": "450",
+   "what": "()=>rankUp(after)"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "views.js",
+   "line": 70,
+   "ms": "0",
+   "what": "()=>ccUpd(i)"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "views.js",
+   "line": 82,
+   "ms": "90500",
+   "what": "()=>{if(m.hotUntil<=now())$$(`[data-row=\"${m.id}\"]`).forEach(el=>el.classList.remove('hot'"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "views.js",
+   "line": 92,
+   "ms": "300",
+   "what": "()=>t.remove()"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "views.js",
+   "line": 92,
+   "ms": "dur",
+   "what": "kill"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "views.js",
+   "line": 93,
+   "ms": "1250",
+   "what": "()=>el.remove()"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "views.js",
+   "line": 94,
+   "ms": "1900",
+   "what": "()=>c.remove()"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "views.js",
+   "line": 116,
+   "ms": "60",
+   "what": "()=>{const i=ov.querySelector('[autofocus]');if(i)i.focus();}"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "views.js",
+   "line": 179,
+   "ms": "550",
+   "what": "()=>gainXP(5)"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "views.js",
+   "line": 180,
+   "ms": "800",
+   "what": "()=>gainXP(5)"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "views.js",
+   "line": 184,
+   "ms": "4000+i*5200+R()*3500",
+   "what": "()=>{if(ep!==S.epoch)return;const u=pickUser(),before=myRank();x.followers++;setFc(x);S.me"
+  },
+  {
+   "kind": "setInterval",
+   "file": "views.js",
+   "line": 318,
+   "ms": "650",
+   "what": "()=>{if(ep!==S.epoch){clearInterval(iv);return;}d.conf++;refreshDeps();if(d.conf>=d.need){"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "views.js",
+   "line": 342,
+   "ms": "0",
+   "what": "searchClose"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "views.js",
+   "line": 403,
+   "ms": "1600+R()*2200",
+   "what": "()=>addMsg(rid,mkMsg({u:rid.slice(3),k:'msg',text:pick(DM_REPLIES)}))"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "views.js",
+   "line": 404,
+   "ms": "1800+R()*3200",
+   "what": "()=>addMsg(rid,mkMsg({u:pickUser(),k:'msg',text:`@${S.me.n} ${pick(REPLIES)}`}))"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "views.js",
+   "line": 433,
+   "ms": "1400",
+   "what": "()=>addMsg(rid,mkMsg({u,k:'msg',text:pick(DM_REPLIES)}))"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "views.js",
+   "line": 441,
+   "ms": "4500",
+   "what": "()=>{if(ep!==S.epoch)return;x.st='sent';notif('out',`${_t(\"Retrait envoyé : {0} USDC sur {"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "views.js",
+   "line": 468,
+   "ms": "180",
+   "what": "()=>mountTrails()"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "auth.js",
+   "line": 47,
+   "ms": "0",
+   "what": "()=>location.replace(S.me.onboarded?'#accueil':'#bienvenue')"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "auth.js",
+   "line": 84,
+   "ms": "1600",
+   "what": "()=>{closeModal();const all=AUTH.all(),wk=Object.keys(all).find(k=>k.startsWith('w:'));if("
+  },
+  {
+   "kind": "setTimeout",
+   "file": "auth.js",
+   "line": 107,
+   "ms": "900",
+   "what": "()=>render(false)"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "auth.js",
+   "line": 170,
+   "ms": "1800",
+   "what": "clearXH"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "auth.js",
+   "line": 231,
+   "ms": "1300",
+   "what": "()=>{if(!S.ui.pe)return;const hex='0123456789abcdef';S.ui.pe.wallet='0x'+Array.from({lengt"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "auth.js",
+   "line": 321,
+   "ms": "3500+R()*4000",
+   "what": "()=>frAccepted(u)"
+  },
+  {
+   "kind": "setInterval",
+   "file": "account.js",
+   "line": 53,
+   "ms": "m==='bank'?700:650",
+   "what": "()=>{if(ep!==S.epoch){clearInterval(iv);return;}d.conf++;refreshDeps();if(d.conf>=d.need){"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "account.js",
+   "line": 55,
+   "ms": "m==='bank'?6000:3500",
+   "what": "()=>{if(ep!==S.epoch)return;x.st='sent';notif('out',`${_t(\"Retrait envoyé : {0} par {1}.\","
+  },
+  {
+   "kind": "setTimeout",
+   "file": "account.js",
+   "line": 64,
+   "ms": "1500",
+   "what": "()=>{if(ep!==S.epoch)return;S.ui.kycd={doc:false};kycDone();if(ctx==='ob'){S.ui.ob=4;rende"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "flash.js",
+   "line": 301,
+   "ms": "2800",
+   "what": "()=>o.remove()"
+  },
+  {
+   "kind": "setInterval",
+   "file": "copy.js",
+   "line": 315,
+   "ms": "4000",
+   "what": "live(copyGuard)"
+  },
+  {
+   "kind": "setInterval",
+   "file": "copy.js",
+   "line": 315,
+   "ms": "20000",
+   "what": "live(copyDriver)"
+  },
+  {
+   "kind": "setInterval",
+   "file": "copy.js",
+   "line": 315,
+   "ms": "52000",
+   "what": "live(botCopier)"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "orders.js",
+   "line": 121,
+   "ms": "600",
+   "what": "()=>gainXP(15)"
+  },
+  {
+   "kind": "setInterval",
+   "file": "orders.js",
+   "line": 186,
+   "ms": "2000",
+   "what": "live(ordersTick)"
+  },
+  {
+   "kind": "setInterval",
+   "file": "referral.js",
+   "line": 104,
+   "ms": "70000",
+   "what": "live(botReferral)"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "responsible.js",
+   "line": 189,
+   "ms": "4000",
+   "what": "()=>URL.revokeObjectURL(url)"
+  },
+  {
+   "kind": "setInterval",
+   "file": "responsible.js",
+   "line": 198,
+   "ms": "30000",
+   "what": "live(rgTick)"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "duels.js",
+   "line": 90,
+   "ms": "delay",
+   "what": "()=>{if(ep!==S.epoch||d.status!=='open')return;if(R()<.12&&!d.opp){duelRefund(d,'declined'"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "blitz.js",
+   "line": 60,
+   "ms": "6000",
+   "what": "()=>{if(S.bz.royale===r)bzNew(next);bzRefresh();}"
+  },
+  {
+   "kind": "setInterval",
+   "file": "blitz.js",
+   "line": 115,
+   "ms": "7000",
+   "what": "()=>{if(document.hidden||R()<.6)return;const r=bzR();if(!r)return;const L=r.bots.filter(b="
+  },
+  {
+   "kind": "setInterval",
+   "file": "blitz.js",
+   "line": 200,
+   "ms": "1000",
+   "what": "()=>{bzTick();serieTick();}"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "clans.js",
+   "line": 61,
+   "ms": "4500",
+   "what": "ctipHide"
+  },
+  {
+   "kind": "setInterval",
+   "file": "clans.js",
+   "line": 61,
+   "ms": "700",
+   "what": "()=>{if(!CTIP||!document.contains(CTIP.a)||!CTIP.a.matches(':hover'))ctipHide();}"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "clans.js",
+   "line": 64,
+   "ms": "0",
+   "what": "ctipHide"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "clans.js",
+   "line": 106,
+   "ms": "8000+R()*10000",
+   "what": "()=>{if(ep!==S.epoch||!S.me.clanApps||!S.me.clanApps[c.id])return;delete S.me.clanApps[c.i"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "clans.js",
+   "line": 113,
+   "ms": "5000+R()*8000",
+   "what": "()=>{if(ep!==S.epoch)return;call.followers=clanMates(c).slice(0,2+Math.floor(R()*4));notif"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "clans.js",
+   "line": 117,
+   "ms": "4000",
+   "what": "()=>{if(ep!==S.epoch||!c.war)return;clanMates(c).slice(0,3+Math.floor(R()*5)).forEach(u=>{"
+  },
+  {
+   "kind": "setInterval",
+   "file": "clans.js",
+   "line": 229,
+   "ms": "20000",
+   "what": "()=>{if(document.hidden)return;const c=myClan();if(!c)return;clanWarTick();clanWeekAward()"
+  },
+  {
+   "kind": "setInterval",
+   "file": "pro2.js",
+   "line": 136,
+   "ms": "5000",
+   "what": "()=>{if(!PV.open||PV.snap||document.hidden)return;const mm=MK[PV.id],D=PV.D;if(mm&&D&&Math"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "pro2.js",
+   "line": 137,
+   "ms": "6600",
+   "what": "()=>{if(PV.open&&PV.tip&&now()>=PV.tip){PV.tip=0;proFloat();}}"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "pro2.js",
+   "line": 148,
+   "ms": "30",
+   "what": "()=>{try{i.focus();i.select();}catch(e){}}"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "pro2.js",
+   "line": 226,
+   "ms": "300",
+   "what": "proViewSave"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "pro2.js",
+   "line": 241,
+   "ms": "160",
+   "what": "go"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "pro2.js",
+   "line": 273,
+   "ms": "200",
+   "what": "proViewSave"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "pro2.js",
+   "line": 283,
+   "ms": "300",
+   "what": "proViewSave"
+  },
+  {
+   "kind": "setInterval",
+   "file": "pro2.js",
+   "line": 290,
+   "ms": "20000",
+   "what": "()=>{if(!document.hidden)proStoreSave();}"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "demo.js",
+   "line": 35,
+   "ms": "1400+n*500+R()*1500",
+   "what": "()=>{if(ep!==S.epoch)return;const e=pick(['🎯','🔥','👀']);x.r[e]=(x.r[e]||0)+1+Math.floor"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "demo.js",
+   "line": 36,
+   "ms": "2600+n*900+R()*2600",
+   "what": "()=>{if(ep!==S.epoch)return;let u;if(dm)u=rid.slice(3);else if(rid.startsWith('clan:')){co"
+  },
+  {
+   "kind": "setInterval",
+   "file": "demo.js",
+   "line": 182,
+   "ms": "150000",
+   "what": "()=>{if(!document.hidden&&R()<.4)proBotShare();}"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "boot.js",
+   "line": 17,
+   "ms": "1200",
+   "what": "catchUpVotes"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "boot.js",
+   "line": 17,
+   "ms": "45000",
+   "what": "botFriendRequest"
+  },
+  {
+   "kind": "setInterval",
+   "file": "boot.js",
+   "line": 17,
+   "ms": "90000",
+   "what": "vis(()=>{if(R()<.35)botFriendRequest();})"
+  },
+  {
+   "kind": "setInterval",
+   "file": "boot.js",
+   "line": 17,
+   "ms": "5200",
+   "what": "vis(()=>pushBig(false))"
+  },
+  {
+   "kind": "setInterval",
+   "file": "boot.js",
+   "line": 18,
+   "ms": "650",
+   "what": "vis(botBet)"
+  },
+  {
+   "kind": "setInterval",
+   "file": "boot.js",
+   "line": 18,
+   "ms": "3600",
+   "what": "vis(()=>{if(R()<.85)botChat();})"
+  },
+  {
+   "kind": "setInterval",
+   "file": "boot.js",
+   "line": 18,
+   "ms": "2600",
+   "what": "vis(botReact)"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "boot.js",
+   "line": 18,
+   "ms": "9000",
+   "what": "burst"
+  },
+  {
+   "kind": "setInterval",
+   "file": "boot.js",
+   "line": 18,
+   "ms": "26000",
+   "what": "vis(()=>{if(R()<.55)burst();})"
+  },
+  {
+   "kind": "setInterval",
+   "file": "boot.js",
+   "line": 19,
+   "ms": "250",
+   "what": "flashTick"
+  },
+  {
+   "kind": "setInterval",
+   "file": "boot.js",
+   "line": 19,
+   "ms": "5000",
+   "what": "duelTick"
+  },
+  {
+   "kind": "setInterval",
+   "file": "boot.js",
+   "line": 19,
+   "ms": "240000",
+   "what": "vis(duelBotChallenge)"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "boot.js",
+   "line": 19,
+   "ms": "150000",
+   "what": "()=>{if(S.me.logged&&!duelIncoming().length)duelBotChallenge();}"
+  },
+  {
+   "kind": "setInterval",
+   "file": "boot.js",
+   "line": 19,
+   "ms": "10000",
+   "what": "vis(driftAnchors)"
+  },
+  {
+   "kind": "setInterval",
+   "file": "boot.js",
+   "line": 19,
+   "ms": "1000",
+   "what": "vis(()=>{refreshLive();syncSellBtns();})"
+  },
+  {
+   "kind": "setInterval",
+   "file": "boot.js",
+   "line": 20,
+   "ms": "2200",
+   "what": "vis(()=>{if(!XH)refreshCharts();})"
+  },
+  {
+   "kind": "setInterval",
+   "file": "boot.js",
+   "line": 21,
+   "ms": "15000",
+   "what": "vis(()=>{MARKETS.forEach(growLiq);$$('[data-liq]').forEach(e=>{const k=MK[e.dataset.liq];i"
+  },
+  {
+   "kind": "setInterval",
+   "file": "boot.js",
+   "line": 22,
+   "ms": "3000",
+   "what": "vis(()=>{S.online=clamp(S.online+Math.round((R()-.48)*14),2200,2900);$$('[data-online]').f"
+  },
+  {
+   "kind": "setInterval",
+   "file": "boot.js",
+   "line": 24,
+   "ms": "1600",
+   "what": "vis(()=>{voteTick();for(const p of COMM_PROPS){if(R()<.3&&p.for<p.need-2){p.for++;$$(`[dat"
+  },
+  {
+   "kind": "setInterval",
+   "file": "boot.js",
+   "line": 28,
+   "ms": "8000",
+   "what": "vis(marketsSave)"
+  },
+  {
+   "kind": "setTimeout",
+   "file": "boot.js",
+   "line": 29,
+   "ms": "700",
+   "what": "welcome"
+  },
+  {
+   "kind": "setInterval",
+   "file": "supabase.js",
+   "line": 93,
+   "ms": "15000",
+   "what": "function(){if(uid&&S.me.logged)sbRefresh();}"
+  },
+  {
+   "kind": "setInterval",
+   "file": "supabase.js",
+   "line": 94,
+   "ms": "17000",
+   "what": "function(){if(uid&&S.me.logged)sbSave();}"
+  },
+  {
+   "kind": "setInterval",
+   "file": "supabase.js",
+   "line": 95,
+   "ms": "20000",
+   "what": "function(){if(uid&&S.me.logged)sbLoadFriends();}"
+  }
+ ],
+ "sbCalls": [
+  {
+   "file": "supabase.js",
+   "line": 17,
+   "call": "from('user_full_state')"
+  },
+  {
+   "file": "supabase.js",
+   "line": 18,
+   "call": "from('users')"
+  },
+  {
+   "file": "supabase.js",
+   "line": 19,
+   "call": "from('user_stats')"
+  },
+  {
+   "file": "supabase.js",
+   "line": 36,
+   "call": "rpc('get_friends')"
+  },
+  {
+   "file": "supabase.js",
+   "line": 55,
+   "call": "from('user_full_state')"
+  },
+  {
+   "file": "supabase.js",
+   "line": 57,
+   "call": "from('users')"
+  },
+  {
+   "file": "supabase.js",
+   "line": 64,
+   "call": "from('user_stats')"
+  },
+  {
+   "file": "supabase.js",
+   "line": 75,
+   "call": "auth.getSession()"
+  },
+  {
+   "file": "supabase.js",
+   "line": 83,
+   "call": "auth.onAuthStateChange()"
+  },
+  {
+   "file": "supabase.js",
+   "line": 106,
+   "call": "from('users')"
+  },
+  {
+   "file": "supabase.js",
+   "line": 109,
+   "call": "auth.signInWithPassword()"
+  },
+  {
+   "file": "supabase.js",
+   "line": 122,
+   "call": "auth.signUp()"
+  },
+  {
+   "file": "supabase.js",
+   "line": 124,
+   "call": "from('users')"
+  },
+  {
+   "file": "supabase.js",
+   "line": 132,
+   "call": "auth.signOut()"
+  },
+  {
+   "file": "supabase.js",
+   "line": 143,
+   "call": "auth.resetPasswordForEmail()"
+  },
+  {
+   "file": "supabase.js",
+   "line": 158,
+   "call": "rpc('place_bet')"
+  },
+  {
+   "file": "supabase.js",
+   "line": 175,
+   "call": "rpc('sell_position')"
+  },
+  {
+   "file": "supabase.js",
+   "line": 195,
+   "call": "rpc('flash_bet')"
+  },
+  {
+   "file": "supabase.js",
+   "line": 208,
+   "call": "rpc('demo_deposit')"
+  },
+  {
+   "file": "supabase.js",
+   "line": 216,
+   "call": "rpc('get_markets')"
+  },
+  {
+   "file": "supabase.js",
+   "line": 222,
+   "call": "channel('mkt-live')"
+  },
+  {
+   "file": "supabase.js",
+   "line": 235,
+   "call": "rpc('send_chat_message')"
+  },
+  {
+   "file": "supabase.js",
+   "line": 240,
+   "call": "channel('chat-live')"
+  },
+  {
+   "file": "supabase.js",
+   "line": 264,
+   "call": "auth.signOut()"
+  }
+ ],
+ "wrappers": {
+  "save": [
+   "core.js:210",
+   "clans.js:274"
+  ],
+  "marketsSave": [
+   "core.js:218",
+   "supabase.js:284"
+  ],
+  "marketsLoad": [
+   "core.js:219",
+   "supabase.js:285"
+  ],
+  "botBet": [
+   "core.js:284",
+   "supabase.js:279"
+  ],
+  "driftAnchors": [
+   "core.js:285",
+   "supabase.js:283"
+  ],
+  "botChat": [
+   "core.js:288",
+   "supabase.js:280"
+  ],
+  "botReact": [
+   "core.js:302",
+   "supabase.js:281"
+  ],
+  "burst": [
+   "core.js:307",
+   "supabase.js:282"
+  ],
+  "updateMarket": [
+   "views.js:75",
+   "groups.js:27",
+   "combos.js:93",
+   "pro.js:85"
+  ],
+  "rankUp": [
+   "views.js:95",
+   "supabase.js:254"
+  ],
+  "placeBet": [
+   "views.js:174",
+   "groups.js:62",
+   "clans.js:259",
+   "supabase.js:152"
+  ],
+  "sellPos": [
+   "views.js:185",
+   "groups.js:63",
+   "supabase.js:172"
+  ],
+  "startDeposit": [
+   "views.js:317",
+   "supabase.js:205"
+  ],
+  "render": [
+   "views.js:387",
+   "auth.js:347",
+   "combos.js:109"
+  ],
+  "sendMsg": [
+   "views.js:399",
+   "supabase.js:230"
+  ],
+  "friendsOf": [
+   "auth.js:297",
+   "supabase.js:248"
+  ],
+  "fIn": [
+   "auth.js:298",
+   "supabase.js:249"
+  ],
+  "fOut": [
+   "auth.js:299",
+   "supabase.js:250"
+  ],
+  "enterAccount": [
+   "account.js:16",
+   "demo.js:184"
+  ],
+  "logout": [
+   "account.js:24",
+   "demo.js:184",
+   "supabase.js:130"
+  ],
+  "createAccount": [
+   "account.js:29",
+   "supabase.js:120"
+  ],
+  "umenuH": [
+   "account.js:73",
+   "supabase.js:269"
+  ],
+  "flashTick": [
+   "flash.js:134",
+   "blitz.js:69"
+  ],
+  "flashBet": [
+   "flash.js:140",
+   "clans.js:260"
+  ],
+  "resolveFlash": [
+   "flash.js:158",
+   "duels.js:76"
+  ],
+  "live": [
+   "copy.js:314",
+   "orders.js:186",
+   "referral.js:104",
+   "responsible.js:198"
+  ],
+  "clanSeedRoom": [
+   "clans.js:194",
+   "demo.js:179"
+  ]
+ }
+}
