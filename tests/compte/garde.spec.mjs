@@ -29,6 +29,11 @@ const RELIEES = {
   'ACT.rg-pend-cancel': 'api_rg_pend_cancel — tests/compte/argent.spec.mjs',
   'ACT.claim': 'api_mission_claim — tests/compte/etat.spec.mjs',
   'ACT.flash-bet': 'Edge Function « eclair » (mise et règlement) — tests/compte/eclair.spec.mjs',
+  'ACT.fr-add': 'api_friend — tests/compte/amis.spec.mjs',
+  'ACT.fr-accept': 'api_friend — tests/compte/amis.spec.mjs',
+  'ACT.fr-cancel': 'api_friend — tests/compte/amis.spec.mjs',
+  'ACT.fr-decline': 'api_friend — tests/compte/amis.spec.mjs',
+  'ACT.fr-remove': 'api_friend — tests/compte/amis.spec.mjs',
   'ACT.pro-sh-dst': 'lecture seule de la liste d’amis (choix du destinataire)',
   'ACT.pro-sh-dm': 'lecture seule de la liste d’amis (choix du destinataire)',
   'FORMS.settings': 'api_profile_update (pseudo unique) — tests/compte/etat.spec.mjs',
@@ -68,7 +73,7 @@ test('une action pas encore reliée est clairement indisponible : message, et ri
   await page.evaluate(() => { const b = document.createElement('button'); b.dataset.a = 'cb-place'; document.body.appendChild(b); b.click(); b.remove(); });   // combiné
   await expect(page.locator('.toast', { hasText: 'Coming soon for accounts' }).first()).toBeVisible();
   await page.evaluate(() => { ACT.withdraw && document.dispatchEvent(new Event('x')); });
-  for (const a of ['dl-create', 'cb-place', 'cl-join', 'fr-add', 'cp-start', 'limit-place', 'bz-join', 'sr-start'])
+  for (const a of ['dl-create', 'cb-place', 'cl-join', 'cp-start', 'limit-place', 'bz-join', 'sr-start'])
     await page.evaluate(nom => { const b = document.createElement('button'); b.dataset.a = nom; b.dataset.u = 'x'; b.dataset.m = 'btc150k'; document.body.appendChild(b); b.click(); b.remove(); }, a);
   const apres = await lire(page, () => JSON.stringify({ solde: S.me.balance, xp: S.me.xp, pos: S.me.positions, hist: S.me.history, notifs: S.me.notifs.length, prix: MK.btc150k.p, messages: Object.values(S.rooms).reduce((n, r) => n + r.msgs.filter(x => x.k !== 'evt').length, 0) }));
   expect(apres).toBe(avant);

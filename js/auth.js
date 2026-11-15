@@ -329,18 +329,28 @@ function vFriends(){const F0=friendsOf(),In=fIn(),Out=fOut(),q=(S.ui.fq||'').tri
  ${!q&&sugg.length?`<div class="sub" style="margin:16px 0 2px">${_t("Joueurs que tu croises dans les chats")}</div>${sugg.map(u=>frRowH(u,friendBtnH(u,true))).join('')}`:''}</section>
  <section class="pn pad"><div class="h2">${_t("Ton lien d’invitation")}</div><div class="sub">${_t("Chaque ami qui s’inscrit avec ton lien te rapporte 200 XP.")}</div><div class="invl"><span>${esc(link)}</span><button class="btn b-white sm" data-a="copy" data-v="${esc(link)}">${_t("{0} Copier",[ic('copy',14)])}</button></div></section>
  </aside></div></div>`;}
+/* où faire flotter le « +15 XP » : près du bouton cliqué */
+const frOu=a=>a&&a.getBoundingClientRect?{clientX:a.getBoundingClientRect().left+20,clientY:a.getBoundingClientRect().top}:undefined;
+/* annonces communes aux deux modes */
+function frAnnonce(quoi,u){const n=userOf(u).n;
+ if(quoi==='envoyee')toast({icon:'check',force:true,title:_t("Demande d’ami envoyée"),text:`${_t("{0} doit l’accepter.",[n])}`,dur:2200});
+ else if(quoi==='amis')toast({icon:'check',force:true,title:`${_t("{0} et toi êtes amis",[n])}`,text:_t("Tu verras ses mises en direct."),dur:2400});
+ else if(quoi==='retire'){closeModal();toast({icon:'info',force:true,title:`${_t("{0} retiré de tes amis",[n])}`,dur:2000});}}
 function refreshFriends(){const r=S.ui.route||'';if(r==='amis'||r.startsWith('joueur-')||r==='eclair'||r==='profil')render(false);updateBell();}
 function frAccepted(u){const L=fOut();const i=L.indexOf(u);if(i<0)return;L.splice(i,1);if(!friendsOf().includes(u))friendsOf().push(u);notif('users',`${_t("{0} a accepté ta demande d’ami.",[userOf(u).n])}`,'#amis');toast({icon:'users',title:`${_t("{0} a accepté ta demande",[userOf(u).n])}`,text:_t("Vous êtes maintenant amis."),href:'#amis'});gainXP(15);save();refreshFriends();}
 Object.assign(ACT,{
- 'fr-add':a=>{const u=a.dataset.u;if(friendsOf().includes(u)||fOut().includes(u))return;if(fIn().includes(u)){ACT['fr-accept'](a);return;}fOut().push(u);save();toast({icon:'check',force:true,title:_t("Demande d’ami envoyée"),text:`${_t("{0} doit l’accepter.",[userOf(u).n])}`,dur:2200});refreshFriends();setTimeout(()=>frAccepted(u),3500+R()*4000);},
- 'fr-cancel':a=>{const u=a.dataset.u,L=fOut(),i=L.indexOf(u);if(i>=0)L.splice(i,1);save();refreshFriends();},
- 'fr-accept':a=>{const u=a.dataset.u,L=fIn(),i=L.indexOf(u);if(i>=0)L.splice(i,1);if(!friendsOf().includes(u))friendsOf().push(u);save();toast({icon:'check',force:true,title:`${_t("{0} et toi êtes amis",[userOf(u).n])}`,text:_t("Tu verras ses mises en direct."),dur:2400});gainXP(15,a&&a.getBoundingClientRect?{clientX:a.getBoundingClientRect().left+20,clientY:a.getBoundingClientRect().top}:undefined);refreshFriends();},
- 'fr-decline':a=>{const u=a.dataset.u,L=fIn(),i=L.indexOf(u);if(i>=0)L.splice(i,1);save();refreshFriends();},
- 'fr-remove':a=>{const u=a.dataset.u,L=friendsOf(),i=L.indexOf(u);if(i>=0)L.splice(i,1);closeModal();save();toast({icon:'info',force:true,title:`${_t("{0} retiré de tes amis",[userOf(u).n])}`,dur:2000});refreshFriends();},
+ /* amis : validation, écriture (locale, ou api_friend en mode serveur), puis les mêmes annonces (frAnnonce) */
+'fr-add':a=>{const u=a.dataset.u;if(friendsOf().includes(u)||fOut().includes(u))return;if(fIn().includes(u)){ACT['fr-accept'](a);return;}if(SRV()){srvAmi('add',u,a);return;}fOut().push(u);save();frAnnonce('envoyee',u);refreshFriends();setTimeout(()=>frAccepted(u),3500+R()*4000);},
+ 'fr-cancel':a=>{const u=a.dataset.u;if(SRV()){srvAmi('cancel',u,a);return;}const L=fOut(),i=L.indexOf(u);if(i>=0)L.splice(i,1);save();refreshFriends();},
+ 'fr-accept':a=>{const u=a.dataset.u;if(SRV()){srvAmi('accept',u,a);return;}const L=fIn(),i=L.indexOf(u);if(i>=0)L.splice(i,1);if(!friendsOf().includes(u))friendsOf().push(u);save();frAnnonce('amis',u);gainXP(15,frOu(a));refreshFriends();},
+ 'fr-decline':a=>{const u=a.dataset.u;if(SRV()){srvAmi('decline',u,a);return;}const L=fIn(),i=L.indexOf(u);if(i>=0)L.splice(i,1);save();refreshFriends();},
+ 'fr-remove':a=>{const u=a.dataset.u;if(SRV()){srvAmi('remove',u,a);return;}const L=friendsOf(),i=L.indexOf(u);if(i>=0)L.splice(i,1);closeModal();save();frAnnonce('retire',u);refreshFriends();},
  'fr-menu':a=>{const u=a.dataset.u;openModal(`<div class="md"><div class="md-h"><div><h3>${esc(userOf(u).n)}</h3><p>${_t("Vous êtes amis.")}</p></div><button class="x" data-a="close" aria-label="${_t("Fermer")}">${ic('x')}</button></div><div class="md-acts">${can('dm')?`<button class="btn b-ink lg full" data-a="dm" data-u="${u}">${_t("{0} Envoyer un message",[ic('send',16,'#fff')])}</button>`:''}<a class="btn b-white lg full" href="#amis" data-a="close">${_t("Voir tous mes amis")}</a><button class="btn b-ghost lg full" data-a="fr-remove" data-u="${u}">${_t("Retirer des amis")}</button></div></div>`);},
  'fr-invite':()=>copyText(_t('Rejoins-moi sur Wimoro : {0}',[inviteLink()]),_t("Lien d’invitation copié"))
 });
-document.addEventListener('input',e=>{if(!e.target.matches||!e.target.matches('[data-fq]'))return;S.ui.fq=e.target.value;const q=S.ui.fq.trim().toLowerCase(),box=$('[data-fres]');if(!box)return;const res=q?USER_IDS.filter(u=>userOf(u).n.toLowerCase().includes(q)):[];box.innerHTML=q?(res.length?res.map(u=>frRowH(u,friendBtnH(u,true))).join(''):`<div class="empty" style="padding:16px 0">${_t("Aucun joueur avec ce pseudo.")}</div>`):'';fixText(box);});
+/* résultats de la recherche d'un joueur : tirés de l'annuaire (en mode serveur, srvChercher le complète puis rappelle cette fonction) */
+function frResultats(){const q=(S.ui.fq||'').trim().toLowerCase(),box=$('[data-fres]');if(!box)return;const res=q?USER_IDS.filter(u=>userOf(u).n.toLowerCase().includes(q)):[];box.innerHTML=q?(res.length?res.map(u=>frRowH(u,friendBtnH(u,true))).join(''):`<div class="empty" style="padding:16px 0">${_t("Aucun joueur avec ce pseudo.")}</div>`):'';fixText(box);}
+document.addEventListener('input',e=>{if(!e.target.matches||!e.target.matches('[data-fq]'))return;S.ui.fq=e.target.value;frResultats();if(SRV())srvChercher(S.ui.fq);});
 /* Demande d'ami reçue de temps en temps */
 function botFriendRequest(){if(!S.me.logged||document.hidden)return;const pool=USER_IDS.filter(u=>!friendsOf().includes(u)&&!fIn().includes(u)&&!fOut().includes(u));if(!pool.length||fIn().length>=3)return;const u=pick(pool);fIn().push(u);notif('users',`${_t("{0} veut t’ajouter en ami.",[userOf(u).n])}`,'#amis');toast({icon:'users',title:`${_t("{0} veut t’ajouter en ami",[userOf(u).n])}`,text:_t("Accepte depuis ta page Amis."),href:'#amis'});save();refreshFriends();}
 Object.assign(VIEWS,{amis:vFriends});

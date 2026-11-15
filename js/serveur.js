@@ -51,6 +51,9 @@ const ERR_TXT={
  trop_de_messages:()=>_t("Trop de messages d’un coup. Réessaie dans une minute."),
  message_trop_long:()=>_t("Message trop long (280 caractères au plus)."),
  salon_indisponible:()=>_t("Ce salon n’est pas encore disponible avec ton compte."),
+ joueur_inconnu:()=>_t("Ce joueur est introuvable."),
+ demande_absente:()=>_t("Cette demande d’ami n’existe plus."),
+ trop_de_demandes:()=>_t("Trop de demandes d’ami d’un coup. Réessaie dans une heure."),
  mises_fermees:()=>_t("La prochaine manche arrive dans quelques secondes."),
  deja_mise:()=>_t("Une mise par pari et par manche. Tu peux jouer les autres paris éclair."),
  be_plein:()=>_t("La cagnotte de cette manche ne peut plus couvrir de break even.")
@@ -61,7 +64,7 @@ const srvErreur=e=>{if(e&&e.code==='session'){srvSessionPerdue();return;}if(e&&e
 /* ----- Ce qui n'est pas encore relié au serveur est clairement indisponible en mode serveur -----
    La liste se vide au fil des lots (voir docs/PLAN.md). Le test tests/compte/garde.spec.mjs vérifie qu'aucune action
    qui touche au solde, à l'XP ou à un état partagé n'est exécutée localement quand le serveur fait autorité. */
-const SRV_BLOQUE=new Set(('share-pick vote fr-add fr-accept fr-cancel fr-decline fr-remove '
+const SRV_BLOQUE=new Set(('share-pick vote '
  +'cp-start cp-stop-do cp-edit cp-manage cp-pause cp-stop cp-open limit-place ord-cancel guard guard-save guard-del dl-create dl-cancel dl-accept dl-share dl-decline duel-open stk-create stack-open '
  +'bz-join bz-rebuy bz-choose sr-start sr-cash sr-play sr-share cl-war-join cl-sim cl-join cl-apply cl-leave-do cl-share cl-promote cl-kick cl-invite cl-call-do cl-war cl-feedopt cl-create-open cl-leave cl-call-open cl-war-open '
  +'cb-place cb-cash cb-add cb-clear cb-rm cb-stake pro-sh-send pro-share follow-user follow-bet follow-pbet share dm ref-copy ref-share propose react '
@@ -88,6 +91,8 @@ const NOTIF_T={
  wd_sent:p=>wdNotifTxt({method:p.method,amt:+p.recv,fee:0,net:p.method&&FIAT[p.method]?FIAT[p.method].n:p.net}),
  kyc_ok:()=>_t('Identité vérifiée : carte, virement et PayPal sont débloqués.'),
  rg_pause:p=>_t("Pause activée jusqu’au {0}.",[fmtDT(+p.at)]),
+ fr_demande:p=>_t("{0} veut t’ajouter en ami.",[p.n||'']),
+ fr_acceptee:p=>_t("{0} a accepté ta demande d’ami.",[p.n||'']),
  flash_gagne:p=>_t("Éclair {0}, manche {1} : gagné, +{2}.",[GM[p.g]?GM[p.g].name:p.g,F.int(+p.r),F.usd(+p.pay)]),
  flash_perdu:p=>_t("Éclair {0}, manche {1} : perdu, −{2}.",[GM[p.g]?GM[p.g].name:p.g,F.int(+p.r),F.usd(+p.amt)]),
  rg_limite:p=>_t("Ta limite de dépôt {0} est maintenant {1}.",[winTxt(p.k),+p.v?F.usd0(+p.v):_t("retirée")])
@@ -315,6 +320,27 @@ async function srvEclairRegler(attendus,essai){
  }catch(e){if(e.code==='session'||e.code==='exclu')srvErreur(e);else console.warn('[srv] règlement éclair remis à plus tard',e.code);}
  finally{srvEclairRegle=false;}
  if(encore>0&&(essai|0)<3)setTimeout(()=>srvEclairRegler(encore,(essai|0)+1),1500);   /* l'horloge du serveur était encore dans la manche */
+}
+
+/* ----- Amis : l'écriture est faite par le serveur, qui rend les trois listes à jour ----- */
+let srvAmiOccupe=false;
+async function srvAmi(action,u,el){
+ if(srvAmiOccupe)return;srvAmiOccupe=true;
+ try{
+  const r=await API.call('api_friend',{p_action:action,p_user:u});
+  srvFiches(r.users);S.me.friends=(r.friends||[]).slice();S.me.freqIn=(r.freqIn||[]).slice();S.me.freqOut=(r.freqOut||[]).slice();
+  if(r.r==='envoyee'||r.r==='amis'||r.r==='retire')frAnnonce(r.r,u);
+  srvAppliquer(r,frOu(el));refreshFriends();
+ }catch(e){srvErreur(e);}
+ finally{srvAmiOccupe=false;}
+}
+/* recherche d'un joueur : le serveur complète l'annuaire, puis la liste des résultats est redessinée */
+let srvChercheT=null,srvChercheN=0;
+function srvChercher(texte){
+ clearTimeout(srvChercheT);const q=String(texte||'').trim().toLowerCase();if(q.length<2)return;
+ srvChercheT=setTimeout(async()=>{const n=++srvChercheN;
+  try{const r=await API.call('api_users_search',{p_q:q});if(n!==srvChercheN)return;srvFiches(r.users);if((S.ui.fq||'').trim().toLowerCase()===q)frResultats();}
+  catch(e){console.warn('[srv] recherche de joueur',e.code);}},300);
 }
 
 /* ----- Chat : salons publics (général et marchés) -----

@@ -200,7 +200,12 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
       contient pour l'instant que les messages des vrais joueurs.
 
 ### 4.6 Social
-- [ ] Amis : recherche, demande, annulation, acceptation, refus, retrait (B11, K10, K44).
+- [x] Amis : recherche d'un joueur par son pseudo (`api_users_search`), demande, annulation, acceptation, refus, retrait
+      (`api_friend`) (B11, K10, K44). Rien n'est supprimé ; 15 XP par nouvelle amitié, une seule fois par paire ; un bot
+      accepte tout de suite ; 30 demandes par heure au plus. _Recette 5 (partie amis)._ _Tests_ `tests/sql/amis.spec.mjs`,
+      `tests/compte/amis.spec.mjs`, `tests/e2e/comptes.spec.mjs` (deux vrais comptes).
+- [ ] La demande reçue apparaît au chargement suivant ou au retour sur l'onglet, pas encore à la seconde (il faudra un
+      canal privé par joueur, le même que pour les messages privés).
 - [ ] Suivre un joueur, profils, classement réel par période (B17, K46).
 - [ ] Duels, clans, copy trading, parrainage.
 
@@ -233,6 +238,8 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
       de bot ; un message par tick, 920 octets en moyenne. Diffuser en permanence aurait coûté environ 150 Mo sur les
       500 Mo gratuits : les bots passent donc en **veille** quand aucun joueur n'est présent depuis 6 minutes (un tick
       sur dix, aucune diffusion) et se réveillent dès qu'un joueur charge les marchés.
+- [x] Rappel renforcé (2 % de l'écart, réglable par `rappel` dans `wm.config`) : avec 0,5 %, un marché très actif s'écartait
+      encore trop. Migration `bots_rappel`.
 - [x] Tenue dans le temps : les ancres sont rappelées vers la valeur de référence de chaque marché. Sans cela, la logique
       du mode Démo, laissée tourner jour et nuit, polarisait les prix vers 5 % ou 95 % en quelques heures (test « sur la
       durée » : 3 échecs sur 3 sans le correctif, 3 succès sur 3 avec). Migration `bots_ancres`.
@@ -307,3 +314,4 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 | 15 nov. 2026 | Mission réclamée côté serveur ; droits d'appel dérivés des fonctions `api_`. Anti-cache, intégration continue, documentation (README, architecture, back, exploitation). | migration `missions` ; `tools/version.mjs` ; `.github/workflows/tests.yml` ; 120 tests (54 SQL) |
 | 15 nov. 2026 | 4.5 : chat des salons publics par le serveur (historique, envoi, direct, anti-spam). Bots : ancres rappelées vers la valeur de référence (plus de polarisation dans le temps). | migrations `chat`, `bots_ancres` ; 133 tests (60 SQL) ; 5 tests de bout en bout dont le chat entre deux comptes |
 | 15 nov. 2026 | 4.4 : pari éclair par le serveur. Moteur extrait dans un module pur, Edge Function `eclair`, mise et règlement. Test du mode Démo rendu stable dans l'intégration continue. | migration `eclair` (empreinte identique) ; 151 tests (65 SQL) ; 6 tests de bout en bout contre le vrai back |
+| 15 nov. 2026 | 4.6 (début) : amis par le serveur. Bots : rappel des ancres renforcé et réglable. | migrations `amis`, `bots_rappel` (empreintes identiques) ; 159 tests (69 SQL) ; 7 tests de bout en bout contre le vrai back |

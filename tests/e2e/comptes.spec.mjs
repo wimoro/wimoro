@@ -270,3 +270,41 @@ test('recette 2 · pari éclair : mise acceptée par le serveur, toujours là ap
   expect(fin.solde).toBeCloseTo(apres.solde, 2); expect(fin.regles).toBe(avant.regles + 1); expect(fin.hist).toBe('flash'); expect(fin.my).toBeNull();
   expect(erreurs).toEqual([]);
 });
+
+test('recette 5 · amis : A cherche B et lui envoie une demande, B l’accepte, les deux listes sont à jour', async ({ browser }) => {
+  test.setTimeout(120000);
+  const connecter = async pseudo => {
+    const ctx = await browser.newContext(), page = await ctx.newPage();
+    const erreurs = await ouvrirReel(page, '#connexion');
+    await page.locator('#le').fill(pseudo); await page.locator('#lp').fill(MDP); await page.locator('form[data-form="login"] [type=submit]').click();
+    await expect(page).toHaveURL(/#accueil/, { timeout: 20000 }); await pret(page);
+    await page.evaluate(() => { location.hash = '#amis'; });
+    return { ctx, page, erreurs };
+  };
+  const listes = page => lire(page, () => ({ amis: S.me.friends.map(u => userOf(u).n), recues: S.me.freqIn.map(u => userOf(u).n), envoyees: S.me.freqOut.map(u => userOf(u).n) }));
+  const a = await connecter(PSEUDO);
+  // A cherche B par son pseudo (le serveur répond) et lui envoie une demande
+  await a.page.locator('[data-fq]').fill(PSEUDO + 'b');
+  const resultat = a.page.locator('[data-fres] .frow', { hasText: PSEUDO + 'b' });
+  await expect(resultat).toHaveCount(1, { timeout: 15000 });
+  await resultat.locator('[data-a="fr-add"]').click();
+  await expect(a.page.locator('.toast', { hasText: 'Friend request sent' }).first()).toBeVisible({ timeout: 15000 });
+  expect(await listes(a.page)).toEqual({ amis: [], recues: [], envoyees: [PSEUDO + 'b'] });
+  // B ouvre le site : la demande est là, avec le pseudo de A ; il l'accepte
+  const b = await connecter(PSEUDO + 'b');
+  expect(await listes(b.page)).toEqual({ amis: [], recues: [PSEUDO], envoyees: [] });
+  expect(await lire(b.page, () => S.me.notifs.map(n => n.text).join(' | '))).toContain(PSEUDO + ' wants to add you');
+  const xpB = await lire(b.page, () => S.me.xp);
+  await b.page.locator('.frow', { hasText: PSEUDO }).locator('[data-a="fr-accept"]').click();
+  await expect.poll(() => listes(b.page), { timeout: 15000 }).toEqual({ amis: [PSEUDO], recues: [], envoyees: [] });
+  expect(await lire(b.page, () => S.me.xp)).toBe(xpB + 15);
+  // A recharge : B est dans ses amis, et il en est prévenu
+  await a.page.reload(); await pret(a.page);
+  expect(await listes(a.page)).toEqual({ amis: [PSEUDO + 'b'], recues: [], envoyees: [] });
+  expect(await lire(a.page, () => S.me.notifs.map(n => n.text).join(' | '))).toContain(PSEUDO + 'b accepted your friend request');
+  // B recharge aussi : même chose de son côté
+  await b.page.reload(); await pret(b.page);
+  expect(await listes(b.page)).toEqual({ amis: [PSEUDO], recues: [], envoyees: [] });
+  expect(a.erreurs).toEqual([]); expect(b.erreurs).toEqual([]);
+  await a.ctx.close(); await b.ctx.close();
+});

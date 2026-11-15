@@ -50,6 +50,8 @@ avec la même clé, l'opération n'est appliquée qu'une fois et renvoie le mêm
 | `api_mission_claim(id)` | joueur | récupérer les XP d'une mission terminée |
 | `api_chat_history(salon)` | joueur | les 60 derniers messages d'un salon public et la fiche de leurs auteurs |
 | `api_chat_send(salon, texte)` | joueur | écrire dans le salon général ou celui d'un marché ; anti-spam ; diffusé aux lecteurs du salon |
+| `api_users_search(texte)` | joueur | dix joueurs au plus dont le pseudo contient le texte (fiches publiques, jamais d'e-mail) |
+| `api_friend(action, joueur)` | joueur | `add`, `accept`, `cancel`, `decline`, `remove` ; rend les trois listes à jour |
 | Edge Function `connexion` | visiteur | connexion par pseudo, sans jamais révéler d'e-mail ; limite les tentatives |
 | Edge Function `eclair` | joueur | pari éclair : `bet` (miser) et `settle` (régler les manches terminées) |
 
@@ -77,9 +79,10 @@ de foule) ; la profondeur du carnet suit le volume avec retard. C'est la logique
 
 - **Aucune ligne créée par action de bot** : les marchés sont mis à jour en place. Un seul message diffusé par tick.
 - **Veille** : sans joueur présent depuis 6 minutes, un tick sur dix seulement et aucune diffusion.
-- **Tenue dans le temps** : chaque ancre est rappelée de 0,5 % de son écart vers la probabilité de référence du marché
+- **Tenue dans le temps** : chaque ancre est rappelée de 2 % de son écart vers la probabilité de référence du marché
   (table `markets`) ; sans cela les prix se polarisent vers 5 % ou 95 % en quelques heures.
-- **Réglage** : table `wm.config`, clé `bots`, valeur `{"actif": true, "intensite": 1}` (intensité de 0 à 3).
+- **Réglage** : table `wm.config`, clé `bots`, valeur `{"actif": true, "intensite": 1, "rappel": 0.02}` (intensité de 0 à 3,
+  rappel de 0 à 0,2).
 - Mesuré en production : 22 ms par tick en moyenne, 920 octets par message.
 
 ## 4 bis. Pari éclair
@@ -119,8 +122,8 @@ dépôt, retrait possible, impossible à écourter), auto-exclusion (`wm.uid()` 
 ## 7. Tests du back
 
 `tests/sql/` charge une vraie base Postgres embarquée (PGlite) avec la photo du schéma puis toutes les migrations du
-dépôt, en moins d'une seconde, et exécute les fonctions « en tant que » un visiteur ou un joueur. 65 tests : sécurité,
-comptes, moteur, bots, argent fictif, jeu responsable, missions, chat, pari éclair, invariants (solde jamais négatif, opérations
+dépôt, en moins d'une seconde, et exécute les fonctions « en tant que » un visiteur ou un joueur. 69 tests : sécurité,
+comptes, moteur, bots, argent fictif, jeu responsable, missions, chat, pari éclair, amis, invariants (solde jamais négatif, opérations
 simultanées, rejeu d'une clé).
 
 ## 8. Ajouter une fonction

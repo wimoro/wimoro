@@ -51,7 +51,10 @@ I18N_ADD("en",{
 "Tu viens d’envoyer ce message.":"You just sent that message.",
 "Trop de messages d’un coup. Réessaie dans une minute.":"Too many messages at once. Try again in a minute.",
 "Message trop long (280 caractères au plus).":"Message too long (280 characters max).",
-"Ce salon n’est pas encore disponible avec ton compte.":"This room isn't available for accounts yet."
+"Ce salon n’est pas encore disponible avec ton compte.":"This room isn't available for accounts yet.",
+"Ce joueur est introuvable.":"This player can't be found.",
+"Cette demande d’ami n’existe plus.":"This friend request no longer exists.",
+"Trop de demandes d’ami d’un coup. Réessaie dans une heure.":"Too many friend requests at once. Try again in an hour."
 });
 I18N_ADD("he",{
 "Connexion au serveur impossible. Vérifie ta connexion et réessaie.":"לא ניתן להתחבר לשרת. בדוק את החיבור ונסה שוב.",
@@ -103,5 +106,8 @@ I18N_ADD("he",{
 "Tu viens d’envoyer ce message.":"שלחת את ההודעה הזו זה עתה.",
 "Trop de messages d’un coup. Réessaie dans une minute.":"יותר מדי הודעות בבת אחת. נסה שוב בעוד דקה.",
 "Message trop long (280 caractères au plus).":"ההודעה ארוכה מדי (עד 280 תווים).",
-"Ce salon n’est pas encore disponible avec ton compte.":"החדר הזה עדיין לא זמין לחשבונות."
+"Ce salon n’est pas encore disponible avec ton compte.":"החדר הזה עדיין לא זמין לחשבונות.",
+"Ce joueur est introuvable.":"השחקן הזה לא נמצא.",
+"Cette demande d’ami n’existe plus.":"בקשת החברות הזו כבר לא קיימת.",
+"Trop de demandes d’ami d’un coup. Réessaie dans une heure.":"יותר מדי בקשות חברות בבת אחת. נסה שוב בעוד שעה."
 });

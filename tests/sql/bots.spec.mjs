@@ -48,12 +48,12 @@ test('K20 · sur la durée (plusieurs heures d’activité), les ancres ne se po
     await ticks(600);
     const e = await etat();
     ecarts.push(Math.abs(e.btc150k.anchor - 63), Math.abs(e.clasico.anchor - 54));
-    expect(e.btc150k.anchor, 'ancre de btc150k').toBeGreaterThan(63 - 28); expect(e.btc150k.anchor).toBeLessThan(63 + 28);
-    expect(e.clasico.anchor, 'ancre de clasico').toBeGreaterThan(54 - 28); expect(e.clasico.anchor).toBeLessThan(54 + 28);
+    expect(e.btc150k.anchor, 'ancre de btc150k').toBeGreaterThan(63 - 22); expect(e.btc150k.anchor).toBeLessThan(63 + 22);
+    expect(e.clasico.anchor, 'ancre de clasico').toBeGreaterThan(54 - 22); expect(e.clasico.anchor).toBeLessThan(54 + 22);
     expect(e.btc150k.p).toBeGreaterThan(15); expect(e.btc150k.p).toBeLessThan(97);
   }
   const moyen = ecarts.reduce((a, b) => a + b, 0) / ecarts.length;
-  expect(moyen, 'écart moyen à la référence ' + moyen.toFixed(1)).toBeLessThan(14);
+  expect(moyen, 'écart moyen à la référence ' + moyen.toFixed(1)).toBeLessThan(9);
   expect(moyen, 'les marchés vivent : l’ancre bouge').toBeGreaterThan(0.5);
 });
 

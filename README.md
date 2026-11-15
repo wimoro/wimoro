@@ -29,7 +29,7 @@ node tools/serve.mjs          # http://127.0.0.1:4173
 ```bash
 npm ci
 npx playwright install chromium
-npx playwright test           # 151 tests : back (base embarquée), écrans bureau et mobile
+npx playwright test           # 159 tests : back (base embarquée), écrans bureau et mobile
 E2E=1 npx playwright test --project=e2e    # bout en bout contre le VRAI back (crée un compte de test jetable)
 ```
 
@@ -60,10 +60,10 @@ Le détail, case par case, est dans [docs/PLAN.md](docs/PLAN.md). En bref, en mo
 
 - **marche par le serveur** : inscription, connexion par e-mail ou pseudo, mot de passe oublié, onboarding, profil,
   marchés en direct animés par les bots, achat et vente, dépôts, retraits et KYC fictifs, limites de jeu responsable,
-  pause, auto-exclusion, pari éclair (mise et règlement), chat du salon général et des marchés, missions, XP, rangs,
-  badges, notifications ;
+  pause, auto-exclusion, pari éclair (mise et règlement), chat du salon général et des marchés, amis, missions,
+  XP, rangs, badges, notifications ;
 - **pas encore relié, annoncé comme tel à l'écran** (« Bientôt disponible avec ton compte ») : Blitz, Série,
-  salons privés, VIP et de clan, amis, duels, clans, combinés, ordres limites, copy trading, parrainage, propositions
+  salons privés, VIP et de clan, duels, clans, combinés, ordres limites, copy trading, parrainage, propositions
   de marché.
 
 Le mode Démo, lui, fait tout fonctionner localement.

@@ -78,6 +78,21 @@
     api_notifs_read: function () { etat().notifs.forEach(function (n) { n.read = true; }); return null; },
     api_notif_hide: function (a) { var e = etat(); e.notifs = a.p_id ? e.notifs.filter(function (n) { return n.id !== a.p_id; }) : []; return null; },
     api_present: function () { return null; },
+    api_friend: function (a) { var e = etat(), me = e.me, u = a.p_user, ev = [], res = 'rien', f = db.fiches[u];
+      if (['add', 'accept', 'cancel', 'decline', 'remove'].indexOf(a.p_action) < 0) throw { message: 'action_invalide' };
+      if (!u || u === uid() || !f) throw { message: 'joueur_inconnu' };
+      var oter = function (L) { var i = L.indexOf(u); if (i >= 0) L.splice(i, 1); }, action = a.p_action;
+      var lier = function () { oter(e.freqIn); oter(e.freqOut); if (e.friends.indexOf(u) < 0) e.friends.push(u); e.amisXp = e.amisXp || {}; if (!e.amisXp[u]) { e.amisXp[u] = 1; var av = rangDe(me); me.xp += 15; ev.push({ k: 'xp', n: 15, src: 'ami' }); rangMonte(me, av, ev); } res = 'amis'; };
+      if (action === 'add') { if (e.friends.indexOf(u) >= 0) res = 'amis'; else if (e.freqIn.indexOf(u) >= 0) action = 'accept'; else if (f.bot) lier(); else { if (e.freqOut.indexOf(u) < 0) e.freqOut.push(u); res = 'envoyee'; } }
+      if (action === 'accept') { if (e.freqIn.indexOf(u) < 0) throw { message: 'demande_absente' }; lier(); }
+      else if (action === 'decline') { oter(e.freqIn); res = 'refusee'; }
+      else if (action === 'cancel') { oter(e.freqOut); res = 'annulee'; }
+      else if (action === 'remove') { oter(e.friends); res = 'retire'; }
+      var rep = reponse(ev), users = {}; e.friends.concat(e.freqIn, e.freqOut, [u]).forEach(function (x) { users[x] = ficheDe(x); }); e.users = users;
+      rep.friends = clone(e.friends); rep.freqIn = clone(e.freqIn); rep.freqOut = clone(e.freqOut); rep.users = users; rep.r = res; return rep; },
+    api_users_search: function (a) { var q = String(a.p_q || '').trim().toLowerCase(), ids = [], users = {};
+      if (q.length >= 2 && /^[a-z0-9._]+$/.test(q)) for (var id in db.fiches) if (id !== uid() && String(db.fiches[id].n).toLowerCase().indexOf(q) >= 0 && ids.length < 10) { ids.push(id); users[id] = ficheDe(id); }
+      return { ids: ids, users: users }; },
     api_chat_history: function (a) { salonOk(a.p_room); var L = (db.chat[a.p_room] || []).slice(-60), users = {};
       L.forEach(function (m) { users[m.u] = ficheDe(m.u); }); return { room: a.p_room, msgs: clone(L), users: users }; },
     api_chat_send: function (a) { salonOk(a.p_room); var e = etat(), me = e.me, ev = [], t = String(a.p_text || '').trim();
