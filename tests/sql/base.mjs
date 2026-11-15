@@ -78,6 +78,11 @@ export async function semer(db) {
     insert into public.market_live_state (market_id, current_probability, anchor_probability, volume_total, participants_count, liquidity_depth) values
       ('btc150k', 63, 63, 4200000, 1284, 25200),
       ('clasico', 54, 54, 860000, 1204, 5160);
+    insert into public.badges (id, name, icon) values
+      ('first', 'Premier pari', 'check'), ('streak7', 'Série de 7 jours', 'flame'), ('contra', 'Contre la foule', 'down'),
+      ('voice', 'Voix du live chat', 'chat'), ('dep', 'Premier dépôt', 'wallet'), ('flash3', 'Triplé éclair', 'bolt'),
+      ('fol25', 'Suivi par 25', 'users'), ('clanfounder', 'Fondateur de clan', 'shield'), ('clanweek', 'Champion de clan', 'trophy'),
+      ('whale', 'Grosse mise', 'target');
     insert into public.chat_rooms (id, name, kind, market_id) values
       ('general', 'Général', 'global', null), ('vip', 'VIP', 'vip', null),
       ('m:btc150k', '#btc150k', 'market', 'btc150k'), ('m:clasico', '#clasico', 'market', 'clasico');

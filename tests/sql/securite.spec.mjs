@@ -151,6 +151,6 @@ test.describe('après la migration', () => {
     const sans = await q(db, `select proname from pg_proc where pronamespace = 'public'::regnamespace and prokind = 'f' and not exists (select 1 from unnest(coalesce(proconfig, '{}')) c where c like 'search_path=%')`);
     expect(sans).toEqual([]);
     const anon = (await q(db, `select p.proname from pg_proc p where p.pronamespace = 'public'::regnamespace and has_function_privilege('anon', p.oid, 'execute') order by 1`)).map(x => x.proname);
-    expect(anon).toEqual(['get_chat_history', 'get_clan_members', 'get_clans', 'get_leaderboard', 'get_markets', 'newsletter_subscribe', 'newsletter_unsubscribe']);
+    expect(anon).toEqual(['api_pseudo_libre', 'get_chat_history', 'get_clan_members', 'get_clans', 'get_leaderboard', 'get_markets', 'newsletter_subscribe', 'newsletter_unsubscribe']);
   });
 });
