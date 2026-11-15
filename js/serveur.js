@@ -357,7 +357,16 @@ const srvMoi=()=>String(S.auth.key||'').slice(4);
 function srvChatAjouter(rid,m){
  if(!m||SRV_MSG_VUS.has(m.id))return;SRV_MSG_VUS.add(m.id);
  if(m.f)srvFiches({[m.u]:m.f});
- addMsg(rid,mkMsg({u:m.u===srvMoi()?'me':m.u,k:'msg',text:m.text,at:m.at,sid:m.id}));
+ const text=m.tpl?srvBotTexte(m.tpl):m.text;if(m.tpl&&!text)return;             /* gabarit sur un marché inconnu de l'écran : ignoré */
+ addMsg(rid,mkMsg({u:m.u===srvMoi()?'me':m.u,k:'msg',text,at:m.at,sid:m.id}));
+}
+/* Message d'un bot : le serveur envoie un gabarit et ses paramètres ({g,i,m,p,s}) ; la phrase est composée ici, dans la
+   langue du lecteur, avec les mêmes listes de phrases que le mode Démo. */
+function srvBotTexte(t){
+ const m=MK[t.m];if(!m)return '';
+ const lignes=t.g==='G'?GLOBAL_LINES:(MLINES[t.m]||[]).concat(GEN_LINES),p=Number(t.p)||0;
+ return lignes[Math.abs(t.i|0)%lignes.length].replace(/\{id\}/g,m.id).replace(/\{pct\}/g,F.pct(p)).replace(/\{side\}/g,t.s?_t("Oui"):_t("Non"))
+  .replace(/\{hb\}/g,p>50?_t("haut"):_t("bas")).replace(/\{prev\}/g,Math.round(p-3));
 }
 function srvSalons(){
  const vus=new Set(Array.from(document.querySelectorAll('.feed[data-room]')).map(f=>f.dataset.room).filter(srvSalonOuvert));
@@ -435,7 +444,9 @@ function srvExclu(e){if(srvExcluVu)return;srvExcluVu=true;const d=+(e&&e.cause&&
 
 /* Présence : tant que l'onglet est visible, le site dit au serveur qu'un joueur regarde (toutes les 4 minutes). Sans joueur
    présent, les bots du serveur passent en veille et ne diffusent plus rien (voir supabase/migrations/…_bots_veille.sql). */
-planifier('serveur : présence',240000,()=>{if(!document.hidden&&S.me.logged)API.call('api_present').catch(()=>{});},'serveur');
+planifier('serveur : présence',240000,()=>{if(document.hidden||!S.me.logged)return;API.call('api_present').catch(()=>{});
+ const salons=Array.from(SRV_SALONS).filter(r=>!srvPrive(r));if(salons.length)API.call('api_chat_seen',{p_rooms:salons}).catch(()=>{});   /* les bots ne parlent que dans les salons regardés */
+},'serveur');
 
 /* ----- Démarrage en mode serveur ----- */
 async function bootServeur(){
