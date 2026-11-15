@@ -29,7 +29,7 @@ node tools/serve.mjs          # http://127.0.0.1:4173
 ```bash
 npm ci
 npx playwright install chromium
-npx playwright test           # 133 tests : back (base embarquée), écrans bureau et mobile
+npx playwright test           # 151 tests : back (base embarquée), écrans bureau et mobile
 E2E=1 npx playwright test --project=e2e    # bout en bout contre le VRAI back (crée un compte de test jetable)
 ```
 
@@ -49,7 +49,7 @@ node tools/version.mjs        # met à jour l'empreinte anti-cache des fichiers 
 |---|---|
 | `index.html`, `css/`, `js/` | le site. `js/api.js` est le seul fichier qui parle à Supabase ; `js/serveur.js` porte le mode Compte |
 | `supabase/migrations/` | le back, versionné : photo de départ (`0000_baseline.sql`) puis une migration par changement |
-| `supabase/functions/` | Edge Functions (connexion par pseudo) |
+| `supabase/functions/` | Edge Functions : connexion par pseudo ; pari éclair (avec une copie conforme de `js/moteur-eclair.js`) |
 | `tests/` | `sql/` (back), `demo/` et `compte/` (écrans), `e2e/` (vrai back) |
 | `tools/` | serveur local, anti-cache, audit, vérification des migrations |
 | `docs/` | [audit](docs/AUDIT.md), [plan et avancement](docs/PLAN.md), [architecture](docs/ARCHITECTURE.md), [back](docs/BACKEND.md), [exploitation](docs/EXPLOITATION.md) |
@@ -60,9 +60,10 @@ Le détail, case par case, est dans [docs/PLAN.md](docs/PLAN.md). En bref, en mo
 
 - **marche par le serveur** : inscription, connexion par e-mail ou pseudo, mot de passe oublié, onboarding, profil,
   marchés en direct animés par les bots, achat et vente, dépôts, retraits et KYC fictifs, limites de jeu responsable,
-  pause, auto-exclusion, chat du salon général et des marchés, missions, XP, rangs, badges, notifications ;
-- **pas encore relié, annoncé comme tel à l'écran** (« Bientôt disponible avec ton compte ») : pari éclair, Blitz,
-  Série, salons privés, VIP et de clan, amis, duels, clans, combinés, ordres limites, copy trading, parrainage, propositions
+  pause, auto-exclusion, pari éclair (mise et règlement), chat du salon général et des marchés, missions, XP, rangs,
+  badges, notifications ;
+- **pas encore relié, annoncé comme tel à l'écran** (« Bientôt disponible avec ton compte ») : Blitz, Série,
+  salons privés, VIP et de clan, amis, duels, clans, combinés, ordres limites, copy trading, parrainage, propositions
   de marché.
 
 Le mode Démo, lui, fait tout fonctionner localement.

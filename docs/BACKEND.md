@@ -51,6 +51,7 @@ avec la même clé, l'opération n'est appliquée qu'une fois et renvoie le mêm
 | `api_chat_history(salon)` | joueur | les 60 derniers messages d'un salon public et la fiche de leurs auteurs |
 | `api_chat_send(salon, texte)` | joueur | écrire dans le salon général ou celui d'un marché ; anti-spam ; diffusé aux lecteurs du salon |
 | Edge Function `connexion` | visiteur | connexion par pseudo, sans jamais révéler d'e-mail ; limite les tentatives |
+| Edge Function `eclair` | joueur | pari éclair : `bet` (miser) et `settle` (régler les manches terminées) |
 
 Les **anciennes fonctions** (`place_bet`, `demo_deposit`, `get_markets`, `send_chat_message`…) existent encore pour
 l'ancien site tant qu'il est en ligne. Elles seront fermées à la livraison (voir `docs/EXPLOITATION.md`).
@@ -81,6 +82,22 @@ de foule) ; la profondeur du carnet suit le volume avec retard. C'est la logique
 - **Réglage** : table `wm.config`, clé `bots`, valeur `{"actif": true, "intensite": 1}` (intensité de 0 à 3).
 - Mesuré en production : 22 ms par tick en moyenne, 920 octets par message.
 
+## 4 bis. Pari éclair
+
+Le pari éclair est déterministe : la manche, les prix, la cagnotte de départ, les mises des joueurs simulés et l'issue se
+déduisent de l'heure. Le calcul vit dans `js/moteur-eclair.js`, module pur ; l'Edge Function `eclair` en embarque une
+**copie conforme** (`supabase/functions/eclair/moteur-eclair.js` ; un test vérifie que les deux fichiers sont identiques).
+
+- **Miser** : l'Edge Function lit SON horloge (manche, tick, mises ouvertes 30 secondes), calcule les frais et la cote du
+  break even avec le moteur, puis appelle `srv_eclair_miser`. La base revérifie l'heure, la pause, le solde et l'unicité
+  (une mise par pari et par manche), puis débite. Table `wm.eclair_mises`.
+- **Régler** : `srv_eclair_ouvertes` rend les mises des manches terminées ; l'Edge Function rejoue chaque manche (cagnotte,
+  issue, gain) ; `srv_eclair_regler` crédite, tient les statistiques (série, victoires contre la foule), l'historique, les
+  XP (40, ou 120 sur un break even), les missions, et crée une notification si la manche est réglée après coup.
+- Les fonctions `srv_…` ne sont appelables qu'avec la clé de service : un joueur ne fixe ni ses frais ni son gain.
+- Après une modification de `js/moteur-eclair.js` : recopier le fichier dans `supabase/functions/eclair/` et redéployer
+  la fonction, sinon l'écran et le serveur ne calculeraient plus la même chose.
+
 ## 5. Argent fictif et jeu responsable
 
 Tout est nommé « démo » dans le code et la base (`api_demo_…`, `wm.demo_…`, écritures `demo_deposit` et `demo_withdraw`
@@ -102,8 +119,8 @@ dépôt, retrait possible, impossible à écourter), auto-exclusion (`wm.uid()` 
 ## 7. Tests du back
 
 `tests/sql/` charge une vraie base Postgres embarquée (PGlite) avec la photo du schéma puis toutes les migrations du
-dépôt, en moins d'une seconde, et exécute les fonctions « en tant que » un visiteur ou un joueur. 60 tests : sécurité,
-comptes, moteur, bots, argent fictif, jeu responsable, missions, chat, invariants (solde jamais négatif, opérations
+dépôt, en moins d'une seconde, et exécute les fonctions « en tant que » un visiteur ou un joueur. 65 tests : sécurité,
+comptes, moteur, bots, argent fictif, jeu responsable, missions, chat, pari éclair, invariants (solde jamais négatif, opérations
 simultanées, rejeu d'une clé).
 
 ## 8. Ajouter une fonction

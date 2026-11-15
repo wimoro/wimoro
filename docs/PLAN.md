@@ -174,9 +174,17 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 - [ ] Clôture et résolution depuis le panel admin (K05, K48).
 
 ### 4.4 Pari éclair, Blitz, Série
-- [ ] `js/moteur-eclair.js` : moteur pur. _Test_ : mêmes prix et issues que le code d'origine sur 500 manches.
-- [ ] Edge Function `eclair` : miser, régler ; horloge alignée (`FSKEW`). _Recette 2._
-- [ ] Blitz et Série.
+- [x] `js/moteur-eclair.js` : moteur pur (horloge, trajectoires, issues, cagnottes, frais, gains), auquel `js/flash.js`
+      délègue. _Test_ `tests/eclair-moteur.spec.mjs` : mêmes issues sur 19 jeux × 500 manches, mêmes prix, mêmes cagnottes
+      que le code d'origine (référence produite avant l'extraction : `tests/fixtures/eclair-reference.json`).
+- [x] Edge Function `eclair` (copie conforme du moteur) : miser avec l'horloge du serveur, régler en rejouant la manche ;
+      écritures par `srv_eclair_…`, réservées à la clé de service. Une mise par pari et par manche, pause respectée, mise
+      rendue après rechargement, manches manquées réglées au retour avec notification. _Recette 2._ _Tests_
+      `tests/sql/eclair.spec.mjs`, `tests/compte/eclair.spec.mjs`, `tests/e2e/comptes.spec.mjs` (le gain payé par le vrai
+      serveur est celui que l'écran avait calculé).
+- [ ] Limite connue : la cagnotte d'une manche est celle des joueurs simulés plus la mise du joueur, comme en mode Démo ;
+      les mises des autres vrais joueurs n'y entrent pas encore.
+- [ ] Blitz et Série : annoncés comme indisponibles en mode Compte.
 
 ### 4.5 Chat
 - [x] Salons publics (général et salon de chaque marché) : historique, envoi, réception en direct ; on ne s'abonne qu'au
@@ -298,3 +306,4 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 | 15 nov. 2026 | 4.7 : argent fictif et KYC écrits par le serveur ; jeu responsable appliqué par le serveur. Recette 3 complète contre le vrai back : inscription → onboarding → dépôt → achat → rechargement → vente → reconnexion par pseudo depuis un autre navigateur. | migration `argent_demo` (empreinte identique) ; 117 tests (52 SQL) ; 4 tests de bout en bout |
 | 15 nov. 2026 | Mission réclamée côté serveur ; droits d'appel dérivés des fonctions `api_`. Anti-cache, intégration continue, documentation (README, architecture, back, exploitation). | migration `missions` ; `tools/version.mjs` ; `.github/workflows/tests.yml` ; 120 tests (54 SQL) |
 | 15 nov. 2026 | 4.5 : chat des salons publics par le serveur (historique, envoi, direct, anti-spam). Bots : ancres rappelées vers la valeur de référence (plus de polarisation dans le temps). | migrations `chat`, `bots_ancres` ; 133 tests (60 SQL) ; 5 tests de bout en bout dont le chat entre deux comptes |
+| 15 nov. 2026 | 4.4 : pari éclair par le serveur. Moteur extrait dans un module pur, Edge Function `eclair`, mise et règlement. Test du mode Démo rendu stable dans l'intégration continue. | migration `eclair` (empreinte identique) ; 151 tests (65 SQL) ; 6 tests de bout en bout contre le vrai back |

@@ -1,6 +1,6 @@
 # Architecture du front
 
-Le site est une page unique (`index.html`) et 26 fichiers JavaScript chargés dans l'ordre, sans framework ni étape de
+Le site est une page unique (`index.html`) et 27 fichiers JavaScript chargés dans l'ordre, sans framework ni étape de
 construction. Ce document explique comment les deux modes cohabitent sans se mélanger.
 
 ## 1. Deux modes, un seul interrupteur
@@ -18,7 +18,7 @@ Le mode est connu **avant le premier rendu** : `boot.js` attend `API.pret` (le c
 ## 2. Ordre de chargement
 
 ```
-i18n ×4  →  api.js  →  core, engine, views, auth, …, demo  →  serveur.js  →  boot.js
+i18n ×4  →  api.js  →  core, engine, moteur-eclair, views, auth, …, demo  →  serveur.js  →  boot.js
 ```
 
 - `js/api.js` — **la seule passerelle vers le back**. Seul fichier à toucher le client Supabase (version 2.118.0, figée
@@ -39,6 +39,10 @@ Chaque action (parier, vendre, déposer, retirer, valider le KYC, réclamer une 
    fonction `api_…` dont la réponse fait autorité ;
 3. **effets d'interface** — une seule fonction pour les deux modes (`betEffets`, `sellEffets`, `depDetecte`,
    `depCredite`, `wdLance`, `wdEnvoye`, `kycDone`, `rgPauseEffets`, `rgLimiteEffets`).
+
+Le pari éclair suit la même règle : `flashBet` valide, puis écrit (`flashPoser` en local, `srvEclairMiser` → Edge Function
+`eclair` en serveur) ; à la fin de la manche, `fSettle` calcule le résultat pour l'affichage et, en mode serveur, c'est
+`srvEclairRegler` qui apporte l'écriture comptable ; l'annonce (`flashAnnonce`) est commune.
 
 Exemple, acheter : `placeBet` → (local) débit et position dans `S.me`, ou (serveur) `srvAcheter` → `api_buy` → la
 réponse `{me, ev, pos, q, marches}` est appliquée → `betEffets`. L'écran affiche ce que le serveur a exécuté, même si le

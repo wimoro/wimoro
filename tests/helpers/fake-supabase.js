@@ -10,6 +10,7 @@
  *   marches   : [ { market_id, current_probability, volume_total, liquidity_depth, participants_count, status, price_history } ]
  *               un marché absent de la liste est créé à la demande avec les valeurs de départ du site
  *   rpc       : { nom: valeur | { error: { message } } }   réponses forcées
+ *   fn        : { eclair: 'mises_fermees' }                refus forcé d'une Edge Function (code)
  *   autoconfirm : false  → l'inscription demande une confirmation d'e-mail (pas de session)
  *   otp       : '123456'  code accepté par verifyOtp
  *   latence   : ms
@@ -60,7 +61,7 @@
 
   /* ----- Les fonctions du contrat ----- */
   var RPC = {
-    api_state: function () { var e0 = etat(); regler(e0, []); rgMaj(e0, []); var e = clone(e0); e.deps = e0.deps.map(depJson); e.now = Date.now() + (CFG.decalage || 0); return e; },
+    api_state: function () { var e0 = etat(); regler(e0, []); rgMaj(e0, []); var e = clone(e0); e.deps = e0.deps.map(depJson); e.eclair = eclairJson(e0); delete e.eclairMises; e.now = Date.now() + (CFG.decalage || 0); return e; },
     api_pseudo_libre: function (a) { return /^[A-Za-z0-9._]{3,20}$/.test(a.p_pseudo || '') && !pseudoPris(a.p_pseudo); },
     api_profile_update: function (a) { var p = a.p || {}, me = etat().me;
       if ('n' in p) { if (!/^[A-Za-z0-9._]{3,20}$/.test(p.n || '')) throw { message: 'pseudo_invalide' }; if (pseudoPris(p.n, uid())) throw { message: 'pseudo_pris' }; me.n = p.n; }
@@ -259,6 +260,37 @@
     Object.keys(e.rg.pend).forEach(function (k) { var p = e.rg.pend[k]; if (p.at > Date.now()) return; e.rg.lim[k] = p.v; delete e.rg.pend[k]; ev.push(notif('shield', 'rg_limite', { k: k, v: p.v }, '#responsable')); });
     if (e.rg.pause && e.rg.pause <= Date.now()) e.rg.pause = 0;
   }
+  /* ----- Pari éclair ----- */
+  var eclairJson = function (e) { var ME = MoteurEclair, r = ME.round(Date.now()), L = e.eclairMises || [], b = {};
+    L.forEach(function (m) { if (m.etat === 'ouverte' && m.r === r) b[m.g] = clone(m); });
+    return { r: r, du: L.filter(function (m) { return m.etat === 'ouverte' && m.r < r; }).length, b: b }; };
+  function eclairMiser(b) { var ME = MoteurEclair, e = etat(), me = e.me, t = Date.now(), d = ME.JEUX[b.gid], amt = Math.round(Number(b.amt) * 100) / 100, cle = uid() + ':' + b.key;
+    if (!d) throw { message: 'jeu_inconnu' }; if (['oui', 'non', 'be'].indexOf(b.side) < 0) throw { message: 'cote_invalide' };
+    if (!(amt >= 1) || !(amt <= 10000)) throw { message: 'montant_invalide' }; if (!b.key) throw { message: 'cle_absente' };
+    if (!ME.ouvert(t)) throw { message: 'mises_fermees' };
+    if (db.ops[cle]) { var deja = clone(db.ops[cle]); deja.rejoue = true; return deja; }
+    if (e.rg && e.rg.pause > t) throw { message: 'pause' };
+    var r = ME.round(t), tk = ME.tick(t), g = ME.etat(d, r, tk), px = ME.prix(d, g), L = e.eclairMises = e.eclairMises || [];
+    if (L.some(function (m) { return m.r === r && m.g === d.id; })) throw { message: 'deja_mise' };
+    if (me.balance < amt) throw { message: 'solde_insuffisant' };
+    if (b.side === 'be' && amt > ME.beMax(g, d)) throw { message: 'be_plein' };
+    var fee = ME.frais(d, g, b.side, amt, rangDe(me).t >= 5), avant = rangDe(me), ev = [];
+    var m = { id: db.seq++, r: r, g: d.id, s: b.side, amt: amt, fee: fee, net: amt - fee, price: b.side === 'oui' ? px.o : b.side === 'non' ? px.n : px.e, mult: b.side === 'be' ? ME.beMult(d) : 0, tk: tk, etat: 'ouverte' };
+    L.push(m); me.balance = r2(me.balance - amt); me.played = (me.played | 0) + 1;
+    me.xp += 10; ev.push({ k: 'xp', n: 10, src: 'eclair' }); rangMonte(me, avant, ev); missionAvance(e, 'flashbet', ev); badges(e, ev);
+    var rep = reponse(ev); rep.mise = clone(m); delete rep.mise.etat; db.ops[cle] = clone(rep); return rep; }
+  function eclairRegler() { var ME = MoteurEclair, e = etat(), me = e.me, r = ME.round(Date.now()), ev = [], regles = [], hist = [], avant = rangDe(me);
+    (e.eclairMises || []).forEach(function (m) { if (m.etat !== 'ouverte' || m.r >= r) return;
+      var x = ME.regler(ME.JEUX[m.g], m.r, m), pay = x.win ? r2(x.pay) : 0, pnl = r2(pay - m.amt), at = ME.t0(m.r + 1), tard = m.r < r - 1;
+      m.etat = x.win ? 'gagnee' : 'perdue'; me.balance = r2(me.balance + pay); me.settled = (me.settled | 0) + 1; me.flashProfit = r2((me.flashProfit || 0) + pnl); me.realized = r2((me.realized || 0) + pnl);
+      if (x.win) { me.wins = (me.wins | 0) + 1; me.flashWins = (me.flashWins | 0) + 1; me.flashStreak = (me.flashStreak | 0) + 1; me.flashBest = Math.max(me.flashBest | 0, me.flashStreak); if (x.part <= 30) me.contraWins = (me.contraWins | 0) + 1; } else me.flashStreak = 0;
+      var h = { k: 'flash', q: 'eclair|' + m.g + '|' + m.r, s: m.s, win: x.win, pnl: pnl, at: at }; e.history.unshift(clone(h)); hist.push(h);
+      regles.push({ id: m.id, g: m.g, r: m.r, s: m.s, amt: m.amt, win: x.win, pay: pay, pnl: pnl, tard: tard });
+      if (x.win) { var n = m.s === 'be' ? 120 : 40; me.xp += n; ev.push({ k: 'xp', n: n, src: 'eclair' }); missionAvance(e, 'flashwin', ev); }
+      if (tard) ev.push(notif('bolt', x.win ? 'flash_gagne' : 'flash_perdu', { g: m.g, r: m.r, pay: pay, amt: m.amt }, '#eclair')); });
+    if (regles.length) { rangMonte(me, avant, ev); badges(e, ev); }
+    var rep = reponse(ev); rep.regles = regles; rep.hist = hist; rep.eclair = eclairJson(e); return rep; }
+
   /* ----- Chat : salons publics ----- */
   var salonOk = function (r) { if (r === 'general' || (/^m:/.test(String(r)) && typeof MK !== 'undefined' && MK[String(r).slice(2)])) return; throw { message: 'salon_indisponible' }; };
   var ficheDe = function (id) { if (db.fiches[id]) return clone(db.fiches[id]); var e = db.etats[id]; if (!e) return { n: 'joueur', t: 0, d: 0, tone: 0, color: '#2448FF', photo: '', bio: '', profit: 0, acc: 0, bets: 0, fol: 0, bot: false, pub: 1 };
@@ -287,6 +319,15 @@
   var functions = { invoke: function (name, opt) {
     var b = (opt && opt.body) || {}; rec('fn', name, { pseudo: b.pseudo });
     var ko = function (code) { return Promise.resolve({ data: null, error: { message: 'Edge Function returned a non-2xx status code', context: { json: function () { return Promise.resolve({ ok: false, code: code }); } } } }); };
+    if (name === 'eclair') {
+      calls[calls.length - 1].args = { action: b.action, gid: b.gid, side: b.side, amt: b.amt };
+      if (CFG.horsLigne) return Promise.reject(new TypeError('Failed to fetch'));
+      var forcee = (CFG.fn || {}).eclair; if (forcee) return ko(forcee);
+      if (!uid()) return ko('session');
+      try { var rep = b.action === 'bet' ? eclairMiser(b) : b.action === 'settle' ? eclairRegler() : null; if (!rep) return ko('requete'); persist(); rep.ok = true; rep.now = Date.now() + (CFG.decalage || 0);
+        return new Promise(function (ok) { setTimeout(function () { ok({ data: clone(rep), error: null }); }, CFG.latence || 3); }); }
+      catch (e) { return ko(e.message || 'serveur'); }
+    }
     if (name !== 'connexion') return ko('serveur');
     for (var em in db.comptes) { var c = db.comptes[em]; if (String(c.pseudo || '').toLowerCase() === String(b.pseudo || '').toLowerCase()) return c.password === b.mot_de_passe ? Promise.resolve({ data: { ok: true, access_token: 'jeton:' + c.id + ':' + em, refresh_token: 'r' }, error: null }) : ko('identifiants'); }
     return ko('identifiants');

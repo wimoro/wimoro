@@ -50,7 +50,10 @@ const ERR_TXT={
  message_repete:()=>_t("Tu viens d’envoyer ce message."),
  trop_de_messages:()=>_t("Trop de messages d’un coup. Réessaie dans une minute."),
  message_trop_long:()=>_t("Message trop long (280 caractères au plus)."),
- salon_indisponible:()=>_t("Ce salon n’est pas encore disponible avec ton compte.")
+ salon_indisponible:()=>_t("Ce salon n’est pas encore disponible avec ton compte."),
+ mises_fermees:()=>_t("La prochaine manche arrive dans quelques secondes."),
+ deja_mise:()=>_t("Une mise par pari et par manche. Tu peux jouer les autres paris éclair."),
+ be_plein:()=>_t("La cagnotte de cette manche ne peut plus couvrir de break even.")
 };
 const errTxt=e=>{const c=e&&e.code||'';return ERR_TXT[c]?ERR_TXT[c]():_t("Une erreur est survenue. Réessaie.");};
 const srvErreur=e=>{if(e&&e.code==='session'){srvSessionPerdue();return;}if(e&&e.code==='exclu'){srvExclu(e);return;}toast({tone:'red',icon:'info',force:true,title:_t("Action impossible"),text:errTxt(e)});};
@@ -58,7 +61,7 @@ const srvErreur=e=>{if(e&&e.code==='session'){srvSessionPerdue();return;}if(e&&e
 /* ----- Ce qui n'est pas encore relié au serveur est clairement indisponible en mode serveur -----
    La liste se vide au fil des lots (voir docs/PLAN.md). Le test tests/compte/garde.spec.mjs vérifie qu'aucune action
    qui touche au solde, à l'XP ou à un état partagé n'est exécutée localement quand le serveur fait autorité. */
-const SRV_BLOQUE=new Set(('flash-bet share-pick vote fr-add fr-accept fr-cancel fr-decline fr-remove '
+const SRV_BLOQUE=new Set(('share-pick vote fr-add fr-accept fr-cancel fr-decline fr-remove '
  +'cp-start cp-stop-do cp-edit cp-manage cp-pause cp-stop cp-open limit-place ord-cancel guard guard-save guard-del dl-create dl-cancel dl-accept dl-share dl-decline duel-open stk-create stack-open '
  +'bz-join bz-rebuy bz-choose sr-start sr-cash sr-play sr-share cl-war-join cl-sim cl-join cl-apply cl-leave-do cl-share cl-promote cl-kick cl-invite cl-call-do cl-war cl-feedopt cl-create-open cl-leave cl-call-open cl-war-open '
  +'cb-place cb-cash cb-add cb-clear cb-rm cb-stake pro-sh-send pro-share follow-user follow-bet follow-pbet share dm ref-copy ref-share propose react '
@@ -85,6 +88,8 @@ const NOTIF_T={
  wd_sent:p=>wdNotifTxt({method:p.method,amt:+p.recv,fee:0,net:p.method&&FIAT[p.method]?FIAT[p.method].n:p.net}),
  kyc_ok:()=>_t('Identité vérifiée : carte, virement et PayPal sont débloqués.'),
  rg_pause:p=>_t("Pause activée jusqu’au {0}.",[fmtDT(+p.at)]),
+ flash_gagne:p=>_t("Éclair {0}, manche {1} : gagné, +{2}.",[GM[p.g]?GM[p.g].name:p.g,F.int(+p.r),F.usd(+p.pay)]),
+ flash_perdu:p=>_t("Éclair {0}, manche {1} : perdu, −{2}.",[GM[p.g]?GM[p.g].name:p.g,F.int(+p.r),F.usd(+p.amt)]),
  rg_limite:p=>_t("Ta limite de dépôt {0} est maintenant {1}.",[winTxt(p.k),+p.v?F.usd0(+p.v):_t("retirée")])
 };
 const notifDe=n=>{let text=n.text||'';if(n.code&&NOTIF_T[n.code]){try{text=NOTIF_T[n.code](n.p||{});}catch(e){console.warn('[srv] notification illisible',n.code);}}return {id:n.id,ic:n.ic||'info',text,href:n.href||'',at:n.at,read:!!n.read};};
@@ -93,7 +98,11 @@ const missionDe=m=>({id:m.id,type:m.type,label:missionLabel(m.id),goal:m.goal,ha
 const depDe=d=>({id:d.id,coin:d.coin,net:d.method&&FIAT[d.method]?FIAT[d.method].n:d.net,method:d.method||undefined,amt:+d.amt,fee:+d.fee||0,usd:+d.usd,at:d.at,due:d.due||0,conf:d.st==='pending'?(d.conf|0):(d.need||12),need:d.need||12,label:d.label||undefined});
 const wdDe=w=>({id:w.id,net:w.method&&FIAT[w.method]?FIAT[w.method].n:w.net,addr:w.method&&FIAT[w.method]?FIAT[w.method].dest:w.addr,method:w.method||undefined,amt:+w.amt,fee:+w.fee||0,at:w.at,due:w.due||0,st:w.st});
 const rgDe=r=>({lim:{day:+(r.lim||{}).day||0,week:+(r.lim||{}).week||0,month:+(r.lim||{}).month||0},pend:Object.assign({},r.pend||{}),pause:+r.pause||0,excl:+r.excl||0});
-const histDe=h=>({k:h.k,m:h.m||undefined,q:h.m&&MK[h.m]?MK[h.m].q:(h.q||h.m||''),s:h.s,win:!!h.win,pnl:+h.pnl,at:h.at});
+/* une ligne d'historique du pari éclair arrive sous la forme « eclair|jeu|manche » : son libellé est composé ici, dans la langue du lecteur */
+const histDe=h=>{if(h.k==='flash'&&typeof h.q==='string'&&h.q.startsWith('eclair|')){const [,gid,r]=h.q.split('|'),d=GM[gid];
+  return {k:'flash',q:d?_t("Éclair {0}, manche {1} : {2}",[d.name,F.int(+r),sideLabel(d,h.s)]):h.q,s:h.s==='non'?'non':'oui',eq:h.s==='be',win:!!h.win,pnl:+h.pnl,at:h.at};}
+ return {k:h.k,m:h.m||undefined,q:h.m&&MK[h.m]?MK[h.m].q:(h.q||h.m||''),s:h.s,win:!!h.win,pnl:+h.pnl,at:h.at};};
+const miseDe=m=>({id:m.id,s:m.s,amt:+m.amt,fee:+m.fee,net:+m.net,price:m.price,mult:+m.mult,tk:m.tk|0});
 
 /* ----- Annuaire : les fiches des joueurs viennent du serveur, clé = identifiant du joueur ----- */
 function srvFiches(map){for(const id in map||{}){const f=map[id];USERS[id]=Object.assign(USERS[id]||{},{n:f.n,t:f.t|0,d:f.d|0,tone:f.tone|0,profit:+f.profit||0,acc:f.acc|0,bets:f.bets|0,fol:f.fol|0,bio:f.bio||'',photo:f.photo||'',color:f.color||'',bot:!!f.bot,pub:f.pub===0?0:1});delete FANTOMES[id];}
@@ -113,6 +122,8 @@ function hydrater(e){
  me.positions=(e.positions||[]).filter(p=>MK[p.m]).map(p=>({m:p.m,s:p.s,sh:+p.sh,avg:+p.avg}));
  me.history=(e.history||[]).map(histDe);
  me.deps=(e.deps||[]).map(depDe);me.wds=(e.wds||[]).map(wdDe);if(e.rg)me.rg=rgDe(e.rg);
+ /* pari éclair : les mises de la manche en cours sont rendues par le serveur (flashBoot les replace sur leurs paris) */
+ {const b=e.eclair&&e.eclair.b||{};if(Object.keys(b).length){me.fmy={r:e.eclair.r,b:{}};for(const g in b)me.fmy.b[g]=miseDe(b[g]);}SRV_ECLAIR_DU=e.eclair?(e.eclair.du|0):0;}
  me.notifs=(e.notifs||[]).map(notifDe);me.missions=(e.missions||[]).map(missionDe);me.badges=(e.badges||[]).slice();
  me.friends=(e.friends||[]).slice();me.freqIn=(e.freqIn||[]).slice();me.freqOut=(e.freqOut||[]).slice();me.following=(e.following||[]).slice();
  const pr=e.prefs||{};for(const k of SRV_PREFS)if(pr[k]!==undefined)me[k]=pr[k];
@@ -268,6 +279,44 @@ async function srvKyc(p,fini,echec){
  catch(e){srvErreur(e);if(echec)echec();}
 }
 
+/* ----- Pari éclair : la mise et le règlement sont faits par l'Edge Function « eclair », avec le même moteur que l'écran -----
+   Miser : l'heure du serveur décide de la manche et du tick ; la réponse rend la mise telle qu'elle a été enregistrée.
+   Régler : à la fin d'une manche (ou au chargement s'il reste des manches à régler), le serveur rejoue la manche et crédite. */
+let SRV_ECLAIR_DU=0,srvEclairOccupe=false,srvEclairRegle=false;
+function srvEclairPoser(d,g,m){const my=miseDe(m),e=MoteurEclair.etat(d,S.flash.round,g.tk,my);g.pool=e.pool;g.players=e.players;g.my=my;
+ const b={s:SIDEV[my.s],a:Math.min(1,my.amt/60),me:1};g.bets.push(b);if(d.id===S.ui.fgame)trailPush('flash',b);
+ if(!S.me.fmy||S.me.fmy.r!==S.flash.round)S.me.fmy={r:S.flash.round,b:{}};S.me.fmy.b[d.id]=my;}
+async function srvEclairMiser(d,g,side,amt,ev){
+ if(srvEclairOccupe)return;srvEclairOccupe=true;
+ try{
+  const r=await API.fn('eclair',{action:'bet',gid:d.id,side,amt,key:cleOp()});
+  if(typeof r.now==='number')FSKEW=r.now-Date.now();
+  if(r.mise&&r.mise.r===S.flash.round&&!g.my)srvEclairPoser(d,g,r.mise);
+  srvAppliquer(r,ev);updateFlash(true);
+ }catch(e){
+  if(e.code==='mises_fermees')toast({tone:'amber',icon:'lock',title:_t("Mises fermées"),text:errTxt(e)});
+  else if(e.code==='deja_mise')toast({icon:'info',title:_t("Tu as déjà misé sur ce pari"),text:errTxt(e)});
+  else if(e.code==='be_plein')toast({tone:'amber',icon:'info',title:_t("Mise trop grosse pour le break even"),text:errTxt(e)});
+  else srvErreur(e);
+ }finally{srvEclairOccupe=false;}
+}
+/* fin de manche : on laisse une petite seconde à l'horloge du serveur pour changer de manche, puis on demande le règlement */
+function srvEclairApresManche(n){setTimeout(()=>srvEclairRegler(n,0),900);}
+async function srvEclairRegler(attendus,essai){
+ if(srvEclairRegle)return;srvEclairRegle=true;let encore=0;
+ try{
+  const r=await API.fn('eclair',{action:'settle'});
+  if(typeof r.now==='number')FSKEW=r.now-Date.now();
+  srvEtat(r);
+  for(const h of r.hist||[])S.me.history.unshift(histDe(h));
+  for(const x of r.regles||[]){const d=GM[x.g];if(d)flashAnnonce(d,+x.r,{s:x.s,amt:+x.amt},!!x.win,+x.pay,!!x.tard);}
+  srvEvenements(r);SRV_ECLAIR_DU=r.eclair?(r.eclair.du|0):0;
+  encore=(attendus|0)-(r.regles||[]).length;
+ }catch(e){if(e.code==='session'||e.code==='exclu')srvErreur(e);else console.warn('[srv] règlement éclair remis à plus tard',e.code);}
+ finally{srvEclairRegle=false;}
+ if(encore>0&&(essai|0)<3)setTimeout(()=>srvEclairRegler(encore,(essai|0)+1),1500);   /* l'horloge du serveur était encore dans la manche */
+}
+
 /* ----- Chat : salons publics (général et marchés) -----
    On ne s'abonne qu'aux salons affichés (srvSalons, appelé après chaque rendu). À l'ouverture d'un salon : son historique,
    puis les messages en direct. Chaque message diffusé porte la fiche de son auteur (pseudo, rang) : pas d'autre requête. */
@@ -338,6 +387,7 @@ planifier('serveur : présence',240000,()=>{if(!document.hidden&&S.me.logged)API
 async function bootServeur(){
  const [etat]=await Promise.all([API.loadState(),srvMarches().catch(e=>console.warn('[srv] marchés indisponibles',e.code))]);
  hydrater(etat);srvArgentSuivre();
+ if(SRV_ECLAIR_DU>0)setTimeout(()=>srvEclairRegler(0,3),1200);                 /* des manches jouées avant le rechargement restent à régler */
  API.on('session',()=>srvSessionPerdue());
  API.subscribe('marches',(evt,d)=>{if(evt==='tick')srvTick(d);}).catch(e=>console.warn('[srv] temps réel indisponible',e.code));
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)srvRafraichir();});

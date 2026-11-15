@@ -28,6 +28,7 @@ const RELIEES = {
   'ACT.rg-pause-do': 'api_rg_pause — tests/compte/argent.spec.mjs',
   'ACT.rg-pend-cancel': 'api_rg_pend_cancel — tests/compte/argent.spec.mjs',
   'ACT.claim': 'api_mission_claim — tests/compte/etat.spec.mjs',
+  'ACT.flash-bet': 'Edge Function « eclair » (mise et règlement) — tests/compte/eclair.spec.mjs',
   'ACT.pro-sh-dst': 'lecture seule de la liste d’amis (choix du destinataire)',
   'ACT.pro-sh-dm': 'lecture seule de la liste d’amis (choix du destinataire)',
   'FORMS.settings': 'api_profile_update (pseudo unique) — tests/compte/etat.spec.mjs',
@@ -64,8 +65,7 @@ test('une action pas encore reliée est clairement indisponible : message, et ri
   await page.locator('[data-a="limit-place"], [data-a="otype"][data-v="limit"]').first().click({ force: true }).catch(() => {});
   await page.evaluate(() => { location.hash = '#chat'; });
   await page.evaluate(() => { location.hash = '#eclair'; });
-  // pari éclair : bouton créé pour le test, car le vrai bouton est fermé pendant les dernières secondes d'une manche
-  await page.evaluate(() => { const b = document.createElement('button'); b.dataset.a = 'flash-bet'; b.dataset.side = 'oui'; document.body.appendChild(b); b.click(); b.remove(); });
+  await page.evaluate(() => { const b = document.createElement('button'); b.dataset.a = 'cb-place'; document.body.appendChild(b); b.click(); b.remove(); });   // combiné
   await expect(page.locator('.toast', { hasText: 'Coming soon for accounts' }).first()).toBeVisible();
   await page.evaluate(() => { ACT.withdraw && document.dispatchEvent(new Event('x')); });
   for (const a of ['dl-create', 'cb-place', 'cl-join', 'fr-add', 'cp-start', 'limit-place', 'bz-join', 'sr-start'])

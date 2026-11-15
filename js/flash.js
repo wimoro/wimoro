@@ -133,24 +133,36 @@ function flashBet(side,ev,gid){const d=GM[gid||S.ui.fgame]||GAMES[0],g=G(d.id),p
  const amt=S.ui.flashAmt;if(amt>S.me.balance){toast({tone:'amber',icon:'wallet',title:_t("Solde insuffisant"),text:_t("Dépose des fonds pour continuer."),href:'#depot'});return;}
  const pr=flashPrices(g),price=side==='oui'?pr.o:side==='non'?pr.n:pr.e;const fee=flashFee(d.cat,g,side,amt,myRank().t>=5),net=amt-fee;
  if(side==='be'){const mx=beMax(g,d);if(amt>mx){toast({tone:'amber',icon:'info',title:_t("Mise trop grosse pour le break even"),text:mx>=1?`${_t("La cagnotte de cette manche couvre au plus {0} sur le break even à {1}.",[F.usd0(mx),beTxt(d)])}`:_t("La cagnotte de cette manche ne peut plus couvrir de break even.")});return;}}
- g.my={s:side,amt,fee,net,price,mult:side==='be'?beMult(d):0};S.me.balance-=amt;S.me.played++;g.pool[poolKey(side)]+=net;if(side==='be')g.pool.eProm=(g.pool.eProm||0)+net*g.my.mult;const b={s:SIDEV[side],a:Math.min(1,amt/60),me:1};g.bets.push(b);if(d.id===S.ui.fgame)trailPush('flash',b);
- if(!S.me.fmy||S.me.fmy.r!==S.flash.round)S.me.fmy={r:S.flash.round,b:{}};S.me.fmy.b[d.id]=g.my;
+ /* écriture : en mode serveur, l'Edge Function « eclair » enregistre la mise avec son horloge et son calcul des frais */
+ if(SRV()){srvEclairMiser(d,g,side,amt,ev);return;}
+ S.me.balance-=amt;S.me.played++;flashPoser(d,g,{s:side,amt,fee,net,price,mult:side==='be'?beMult(d):0,tk:g.tk});
  updateHeader();gainXP(10,ev);mission('flashbet');updateFlash(true);save();}
+/* la mise entre dans la cagnotte du pari et dans la mémoire de la manche (commun aux deux modes) */
+function flashPoser(d,g,my){g.my=my;g.pool[poolKey(my.s)]+=my.net;if(my.s==='be')g.pool.eProm=(g.pool.eProm||0)+my.net*my.mult;const b={s:SIDEV[my.s],a:Math.min(1,my.amt/60),me:1};g.bets.push(b);if(d.id===S.ui.fgame)trailPush('flash',b);
+ if(!S.me.fmy||S.me.fmy.r!==S.flash.round)S.me.fmy={r:S.flash.round,b:{}};S.me.fmy.b[d.id]=my;}
 /* règle la mise du joueur sur un pari terminé (quiet : manche réglée après coup, au retour sur le site) */
 function fSettle(d,g,out,round,h,quiet){const key=out===2?'e':out===1?'o':'n',tot=g.pool.o+g.pool.n+g.pool.e,right=Math.round(g.pool[key]/tot*100);
- const before=myRank();const win=SIDEV[g.my.s]===out;const pay=win?flashPayout(g,g.my):0,pnl=pay-g.my.amt;S.me.balance+=pay;S.me.settled++;S.me.flashProfit+=pnl;S.me.realized+=pnl;
+ const win=SIDEV[g.my.s]===out;const pay=win?flashPayout(g,g.my):0,pnl=pay-g.my.amt;
+ /* mode serveur : ce calcul (le même que celui du serveur) n'alimente que l'affichage du résultat ; l'écriture comptable et
+    l'annonce arrivent avec la réponse du serveur (srvEclairRegler) */
+ if(SRV()){if(h)h.my={win,pnl};return {win,pay,pnl,amt:g.my.amt,be:g.my.s==='be'};}
+ const before=myRank();S.me.balance+=pay;S.me.settled++;S.me.flashProfit+=pnl;S.me.realized+=pnl;
  if(win){S.me.wins++;S.me.flashWins++;S.me.flashStreak++;if(right<=30)S.me.contraWins=(S.me.contraWins||0)+1;S.me.flashBest=Math.max(S.me.flashBest,S.me.flashStreak);}else S.me.flashStreak=0;
  S.me.history.unshift({k:'flash',q:`${_t("Éclair {0}, manche {1} : {2}",[d.name,F.int(round),sideLabel(d,g.my.s)])}`,s:g.my.s==='non'?'non':'oui',eq:g.my.s==='be',win,pnl,at:fT0(round+1)});if(h)h.my={win,pnl};
- if(quiet){notif('bolt',win?`${_t("Éclair {0}, manche {1} : gagné, +{2}.",[d.name,F.int(round),F.usd(pay)])}`:`${_t("Éclair {0}, manche {1} : perdu, −{2}.",[d.name,F.int(round),F.usd(g.my.amt)])}`,'#eclair');if(win){gainXP(g.my.s==='be'?120:40);mission('flashwin');}}
- else if(win){toast({tone:'green',icon:'bolt',flash:true,title:`${g.my.s==='be'?_t("Break even ! "):_t("Gagné : ")}+${F.usd(pay)}`,text:`${_t("{0}, manche {1}. Série de victoires : {2}.",[d.name,F.int(round),S.me.flashStreak])}`,href:'#eclair'});gainXP(g.my.s==='be'?120:40);mission('flashwin');if(!$('.flres'))confetti(g.my.s==='be'?60:28);}
- else toast({tone:'red',icon:'bolt',flash:true,title:`${_t("Perdu : −{0}",[F.usd(g.my.amt)])}`,text:`${_t("{0}. La prochaine manche est déjà ouverte.",[d.name])}`,href:'#eclair'});
+ flashAnnonce(d,round,g.my,win,pay,quiet);
  updateHeader();checkRank(before);checkBadges();
  return {win,pay,pnl,amt:g.my.amt,be:g.my.s==='be'};}
-function resolveFlash(){const f=S.flash,spotId=SPOT().id,rn=fRound(fNow());
+/* annonce d'une manche réglée (quiet : réglée après coup, au retour sur le site) — commune aux deux modes */
+function flashAnnonce(d,round,my,win,pay,quiet){
+ if(quiet){notif('bolt',win?`${_t("Éclair {0}, manche {1} : gagné, +{2}.",[d.name,F.int(round),F.usd(pay)])}`:`${_t("Éclair {0}, manche {1} : perdu, −{2}.",[d.name,F.int(round),F.usd(my.amt)])}`,'#eclair');if(win){gainXP(my.s==='be'?120:40);mission('flashwin');}}
+ else if(win){toast({tone:'green',icon:'bolt',flash:true,title:`${my.s==='be'?_t("Break even ! "):_t("Gagné : ")}+${F.usd(pay)}`,text:`${_t("{0}, manche {1}. Série de victoires : {2}.",[d.name,F.int(round),S.me.flashStreak])}`,href:'#eclair'});gainXP(my.s==='be'?120:40);mission('flashwin');if(!$('.flres'))confetti(my.s==='be'?60:28);}
+ else toast({tone:'red',icon:'bolt',flash:true,title:`${_t("Perdu : −{0}",[F.usd(my.amt)])}`,text:`${_t("{0}. La prochaine manche est déjà ouverte.",[d.name])}`,href:'#eclair'});
+}
+function resolveFlash(){const f=S.flash,spotId=SPOT().id,rn=fRound(fNow());let aRegler=0;
  for(const d of GAMES){const g=G(d.id),out=d.kind==='event'?fOutcome(d,f.round):gOut(d);
   const h=g.hs||g.my?fHistEntry(d,f.round):null;
   const key=out===2?'e':out===1?'o':'n',tot=g.pool.o+g.pool.n+g.pool.e,right=Math.round(g.pool[key]/tot*100);let res=null;
-  if(g.my)res=fSettle(d,g,out,f.round,h,false);
+  if(g.my){res=fSettle(d,g,out,f.round,h,false);aRegler++;}
   if(d.id===spotId)addMsg('general',mkMsg({k:'evt',text:out===2?`${_t("Éclair, manche {0} : break even sur {1} ! Seulement {2} % des joueurs l’avaient vu venir.",[F.int(f.round),d.name,right])}`:`${_t("Éclair, manche {0} : {1}. {2} % des joueurs avaient raison.",[F.int(f.round),d.kind==='event'?(out===1?d.a:d.b):d.name+' a '+(out===1?_t("monté"):_t("baissé")),right])}`}));
   {const s=src(d);g.result={out,res,round:f.round,at:now(),p0:d.kind==='event'?undefined:s.start,p1:d.kind==='event'?undefined:s.price};}
   /* douze dernières manches, y compris celles passées pendant que l'onglet dormait ; mes résultats sont conservés */
@@ -162,7 +174,8 @@ function resolveFlash(){const f=S.flash,spotId=SPOT().id,rn=fRound(fNow());
  if(fmode()==='rot')S.ui.fgame=SPOT().id;
  $$('[data-trail="flash"]').forEach(el=>{el.innerHTML='';});
  if($('[data-flashcard]'))render(false);else updateFlashStatic();
- showFlashResult();flashAlert();}
+ showFlashResult();flashAlert();
+ if(SRV()&&aRegler)srvEclairApresManche(aRegler);}
 /* Au chargement (après la connexion) : pari vedette de la catégorie du joueur, ticks déjà écoulés rejoués,
    mises de la manche en cours retrouvées, mises d'une manche terminée entre-temps réglées. */
 /* UX12 : résultat de la manche précédente, recalculé à partir de l'heure (issue, prix de départ et d'arrivée). Le résultat du joueur vient de son

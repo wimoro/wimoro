@@ -228,3 +228,45 @@ test('recette 5 · chat : A écrit dans le salon général puis dans celui d’u
   expect(erreursA).toEqual([]); expect(erreursB).toEqual([]);
   await ctxA.close(); await ctxB.close();
 });
+
+test('recette 2 · pari éclair : mise acceptée par le serveur, toujours là après rechargement, réglée à la fin de la manche comme l’écran l’avait calculé', async ({ page }) => {
+  test.setTimeout(170000);
+  const erreurs = await ouvrirReel(page, '#connexion');
+  await page.locator('#le').fill(PSEUDO); await page.locator('#lp').fill(MDP); await page.locator('form[data-form="login"] [type=submit]').click();
+  await expect(page).toHaveURL(/#accueil/, { timeout: 20000 }); await pret(page);
+  await page.evaluate(() => { location.hash = '#eclair'; });
+  // on attend le début d'une manche pour avoir le temps de miser puis de recharger (30 secondes de mises)
+  await expect.poll(() => lire(page, () => { const p = flashPhase(); return p.open && p.openLeft > 22000; }), { timeout: 50000, intervals: [500] }).toBe(true);
+  const avant = await lire(page, () => ({ solde: S.me.balance, regles: S.me.settled, xp: S.me.xp, manche: S.flash.round, jeu: S.ui.fgame, hist: S.me.history.length }));
+  await page.locator('[data-a="flash-bet"]:not([disabled])').first().click();
+  await expect.poll(() => lire(page, () => !!G(S.ui.fgame).my), { timeout: 15000 }).toBe(true);
+  const pendant = await lire(page, () => ({ solde: S.me.balance, xp: S.me.xp, my: G(S.ui.fgame).my, manche: S.flash.round, jeu: S.ui.fgame }));
+  expect(pendant.manche).toBe(avant.manche);
+  expect(pendant.solde).toBeCloseTo(avant.solde - 10, 2); expect(pendant.xp).toBe(avant.xp + 10);
+  expect(pendant.my.amt).toBe(10); expect(pendant.my.net).toBeLessThan(10); expect(pendant.my.net).toBeGreaterThan(9.4);
+  await expect(page.locator('#view')).toContainText('Your stake: $10.00');
+
+  // rechargement en cours de manche : la mise est rendue par le serveur
+  await page.reload(); await pret(page);
+  const recharge = await lire(page, g => ({ solde: S.me.balance, my: G(g).my, manche: S.flash.round }), pendant.jeu);
+  expect(recharge.manche).toBe(pendant.manche);
+  expect(recharge.solde).toBeCloseTo(pendant.solde, 2);
+  expect(recharge.my).toMatchObject({ amt: 10, s: pendant.my.s, tk: pendant.my.tk });
+  expect(recharge.my.net).toBeCloseTo(pendant.my.net, 9);
+
+  // fin de la manche : le serveur rejoue la manche avec le même moteur et règle
+  const prevu = await lire(page, ([g, r]) => MoteurEclair.regler(GM[g], r, G(g).my), [pendant.jeu, pendant.manche]);
+  await expect.poll(() => lire(page, () => S.me.settled), { timeout: 70000, intervals: [1000] }).toBe(avant.regles + 1);
+  const gain = Math.round((prevu.win ? prevu.pay : 0) * 100) / 100;
+  const apres = await lire(page, () => ({ solde: S.me.balance, xp: S.me.xp, hist: S.me.history[0], n: S.me.history.length }));
+  expect(apres.solde, 'le gain payé par le serveur est celui que l’écran avait calculé').toBeCloseTo(pendant.solde + gain, 2);
+  expect(apres.xp).toBe(pendant.xp + (prevu.win ? (pendant.my.s === 'be' ? 120 : 40) : 0));
+  expect(apres.n).toBe(avant.hist + 1);
+  expect(apres.hist).toMatchObject({ k: 'flash', win: prevu.win });
+  expect(apres.hist.pnl).toBeCloseTo(gain - 10, 2);
+  // après rechargement : même solde, même historique, plus de mise en cours
+  await page.reload(); await pret(page);
+  const fin = await lire(page, g => ({ solde: S.me.balance, regles: S.me.settled, hist: S.me.history[0].k, my: G(g).my }), pendant.jeu);
+  expect(fin.solde).toBeCloseTo(apres.solde, 2); expect(fin.regles).toBe(avant.regles + 1); expect(fin.hist).toBe('flash'); expect(fin.my).toBeNull();
+  expect(erreurs).toEqual([]);
+});
