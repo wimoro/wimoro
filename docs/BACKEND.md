@@ -58,6 +58,7 @@ avec la même clé, l'opération n'est appliquée qu'une fois et renvoie le mêm
 | Edge Function `connexion` | visiteur | connexion par pseudo, sans jamais révéler d'e-mail ; limite les tentatives |
 | Edge Function `eclair` | joueur | pari éclair : `bet` (miser) et `settle` (régler les manches terminées) |
 
+| `api_admin(action, paramètres)` | administrateur | la seule porte du panel d'administration : `moi`, `chiffres`, `joueurs`, `joueur`, `solde`, `xp`, `rang`, `kyc`, `suspendre`, `marches`, `marche`, `marche_etat`, `resoudre`, `chat`, `masquer`, `bots`, `journal`. Refusée (`interdit`) à tout compte absent de `public.admin_users` ; chaque modification est écrite dans `wm.admin_journal` |
 | `api_test_end()` | compte de test | un compte `wimoro-e2e-…@example.com` se supprime lui-même à la fin des tests ; refusée à tout autre compte |
 
 Les **anciennes fonctions** (`place_bet`, `demo_deposit`, `get_markets`, `send_chat_message`…) existent toujours dans

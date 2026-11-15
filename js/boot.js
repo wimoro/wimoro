@@ -39,7 +39,8 @@ async function demarrer(){
   LS.r(SESK);                                             /* une session serveur l'emporte : jamais deux comptes à la fois */
   try{await bootServeur();}
   catch(e){if(e&&e.code==='session'){await API.signOut();srvRecharger('#connexion','expire');return;}
-   if(e&&e.code==='exclu'){srvExclu(e);return;}                 /* compte en auto-exclusion : la connexion est refusée par le serveur */
+   if(e&&e.code==='exclu'){srvExclu(e);return;}
+   if(e&&e.code==='suspendu'){srvSuspendu(e);return;}             /* compte suspendu par un administrateur */                 /* compte en auto-exclusion : la connexion est refusée par le serveur */
    S.me=guestMe();i18nStatic(document.body);PRET=true;ecranErreurServeur(e);return;}
   flashBoot();
   if(!S.me.onboarded&&location.hash!=='#bienvenue')location.replace('#bienvenue');

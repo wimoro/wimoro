@@ -47,6 +47,7 @@ node tools/version.mjs        # met à jour l'empreinte anti-cache des fichiers 
 
 | Dossier | Contenu |
 |---|---|
+| `admin.html`, `js/admin.js` | le panel d'administration (réservé aux comptes administrateurs, contrôle fait par le serveur) |
 | `index.html`, `css/`, `js/` | le site. `js/api.js` est le seul fichier qui parle à Supabase ; `js/serveur.js` porte le mode Compte |
 | `supabase/migrations/` | le back, versionné : photo de départ (`0000_baseline.sql`) puis une migration par changement |
 | `supabase/functions/` | Edge Functions : connexion par pseudo ; pari éclair (avec une copie conforme de `js/moteur-eclair.js`) |

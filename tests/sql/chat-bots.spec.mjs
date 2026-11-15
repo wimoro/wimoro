@@ -49,9 +49,9 @@ test('un joueur présent et un salon regardé : les bots y parlent, le message e
   await parler(30);                                                                          // salon regardé, mais aucun signal de présence
   expect(await diffusions()).toEqual([]);
   await enTantQue(db, alice, s => s('select public.api_present()'));
-  await parler(120);
+  await parler(200);
   const d = await diffusions();
-  expect(d.length).toBeGreaterThan(50); expect(d.length).toBeLessThan(110);                 // environ 7 fois sur 10
+  expect(d.length).toBeGreaterThan(45); expect(d.length).toBeLessThan(95);                  // environ un passage sur trois, par salon regardé
   expect(new Set(d.map(x => x.topic))).toEqual(new Set(['salon:m:btc150k']));               // nulle part ailleurs
   expect(d[0]).toMatchObject({ event: 'msg', private: false });
   expect(d[0].payload).toMatchObject({ k: 'msg', text: '', tpl: { g: 'M', m: 'btc150k' }, f: { bot: true } });
@@ -80,9 +80,16 @@ test('salon général : le gabarit cite un marché ouvert ; api_chat_seen garde 
   expect((await q(db, 'select room from wm.chat_bots order by 1')).map(x => x.room)).toEqual(['general', 'm:btc150k']);
   await parler(60);
   const d = await diffusions();
-  expect(d.length).toBeGreaterThan(20);
+  expect(d.length).toBeGreaterThan(8);
   expect(new Set(d.map(x => x.topic))).toEqual(new Set(['salon:general']));
   for (const x of d) { expect(x.payload.tpl.g).toBe('G'); expect(['btc150k', 'clasico']).toContain(x.payload.tpl.m); }
+  // deux salons regardés : chacun garde son rythme (l'un ne prive pas l'autre)
+  await q(db, 'truncate realtime.messages');
+  await enTantQue(db, alice, s => s(`select public.api_chat_seen(array['m:clasico'])`));
+  await parler(80);
+  const parSalon = {}; for (const x of await diffusions()) parSalon[x.topic] = (parSalon[x.topic] || 0) + 1;
+  expect(Object.keys(parSalon).sort()).toEqual(['salon:general', 'salon:m:clasico']);
+  expect(parSalon['salon:general']).toBeGreaterThan(12); expect(parSalon['salon:m:clasico']).toBeGreaterThan(12);
   expect(await refus(db, null, `select public.api_chat_seen(array['general'])`)).toMatch(/permission denied/);
   expect(await refus(db, alice, 'select wm.bots_chat()')).toMatch(/permission denied/);
   expect(await refus(db, alice, 'select * from wm.chat_bots')).toMatch(/permission denied/);
@@ -94,7 +101,9 @@ test('réglage : « chat » à 0 ou bots coupés → silence, et pas d’amorce 
   await enTantQue(db, alice, s => s(`select public.api_chat_seen(array['general'])`));
   await parler(40);
   expect(await diffusions()).toEqual([]);
-  expect((await historique(alice, 'm:clasico')).msgs).toEqual([]);
+  await db.exec(`insert into public.markets (id, category, question, status) values ('neuf', 'Sport', 'Un marché jamais ouvert ?', 'open');
+    insert into public.market_live_state (market_id, current_probability, anchor_probability, volume_total, participants_count, liquidity_depth) values ('neuf', 50, 50, 1000000, 10, 6000);`);
+  expect((await historique(alice, 'm:neuf')).msgs).toEqual([]);                              // un salon jamais ouvert ne s'amorce pas non plus
   await q(db, `update wm.config set value = (value - 'chat') || '{"actif": false}' where key = 'bots'`);
   await parler(40);
   expect(await diffusions()).toEqual([]);

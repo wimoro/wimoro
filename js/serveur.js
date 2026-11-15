@@ -46,6 +46,7 @@ const ERR_TXT={
  kyc_age:()=>_t("Tu dois avoir 18 ans ou plus."),
  kyc_piece:()=>_t("Ajoute ta pièce d’identité."),
  mission_indisponible:()=>_t("Cette récompense a déjà été récupérée."),
+ suspendu:()=>_t("Ce compte est suspendu."),
  trop_vite:()=>_t("Pas si vite : attends une seconde entre deux messages."),
  message_repete:()=>_t("Tu viens d’envoyer ce message."),
  trop_de_messages:()=>_t("Trop de messages d’un coup. Réessaie dans une minute."),
@@ -61,7 +62,7 @@ const ERR_TXT={
  be_plein:()=>_t("La cagnotte de cette manche ne peut plus couvrir de break even.")
 };
 const errTxt=e=>{const c=e&&e.code||'';return ERR_TXT[c]?ERR_TXT[c]():_t("Une erreur est survenue. Réessaie.");};
-const srvErreur=e=>{if(e&&e.code==='session'){srvSessionPerdue();return;}if(e&&e.code==='exclu'){srvExclu(e);return;}toast({tone:'red',icon:'info',force:true,title:_t("Action impossible"),text:errTxt(e)});};
+const srvErreur=e=>{if(e&&e.code==='session'){srvSessionPerdue();return;}if(e&&e.code==='exclu'){srvExclu(e);return;}if(e&&e.code==='suspendu'){srvSuspendu(e);return;}toast({tone:'red',icon:'info',force:true,title:_t("Action impossible"),text:errTxt(e)});};
 
 /* ----- Ce qui n'est pas encore relié au serveur est clairement indisponible en mode serveur -----
    La liste se vide au fil des lots (voir docs/PLAN.md). Le test tests/compte/garde.spec.mjs vérifie qu'aucune action
@@ -89,6 +90,8 @@ const NOTIF_T={
  mission_done:p=>_t("Mission terminée : {0}. Récupère tes {1} XP.",[missionLabel(p.id),p.xp]),
  badge:p=>_t("Badge débloqué : {0}.",[badgeNom(p.id)]),
  bet_placed:p=>_t("Pari placé : {0} sur {1}, {2}.",[F.usd(+p.amt),p.s==='oui'?_t("Oui"):_t("Non"),MK[p.m]?MK[p.m].short:p.m]),
+ marche_resolu:p=>+p.pay>0?_t("Marché résolu : {0}. Tu gagnes {1}.",[MK[p.m]?MK[p.m].short:p.m,F.usd(+p.pay)]):_t("Marché résolu : {0}. Ta position {1} est perdue.",[MK[p.m]?MK[p.m].short:p.m,p.s==='oui'?_t("Oui"):_t("Non")]),
+ admin_solde:p=>+p.delta>=0?_t("Ton solde a été crédité de {0} par l’équipe Wimoro.",[F.usd(+p.delta)]):_t("Ton solde a été débité de {0} par l’équipe Wimoro.",[F.usd(-p.delta)]),
  dep_credited:p=>depNotifTxt({method:p.method,usd:+p.usd,amt:+p.amt,coin:p.coin,net:p.method&&FIAT[p.method]?FIAT[p.method].n:p.net}),
  wd_sent:p=>wdNotifTxt({method:p.method,amt:+p.recv,fee:0,net:p.method&&FIAT[p.method]?FIAT[p.method].n:p.net}),
  kyc_ok:()=>_t('Identité vérifiée : carte, virement et PayPal sont débloqués.'),
@@ -176,9 +179,27 @@ function srvEnvoyer(){
 }
 
 /* ----- Marchés : état partagé, lu sur le serveur et tenu à jour par ses diffusions ----- */
+/* Un marché créé depuis le panel d'administration : le serveur le décrit (x.def), l'écran l'ajoute à son catalogue. */
+function srvMarcheAjouter(id,x){const d=x.def;if(!d||MK[id])return;
+ const m=Object.assign({id,cat:d.cat,q:d.q,short:d.short,p:+x.p,d0:x.d0!=null?+x.d0:+x.p,vol:+x.vol||0,people:x.people|0,msgs:0,heat:+d.heat||1.5,rules:d.rules||'',srv:true},closeOf(d.date,d.time));
+ m.anchor=m.p;m.ph=seedPh(m);m.bets=[];m.online=0;m.hotUntil=0;MARKETS.push(m);MK[id]=m;}
+/* Un marché résolu quitte les listes (et son groupe d'issues) ; il reste connu par son identifiant, pour l'historique. */
+function srvMarcheRetirer(id){const m=MK[id];if(!m||m.st==='resolved')return;m.st='resolved';
+ const i=MARKETS.indexOf(m);if(i>=0)MARKETS.splice(i,1);
+ const g=m.parent&&GK[m.parent];if(g){g.outcomes=g.outcomes.filter(o=>o!==m);if(!g.outcomes.length){const k=GROUPS.indexOf(g);if(k>=0)GROUPS.splice(k,1);delete GK[g.id];}}
+ const w=S.me.watch||[],k=w.indexOf(id);if(k>=0)w.splice(k,1);
+ const h=S.ui.route||'';if(h==='marche-'+id||(m.parent&&h==='marche-'+m.parent&&!GK[m.parent]))location.hash='#accueil';}
+/* Le serveur annonce un changement d'état (fermé, rouvert, résolu, créé, modifié) : on relit les marchés, une seule fois
+   même si plusieurs issues changent d'un coup. */
+let srvEtatT=0;
+function srvMarchesEtat(){clearTimeout(srvEtatT);srvEtatT=setTimeout(()=>{srvMarches().then(()=>render(false)).catch(e=>console.warn('[srv] marchés indisponibles',e.code));},300);}
 async function srvMarches(){
  const r=await API.call('api_markets');
- for(const id in r.m||{}){const m=MK[id],x=r.m[id];if(!m)continue;
+ for(const id in r.m||{}){const x=r.m[id];
+  if(x.st==='resolved'){srvMarcheRetirer(id);continue;}
+  if(!MK[id])srvMarcheAjouter(id,x);
+  const m=MK[id];if(!m)continue;m.st=x.st||'open';
+  if(m.srv&&x.def){const d=x.def;Object.assign(m,{q:d.q,short:d.short,cat:d.cat,rules:d.rules||''},closeOf(d.date,d.time));}   /* modifié depuis le panel */
   m.p=+x.p;m.anchor=m.p;if(x.d0!=null)m.d0=+x.d0;m.vol=+x.vol;m.people=x.people|0;if(x.liq!=null)m.liq=+x.liq;m.hotUntil=x.hot||0;
   if(Array.isArray(x.ph)&&x.ph.length>1){m.ph=x.ph.slice(-160).map(Number);m.ph[m.ph.length-1]=m.p;}}
 }
@@ -191,9 +212,18 @@ function srvMarchesMaj(map){
  for(const [m,old] of vus)updateMarket(m,old,true);
  if(typeof groupRefresh==='function')for(const g of new Set(vus.map(x=>x[0].parent).filter(Boolean)))if(GK[g])groupRefresh(GK[g]);
 }
+/* Entre la première lecture des marchés et l'abonnement au direct, un tick a pu passer sans être reçu : une fois abonné, on
+   relit une fois et on applique ce qui a changé — sauf pour un marché dont un tick plus récent est déjà arrivé. */
+async function srvMarchesRattraper(){
+ const r=await API.call('api_markets'),map={};
+ for(const id in r.m||{}){const x=r.m[id];if(!MK[id]||x.st==='resolved'||SRV_TICK_T[id]>r.now)continue;map[id]=[+x.p,+x.vol,x.people|0,x.liq];}
+ srvMarchesMaj(map);
+}
 /* un tick du serveur : marchés modifiés, traînée des mises des bots, signal de foule éventuel */
+const SRV_TICK_T={};                                           /* marché → heure (serveur) du dernier tick appliqué */
 function srvTick(d){
  srvMarchesMaj(d.m);
+ for(const id in d.m||{})SRV_TICK_T[id]=+d.t||0;
  for(const b of d.b||[]){const m=MK[b[0]];if(m)addBet(m,{s:b[1]>0?1:0,a:+b[2]||0,me:0});}
  if(d.sig)srvSignal(d.sig);
 }
@@ -267,7 +297,7 @@ async function srvRegler(){
   (r.ev||[]).filter(e=>e.k==='wd').map(e=>S.me.wds.find(x=>x.id===e.id)).filter(Boolean).forEach(wdEnvoye);
   srvEvenements(r);refreshDeps();
   if(credites.length)depRendu();
- }catch(e){if(e.code==='session'||e.code==='exclu')srvErreur(e);else console.warn('[srv] règlement remis à plus tard',e.code);}
+ }catch(e){if(e.code==='session'||e.code==='exclu'||e.code==='suspendu')srvErreur(e);else console.warn('[srv] règlement remis à plus tard',e.code);}
  finally{srvRegle=false;}
 }
 async function srvDepot(p){
@@ -321,7 +351,7 @@ async function srvEclairRegler(attendus,essai){
   for(const x of r.regles||[]){const d=GM[x.g];if(d)flashAnnonce(d,+x.r,{s:x.s,amt:+x.amt},!!x.win,+x.pay,!!x.tard);}
   srvEvenements(r);SRV_ECLAIR_DU=r.eclair?(r.eclair.du|0):0;
   encore=(attendus|0)-(r.regles||[]).length;
- }catch(e){if(e.code==='session'||e.code==='exclu')srvErreur(e);else console.warn('[srv] règlement éclair remis à plus tard',e.code);}
+ }catch(e){if(e.code==='session'||e.code==='exclu'||e.code==='suspendu')srvErreur(e);else console.warn('[srv] règlement éclair remis à plus tard',e.code);}
  finally{srvEclairRegle=false;}
  if(encore>0&&(essai|0)<3)setTimeout(()=>srvEclairRegler(encore,(essai|0)+1),1500);   /* l'horloge du serveur était encore dans la manche */
 }
@@ -360,6 +390,7 @@ function srvChatAjouter(rid,m){
  const text=m.tpl?srvBotTexte(m.tpl):m.text;if(m.tpl&&!text)return;             /* gabarit sur un marché inconnu de l'écran : ignoré */
  addMsg(rid,mkMsg({u:m.u===srvMoi()?'me':m.u,k:'msg',text,at:m.at,sid:m.id}));
 }
+function srvChatRetirer(rid,id){const R=S.rooms[rid];if(!R)return;const i=R.msgs.findIndex(x=>x.sid===id);if(i<0)return;R.msgs.splice(i,1);render(false);}
 /* Message d'un bot : le serveur envoie un gabarit et ses paramètres ({g,i,m,p,s}) ; la phrase est composée ici, dans la
    langue du lecteur, avec les mêmes listes de phrases que le mode Démo. */
 function srvBotTexte(t){
@@ -389,7 +420,7 @@ async function srvDmListe(){try{const r=await API.call('api_dm_list');srvFiches(
 async function srvSalonOuvrir(r){
  try{
   if(srvPrive(r)){const h=await API.call('api_dm_history',{p_user:r.slice(3)});srvFiches(h.users);(h.msgs||[]).forEach(m=>srvChatAjouter(r,m));return;}
-  await API.subscribe('salon:'+r,(evt,d)=>{if(evt==='msg')srvChatAjouter(r,d);});
+  await API.subscribe('salon:'+r,(evt,d)=>{if(evt==='msg')srvChatAjouter(r,d);else if(evt==='del')srvChatRetirer(r,d&&d.id);});
   const h=await API.call('api_chat_history',{p_room:r});
   srvFiches(h.users);(h.msgs||[]).forEach(m=>srvChatAjouter(r,m));
  }catch(e){SRV_SALONS.delete(r);console.warn('[srv] salon indisponible',r,e.code);}
@@ -413,7 +444,7 @@ function srvPerso(evt,d){
  if(evt==='notif'&&d&&d.n){
   if(S.me.notifs.some(x=>x.id===d.n.id))return;
   S.me.notifs.unshift(notifDe(d.n));S.me.notifs=S.me.notifs.slice(0,30);updateBell();
-  if(/^fr_/.test(d.n.code||'')){srvVu=0;srvRafraichir();}                   /* demande d'ami ou acceptation : les listes viennent du serveur */
+  if(/^fr_|^marche_resolu$|^admin_solde$|^kyc_ok$/.test(d.n.code||'')){srvVu=0;srvRafraichir();}                   /* demande d'ami ou acceptation : les listes viennent du serveur */
  }
 }
 
@@ -438,6 +469,9 @@ async function srvExclure(mois){
 }
 /* le serveur refuse toute fonction à un compte en auto-exclusion : on ferme la session et on explique pourquoi */
 let srvExcluVu=false;
+function srvSuspendu(e){if(srvExcluVu)return;srvExcluVu=true;const d=+(e&&e.cause&&e.cause.details);
+ srvNote(d>0?_t("Ce compte est suspendu jusqu’au {0}.",[fmtD(d)]):_t("Ce compte est suspendu."));
+ API.signOut().then(()=>{LS.r(SESK);srvRecharger('#connexion');});}
 function srvExclu(e){if(srvExcluVu)return;srvExcluVu=true;const d=+(e&&e.cause&&e.cause.details);
  srvNote(d===-1?_t("Ce compte est fermé définitivement à la demande de son titulaire (auto-exclusion)."):_t("Ce compte est en auto-exclusion jusqu’au {0}. La connexion est impossible avant cette date.",[fmtD(d)]));
  API.signOut().then(()=>{LS.r(SESK);srvRecharger('#connexion');});}
@@ -454,7 +488,7 @@ async function bootServeur(){
  hydrater(etat);srvArgentSuivre();
  if(SRV_ECLAIR_DU>0)setTimeout(()=>srvEclairRegler(0,3),1200);                 /* des manches jouées avant le rechargement restent à régler */
  API.on('session',()=>srvSessionPerdue());
- API.subscribe('marches',(evt,d)=>{if(evt==='tick')srvTick(d);}).catch(e=>console.warn('[srv] temps réel indisponible',e.code));
+ API.subscribe('marches',(evt,d)=>{if(evt==='tick')srvTick(d);else if(evt==='etat')srvMarchesEtat();}).then(srvMarchesRattraper).catch(e=>console.warn('[srv] temps réel indisponible',e.code));
  API.subscribe('joueur:'+etat.uid,srvPerso,true).catch(e=>console.warn('[srv] sujet privé indisponible',e.code));
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)srvRafraichir();});
 }
