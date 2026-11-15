@@ -39,7 +39,13 @@ I18N_ADD("en",{
 "Pas assez de liquidité sur ce marché pour ce montant.":"Not enough liquidity on this market for that amount.",
 "Ce marché est fermé.":"This market is closed.",
 "La mise minimale est de 1 $.":"The minimum bet is $1.",
-"Tu n’as plus cette position.":"You no longer hold this position."
+"Tu n’as plus cette position.":"You no longer hold this position.",
+"Tu es en pause : les paris et les dépôts sont bloqués.":"You're on a break: bets and deposits are blocked.",
+"Fais d’abord le KYC pour utiliser ce moyen de paiement.":"Complete KYC first to use this payment method.",
+"Montant inférieur au minimum.":"Amount below the minimum.",
+"Montant supérieur au maximum autorisé.":"Amount above the allowed maximum.",
+"Montant invalide.":"Invalid amount.",
+"Adresse invalide.":"Invalid address."
 });
 I18N_ADD("he",{
 "Connexion au serveur impossible. Vérifie ta connexion et réessaie.":"לא ניתן להתחבר לשרת. בדוק את החיבור ונסה שוב.",
@@ -79,5 +85,11 @@ I18N_ADD("he",{
 "Pas assez de liquidité sur ce marché pour ce montant.":"אין מספיק נזילות בשוק הזה לסכום הזה.",
 "Ce marché est fermé.":"השוק הזה סגור.",
 "La mise minimale est de 1 $.":"ההימור המינימלי הוא $1.",
-"Tu n’as plus cette position.":"הפוזיציה הזו כבר לא ברשותך."
+"Tu n’as plus cette position.":"הפוזיציה הזו כבר לא ברשותך.",
+"Tu es en pause : les paris et les dépôts sont bloqués.":"אתה בהפסקה: הימורים והפקדות חסומים.",
+"Fais d’abord le KYC pour utiliser ce moyen de paiement.":"השלם קודם את ה־KYC כדי להשתמש באמצעי התשלום הזה.",
+"Montant inférieur au minimum.":"הסכום נמוך מהמינימום.",
+"Montant supérieur au maximum autorisé.":"הסכום גבוה מהמקסימום המותר.",
+"Montant invalide.":"סכום לא תקין.",
+"Adresse invalide.":"כתובת לא תקינה."
 });

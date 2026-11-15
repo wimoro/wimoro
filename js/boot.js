@@ -34,10 +34,12 @@ API.on('recuperation',()=>{RECUP=true;if(PRET)recupModal();});
 async function demarrer(){
  const mode=await API.pret,srv=mode==='serveur';
  {const tm=LS.g('wimoro-tmode');if(tm==='bars')S.ui.tmode='bars';}
+ {let n='';try{n=sessionStorage.getItem('wimoro-note')||'';sessionStorage.removeItem('wimoro-note');}catch(e){}if(n)S.ui.authNote=n;}   /* message laissé avant un rechargement (auto-exclusion) */
  if(srv){
   LS.r(SESK);                                             /* une session serveur l'emporte : jamais deux comptes à la fois */
   try{await bootServeur();}
   catch(e){if(e&&e.code==='session'){await API.signOut();srvRecharger('#connexion','expire');return;}
+   if(e&&e.code==='exclu'){srvExclu(e);return;}                 /* compte en auto-exclusion : la connexion est refusée par le serveur */
    S.me=guestMe();i18nStatic(document.body);PRET=true;ecranErreurServeur(e);return;}
   flashBoot();
   if(!S.me.onboarded&&location.hash!=='#bienvenue')location.replace('#bienvenue');

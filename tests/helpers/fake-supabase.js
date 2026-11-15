@@ -32,7 +32,8 @@
         realized: 0, contraWins: 0, followers: 0, copiers: 0 },
       positions: [], history: [], deps: [], wds: [], notifs: [],
       missions: [{ id: 'chat1', type: 'chat', goal: 1, have: 0, xp: 20, go: '#chat', claimed: false }, { id: 'dep1', type: 'dep', goal: 1, have: 0, xp: 100, go: '#depot', claimed: false }, { id: 'fb1', type: 'flashbet', goal: 1, have: 0, xp: 50, go: '#eclair', claimed: false }],
-      badges: [], friends: [], freqIn: [], freqOut: [], following: [], watch: [], prefs: {}, users: {}
+      badges: [], friends: [], freqIn: [], freqOut: [], following: [], watch: [], prefs: {}, users: {},
+      rg: { lim: { day: 0, week: 0, month: 0 }, pend: {}, pause: 0, excl: 0 }
     };
   }
 
@@ -58,7 +59,7 @@
 
   /* ----- Les fonctions du contrat ----- */
   var RPC = {
-    api_state: function () { var e = clone(etat()); e.now = Date.now() + (CFG.decalage || 0); return e; },
+    api_state: function () { var e0 = etat(); regler(e0, []); rgMaj(e0, []); var e = clone(e0); e.deps = e0.deps.map(depJson); e.now = Date.now() + (CFG.decalage || 0); return e; },
     api_pseudo_libre: function (a) { return /^[A-Za-z0-9._]{3,20}$/.test(a.p_pseudo || '') && !pseudoPris(a.p_pseudo); },
     api_profile_update: function (a) { var p = a.p || {}, me = etat().me;
       if ('n' in p) { if (!/^[A-Za-z0-9._]{3,20}$/.test(p.n || '')) throw { message: 'pseudo_invalide' }; if (pseudoPris(p.n, uid())) throw { message: 'pseudo_pris' }; me.n = p.n; }
@@ -75,6 +76,71 @@
     api_notifs_read: function () { etat().notifs.forEach(function (n) { n.read = true; }); return null; },
     api_notif_hide: function (a) { var e = etat(); e.notifs = a.p_id ? e.notifs.filter(function (n) { return n.id !== a.p_id; }) : []; return null; },
     api_present: function () { return null; },
+    api_demo_deposit: function (a) {
+      var e = etat(), me = e.me, p = a.p || {}, cle = uid() + ':' + a.p_key, amt = Number(p.amt), d;
+      if (!a.p_key) throw { message: 'cle_absente' };
+      if (db.ops[cle]) { var deja = clone(db.ops[cle]); deja.rejoue = true; return deja; }
+      if (!(amt > 0) || !isFinite(amt)) throw { message: 'montant_invalide' };
+      if ((p.method || 'crypto') === 'crypto') {
+        var C = ARGENT.coins[p.coin]; if (!C) throw { message: 'monnaie_invalide' };
+        if (C.nets.indexOf(p.net) < 0) throw { message: 'reseau_invalide' };
+        if (amt < C.min) throw { message: 'depot_min' };
+        var usd = C.fixe ? r2(amt) : r2(Number(p.usd)); if (!(usd > 0)) throw { message: 'montant_invalide' };
+        d = { coin: p.coin, net: p.net, amt: amt, usd: usd, need: Math.min(ARGENT.nets[p.net].conf, 12), pas: 650, method: null, fee: 0 };
+      } else if (ARGENT.fiat[p.method]) {
+        var X = ARGENT.fiat[p.method]; if (!me.kyc) throw { message: 'kyc_requis' };
+        amt = r2(amt); if (amt < 10) throw { message: 'depot_min' }; if (amt > 5000) throw { message: 'depot_max' };
+        var fee = r2(amt * X.df); d = { coin: 'USD', net: p.method, amt: amt, usd: r2(amt - fee), need: X.need, pas: X.pas, method: p.method, fee: fee };
+      } else throw { message: 'moyen_invalide' };
+      if (d.usd > 1e6) throw { message: 'depot_max' };
+      rgMaj(e, []); if (e.rg.pause > Date.now()) throw { message: 'pause' };
+      [['day', 864e5], ['week', 7 * 864e5], ['month', 30 * 864e5]].forEach(function (w) {
+        var lim = +e.rg.lim[w[0]] || 0; if (!lim) return;
+        var deja2 = e.deps.filter(function (x) { return !x.label && x.at >= Date.now() - w[1]; }).reduce(function (n, x) { return n + x.usd; }, 0);
+        if (deja2 + d.usd > lim) throw { message: 'limite_depot' }; });
+      d.id = 'dep-' + (db.seq++); d.at = Date.now(); d.due = d.at + d.need * d.pas; d.st = 'pending'; d.label = null; delete d.pas; e.deps.unshift(d);
+      var rep = reponse([]); rep.dep = depJson(d); db.ops[cle] = clone(rep); return rep; },
+    api_demo_withdraw: function (a) {
+      var e = etat(), me = e.me, p = a.p || {}, cle = uid() + ':' + a.p_key, amt = r2(Number(p.amt)), w;
+      if (!a.p_key) throw { message: 'cle_absente' };
+      if (db.ops[cle]) { var deja = clone(db.ops[cle]); deja.rejoue = true; return deja; }
+      if (!(amt > 0) || !isFinite(amt)) throw { message: 'montant_invalide' };
+      if ((p.method || 'crypto') === 'crypto') {
+        var N = ARGENT.nets[p.net]; if (!N || N.wfee == null) throw { message: 'reseau_invalide' };
+        var adr = String(p.addr || '').trim(); if (!(N.fmt === 'evm' ? /^0x[0-9a-fA-F]{40}$/ : /^[1-9A-HJ-NP-Za-km-z]{32,44}$/).test(adr)) throw { message: 'adresse_invalide' };
+        if (amt < 5) throw { message: 'retrait_min' };
+        w = { net: p.net, addr: adr, amt: amt, fee: N.wfee, method: null, ms: 4500 };
+      } else if (ARGENT.fiat[p.method]) {
+        if (!me.kyc) throw { message: 'kyc_requis' }; if (amt < 10) throw { message: 'retrait_min' };
+        w = { net: p.method, addr: p.method, amt: amt, fee: r2(amt * ARGENT.fiat[p.method].wf), method: p.method, ms: ARGENT.fiat[p.method].wd_ms };
+      } else throw { message: 'moyen_invalide' };
+      if (me.balance < amt) throw { message: 'solde_insuffisant' };
+      me.balance = r2(me.balance - amt);
+      w.id = 'wd-' + (db.seq++); w.at = Date.now(); w.due = w.at + w.ms; w.st = 'pending'; delete w.ms; e.wds.unshift(w);
+      var rep = reponse([]); rep.wd = clone(w); db.ops[cle] = clone(rep); return rep; },
+    api_demo_settle: function () { var e = etat(), ev = []; regler(e, ev); var rep = reponse(ev); rep.deps = e.deps.map(depJson); rep.wds = clone(e.wds); return rep; },
+    api_demo_kyc: function (a) { var e = etat(), p = a.p || {}, ev = [], bd = new Date(p.bd), lim = new Date(); lim.setFullYear(lim.getFullYear() - 18);
+      if (!String(p.fn || '').trim() || !String(p.ln || '').trim()) throw { message: 'kyc_nom' };
+      if (!p.bd || isNaN(bd) || bd > lim) throw { message: 'kyc_age' };
+      if (!p.doc) throw { message: 'kyc_piece' };
+      if (!e.me.kyc) { e.me.kyc = true; e.me.kycAt = Date.now(); ev.push(notif('shield', 'kyc_ok', {}, '#depot')); }
+      return reponse(ev); },
+    api_rg_limit: function (a) { var e = etat(), ev = [], v = Math.max(0, Math.round(+a.p_v || 0)), res;
+      if (['day', 'week', 'month'].indexOf(a.p_k) < 0) throw { message: 'limite_invalide' };
+      rgMaj(e, ev); var cur = +e.rg.lim[a.p_k] || 0;
+      if (v === cur) { delete e.rg.pend[a.p_k]; res = 'same'; }
+      else if (cur && (v === 0 || v > cur)) { e.rg.pend[a.p_k] = { v: v, at: Date.now() + 48 * 3600e3 }; res = 'pending'; }
+      else { e.rg.lim[a.p_k] = v; delete e.rg.pend[a.p_k]; res = 'now'; }
+      var rep = reponse(ev); rep.rg = clone(e.rg); rep.r = res; return rep; },
+    api_rg_pend_cancel: function (a) { var e = etat(); delete e.rg.pend[a.p_k]; var rep = reponse([]); rep.rg = clone(e.rg); return rep; },
+    api_rg_pause: function (a) { var e = etat(), ev = [];
+      if ([24, 72, 168, 720].indexOf(a.p_hours) < 0) throw { message: 'duree_invalide' };
+      e.rg.pause = Math.max(e.rg.pause || 0, Date.now() + a.p_hours * 3600e3); ev.push(notif('shield', 'rg_pause', { at: e.rg.pause }, '#responsable'));
+      var rep = reponse(ev); rep.rg = clone(e.rg); return rep; },
+    api_rg_exclude: function (a) { var e = etat();
+      if ([0, 6, 12, 36].indexOf(a.p_months) < 0) throw { message: 'duree_invalide' };
+      e.rg.pause = 0; e.rg.excl = a.p_months === 0 ? -1 : Math.max(e.rg.excl || 0, Date.now() + a.p_months * 30 * 864e5);
+      return { excl: e.rg.excl }; },
     api_markets: function () { return { now: Date.now() + (CFG.decalage || 0), m: clone(db.marches) }; },
     api_buy: function (a) {
       var e = etat(), me = e.me, total = r2(+a.p_total), cle = uid() + ':' + a.p_key;
@@ -84,6 +150,7 @@
       if (db.ops[cle]) { var deja = clone(db.ops[cle]); deja.rejoue = true; return deja; }      // même clé : appliqué une seule fois
       var m = marche(a.p_market); if (!m) throw { message: 'marche_inconnu' };
       if (m.st !== 'open') throw { message: 'marche_ferme' };
+      if (e.rg && e.rg.pause > Date.now()) throw { message: 'pause' };
       if (me.balance < total) throw { message: 'solde_insuffisant' };
       var q = quoteBuy(carnet(a.p_market), a.p_side, total, rangDe(me).t >= 5);
       if (!q.full || !(q.sh > 0)) throw { message: 'liquidite' };
@@ -148,6 +215,28 @@
     var ecart = r6(100 - ids.map(marche).reduce(function (n, x) { return n + x.p; }, 0));
     if (ecart) { var gros = autres.filter(function (x) { return x.p + ecart >= 1 && x.p + ecart <= 98; }).sort(function (x, y) { return y.p - x.p; })[0]; if (gros) gros.p = r6(gros.p + ecart); }
   }
+  /* ----- Argent fictif : mêmes barèmes que wm.argent() ----- */
+  var ARGENT = { coins: { USDC: { min: 5, fixe: true, nets: ['Base', 'Ethereum', 'Arbitrum', 'Solana', 'Polygon'] }, USDT: { min: 5, fixe: true, nets: ['Ethereum', 'Tron', 'Arbitrum', 'Solana'] }, ETH: { min: 0.002, nets: ['Ethereum', 'Base', 'Arbitrum'] }, BTC: { min: 0.0001, nets: ['Bitcoin', 'Lightning'] }, SOL: { min: 0.03, nets: ['Solana'] } },
+    nets: { Base: { conf: 12, fmt: 'evm', wfee: 0.05 }, Ethereum: { conf: 12, fmt: 'evm', wfee: 2 }, Arbitrum: { conf: 12, fmt: 'evm', wfee: 0.1 }, Polygon: { conf: 30, fmt: 'evm', wfee: 0.05 }, Solana: { conf: 1, fmt: 'sol', wfee: 0.01 }, Tron: { conf: 20 }, Bitcoin: { conf: 2 }, Lightning: { conf: 1 } },
+    fiat: { card: { df: 0.025, wf: 0.015, need: 3, pas: 650, wd_ms: 3500 }, bank: { df: 0, wf: 0, need: 8, pas: 700, wd_ms: 6000 }, paypal: { df: 0.019, wf: 0.01, need: 3, pas: 650, wd_ms: 3500 } } };
+  var depJson = function (d) { var o = clone(d); if (d.st === 'pending' && d.due) o.conf = Math.max(0, Math.min(d.need - 1, Math.floor(d.need * (Date.now() - d.at) / Math.max(1, d.due - d.at)))); else if (d.st !== 'pending') o.conf = d.need; return o; };
+  var jour = function () { return new Date().toISOString().slice(0, 10); };
+  function regler(e, ev) {                                   // wm.demo_regler : crédite les dépôts échus, envoie les retraits échus
+    var me = e.me, avant = rangDe(me), depot = false, t = Date.now();
+    e.deps.slice().reverse().forEach(function (d) { if (d.st !== 'pending' || !d.due || d.due > t) return;
+      d.st = 'done'; d.conf = d.need; me.balance = r2(me.balance + d.usd); me.deposits = (me.deposits | 0) + 1; depot = true;
+      ev.push({ k: 'dep', id: d.id, usd: d.usd }); ev.push(notif('wallet', 'dep_credited', { usd: d.usd, amt: d.amt, coin: d.coin, net: d.net, method: d.method }, '#depot'));
+      missionAvance(e, 'dep', ev);
+      if (me.depDay !== jour()) { me.depDay = jour(); me.xp += 100; ev.push({ k: 'xp', n: 100, src: 'depot' }); } });
+    e.wds.slice().reverse().forEach(function (w) { if (w.st !== 'pending' || !w.due || w.due > t) return;
+      w.st = 'sent'; ev.push({ k: 'wd', id: w.id }); ev.push(notif('out', 'wd_sent', { recv: r2(w.amt - w.fee), net: w.net, method: w.method }, '#retrait')); });
+    if (depot) { rangMonte(me, avant, ev); badges(e, ev); }
+  }
+  function rgMaj(e, ev) {                                    // plafonds en attente arrivés à échéance
+    e.rg = e.rg || { lim: { day: 0, week: 0, month: 0 }, pend: {}, pause: 0, excl: 0 };
+    Object.keys(e.rg.pend).forEach(function (k) { var p = e.rg.pend[k]; if (p.at > Date.now()) return; e.rg.lim[k] = p.v; delete e.rg.pend[k]; ev.push(notif('shield', 'rg_limite', { k: k, v: p.v }, '#responsable')); });
+    if (e.rg.pause && e.rg.pause <= Date.now()) e.rg.pause = 0;
+  }
   var rangDe = function (me) { return rankFrom({ xp: me.xp, settled: me.settled, acc: Math.round(me.wins / Math.max(1, me.settled) * 100), deposits: me.deposits, flashWins: me.flashWins, followed: me.followed, pos: me.pos }); };
   var rangMonte = function (me, avant, ev) { var r = rangDe(me); if (r.t * 3 + r.d > avant.t * 3 + avant.d) ev.push(notif('trophy', 'rank_up', { t: r.t, d: r.d }, '#rang')); };
   var missionAvance = function (e, type, ev) { e.missions.forEach(function (x) { if (x.type !== type || x.claimed || x.have >= x.goal) return; x.have = Math.min(x.goal, x.have + 1); ev.push({ k: 'mission', id: x.id, have: x.have, goal: x.goal, xp: x.xp }); if (x.have >= x.goal) ev.push(notif('gift', 'mission_done', { id: x.id, xp: x.xp }, '#rang')); }); };
@@ -161,6 +250,7 @@
         if (force !== undefined) { resolve(force && force.error ? { data: null, error: force.error } : { data: clone(force), error: null }); return; }
         if (!RPC[name]) { resolve({ data: null, error: { message: 'Could not find the function public.' + name, code: 'PGRST202' } }); return; }
         if (!uid() && !SANS_SESSION[name]) { resolve({ data: null, error: { message: 'permission denied for function ' + name, code: '42501' } }); return; }
+        if (uid() && !SANS_SESSION[name] && name !== 'api_present') { var x = (db.etats[uid()].rg || {}).excl; if (x === -1 || x > Date.now()) { resolve({ data: null, error: { message: 'exclu', code: 'P0001', details: String(x) } }); return; } }
         try { var d = RPC[name](args || {}); persist(); resolve({ data: d === undefined ? null : d, error: null }); }
         catch (e) { resolve({ data: null, error: { message: e.message || String(e), code: 'P0001' } }); }
       }, CFG.latence || 3);

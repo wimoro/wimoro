@@ -189,8 +189,16 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 - [ ] Duels, clans, copy trading, parrainage.
 
 ### 4.7 Argent fictif et KYC
-- [ ] `demo_deposit` (crypto et moyens classiques), `demo_withdraw`, `demo_kyc` (B13, B14, K42). _Recette 7._
-- [ ] Limites de jeu responsable côté serveur. _Recette 10._
+- [x] `api_demo_deposit` (crypto, carte, virement, PayPal), `api_demo_withdraw`, `api_demo_kyc`, `api_demo_settle`
+      (B13, B14, K42) : écrits et journalisés par le serveur, clairement nommés « démo », animations et écrans d'origine
+      conservés. Un dépôt naît « en attente » et n'est crédité qu'à la fin de ses confirmations ; fermé en route, il est
+      crédité au chargement suivant. Les nom, prénom et date de naissance du KYC ne sont pas conservés. _Recettes 3, 6
+      et 7._ _Tests_ `tests/sql/argent.spec.mjs`, `tests/compte/argent.spec.mjs`, `tests/e2e/comptes.spec.mjs`.
+- [x] Jeu responsable appliqué par le serveur : plafonds de dépôt (baisse immédiate, hausse après 48 h), pause (ni pari
+      ni dépôt, retrait possible, impossible à écourter), auto-exclusion (plus aucune fonction du compte ne répond, la
+      connexion est refusée). _Recette 10._ L'export de l'historique marche avec les données du serveur.
+- [ ] Reste limité : le cours BTC / ETH / SOL d'un dépôt vient de l'écran (moteur éclair) ; le serveur borne le montant
+      (1 000 000 $ par dépôt fictif). À resserrer quand le moteur éclair tournera aussi côté serveur (4.4).
 
 ### 4.8 Progression
 - [ ] XP, rangs, missions, badges, séries, notifications attribués par le serveur dans les RPC d'action.
@@ -264,3 +272,4 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 | 15 nov. 2026 | 3.2, 3.6 : `js/supabase.js` retiré ; mode Démo redevenu identique à `3a1d258` ; B01 et B02 corrigés. | 14 tests Playwright dans `tests/demo/` |
 | 15 nov. 2026 | 3.0 : trous de sécurité K01 à K13 fermés en production. Base de test embarquée. | migration `20261115032907_securite_urgence_droits` ; 13 tests SQL ; `tools/e2e/verif-securite.mjs` |
 | 15 nov. 2026 | 4.3 et phase 5 : moteur de marché côté serveur (portage exact de `js/engine.js`), achat et vente reliés, bots teneurs de marché avec veille, prix diffusés en direct. Les 27 marchés sont revenus à des prix sains. | migrations `marches_moteur`, `bots_marche`, `marches_precision`, `bots_veille` (empreintes identiques au dépôt) ; 99 tests (42 SQL) ; 4 tests de bout en bout contre le vrai back |
+| 15 nov. 2026 | 4.7 : argent fictif et KYC écrits par le serveur ; jeu responsable appliqué par le serveur. Recette 3 complète contre le vrai back : inscription → onboarding → dépôt → achat → rechargement → vente → reconnexion par pseudo depuis un autre navigateur. | migration `argent_demo` (empreinte identique) ; 117 tests (52 SQL) ; 4 tests de bout en bout |

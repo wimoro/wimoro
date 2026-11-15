@@ -33,20 +33,31 @@ const ERR_TXT={
  marche_inconnu:()=>_t("Ce marché est fermé."),
  montant_min:()=>_t("La mise minimale est de 1 $."),
  position_absente:()=>_t("Tu n’as plus cette position."),
- quantite_invalide:()=>_t("Tu n’as plus cette position.")
+ quantite_invalide:()=>_t("Tu n’as plus cette position."),
+ pause:()=>_t("Tu es en pause : les paris et les dépôts sont bloqués."),
+ limite_depot:()=>_t("Limite de dépôt atteinte"),
+ kyc_requis:()=>_t("Fais d’abord le KYC pour utiliser ce moyen de paiement."),
+ depot_min:()=>_t("Montant inférieur au minimum."),
+ depot_max:()=>_t("Montant supérieur au maximum autorisé."),
+ montant_invalide:()=>_t("Montant invalide."),
+ adresse_invalide:()=>_t("Adresse invalide."),
+ retrait_min:()=>_t("Montant inférieur au minimum."),
+ kyc_nom:()=>_t("Renseigne ton prénom et ton nom."),
+ kyc_age:()=>_t("Tu dois avoir 18 ans ou plus."),
+ kyc_piece:()=>_t("Ajoute ta pièce d’identité.")
 };
 const errTxt=e=>{const c=e&&e.code||'';return ERR_TXT[c]?ERR_TXT[c]():_t("Une erreur est survenue. Réessaie.");};
-const srvErreur=e=>{if(e&&e.code==='session'){srvSessionPerdue();return;}toast({tone:'red',icon:'info',force:true,title:_t("Action impossible"),text:errTxt(e)});};
+const srvErreur=e=>{if(e&&e.code==='session'){srvSessionPerdue();return;}if(e&&e.code==='exclu'){srvExclu(e);return;}toast({tone:'red',icon:'info',force:true,title:_t("Action impossible"),text:errTxt(e)});};
 
 /* ----- Ce qui n'est pas encore relié au serveur est clairement indisponible en mode serveur -----
    La liste se vide au fil des lots (voir docs/PLAN.md). Le test tests/compte/garde.spec.mjs vérifie qu'aucune action
    qui touche au solde, à l'XP ou à un état partagé n'est exécutée localement quand le serveur fait autorité. */
-const SRV_BLOQUE=new Set(('flash-bet share-pick claim withdraw vote fr-add fr-accept fr-cancel fr-decline fr-remove fiat-dep fiat-wd sim-dep '
+const SRV_BLOQUE=new Set(('flash-bet share-pick claim vote fr-add fr-accept fr-cancel fr-decline fr-remove '
  +'cp-start cp-stop-do cp-edit cp-manage cp-pause cp-stop cp-open limit-place ord-cancel guard guard-save guard-del dl-create dl-cancel dl-accept dl-share dl-decline duel-open stk-create stack-open '
  +'bz-join bz-rebuy bz-choose sr-start sr-cash sr-play sr-share cl-war-join cl-sim cl-join cl-apply cl-leave-do cl-share cl-promote cl-kick cl-invite cl-call-do cl-war cl-feedopt cl-create-open cl-leave cl-call-open cl-war-open '
- +'cb-place cb-cash cb-add cb-clear cb-rm cb-stake pro-sh-send pro-share follow-user follow-bet follow-pbet share dm ref-copy ref-share rg-pause-do rg-excl-do rg-pend-cancel rg-pause rg-excl kyc propose react '
+ +'cb-place cb-cash cb-add cb-clear cb-rm cb-stake pro-sh-send pro-share follow-user follow-bet follow-pbet share dm ref-copy ref-share propose react '
  +'wallet wallet-modal demo-login demo-rank demo-rank-open demo-rank-reset').split(/\s+/));
-const SRV_FORMS_BLOQUE=new Set(['create','clan','clcode','rglim','kyc','simdep','chat']);
+const SRV_FORMS_BLOQUE=new Set(['create','clan','clcode','chat']);
 function srvGarde(type,nom){
  if(!SRV())return true;
  if(!(type==='form'?SRV_FORMS_BLOQUE:SRV_BLOQUE).has(nom))return true;
@@ -62,10 +73,19 @@ const NOTIF_T={
  rank_up:p=>_t("Tu passes {0}.",[rankName(p.t,p.d)]),
  mission_done:p=>_t("Mission terminée : {0}. Récupère tes {1} XP.",[missionLabel(p.id),p.xp]),
  badge:p=>_t("Badge débloqué : {0}.",[badgeNom(p.id)]),
- bet_placed:p=>_t("Pari placé : {0} sur {1}, {2}.",[F.usd(+p.amt),p.s==='oui'?_t("Oui"):_t("Non"),MK[p.m]?MK[p.m].short:p.m])
+ bet_placed:p=>_t("Pari placé : {0} sur {1}, {2}.",[F.usd(+p.amt),p.s==='oui'?_t("Oui"):_t("Non"),MK[p.m]?MK[p.m].short:p.m]),
+ dep_credited:p=>depNotifTxt({method:p.method,usd:+p.usd,amt:+p.amt,coin:p.coin,net:p.method&&FIAT[p.method]?FIAT[p.method].n:p.net}),
+ wd_sent:p=>wdNotifTxt({method:p.method,amt:+p.recv,fee:0,net:p.method&&FIAT[p.method]?FIAT[p.method].n:p.net}),
+ kyc_ok:()=>_t('Identité vérifiée : carte, virement et PayPal sont débloqués.'),
+ rg_pause:p=>_t("Pause activée jusqu’au {0}.",[fmtDT(+p.at)]),
+ rg_limite:p=>_t("Ta limite de dépôt {0} est maintenant {1}.",[winTxt(p.k),+p.v?F.usd0(+p.v):_t("retirée")])
 };
 const notifDe=n=>{let text=n.text||'';if(n.code&&NOTIF_T[n.code]){try{text=NOTIF_T[n.code](n.p||{});}catch(e){console.warn('[srv] notification illisible',n.code);}}return {id:n.id,ic:n.ic||'info',text,href:n.href||'',at:n.at,read:!!n.read};};
 const missionDe=m=>({id:m.id,type:m.type,label:missionLabel(m.id),goal:m.goal,have:m.have,xp:m.xp,go:m.go||'#rang',claimed:!!m.claimed,day:today()});
+/* dépôts, retraits et jeu responsable : du format du serveur à celui de l'écran */
+const depDe=d=>({id:d.id,coin:d.coin,net:d.method&&FIAT[d.method]?FIAT[d.method].n:d.net,method:d.method||undefined,amt:+d.amt,fee:+d.fee||0,usd:+d.usd,at:d.at,due:d.due||0,conf:d.st==='pending'?(d.conf|0):(d.need||12),need:d.need||12,label:d.label||undefined});
+const wdDe=w=>({id:w.id,net:w.method&&FIAT[w.method]?FIAT[w.method].n:w.net,addr:w.method&&FIAT[w.method]?FIAT[w.method].dest:w.addr,method:w.method||undefined,amt:+w.amt,fee:+w.fee||0,at:w.at,due:w.due||0,st:w.st});
+const rgDe=r=>({lim:{day:+(r.lim||{}).day||0,week:+(r.lim||{}).week||0,month:+(r.lim||{}).month||0},pend:Object.assign({},r.pend||{}),pause:+r.pause||0,excl:+r.excl||0});
 const histDe=h=>({k:h.k,m:h.m||undefined,q:h.m&&MK[h.m]?MK[h.m].q:(h.q||h.m||''),s:h.s,win:!!h.win,pnl:+h.pnl,at:h.at});
 
 /* ----- Annuaire : les fiches des joueurs viennent du serveur, clé = identifiant du joueur ----- */
@@ -85,8 +105,7 @@ function hydrater(e){
  me.interests=(b.interests||[]).slice();
  me.positions=(e.positions||[]).filter(p=>MK[p.m]).map(p=>({m:p.m,s:p.s,sh:+p.sh,avg:+p.avg}));
  me.history=(e.history||[]).map(histDe);
- me.deps=(e.deps||[]).map(d=>({coin:d.coin,net:d.net,amt:+d.amt,usd:+d.usd,at:d.at,conf:d.st==='pending'?(d.conf|0):(d.need||12),need:d.need||12,label:d.label||undefined}));
- me.wds=(e.wds||[]).map(w=>({net:w.net,addr:w.addr,amt:+w.amt,fee:0,at:w.at,st:w.st}));
+ me.deps=(e.deps||[]).map(depDe);me.wds=(e.wds||[]).map(wdDe);if(e.rg)me.rg=rgDe(e.rg);
  me.notifs=(e.notifs||[]).map(notifDe);me.missions=(e.missions||[]).map(missionDe);me.badges=(e.badges||[]).slice();
  me.friends=(e.friends||[]).slice();me.freqIn=(e.freqIn||[]).slice();me.freqOut=(e.freqOut||[]).slice();me.following=(e.following||[]).slice();
  const pr=e.prefs||{};for(const k of SRV_PREFS)if(pr[k]!==undefined)me[k]=pr[k];
@@ -194,6 +213,73 @@ async function srvVendre(ctx,st,c){
  finally{srvFin();}
 }
 
+/* ----- Argent fictif (dépôts, retraits, KYC) : l'écriture est faite par le serveur -----
+   Un dépôt naît « en attente » ; l'écran fait défiler ses confirmations (affichage seulement) puis demande le règlement.
+   Si l'onglet est fermé avant, le serveur règle de lui-même au chargement suivant : rien ne reste bloqué ni ne s'annule. */
+let srvArgentT=null,srvRegle=false,srvArgentOccupe=false;
+const srvHeure=()=>Date.now()+(typeof FSKEW!=='undefined'?FSKEW:0);
+function srvArgentSuivre(){
+ if(srvArgentT)return;
+ srvArgentT=setInterval(()=>{
+  const deps=S.me.deps.filter(d=>d.id&&d.due&&d.conf<d.need),wds=S.me.wds.filter(x=>x.id&&x.due&&x.st!=='sent');
+  if(!deps.length&&!wds.length){clearInterval(srvArgentT);srvArgentT=null;return;}
+  const t=srvHeure();let du=false;
+  for(const d of deps){if(t>=d.due)du=true;d.conf=Math.min(d.need-1,Math.max(d.conf,Math.floor(d.need*(t-d.at)/Math.max(1,d.due-d.at))));}
+  for(const x of wds)if(t>=x.due)du=true;
+  if(deps.length)refreshDeps();
+  if(du)srvRegler();
+ },325);
+}
+async function srvRegler(){
+ if(srvRegle)return;srvRegle=true;
+ try{
+  const r=await API.call('api_demo_settle');
+  srvEtat(r);S.me.deps=(r.deps||[]).map(depDe);S.me.wds=(r.wds||[]).map(wdDe);
+  const credites=(r.ev||[]).filter(e=>e.k==='dep').map(e=>S.me.deps.find(d=>d.id===e.id)).filter(Boolean);
+  credites.forEach(depCredite);
+  (r.ev||[]).filter(e=>e.k==='wd').map(e=>S.me.wds.find(x=>x.id===e.id)).filter(Boolean).forEach(wdEnvoye);
+  srvEvenements(r);refreshDeps();
+  if(credites.length)depRendu();
+ }catch(e){if(e.code==='session'||e.code==='exclu')srvErreur(e);else console.warn('[srv] règlement remis à plus tard',e.code);}
+ finally{srvRegle=false;}
+}
+async function srvDepot(p){
+ if(srvArgentOccupe)return;srvArgentOccupe=true;
+ try{const r=await API.call('api_demo_deposit',{p,p_key:cleOp()});const d=depDe(r.dep);S.me.deps.unshift(d);srvAppliquer(r);depDetecte(d);srvArgentSuivre();}
+ catch(e){srvErreur(e);}
+ finally{srvArgentOccupe=false;}
+}
+async function srvRetrait(p,apres){
+ if(srvArgentOccupe)return;srvArgentOccupe=true;
+ try{const r=await API.call('api_demo_withdraw',{p,p_key:cleOp()});const x=wdDe(r.wd);S.me.wds.unshift(x);srvEtat(r);if(apres)apres();wdLance(x);srvEvenements(r);srvArgentSuivre();}
+ catch(e){srvErreur(e);}
+ finally{srvArgentOccupe=false;}
+}
+/* la « vérification » dure au moins 1,5 s, comme en mode local */
+async function srvKyc(p,fini,echec){
+ try{const [r]=await Promise.all([API.call('api_demo_kyc',{p}),new Promise(ok=>setTimeout(ok,1500))]);srvAppliquer(r);fini();}
+ catch(e){srvErreur(e);if(echec)echec();}
+}
+
+/* ----- Jeu responsable : plafonds, pause, auto-exclusion décidés par le serveur ----- */
+async function srvRg(nom,args,apres){
+ try{const r=await API.call(nom,args);if(r.rg)S.me.rg=rgDe(r.rg);srvAppliquer(r);if(apres)apres(r);}
+ catch(e){srvErreur(e);}
+}
+const srvNote=t=>{try{sessionStorage.setItem('wimoro-note',t);}catch(e){}};
+async function srvExclure(mois){
+ try{
+  const r=await API.call('api_rg_exclude',{p_months:mois});
+  srvNote(_t("Auto-exclusion enregistrée. {0}",[r.excl===-1?_t("Ton compte est fermé définitivement."):_t("Ton compte est fermé jusqu’au {0}.",[fmtD(+r.excl)])]));
+  await API.signOut();LS.r(SESK);srvRecharger('#connexion');
+ }catch(e){srvErreur(e);}
+}
+/* le serveur refuse toute fonction à un compte en auto-exclusion : on ferme la session et on explique pourquoi */
+let srvExcluVu=false;
+function srvExclu(e){if(srvExcluVu)return;srvExcluVu=true;const d=+(e&&e.cause&&e.cause.details);
+ srvNote(d===-1?_t("Ce compte est fermé définitivement à la demande de son titulaire (auto-exclusion)."):_t("Ce compte est en auto-exclusion jusqu’au {0}. La connexion est impossible avant cette date.",[fmtD(d)]));
+ API.signOut().then(()=>{LS.r(SESK);srvRecharger('#connexion');});}
+
 /* Présence : tant que l'onglet est visible, le site dit au serveur qu'un joueur regarde (toutes les 4 minutes). Sans joueur
    présent, les bots du serveur passent en veille et ne diffusent plus rien (voir supabase/migrations/…_bots_veille.sql). */
 planifier('serveur : présence',240000,()=>{if(!document.hidden&&S.me.logged)API.call('api_present').catch(()=>{});},'serveur');
@@ -201,7 +287,7 @@ planifier('serveur : présence',240000,()=>{if(!document.hidden&&S.me.logged)API
 /* ----- Démarrage en mode serveur ----- */
 async function bootServeur(){
  const [etat]=await Promise.all([API.loadState(),srvMarches().catch(e=>console.warn('[srv] marchés indisponibles',e.code))]);
- hydrater(etat);
+ hydrater(etat);srvArgentSuivre();
  API.on('session',()=>srvSessionPerdue());
  API.subscribe('marches',(evt,d)=>{if(evt==='tick')srvTick(d);}).catch(e=>console.warn('[srv] temps réel indisponible',e.code));
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)srvRafraichir();});
@@ -210,7 +296,7 @@ async function bootServeur(){
 let srvVu=0;
 async function srvRafraichir(){
  if(!SRV()||Date.now()-srvVu<15000)return;srvVu=Date.now();
- try{const [etat]=await Promise.all([API.loadState(),srvMarches().catch(()=>{})]);const ui={ob:S.ui.ob};hydrater(etat);S.ui.ob=ui.ob;updateHeader();updateBell();render(false);}
+ try{const [etat]=await Promise.all([API.loadState(),srvMarches().catch(()=>{})]);const ui={ob:S.ui.ob};hydrater(etat);S.ui.ob=ui.ob;srvArgentSuivre();updateHeader();updateBell();render(false);}
  catch(e){if(e.code==='session')srvSessionPerdue();}
 }
 function srvRecharger(hash,apres){try{if(apres)sessionStorage.setItem('wimoro-apres',apres);}catch(e){}try{history.replaceState(null,'',location.pathname+location.search+(hash||'#accueil'));}catch(e){location.hash=hash||'#accueil';}location.reload();}
