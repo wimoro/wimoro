@@ -27,6 +27,7 @@ const RELIEES = {
   'FORMS.rglim': 'api_rg_limit — tests/compte/argent.spec.mjs',
   'ACT.rg-pause-do': 'api_rg_pause — tests/compte/argent.spec.mjs',
   'ACT.rg-pend-cancel': 'api_rg_pend_cancel — tests/compte/argent.spec.mjs',
+  'ACT.claim': 'api_mission_claim — tests/compte/etat.spec.mjs',
   'ACT.pro-sh-dst': 'lecture seule de la liste d’amis (choix du destinataire)',
   'ACT.pro-sh-dm': 'lecture seule de la liste d’amis (choix du destinataire)',
   'FORMS.settings': 'api_profile_update (pseudo unique) — tests/compte/etat.spec.mjs',
@@ -68,7 +69,7 @@ test('une action pas encore reliée est clairement indisponible : message, et ri
   await page.locator('[data-a="flash-bet"]').first().click({ force: true });                 // pari éclair
   await expect(page.locator('.toast').first()).toContainText('Coming soon for accounts');
   await page.evaluate(() => { ACT.withdraw && document.dispatchEvent(new Event('x')); });
-  for (const a of ['claim', 'dl-create', 'cb-place', 'cl-join', 'fr-add', 'cp-start', 'limit-place', 'bz-join', 'sr-start'])
+  for (const a of ['dl-create', 'cb-place', 'cl-join', 'fr-add', 'cp-start', 'limit-place', 'bz-join', 'sr-start'])
     await page.evaluate(nom => { const b = document.createElement('button'); b.dataset.a = nom; b.dataset.u = 'x'; b.dataset.m = 'btc150k'; document.body.appendChild(b); b.click(); b.remove(); }, a);
   const apres = await lire(page, () => JSON.stringify({ solde: S.me.balance, xp: S.me.xp, pos: S.me.positions, hist: S.me.history, notifs: S.me.notifs.length, prix: MK.btc150k.p, messages: Object.values(S.rooms).reduce((n, r) => n + r.msgs.filter(x => x.k !== 'evt').length, 0) }));
   expect(apres).toBe(avant);

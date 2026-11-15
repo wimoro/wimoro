@@ -45,7 +45,8 @@ I18N_ADD("en",{
 "Montant inférieur au minimum.":"Amount below the minimum.",
 "Montant supérieur au maximum autorisé.":"Amount above the allowed maximum.",
 "Montant invalide.":"Invalid amount.",
-"Adresse invalide.":"Invalid address."
+"Adresse invalide.":"Invalid address.",
+"Cette récompense a déjà été récupérée.":"This reward has already been claimed."
 });
 I18N_ADD("he",{
 "Connexion au serveur impossible. Vérifie ta connexion et réessaie.":"לא ניתן להתחבר לשרת. בדוק את החיבור ונסה שוב.",
@@ -91,5 +92,6 @@ I18N_ADD("he",{
 "Montant inférieur au minimum.":"הסכום נמוך מהמינימום.",
 "Montant supérieur au maximum autorisé.":"הסכום גבוה מהמקסימום המותר.",
 "Montant invalide.":"סכום לא תקין.",
-"Adresse invalide.":"כתובת לא תקינה."
+"Adresse invalide.":"כתובת לא תקינה.",
+"Cette récompense a déjà été récupérée.":"הפרס הזה כבר נאסף."
 });

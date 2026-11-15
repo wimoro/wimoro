@@ -44,7 +44,8 @@ const ERR_TXT={
  retrait_min:()=>_t("Montant inférieur au minimum."),
  kyc_nom:()=>_t("Renseigne ton prénom et ton nom."),
  kyc_age:()=>_t("Tu dois avoir 18 ans ou plus."),
- kyc_piece:()=>_t("Ajoute ta pièce d’identité.")
+ kyc_piece:()=>_t("Ajoute ta pièce d’identité."),
+ mission_indisponible:()=>_t("Cette récompense a déjà été récupérée.")
 };
 const errTxt=e=>{const c=e&&e.code||'';return ERR_TXT[c]?ERR_TXT[c]():_t("Une erreur est survenue. Réessaie.");};
 const srvErreur=e=>{if(e&&e.code==='session'){srvSessionPerdue();return;}if(e&&e.code==='exclu'){srvExclu(e);return;}toast({tone:'red',icon:'info',force:true,title:_t("Action impossible"),text:errTxt(e)});};
@@ -52,7 +53,7 @@ const srvErreur=e=>{if(e&&e.code==='session'){srvSessionPerdue();return;}if(e&&e
 /* ----- Ce qui n'est pas encore relié au serveur est clairement indisponible en mode serveur -----
    La liste se vide au fil des lots (voir docs/PLAN.md). Le test tests/compte/garde.spec.mjs vérifie qu'aucune action
    qui touche au solde, à l'XP ou à un état partagé n'est exécutée localement quand le serveur fait autorité. */
-const SRV_BLOQUE=new Set(('flash-bet share-pick claim vote fr-add fr-accept fr-cancel fr-decline fr-remove '
+const SRV_BLOQUE=new Set(('flash-bet share-pick vote fr-add fr-accept fr-cancel fr-decline fr-remove '
  +'cp-start cp-stop-do cp-edit cp-manage cp-pause cp-stop cp-open limit-place ord-cancel guard guard-save guard-del dl-create dl-cancel dl-accept dl-share dl-decline duel-open stk-create stack-open '
  +'bz-join bz-rebuy bz-choose sr-start sr-cash sr-play sr-share cl-war-join cl-sim cl-join cl-apply cl-leave-do cl-share cl-promote cl-kick cl-invite cl-call-do cl-war cl-feedopt cl-create-open cl-leave cl-call-open cl-war-open '
  +'cb-place cb-cash cb-add cb-clear cb-rm cb-stake pro-sh-send pro-share follow-user follow-bet follow-pbet share dm ref-copy ref-share propose react '
@@ -259,6 +260,12 @@ async function srvRetrait(p,apres){
 async function srvKyc(p,fini,echec){
  try{const [r]=await Promise.all([API.call('api_demo_kyc',{p}),new Promise(ok=>setTimeout(ok,1500))]);srvAppliquer(r);fini();}
  catch(e){srvErreur(e);if(echec)echec();}
+}
+
+/* ----- Missions : la récompense est donnée par le serveur ----- */
+async function srvReclamer(m,ev,fini){
+ try{const r=await API.call('api_mission_claim',{p_id:m.id});if(r.missions)S.me.missions=r.missions.map(missionDe);else m.claimed=true;srvAppliquer(r,ev);fini();}
+ catch(e){srvErreur(e);if(e.code==='mission_indisponible'){m.claimed=true;fini();}}
 }
 
 /* ----- Jeu responsable : plafonds, pause, auto-exclusion décidés par le serveur ----- */

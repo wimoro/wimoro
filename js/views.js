@@ -456,7 +456,8 @@ const ACT={
  cite:a=>citeModal(a.dataset.room),
  'cite-pick':a=>{const rid=a.dataset.room;closeModal();const i=$(`[data-in="${CSS.escape(rid)}"]`);if(i){i.value=(i.value.trim()?i.value.trim()+' ':'')+'#'+a.dataset.m+' ';i.focus();}},
  lock:a=>lockModal(a.dataset.g),tier:a=>tierModal(+a.dataset.t),
- claim:(a,e)=>{const m=S.me.missions.find(x=>x.id===a.dataset.id);if(!m||m.claimed||m.have<m.goal)return;m.claimed=true;gainXP(m.xp,e);const box=$('[data-missions]');if(box)box.innerHTML=missionsH();save();},
+ /* réclamer une mission : validation, écriture (locale, ou api_mission_claim en mode serveur), puis le même affichage */
+ claim:(a,e)=>{const m=S.me.missions.find(x=>x.id===a.dataset.id);if(!m||m.claimed||m.have<m.goal)return;const fini=()=>{const box=$('[data-missions]');if(box)box.innerHTML=missionsH();};if(SRV()){srvReclamer(m,e,fini);return;}m.claimed=true;gainXP(m.xp,e);fini();save();},
  propose:()=>{location.hash='#creer';},stats:()=>statsModal(),
  dm:a=>{const u=a.dataset.u;const rid='dm:'+u;const r=room(rid);if(!r.msgs.length){r.msgs.push(mkMsg({k:'evt',text:`${_t("Début de ta conversation avec {0}",[userOf(u).n])}`}));setTimeout(()=>addMsg(rid,mkMsg({u,k:'msg',text:pick(DM_REPLIES)})),1400);}S.ui.room=rid;if((S.ui.route||'')==='chat')render(false);else location.hash='#chat';},
  'follow-user':a=>{const u=a.dataset.u,L=S.me.following,i=L.indexOf(u);if(i>=0)L.splice(i,1);else{L.push(u);toast({icon:'users',title:`${_t("Tu suis {0}",[userOf(u).n])}`,text:_t("Ses mises apparaîtront dans tes notifications.")});}$$(`[data-a="follow-user"][data-u="${u}"]`).forEach(b=>{const on=L.includes(u);b.textContent=on?_t("Suivi"):_t("Suivre");b.classList.toggle('b-soft',on);b.classList.toggle('b-ghost',!on);});save();},

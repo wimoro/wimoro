@@ -76,6 +76,10 @@
     api_notifs_read: function () { etat().notifs.forEach(function (n) { n.read = true; }); return null; },
     api_notif_hide: function (a) { var e = etat(); e.notifs = a.p_id ? e.notifs.filter(function (n) { return n.id !== a.p_id; }) : []; return null; },
     api_present: function () { return null; },
+    api_mission_claim: function (a) { var e = etat(), me = e.me, m = e.missions.filter(function (x) { return x.id === a.p_id; })[0], ev = [];
+      if (!m || m.claimed || m.have < m.goal) throw { message: 'mission_indisponible' };
+      var avant = rangDe(me); m.claimed = true; me.xp += m.xp; ev.push({ k: 'xp', n: m.xp, src: 'mission' }); rangMonte(me, avant, ev);
+      var rep = reponse(ev); rep.missions = clone(e.missions); return rep; },
     api_demo_deposit: function (a) {
       var e = etat(), me = e.me, p = a.p || {}, cle = uid() + ':' + a.p_key, amt = Number(p.amt), d;
       if (!a.p_key) throw { message: 'cle_absente' };

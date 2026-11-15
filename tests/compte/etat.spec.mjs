@@ -83,3 +83,21 @@ test('retour sur l’onglet : l’état est relu (un autre appareil a pu jouer e
   await expect.poll(() => lire(page, () => S.me.balance)).toBe(1234.5);
   expect(await lire(page, () => S.me.positions.length)).toBe(1);
 });
+
+test('recette 6 · mission réclamée : les XP viennent du serveur, une seule fois, et restent après rechargement', async ({ page }) => {
+  const etat = { me: { xp: 40 }, missions: [{ id: 'dep1', type: 'dep', goal: 1, have: 1, xp: 100, go: '#depot', claimed: false }, { id: 'chat1', type: 'chat', goal: 1, have: 0, xp: 20, go: '#chat', claimed: false }] };
+  const { erreurs } = await ouvrir(page, { mode: 'compte', hash: '#rang', faux: { etat } });
+  await expect(page.locator('[data-a="claim"]')).toHaveCount(1);                             // seule la mission terminée se réclame
+  await page.locator('[data-a="claim"][data-id="dep1"]').click();
+  await expect.poll(() => lire(page, () => S.me.xp)).toBe(140);
+  expect(await lire(page, () => S.me.missions.find(m => m.id === 'dep1').claimed)).toBe(true);
+  await expect(page.locator('[data-a="claim"]')).toHaveCount(0);
+  expect((await ecritures(page)).filter(n => n !== 'api_rank_seen')).toEqual(['api_mission_claim']);   // + « rang vu », car ces XP font monter d'un rang
+  // 20 secondes plus tard et après rechargement : toujours réclamée, les XP sont toujours là
+  await page.waitForTimeout(300);
+  await page.reload(); await pret(page);
+  expect(await lire(page, () => ({ xp: S.me.xp, reclamee: S.me.missions.find(m => m.id === 'dep1').claimed }))).toEqual({ xp: 140, reclamee: true });
+  // le serveur refuse une seconde réclamation
+  expect(await page.evaluate(async () => { try { await API.call('api_mission_claim', { p_id: 'dep1' }); return 'accepté'; } catch (e) { return e.code; } })).toBe('mission_indisponible');
+  expect(erreurs).toEqual([]);
+});
