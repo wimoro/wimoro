@@ -6,6 +6,7 @@
  *   session   : { user: { id, email } } | null      session ouverte au départ
  *   etat      : { me: {…}, positions: […], … }      morceaux d'état fusionnés dans l'état par défaut du joueur connecté
  *   comptes   : { 'a@b.c': { id, password, pseudo } }  comptes existants (connexion)
+ *   chat      : { general: [ { id, u, k, text, at } ] }, fiches : { <id du joueur> : { n, t, d, … } }   messages et auteurs déjà présents
  *   marches   : [ { market_id, current_probability, volume_total, liquidity_depth, participants_count, status, price_history } ]
  *               un marché absent de la liste est créé à la demande avec les valeurs de départ du site
  *   rpc       : { nom: valeur | { error: { message } } }   réponses forcées
@@ -40,7 +41,7 @@
   var db;
   try { db = JSON.parse(localStorage.getItem(DBKEY) || 'null'); } catch (e) { db = null; }
   if (!db) {
-    db = { session: clone(CFG.session || null), comptes: clone(CFG.comptes || {}), etats: {}, marches: {}, ops: {}, seq: 1 };
+    db = { session: clone(CFG.session || null), comptes: clone(CFG.comptes || {}), etats: {}, marches: {}, ops: {}, chat: clone(CFG.chat || {}), fiches: clone(CFG.fiches || {}), seq: 1 };
     (CFG.marches || []).forEach(function (x) { db.marches[x.market_id] = { p: +x.current_probability, d0: x.d0 == null ? null : +x.d0, vol: +(x.volume_total || 0), people: x.participants_count | 0, liq: x.liquidity_depth == null ? null : +x.liquidity_depth, st: x.status || 'open', hot: 0, ph: clone(x.price_history || []) }; });
     if (db.session) { var u0 = db.session.user; db.etats[u0.id] = fusion(etatNeuf(u0.id, u0.email || '', 'realuser', false), CFG.etat || {}); }
   }
@@ -76,6 +77,23 @@
     api_notifs_read: function () { etat().notifs.forEach(function (n) { n.read = true; }); return null; },
     api_notif_hide: function (a) { var e = etat(); e.notifs = a.p_id ? e.notifs.filter(function (n) { return n.id !== a.p_id; }) : []; return null; },
     api_present: function () { return null; },
+    api_chat_history: function (a) { salonOk(a.p_room); var L = (db.chat[a.p_room] || []).slice(-60), users = {};
+      L.forEach(function (m) { users[m.u] = ficheDe(m.u); }); return { room: a.p_room, msgs: clone(L), users: users }; },
+    api_chat_send: function (a) { salonOk(a.p_room); var e = etat(), me = e.me, ev = [], t = String(a.p_text || '').trim();
+      if (!t) throw { message: 'message_vide' }; if (t.length > 280) throw { message: 'message_trop_long' };
+      var miens = []; for (var r in db.chat) db.chat[r].forEach(function (m) { if (m.u === uid()) miens.push(m); });
+      miens.sort(function (x, y) { return x.at - y.at; }); var d = miens[miens.length - 1];
+      if (d && d.at > Date.now() - 1000) throw { message: 'trop_vite' };
+      if (d && d.text === t && d.at > Date.now() - 30000) throw { message: 'message_repete' };
+      if (miens.filter(function (m) { return m.at > Date.now() - 60000; }).length >= 12) throw { message: 'trop_de_messages' };
+      var m = { id: db.seq++, u: uid(), k: 'msg', text: t, at: Date.now() }; (db.chat[a.p_room] = db.chat[a.p_room] || []).push(m);
+      var avant = rangDe(me), jr = jour(); if (me.chatDay !== jr) { me.chatDay = jr; me.chatXP = 0; }
+      var gain = Math.max(0, Math.min(2, 20 - me.chatXP)); me.chatXP += gain; me.msgsTotal = (me.msgsTotal | 0) + 1;
+      if (gain) { me.xp += gain; ev.push({ k: 'xp', n: gain, src: 'chat' }); rangMonte(me, avant, ev); }
+      missionAvance(e, 'chat', ev);
+      var diffuse = clone(m); diffuse.f = ficheDe(uid()); persist();
+      setTimeout(function () { window.__fakeSB.emit('salon:' + a.p_room, 'msg', diffuse); }, 5);
+      var rep = reponse(ev); rep.msg = clone(m); return rep; },
     api_mission_claim: function (a) { var e = etat(), me = e.me, m = e.missions.filter(function (x) { return x.id === a.p_id; })[0], ev = [];
       if (!m || m.claimed || m.have < m.goal) throw { message: 'mission_indisponible' };
       var avant = rangDe(me); m.claimed = true; me.xp += m.xp; ev.push({ k: 'xp', n: m.xp, src: 'mission' }); rangMonte(me, avant, ev);
@@ -241,6 +259,10 @@
     Object.keys(e.rg.pend).forEach(function (k) { var p = e.rg.pend[k]; if (p.at > Date.now()) return; e.rg.lim[k] = p.v; delete e.rg.pend[k]; ev.push(notif('shield', 'rg_limite', { k: k, v: p.v }, '#responsable')); });
     if (e.rg.pause && e.rg.pause <= Date.now()) e.rg.pause = 0;
   }
+  /* ----- Chat : salons publics ----- */
+  var salonOk = function (r) { if (r === 'general' || (/^m:/.test(String(r)) && typeof MK !== 'undefined' && MK[String(r).slice(2)])) return; throw { message: 'salon_indisponible' }; };
+  var ficheDe = function (id) { if (db.fiches[id]) return clone(db.fiches[id]); var e = db.etats[id]; if (!e) return { n: 'joueur', t: 0, d: 0, tone: 0, color: '#2448FF', photo: '', bio: '', profit: 0, acc: 0, bets: 0, fol: 0, bot: false, pub: 1 };
+    var r = rangDe(e.me); return { n: e.me.n, t: r.t, d: r.d, tone: 1, color: e.me.color, photo: e.me.photo || '', bio: e.me.bio || '', profit: 0, acc: 0, bets: e.me.played | 0, fol: 0, bot: false, pub: 1 }; };
   var rangDe = function (me) { return rankFrom({ xp: me.xp, settled: me.settled, acc: Math.round(me.wins / Math.max(1, me.settled) * 100), deposits: me.deposits, flashWins: me.flashWins, followed: me.followed, pos: me.pos }); };
   var rangMonte = function (me, avant, ev) { var r = rangDe(me); if (r.t * 3 + r.d > avant.t * 3 + avant.d) ev.push(notif('trophy', 'rank_up', { t: r.t, d: r.d }, '#rang')); };
   var missionAvance = function (e, type, ev) { e.missions.forEach(function (x) { if (x.type !== type || x.claimed || x.have >= x.goal) return; x.have = Math.min(x.goal, x.have + 1); ev.push({ k: 'mission', id: x.id, have: x.have, goal: x.goal, xp: x.xp }); if (x.have >= x.goal) ev.push(notif('gift', 'mission_done', { id: x.id, xp: x.xp }, '#rang')); }); };

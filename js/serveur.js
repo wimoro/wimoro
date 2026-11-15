@@ -45,7 +45,12 @@ const ERR_TXT={
  kyc_nom:()=>_t("Renseigne ton prénom et ton nom."),
  kyc_age:()=>_t("Tu dois avoir 18 ans ou plus."),
  kyc_piece:()=>_t("Ajoute ta pièce d’identité."),
- mission_indisponible:()=>_t("Cette récompense a déjà été récupérée.")
+ mission_indisponible:()=>_t("Cette récompense a déjà été récupérée."),
+ trop_vite:()=>_t("Pas si vite : attends une seconde entre deux messages."),
+ message_repete:()=>_t("Tu viens d’envoyer ce message."),
+ trop_de_messages:()=>_t("Trop de messages d’un coup. Réessaie dans une minute."),
+ message_trop_long:()=>_t("Message trop long (280 caractères au plus)."),
+ salon_indisponible:()=>_t("Ce salon n’est pas encore disponible avec ton compte.")
 };
 const errTxt=e=>{const c=e&&e.code||'';return ERR_TXT[c]?ERR_TXT[c]():_t("Une erreur est survenue. Réessaie.");};
 const srvErreur=e=>{if(e&&e.code==='session'){srvSessionPerdue();return;}if(e&&e.code==='exclu'){srvExclu(e);return;}toast({tone:'red',icon:'info',force:true,title:_t("Action impossible"),text:errTxt(e)});};
@@ -58,11 +63,12 @@ const SRV_BLOQUE=new Set(('flash-bet share-pick vote fr-add fr-accept fr-cancel 
  +'bz-join bz-rebuy bz-choose sr-start sr-cash sr-play sr-share cl-war-join cl-sim cl-join cl-apply cl-leave-do cl-share cl-promote cl-kick cl-invite cl-call-do cl-war cl-feedopt cl-create-open cl-leave cl-call-open cl-war-open '
  +'cb-place cb-cash cb-add cb-clear cb-rm cb-stake pro-sh-send pro-share follow-user follow-bet follow-pbet share dm ref-copy ref-share propose react '
  +'wallet wallet-modal demo-login demo-rank demo-rank-open demo-rank-reset').split(/\s+/));
-const SRV_FORMS_BLOQUE=new Set(['create','clan','clcode','chat']);
+const SRV_FORMS_BLOQUE=new Set(['create','clan','clcode']);
+const srvBientot=()=>toast({tone:'amber',icon:'info',force:true,title:_t("Bientôt disponible avec ton compte"),text:_t("Cette fonction marche déjà en mode démo. Elle arrive pour les comptes.")});
 function srvGarde(type,nom){
  if(!SRV())return true;
  if(!(type==='form'?SRV_FORMS_BLOQUE:SRV_BLOQUE).has(nom))return true;
- toast({tone:'amber',icon:'info',force:true,title:_t("Bientôt disponible avec ton compte"),text:_t("Cette fonction marche déjà en mode démo. Elle arrive pour les comptes.")});
+ srvBientot();
  return false;
 }
 
@@ -260,6 +266,43 @@ async function srvRetrait(p,apres){
 async function srvKyc(p,fini,echec){
  try{const [r]=await Promise.all([API.call('api_demo_kyc',{p}),new Promise(ok=>setTimeout(ok,1500))]);srvAppliquer(r);fini();}
  catch(e){srvErreur(e);if(echec)echec();}
+}
+
+/* ----- Chat : salons publics (général et marchés) -----
+   On ne s'abonne qu'aux salons affichés (srvSalons, appelé après chaque rendu). À l'ouverture d'un salon : son historique,
+   puis les messages en direct. Chaque message diffusé porte la fiche de son auteur (pseudo, rang) : pas d'autre requête. */
+const SRV_SALONS=new Set(),SRV_MSG_VUS=new Set();
+const srvSalonOuvert=r=>r==='general'||r.startsWith('m:');
+const srvMoi=()=>String(S.auth.key||'').slice(4);
+function srvChatAjouter(rid,m){
+ if(!m||SRV_MSG_VUS.has(m.id))return;SRV_MSG_VUS.add(m.id);
+ if(m.f)srvFiches({[m.u]:m.f});
+ addMsg(rid,mkMsg({u:m.u===srvMoi()?'me':m.u,k:'msg',text:m.text,at:m.at,sid:m.id}));
+}
+function srvSalons(){
+ const vus=new Set(Array.from(document.querySelectorAll('.feed[data-room]')).map(f=>f.dataset.room).filter(srvSalonOuvert));
+ if(document.querySelector('[data-hcmini]'))vus.add('general');
+ for(const r of vus)if(!SRV_SALONS.has(r)){SRV_SALONS.add(r);srvSalonOuvrir(r);}
+ for(const r of Array.from(SRV_SALONS))if(!vus.has(r)){SRV_SALONS.delete(r);API.unsubscribe('salon:'+r);}
+}
+async function srvSalonOuvrir(r){
+ try{
+  await API.subscribe('salon:'+r,(evt,d)=>{if(evt==='msg')srvChatAjouter(r,d);});
+  const h=await API.call('api_chat_history',{p_room:r});
+  srvFiches(h.users);(h.msgs||[]).forEach(m=>srvChatAjouter(r,m));
+ }catch(e){SRV_SALONS.delete(r);console.warn('[srv] salon indisponible',r,e.code);}
+}
+let srvChatOccupe=false;
+async function srvChatEnvoyer(rid,inp,text){
+ if(!srvSalonOuvert(rid)){srvBientot();return;}                 /* VIP, clan, privé : pas encore reliés */
+ if(srvChatOccupe)return;srvChatOccupe=true;
+ try{
+  const r=await API.call('api_chat_send',{p_room:rid,p_text:text});
+  if(inp.value.trim()===text)inp.value='';
+  srvChatAjouter(rid,r.msg);
+  const b=inp.getBoundingClientRect();srvAppliquer(r,{clientX:b.left+Math.min(b.width-40,160),clientY:b.top});
+ }catch(e){srvErreur(e);}
+ finally{srvChatOccupe=false;}
 }
 
 /* ----- Missions : la récompense est donnée par le serveur ----- */

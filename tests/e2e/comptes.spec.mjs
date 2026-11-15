@@ -90,6 +90,8 @@ test('recette 3 · dépôt fictif → achat → rechargement → vente → recon
   await expect(toast('Deposit detected')).toBeVisible({ timeout: 15000 });
   expect(await lire(page, () => S.me.balance)).toBe(0);                                      // pas crédité avant la fin des confirmations
   await expect(toast('Deposit credited')).toBeVisible({ timeout: 30000 });
+  await page.locator('.rankup').waitFor({ state: 'visible', timeout: 4000 }).catch(() => {});   // ces XP font monter d'un rang : on ferme le popup
+  await page.keyboard.press('Escape'); await expect(page.locator('.rankup')).toHaveCount(0);
   expect(await lire(page, () => ({ solde: S.me.balance, depots: S.me.deposits, xp: S.me.xp, badge: S.me.badges.includes('dep'), mission: S.me.missions.find(m => m.id === 'dep1').have })))
     .toEqual({ solde: 200, depots: 1, xp: 200, badge: true, mission: 1 });                   // 100 XP de bienvenue + 100 XP du premier dépôt
 
@@ -176,4 +178,53 @@ test('marchés en direct : les prix viennent des diffusions du serveur, identiqu
   expect(await lire(a.page, () => API.call('api_state').then(e => e.me.balance))).toBe(avant);
   expect(a.erreurs).toEqual([]); expect(b.erreurs).toEqual([]);
   await a.ctx.close(); await b.ctx.close();
+});
+
+test('recette 5 · chat : A écrit dans le salon général puis dans celui d’un marché, B le lit en direct avec le bon pseudo et le bon rang', async ({ browser }) => {
+  test.setTimeout(120000);
+  // B : un second compte de test
+  const ctxB = await browser.newContext(), b = await ctxB.newPage();
+  const erreursB = await ouvrirReel(b, '#inscription');
+  const f = b.locator('form[data-form="signup"]');
+  await f.locator('[name=pseudo]').fill(PSEUDO + 'b'); await f.locator('[name=email]').fill(`wimoro-e2e-${stamp}-b@example.com`); await f.locator('[name=pw]').fill(MDP);
+  await f.locator('[name=age]').check(); await f.locator('[name=cgu]').check(); await f.locator('[type=submit]').click();
+  await expect(b).toHaveURL(/#bienvenue/, { timeout: 20000 }); await pret(b);
+  await b.evaluate(() => API.call('api_onboarding', { p: { done: true } }));
+  await b.evaluate(() => { location.hash = '#chat'; }); await b.reload(); await pret(b);
+  await expect(b.locator('.feed[data-room="general"]')).toBeAttached();
+  // A : le compte créé au début
+  const ctxA = await browser.newContext(), a = await ctxA.newPage();
+  const erreursA = await ouvrirReel(a, '#connexion');
+  await a.locator('#le').fill(PSEUDO); await a.locator('#lp').fill(MDP); await a.locator('form[data-form="login"] [type=submit]').click();
+  await expect(a).toHaveURL(/#accueil/, { timeout: 20000 }); await pret(a);
+  await a.evaluate(() => { location.hash = '#chat'; });
+  const rangA = await lire(a, () => myRank());
+  const ecrire = async (salon, texte) => { const champ = a.locator('.composer input[data-in="' + salon + '"]'); await champ.fill(texte); await champ.press('Enter'); };
+
+  const general = 'Test automatique ' + stamp + ' : salon général';
+  await ecrire('general', general);
+  await expect(a.locator('.feed[data-room="general"] .msg.mine', { hasText: general })).toHaveCount(1, { timeout: 15000 });
+  const chezB = b.locator('.feed[data-room="general"] .msg', { hasText: general });
+  await expect(chezB).toHaveCount(1, { timeout: 15000 });                                   // sans recharger
+  await expect(chezB.locator('.un')).toHaveText(PSEUDO);
+  expect(await lire(b, n => { const id = Object.keys(USERS).find(k => USERS[k].n === n); return id ? { t: USERS[id].t, d: USERS[id].d } : null; }, PSEUDO)).toEqual(rangA);
+  await expect(chezB).not.toHaveClass(/mine/);
+
+  // salon d'un marché
+  for (const p of [a, b]) await p.evaluate(() => { location.hash = '#marche-clasico'; });
+  await expect(b.locator('.feed[data-room="m:clasico"]')).toBeAttached();
+  await a.waitForTimeout(1500);                                                              // anti-spam : une seconde entre deux messages
+  const marche = 'Test automatique ' + stamp + ' : salon du marché';
+  await ecrire('m:clasico', marche);
+  await expect(b.locator('.feed[data-room="m:clasico"] .msg', { hasText: marche })).toHaveCount(1, { timeout: 15000 });
+  await expect(b.locator('.feed[data-room="m:clasico"] .msg', { hasText: marche }).locator('.un')).toHaveText(PSEUDO);
+
+  // l'anti-spam du serveur : deux messages coup sur coup, le second est refusé
+  const refus = await a.evaluate(async () => { try { await API.call('api_chat_send', { p_room: 'm:clasico', p_text: 'trop vite' }); await API.call('api_chat_send', { p_room: 'm:clasico', p_text: 'trop vite, encore' }); return 'accepté'; } catch (e) { return e.code; } });
+  expect(['trop_vite', 'accepté']).toContain(refus); expect(refus).toBe('trop_vite');
+  // rechargé, B retrouve le message dans l'historique
+  await b.reload(); await pret(b);
+  await expect(b.locator('.feed[data-room="m:clasico"] .msg', { hasText: marche })).toHaveCount(1, { timeout: 15000 });
+  expect(erreursA).toEqual([]); expect(erreursB).toEqual([]);
+  await ctxA.close(); await ctxB.close();
 });

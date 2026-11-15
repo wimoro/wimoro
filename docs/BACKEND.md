@@ -48,6 +48,8 @@ avec la même clé, l'opération n'est appliquée qu'une fois et renvoie le mêm
 | `api_rg_limit(k, v)`, `api_rg_pend_cancel(k)` | joueur | plafond de dépôt par jour, semaine ou mois |
 | `api_rg_pause(heures)`, `api_rg_exclude(mois)` | joueur | pause ; auto-exclusion |
 | `api_mission_claim(id)` | joueur | récupérer les XP d'une mission terminée |
+| `api_chat_history(salon)` | joueur | les 60 derniers messages d'un salon public et la fiche de leurs auteurs |
+| `api_chat_send(salon, texte)` | joueur | écrire dans le salon général ou celui d'un marché ; anti-spam ; diffusé aux lecteurs du salon |
 | Edge Function `connexion` | visiteur | connexion par pseudo, sans jamais révéler d'e-mail ; limite les tentatives |
 
 Les **anciennes fonctions** (`place_bet`, `demo_deposit`, `get_markets`, `send_chat_message`…) existent encore pour
@@ -74,6 +76,8 @@ de foule) ; la profondeur du carnet suit le volume avec retard. C'est la logique
 
 - **Aucune ligne créée par action de bot** : les marchés sont mis à jour en place. Un seul message diffusé par tick.
 - **Veille** : sans joueur présent depuis 6 minutes, un tick sur dix seulement et aucune diffusion.
+- **Tenue dans le temps** : chaque ancre est rappelée de 0,5 % de son écart vers la probabilité de référence du marché
+  (table `markets`) ; sans cela les prix se polarisent vers 5 % ou 95 % en quelques heures.
 - **Réglage** : table `wm.config`, clé `bots`, valeur `{"actif": true, "intensite": 1}` (intensité de 0 à 3).
 - Mesuré en production : 22 ms par tick en moyenne, 920 octets par message.
 
@@ -98,8 +102,8 @@ dépôt, retrait possible, impossible à écourter), auto-exclusion (`wm.uid()` 
 ## 7. Tests du back
 
 `tests/sql/` charge une vraie base Postgres embarquée (PGlite) avec la photo du schéma puis toutes les migrations du
-dépôt, en moins d'une seconde, et exécute les fonctions « en tant que » un visiteur ou un joueur. 54 tests : sécurité,
-comptes, moteur, bots, argent fictif, jeu responsable, missions, invariants (solde jamais négatif, opérations
+dépôt, en moins d'une seconde, et exécute les fonctions « en tant que » un visiteur ou un joueur. 60 tests : sécurité,
+comptes, moteur, bots, argent fictif, jeu responsable, missions, chat, invariants (solde jamais négatif, opérations
 simultanées, rejeu d'une clé).
 
 ## 8. Ajouter une fonction

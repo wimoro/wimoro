@@ -46,7 +46,12 @@ I18N_ADD("en",{
 "Montant supérieur au maximum autorisé.":"Amount above the allowed maximum.",
 "Montant invalide.":"Invalid amount.",
 "Adresse invalide.":"Invalid address.",
-"Cette récompense a déjà été récupérée.":"This reward has already been claimed."
+"Cette récompense a déjà été récupérée.":"This reward has already been claimed.",
+"Pas si vite : attends une seconde entre deux messages.":"Not so fast: wait a second between messages.",
+"Tu viens d’envoyer ce message.":"You just sent that message.",
+"Trop de messages d’un coup. Réessaie dans une minute.":"Too many messages at once. Try again in a minute.",
+"Message trop long (280 caractères au plus).":"Message too long (280 characters max).",
+"Ce salon n’est pas encore disponible avec ton compte.":"This room isn't available for accounts yet."
 });
 I18N_ADD("he",{
 "Connexion au serveur impossible. Vérifie ta connexion et réessaie.":"לא ניתן להתחבר לשרת. בדוק את החיבור ונסה שוב.",
@@ -93,5 +98,10 @@ I18N_ADD("he",{
 "Montant supérieur au maximum autorisé.":"הסכום גבוה מהמקסימום המותר.",
 "Montant invalide.":"סכום לא תקין.",
 "Adresse invalide.":"כתובת לא תקינה.",
-"Cette récompense a déjà été récupérée.":"הפרס הזה כבר נאסף."
+"Cette récompense a déjà été récupérée.":"הפרס הזה כבר נאסף.",
+"Pas si vite : attends une seconde entre deux messages.":"לא כל כך מהר: המתן שנייה בין הודעה להודעה.",
+"Tu viens d’envoyer ce message.":"שלחת את ההודעה הזו זה עתה.",
+"Trop de messages d’un coup. Réessaie dans une minute.":"יותר מדי הודעות בבת אחת. נסה שוב בעוד דקה.",
+"Message trop long (280 caractères au plus).":"ההודעה ארוכה מדי (עד 280 תווים).",
+"Ce salon n’est pas encore disponible avec ton compte.":"החדר הזה עדיין לא זמין לחשבונות."
 });

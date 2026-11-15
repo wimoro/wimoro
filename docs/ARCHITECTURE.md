@@ -79,12 +79,16 @@ bots du serveur de se mettre en veille quand personne ne regarde (`tests/compte/
 
 ## 6. Temps réel
 
-Un seul abonnement pour l'instant : le sujet public **`marches`**. Le serveur y envoie un message par « tick » (toutes
+Le sujet public **`marches`** est suivi en permanence en mode serveur. Le serveur y envoie un message par « tick » (toutes
 les 3 secondes quand un joueur est présent) avec les marchés modifiés `{identifiant: [prix, volume, participants,
 profondeur]}`, la traînée des mises des bots et, parfois, un signal de foule. Un achat ou une vente d'un joueur envoie
 aussi son message : les autres voient le prix bouger sans recharger. Le navigateur applique ces valeurs telles quelles
 (`srvTick`), sans recalcul — en particulier pour les marchés à plusieurs issues, dont le total à 100 % est garanti par
 le serveur.
+
+Le chat suit la règle « on ne s'abonne qu'à ce qui est à l'écran » : après chaque rendu, `srvSalons` compare les salons
+affichés à ceux suivis, s'abonne aux nouveaux (sujets `salon:general`, `salon:m:<marché>`) en chargeant leur historique,
+et se désabonne des autres. Chaque message diffusé porte la fiche de son auteur (pseudo, rang).
 
 ## 7. Annuaire des joueurs
 

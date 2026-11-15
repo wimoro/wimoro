@@ -47,6 +47,7 @@ test('mode Démo : les simulateurs tournent toujours (prix, chat, grosses mises)
 
 test('en mode Compte, le site ne lit ni n’écrit plus rien tout seul : seulement un signal de présence toutes les 4 minutes', async ({ page }) => {
   await ouvrir(page, { mode: 'compte', faux: { marches: MARCHES }, horloge: debutManche() + 2000 });
+  await page.clock.runFor(1000);                                            // le temps de lire l'historique du salon affiché sur l'accueil
   const n0 = await lire(page, () => __fakeSB.calls.length);
   await page.clock.runFor(120000);                                          // B05, B19 : avant, 16 lectures et 14 écritures en 2 minutes
   const appels = await lire(page, n => __fakeSB.calls.slice(n).map(c => c.kind + ':' + c.name), n0);
@@ -57,6 +58,6 @@ test('en mode Compte, le site ne lit ni n’écrit plus rien tout seul : seuleme
   await page.clock.runFor(10 * 60000);                                      // onglet caché : plus aucun signal
   expect(await lire(page, n => __fakeSB.calls.slice(n).length, n0)).toBe(2);
   const demarrage = await lire(page, n => __fakeSB.calls.slice(0, n).map(c => c.kind + ':' + c.name), n0);
-  expect(demarrage.filter(c => c.startsWith('rpc:')).sort()).toEqual(['rpc:api_markets', 'rpc:api_state']);
+  expect(demarrage.filter(c => c.startsWith('rpc:')).sort()).toEqual(['rpc:api_chat_history', 'rpc:api_markets', 'rpc:api_state']);   // trois lectures au démarrage, puis plus rien
   expect(demarrage.filter(c => c.startsWith('from:'))).toEqual([]);          // plus aucun accès direct aux tables
 });

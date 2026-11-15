@@ -179,7 +179,8 @@ test('B16 · marché à plusieurs issues : les issues sœurs viennent du serveur
 test('K20-K25 · diffusions du serveur : prix, volume, profondeur, traînée et signal de foule arrivent sans aucun appel', async ({ page }) => {
   // réglage « toutes les notifications » : par défaut (« importantes seulement »), un signal de foule n'affiche pas de bandeau, comme en mode Démo
   const { erreurs } = await ouvrir(page, { mode: 'compte', hash: '#marche-btc150k', faux: { marches: [BTC], etat: { prefs: { tmode: 'all' } } } });
-  expect(await lire(page, () => __fakeSB.sujets())).toEqual(['marches']);                   // un seul abonnement, public
+  await expect.poll(() => lire(page, () => __fakeSB.sujets().sort())).toEqual(['marches', 'salon:m:btc150k']);   // les marchés, et le salon affiché
+  await page.waitForTimeout(100);
   const n0 = await lire(page, () => __fakeSB.calls.length);
   const a = await lire(page, () => ({ mises: MK.btc150k.bets.length, points: MK.btc150k.ph.length, messages: room('general').msgs.length }));
   const recus = await page.evaluate(() => __fakeSB.emit('marches', 'tick', {

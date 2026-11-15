@@ -63,17 +63,17 @@ test('une action pas encore reliée est clairement indisponible : message, et ri
   const n0 = await lire(page, () => __fakeSB.calls.length);
   await page.locator('[data-a="limit-place"], [data-a="otype"][data-v="limit"]').first().click({ force: true }).catch(() => {});
   await page.evaluate(() => { location.hash = '#chat'; });
-  await page.locator('.composer input[data-in="general"]').fill('bonjour');                  // écrire dans le chat
-  await page.locator('.composer input[data-in="general"]').press('Enter');
   await page.evaluate(() => { location.hash = '#eclair'; });
-  await page.locator('[data-a="flash-bet"]').first().click({ force: true });                 // pari éclair
-  await expect(page.locator('.toast').first()).toContainText('Coming soon for accounts');
+  // pari éclair : bouton créé pour le test, car le vrai bouton est fermé pendant les dernières secondes d'une manche
+  await page.evaluate(() => { const b = document.createElement('button'); b.dataset.a = 'flash-bet'; b.dataset.side = 'oui'; document.body.appendChild(b); b.click(); b.remove(); });
+  await expect(page.locator('.toast', { hasText: 'Coming soon for accounts' }).first()).toBeVisible();
   await page.evaluate(() => { ACT.withdraw && document.dispatchEvent(new Event('x')); });
   for (const a of ['dl-create', 'cb-place', 'cl-join', 'fr-add', 'cp-start', 'limit-place', 'bz-join', 'sr-start'])
     await page.evaluate(nom => { const b = document.createElement('button'); b.dataset.a = nom; b.dataset.u = 'x'; b.dataset.m = 'btc150k'; document.body.appendChild(b); b.click(); b.remove(); }, a);
   const apres = await lire(page, () => JSON.stringify({ solde: S.me.balance, xp: S.me.xp, pos: S.me.positions, hist: S.me.history, notifs: S.me.notifs.length, prix: MK.btc150k.p, messages: Object.values(S.rooms).reduce((n, r) => n + r.msgs.filter(x => x.k !== 'evt').length, 0) }));
   expect(apres).toBe(avant);
-  expect(await lire(page, n => __fakeSB.calls.slice(n).map(c => c.name), n0), 'aucun appel au serveur non plus').toEqual([]);
+  // seules des lectures ont eu lieu (ouverture du salon général) : aucune écriture
+  expect(await lire(page, n => __fakeSB.calls.slice(n).map(c => c.name).filter(nom => nom !== 'api_chat_history' && !nom.startsWith('salon:')), n0), 'aucune écriture sur le serveur').toEqual([]);
   expect(erreurs).toEqual([]);
 });
 

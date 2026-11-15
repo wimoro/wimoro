@@ -13,7 +13,9 @@ test.beforeAll(async () => {
       ('g-a', 'Politique', 'A ?', 'open', 'g', 2), ('g-b', 'Politique', 'B ?', 'open', 'g', 1.5), ('g-c', 'Politique', 'C ?', 'open', 'g', 1), ('ferme', 'Sport', 'Fermé ?', 'resolved', null, 3);
     insert into public.market_live_state (market_id, current_probability, anchor_probability, volume_total, participants_count, liquidity_depth) values
       ('g-a', 50, 50, 2000000, 10, 12000), ('g-b', 30, 30, 1500000, 10, 9000), ('g-c', 20, 20, 1000000, 10, 6000), ('ferme', 40, 40, 100000, 1, 600);
-    update public.markets set heat_level = 3 where id = 'btc150k';
+    update public.markets set heat_level = 3, current_probability = 63 where id = 'btc150k';        -- valeur de référence du marché
+    update public.markets set current_probability = 54 where id = 'clasico';
+    update public.markets set current_probability = 50 where id = 'g-a'; update public.markets set current_probability = 30 where id = 'g-b'; update public.markets set current_probability = 20 where id = 'g-c';
     select wm.present();`);                                                           // un joueur est là : rythme normal et diffusions
 });
 test.afterAll(async () => { await db.close(); });
@@ -32,11 +34,27 @@ test('K20 · les prix restent autour de l’ancre au lieu de filer vers 2 % ou 9
   await q(db, `update public.market_live_state set current_probability = 2, anchor_probability = 63 where market_id = 'btc150k'`);
   await ticks(700);                                                                // environ 35 minutes d'activité
   const e = await etat();
-  expect(Math.abs(e.btc150k.p - e.btc150k.anchor), `prix ${e.btc150k.p}, ancre ${e.btc150k.anchor}`).toBeLessThan(12);
-  expect(e.btc150k.p).toBeGreaterThan(25);
+  expect(Math.abs(e.btc150k.p - e.btc150k.anchor), `prix ${e.btc150k.p}, ancre ${e.btc150k.anchor}`).toBeLessThan(12);   // le prix a rejoint son ancre
+  expect(Math.abs(e.btc150k.anchor - 63), `ancre ${e.btc150k.anchor}`).toBeLessThan(25);                                   // qui reste autour de la valeur de référence
   expect(e.clasico.p).toBeGreaterThan(20); expect(e.clasico.p).toBeLessThan(90);
   for (const id in e) { expect(e[id].p).toBeGreaterThanOrEqual(1); expect(e[id].p).toBeLessThanOrEqual(99); }
   expect(e.ferme.p, 'un marché résolu ne bouge plus').toBe(40);
+});
+
+test('K20 · sur la durée (plusieurs heures d’activité), les ancres ne se polarisent pas : elles restent autour de la valeur de référence', async () => {
+  test.setTimeout(120000);
+  const ecarts = [];
+  for (let i = 0; i < 8; i++) {                                                    // 8 × 600 ticks : environ 4 heures d'activité
+    await ticks(600);
+    const e = await etat();
+    ecarts.push(Math.abs(e.btc150k.anchor - 63), Math.abs(e.clasico.anchor - 54));
+    expect(e.btc150k.anchor, 'ancre de btc150k').toBeGreaterThan(63 - 28); expect(e.btc150k.anchor).toBeLessThan(63 + 28);
+    expect(e.clasico.anchor, 'ancre de clasico').toBeGreaterThan(54 - 28); expect(e.clasico.anchor).toBeLessThan(54 + 28);
+    expect(e.btc150k.p).toBeGreaterThan(15); expect(e.btc150k.p).toBeLessThan(97);
+  }
+  const moyen = ecarts.reduce((a, b) => a + b, 0) / ecarts.length;
+  expect(moyen, 'écart moyen à la référence ' + moyen.toFixed(1)).toBeLessThan(14);
+  expect(moyen, 'les marchés vivent : l’ancre bouge').toBeGreaterThan(0.5);
 });
 
 test('K21 · les issues d’un même marché totalisent 100 % à chaque instant', async () => {

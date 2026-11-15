@@ -415,7 +415,7 @@ function tkWatch(view){if(TKIO){TKIO.disconnect();TKIO=null;}document.body.class
 function render(top=true){const {h,v,arg}=parseHash();S.ui.route=VIEWS[h.split('-')[0]]?h:'accueil';const view=$('#view');const y=window.scrollY;const feeds={};if(!top)$$('.feed',view).forEach(f=>{feeds[f.dataset.room]=f.scrollHeight-f.scrollTop-f.clientHeight;});
  let html;if(PROTECTED.has(v)&&!S.me.logged){S.ui.after='#'+h;S.ui.authNote=S.ui.authNote||_t("Connecte-toi pour accéder à cette page.");html=vLogin();}else html=VIEWS[v](arg);view.innerHTML=html;fixText(view);mountTrails(view);$$('.feed',view).forEach(f=>{const off=feeds[f.dataset.room];f.scrollTop=off!==undefined?f.scrollHeight-f.clientHeight-off:f.scrollHeight;});
  document.body.classList.toggle('has-mbar',v==='marche');document.body.classList.toggle('pg-mbar',!!view.querySelector('.mbar'));document.body.classList.toggle('pg-flash',!!view.querySelector('.flash-card'));tkWatch(view);asideFit(view);chartNames(view);$$('[data-nav]').forEach(a=>a.classList.toggle('on',a.dataset.nav.split(' ').includes(v)));
- if(top){view.classList.remove('vin');void view.offsetWidth;view.classList.add('vin');window.scrollTo(0,0);}else window.scrollTo(0,y);FXEL=null;updateFlash(true);if(typeof centerTabs==='function')centerTabs();updateHeader();{const tt=v==='marche'&&MK[arg]?MK[arg].q:v==='marche'&&typeof GK!=='undefined'&&GK[arg]?GK[arg].q:v==='clan'&&typeof CK!=='undefined'&&CK[arg]?CK[arg].name:v==='joueur'&&USERS[arg]?userOf(arg).n:(TITLES[v]||'');document.title=tt?plain(tt)+' · Wimoro':'Wimoro';}document.body.classList.toggle('out',!S.me.logged);FXEL=null;}
+ if(top){view.classList.remove('vin');void view.offsetWidth;view.classList.add('vin');window.scrollTo(0,0);}else window.scrollTo(0,y);FXEL=null;updateFlash(true);if(typeof centerTabs==='function')centerTabs();updateHeader();{const tt=v==='marche'&&MK[arg]?MK[arg].q:v==='marche'&&typeof GK!=='undefined'&&GK[arg]?GK[arg].q:v==='clan'&&typeof CK!=='undefined'&&CK[arg]?CK[arg].name:v==='joueur'&&USERS[arg]?userOf(arg).n:(TITLES[v]||'');document.title=tt?plain(tt)+' · Wimoro':'Wimoro';}document.body.classList.toggle('out',!S.me.logged);FXEL=null;if(SRV())srvSalons();}
 /* Chaque entrée d'historique garde sa position de défilement : restaurée au retour arrière ou avant, en haut pour une nouvelle navigation. */
 const NAV={sid:Math.random().toString(36).slice(2),n:0,cur:0,pos:{}};
 try{history.scrollRestoration='manual';}catch(e){}
@@ -425,6 +425,7 @@ function route(){if(!PRET)return;closeModal();searchClose();const p=$('#npanel')
  if(back===null)navMark();else{NAV.cur=back;const y=NAV.pos[back];if(y>0)window.scrollTo(0,y);}}
 function gate(g,fn){if(can(g))fn();else lockModal(g);}
 function sendMsg(rid){const inp=$(`[data-in="${CSS.escape(rid)}"]`);if(!inp)return;const text=inp.value.trim();if(!text)return;if(rid==='vip'&&!can('vip')){lockModal('vip');return;}
+ if(SRV()){srvChatEnvoyer(rid,inp,text);return;}                 /* mode serveur : le message est enregistré et diffusé par le serveur */
  addMsg(rid,mkMsg({u:'me',k:'msg',text}));inp.value='';S.me.msgsTotal++;if(S.me.chatDay!==today()){S.me.chatDay=today();S.me.chatXP=0;}
  if(S.me.chatXP<20){const g=Math.min(2,20-S.me.chatXP);S.me.chatXP+=g;const r=inp.getBoundingClientRect();gainXP(g,{clientX:r.left+Math.min(r.width-40,160),clientY:r.top});}
  mission('chat');if(rid.startsWith('m:'))mission('chatm');checkBadges();
@@ -486,7 +487,7 @@ const isRoom=k=>k==='general'||k==='vip'||k==='blitz'||/^(m|dm|clan):/.test(k);
 const LOGO=(s=28)=>`<svg width="${s}" height="${s}" viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="8" fill="#2448FF"/><path d="M5 9l4.5 11 4.5-8.5 4.5 8.5L23 9" fill="none" stroke="#fff" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="23" cy="9" r="2.8" fill="#F59A0B" stroke="#2448FF" stroke-width="1.5"/></svg>`;
 document.addEventListener('submit',e=>{const f=e.target.closest('form[data-form]');if(!f)return;e.preventDefault();const k=f.dataset.form;
  if(!PRET)return;if(FORMS[k]){if(srvGarde('form',k))FORMS[k](f,e);return;}
- if(isRoom(k)){if(!S.me.logged){needLogin(_t("Connecte-toi pour écrire dans le chat."));return;}if(srvGarde('form','chat'))sendMsg(k);}});
+ if(isRoom(k)){if(!S.me.logged){needLogin(_t("Connecte-toi pour écrire dans le chat."));return;}sendMsg(k);}});
 document.addEventListener('input',e=>{const t=e.target;
  if(t.dataset.tamt){const ctx=t.dataset.tamt;tState(ctx).amt=t.value.replace(/[^\d,.]/g,'');updTicket(ctx);return;}
  if(t.dataset.search!==undefined){showSearch(t);return;}

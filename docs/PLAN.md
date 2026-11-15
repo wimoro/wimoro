@@ -179,9 +179,17 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 - [ ] Blitz et Série.
 
 ### 4.5 Chat
-- [ ] Historique, envoi, réception en direct par salon ; salons privés réellement privés (K09).
-- [ ] Cartes de mise et d'analyse, réactions, « suivre cette mise », mentions.
-- [ ] Anti-spam côté serveur (K13). _Recette 5._
+- [x] Salons publics (général et salon de chaque marché) : historique, envoi, réception en direct ; on ne s'abonne qu'au
+      salon à l'écran ; chaque message arrive avec le pseudo et le rang de son auteur. _Recette 5 (partie chat)._
+      _Tests_ `tests/sql/chat.spec.mjs`, `tests/compte/chat.spec.mjs`, `tests/e2e/comptes.spec.mjs` (deux comptes).
+- [x] Anti-spam côté serveur (K13) : une seconde entre deux messages, pas deux fois le même, 12 par minute au plus,
+      280 caractères ; 2 XP par message, 20 XP par jour au plus.
+- [x] Les anciens messages figés en français (11 989, écrits par les anciens bots) ne sont plus servis (K26) ; ils ne
+      sont pas supprimés.
+- [ ] Salons privés, de clan et VIP (canaux privés, K09) : annoncés comme indisponibles en mode Compte.
+- [ ] Cartes de mise et d'analyse, réactions, « suivre cette mise ». Mentions et citations de marché : affichées.
+- [ ] Messages des bots dans le chat (gabarit + paramètres, traduits chez le lecteur) : en mode Compte, le chat ne
+      contient pour l'instant que les messages des vrais joueurs.
 
 ### 4.6 Social
 - [ ] Amis : recherche, demande, annulation, acceptation, refus, retrait (B11, K10, K44).
@@ -217,9 +225,12 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
       de bot ; un message par tick, 920 octets en moyenne. Diffuser en permanence aurait coûté environ 150 Mo sur les
       500 Mo gratuits : les bots passent donc en **veille** quand aucun joueur n'est présent depuis 6 minutes (un tick
       sur dix, aucune diffusion) et se réveillent dès qu'un joueur charge les marchés.
+- [x] Tenue dans le temps : les ancres sont rappelées vers la valeur de référence de chaque marché. Sans cela, la logique
+      du mode Démo, laissée tourner jour et nuit, polarisait les prix vers 5 % ou 95 % en quelques heures (test « sur la
+      durée » : 3 échecs sur 3 sans le correctif, 3 succès sur 3 avec). Migration `bots_ancres`.
 - [ ] Purge du journal de pg_cron (30 000 lignes, 6 Mo par jour) : migration `purge_journal_cron` prête, **attend ta
       confirmation** (voir « À faire par l'humain »).
-- [ ] Messages des bots stockés en gabarit + paramètres (K26).
+- [ ] Messages des bots dans le chat, en gabarit + paramètres (K26) : voir 4.5.
 - [ ] Marche/arrêt et intensité depuis le panel admin. _Recette 9._ Le réglage existe déjà côté serveur
       (`wm.config`, clé « bots » : `actif`, `intensite` de 0 à 3) ; il reste à le poser dans le panel.
 
@@ -286,3 +297,4 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 | 15 nov. 2026 | 4.3 et phase 5 : moteur de marché côté serveur (portage exact de `js/engine.js`), achat et vente reliés, bots teneurs de marché avec veille, prix diffusés en direct. Les 27 marchés sont revenus à des prix sains. | migrations `marches_moteur`, `bots_marche`, `marches_precision`, `bots_veille` (empreintes identiques au dépôt) ; 99 tests (42 SQL) ; 4 tests de bout en bout contre le vrai back |
 | 15 nov. 2026 | 4.7 : argent fictif et KYC écrits par le serveur ; jeu responsable appliqué par le serveur. Recette 3 complète contre le vrai back : inscription → onboarding → dépôt → achat → rechargement → vente → reconnexion par pseudo depuis un autre navigateur. | migration `argent_demo` (empreinte identique) ; 117 tests (52 SQL) ; 4 tests de bout en bout |
 | 15 nov. 2026 | Mission réclamée côté serveur ; droits d'appel dérivés des fonctions `api_`. Anti-cache, intégration continue, documentation (README, architecture, back, exploitation). | migration `missions` ; `tools/version.mjs` ; `.github/workflows/tests.yml` ; 120 tests (54 SQL) |
+| 15 nov. 2026 | 4.5 : chat des salons publics par le serveur (historique, envoi, direct, anti-spam). Bots : ancres rappelées vers la valeur de référence (plus de polarisation dans le temps). | migrations `chat`, `bots_ancres` ; 133 tests (60 SQL) ; 5 tests de bout en bout dont le chat entre deux comptes |
