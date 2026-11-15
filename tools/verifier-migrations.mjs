@@ -13,15 +13,17 @@ import { fileURLToPath } from 'node:url';
 const DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'supabase', 'migrations');
 const local = {};
 for (const f of fs.readdirSync(DIR).filter(f => /^\d{14}_.*\.sql$/.test(f)).sort()) {
-  const s = fs.readFileSync(path.join(DIR, f), 'utf8').replace(/\n+$/, '');
-  local[f.slice(0, 14)] = { fichier: f, md5: crypto.createHash('md5').update(s).digest('hex') };
+  // L'outil d'application garde ou non le saut de ligne final selon le cas : les deux empreintes sont acceptées.
+  const brut = fs.readFileSync(path.join(DIR, f), 'utf8'), s = brut.replace(/\n+$/, '');
+  const h = x => crypto.createHash('md5').update(x).digest('hex');
+  local[f.slice(0, 14)] = { fichier: f, md5: h(s), brut: h(brut) };
 }
 if (!process.argv[2]) { for (const [v, x] of Object.entries(local)) console.log(v, x.md5, x.fichier); process.exit(0); }
 const distant = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
 let ecarts = 0;
 for (const m of distant.filter(m => m.version >= '20261114234523')) {
   const l = local[m.version];
-  const ok = l && l.md5 === m.md5;
+  const ok = l && (l.md5 === m.md5 || l.brut === m.md5);
   if (!ok) ecarts++;
   console.log(`${ok ? 'OK   ' : 'ÉCART'} ${m.version}_${m.name}${l ? '' : ' (fichier absent du dépôt)'}`);
 }

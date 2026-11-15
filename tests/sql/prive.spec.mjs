@@ -53,9 +53,9 @@ test('recette 5 · A écrit à B : B le reçoit sur son sujet privé et le relit
   // le chat public ne sert jamais un message privé
   expect((await api(c, `public.api_chat_history('general')`)).msgs).toEqual([]);
   expect(await refus(db, c, `select public.api_chat_history($1)`, ['dm:' + [a, b].sort().join(':')])).toMatch(/salon_indisponible/);
-  // lecture directe des tables : la règle d'accès ne laisse voir que les salons publics, jamais un message ni un salon privé
-  const direct = await enTantQue(db, c, async s => ({ messages: await s(`select count(*)::int as n from public.chat_messages where room_id like 'dm:%'`), salons: await s(`select count(*)::int as n from public.chat_rooms where kind = 'dm'`), publics: await s(`select count(*)::int as n from public.chat_rooms where kind <> 'dm'`) }));
-  expect(direct.messages[0].n).toBe(0); expect(direct.salons[0].n).toBe(0); expect(direct.publics[0].n).toBeGreaterThan(0);
+  // lecture directe des tables : fermée à tout le monde depuis la fermeture de l'ancienne API (même A et B passent par l'API)
+  for (const qui of [a, b, c, null]) for (const table of ['chat_messages', 'chat_rooms', 'chat_room_members'])
+    expect(await refus(db, qui, `select count(*) from public.${table}`), table).toMatch(/permission denied/);
   expect((await q(db, `select count(*)::int as n from public.chat_messages where room_id like 'dm:%'`))[0].n).toBe(1);   // il existe bien, mais C ne le voit pas
 });
 

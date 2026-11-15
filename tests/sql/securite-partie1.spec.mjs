@@ -4,7 +4,7 @@ import { test, expect } from '@playwright/test';
 import { creerBase, creerJoueur, enTantQue, refus, q, semer } from './base.mjs';
 
 test('partie 1 seule : e-mails, fonctions internes, écritures directes et chat privé sont déjà fermés', async () => {
-  const db = await creerBase({ until: 'securite_urgence_nettoyage' });
+  const db = await creerBase({ until: 'fermeture_ancienne_api' });         // avant la fermeture de l'ancienne API et le nettoyage qui la suit
   await semer(db);
   const alice = await creerJoueur(db, 'alice', 500), bob = await creerJoueur(db, 'bob', 500);
   const [{ id: clan }] = await q(db, `insert into public.clans (name, founder_user_id) values ('Les Aigles', $1) returning id`, [alice]);

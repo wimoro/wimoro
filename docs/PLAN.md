@@ -262,12 +262,15 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 
 ## Phase 7 — Sécurité
 - [x] Aucune écriture directe du client sur solde, positions, statistiques, dépôts, marchés (migration `securite_urgence_droits`,
-      tests `tests/sql/securite*.spec.mjs`, `argent.spec.mjs`). Le nettoyage des règles devenues inutiles attend ta confirmation.
+      tests `tests/sql/securite*.spec.mjs`, `argent.spec.mjs`).
+- [x] Ancienne API fermée après la mise en ligne (migration `fermeture_ancienne_api`) : plus aucun droit direct sur les
+      tables, plus aucune fonction appelable hors `api_…`. Test avant/après et retour arrière : `tests/sql/fermeture.spec.mjs`.
+      Le rangement des policies devenues inutiles (`securite_urgence_nettoyage`) attend une confirmation manuelle ; il n'est
+      pas nécessaire à la sécurité.
 - [ ] Limites de fréquence sur le chat et les actions d'argent.
-- [ ] Advisors (relevé du 15 nov. 2026) : 50 alertes « fonction SECURITY DEFINER appelable » qui portent toutes sur les
-      **anciennes** fonctions, encore nécessaires à l'ancien site → fermées à la livraison par
-      `supabase/livraison/fermeture_ancienne_api.sql` ; 52 notes « RLS sans règle » volontaires (schéma `wm`, sauvegarde :
-      aucun accès client) ; 1 alerte « mots de passe compromis » (réglage du tableau de bord, offre payante).
+- [x] Advisors : les 50 alertes « fonction SECURITY DEFINER appelable » portaient sur les anciennes fonctions, fermées
+      par `fermeture_ancienne_api`. Restent des notes volontaires (« RLS sans règle » : aucun accès client) et l'alerte
+      « mots de passe compromis » (réglage du tableau de bord, offre payante).
 
 ## Phase 8 — Optimisation du front
 - [x] Cache-busting systématique : `tools/version.mjs` (empreinte du contenu dans l'adresse de chaque fichier), vérifié par
@@ -277,41 +280,41 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 - [ ] Mesure avant/après sur mobile.
 
 ## Phase 9 — Tests et recette
-- [x] Suite Playwright sur chaque pull request. Comptes de test marqués ; leur suppression attend ta confirmation.
+- [x] Suite Playwright sur chaque pull request. Les comptes de test se suppriment eux-mêmes à la fin de la suite
+      (`api_test_end`) ; les 27 accumulés pendant les travaux ont été supprimés.
 - [x] Tests SQL des invariants : solde jamais négatif, paris et retraits simultanés, rejeu d'une même clé, argent ni créé ni perdu.
 - [ ] Recette finale, 10 points, dans les deux modes.
 
 ## Phase 10 — Livraison
 - [x] `README.md`, `docs/ARCHITECTURE.md`, `docs/BACKEND.md`, `docs/EXPLOITATION.md`.
-- [x] Pull request vers `main` ouverte. **Pas fusionnée** : la recette n'est pas entièrement verte (pari éclair, chat et
-      social ne sont pas encore reliés au serveur en mode Compte ; ils y sont annoncés comme indisponibles).
-- [ ] Vérification en production, en navigation privée.
+- [x] Pull request n° 1 fusionnée dans `main` le 15 nov. 2026 à la demande du propriétaire (commit de fusion `13f224e`).
+- [x] Vérification en production, navigateur neuf à chaque test : mode Démo et visiteur dans les trois langues (14 tests),
+      mode Compte avec de vrais comptes dans les trois langues (9 scénarios), avant puis après la fermeture de l'ancienne API.
+- [x] Depuis, chaque lot passe par sa propre pull request, fusionnée dès que ses tests sont verts.
 
 ---
 
-## À faire par l'humain (tableau de bord Supabase ou GitHub)
+## Décisions prises sans te consulter (consigne du 15 nov. 2026 : « décide, note tes choix »)
 
-1. **Accepter la confirmation Supabase** quand elle s'affiche pendant une session de travail : l'outil de base de données
-   demande un accord manuel pour toute instruction qui supprime quelque chose, et la demande expire après 2 minutes.
-   Trois opérations l'attendent : la migration `securite_urgence_nettoyage` (retrait de règles devenues inutiles), la
-   migration `purge_journal_cron` (nettoyage horaire du journal technique des tâches planifiées, qui grossit de 6 Mo
-   par jour) et la suppression des comptes de test `wimoro-e2e-…@example.com`.
-2. **Modèle d'e-mail « mot de passe oublié »** : tableau de bord Supabase → Authentication → Emails → « Reset Password ».
-   Ajouter dans le texte la ligne `Ton code : {{ .Token }}` (le site demande un code à 6 chiffres). Sans cette ligne,
-   l'e-mail ne contient que le lien, qui marche aussi.
-3. **Purge du journal des tâches planifiées** — le mode automatique de l'outil refuse cette opération (elle supprime des
-   lignes). Deux façons de la faire toi-même : dire à Claude « autorise et applique la migration purge_journal_cron »
-   après avoir autorisé l'outil dans tes réglages, ou bien dans le tableau de bord Supabase : Integrations → Cron → Jobs →
-   Create job ; nom `wm-purge-cron`, planification `7 * * * *`, type SQL Snippet, et coller :
-   `delete from cron.job_run_details where end_time < now() - interval '6 hours'`. Sans elle, la base grossit de 6 Mo
-   par jour (90 Mo sur 500 le 15 novembre).
-3 bis. **URL du site** : Authentication → URL Configuration → Site URL = `https://wimoro.com` ; Redirect URLs : ajouter
-   `https://wimoro.com/**`.
-4. **Envoi des e-mails** : le service intégré est limité à quelques e-mails par heure. Pour de vrais utilisateurs,
-   brancher un SMTP (Authentication → Emails → SMTP Settings).
-5. **À la mise en ligne du nouveau site** : faire appliquer `supabase/livraison/fermeture_ancienne_api.sql` (voir
-   `docs/EXPLOITATION.md`, § 1).
-6. Facultatif : protéger la branche `main` sur GitHub (pull request et tests obligatoires).
+| Sujet | Choix | Pourquoi |
+|---|---|---|
+| Fermeture de l'ancienne API | Retirer aussi **tout** droit direct sur les tables (lecture comprise), pas seulement les 43 fonctions. | L'ancien site lisait les tables directement ; le nouveau n'en lit aucune. Un seul chemin à surveiller : les fonctions `api_…`. |
+| Ancienne tâche du pari éclair | Arrêtée (`flash-tick-server`, une manche par minute). | Le pari éclair du nouveau site est réglé par l'Edge Function `eclair` ; l'ancienne tâche remplissait une table que plus personne ne lit. |
+| Policies inutiles et publication temps réel | Laissées en place, dans une migration à part qui attend une confirmation. | L'outil exige un accord manuel pour tout `drop`. Je ne contourne pas ce garde-fou ; ce rangement n'apporte rien à la sécurité. |
+| Comptes de test | 27 supprimés au lieu des 21 annoncés. | Les 6 de plus venaient de mes deux vérifications du jour, même adresse `wimoro-e2e-…@example.com`. Aucun vrai compte touché (20 avant, 20 après). |
+| Comptes de test à l'avenir | Chaque compte de test se supprime lui-même à la fin de la suite (`api_test_end`). | Plus rien ne s'accumule dans la vraie base ; la fonction refuse toute adresse qui n'est pas une adresse de test. |
+| Branche de travail | On garde `fix/harmonisation-front-back` ; une pull request par lot. | C'est la branche fixée au départ ; chaque fusion reste annulable séparément. |
+| Protection de `main` | Non activée. | Elle changerait ta façon de publier ; elle reste proposée, facultative. |
+
+## À faire par l'humain
+
+Rien d'obligatoire. Le détail et les constats sont dans `docs/EXPLOITATION.md`, § 5.
+
+1. **Une fois** : demander « mot de passe oublié » avec ta propre adresse, pour vérifier que l'e-mail arrive (un service
+   d'envoi est déjà branché ; je ne peux pas voir si son domaine est validé).
+2. Facultatif : accepter la confirmation Supabase pour la migration de rangement `securite_urgence_nettoyage`.
+3. Facultatif : ajouter `Ton code : {{ .Token }}` au modèle d'e-mail « Reset Password ».
+4. Facultatif : protéger la branche `main` sur GitHub.
 
 ## Journal
 
@@ -330,3 +333,4 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 | 15 nov. 2026 | 4.6 (début) : amis par le serveur. Bots : rappel des ancres renforcé et réglable. | migrations `amis`, `bots_rappel` (empreintes identiques) ; 159 tests (69 SQL) ; 7 tests de bout en bout contre le vrai back |
 | 15 nov. 2026 | 4.5 (suite) : messages privés entre amis et sujet temps réel privé par joueur ; notifications en direct. | migration `messages_prives` (empreinte identique) ; 166 tests (73 SQL) ; 8 tests de bout en bout contre le vrai back |
 | 15 nov. 2026 | 4.6 (suite) : classement servi par le serveur. | migration `classement` (empreinte identique) ; 168 tests (74 SQL) |
+| 15 nov. 2026 | Mise en ligne : pull request n° 1 fusionnée, wimoro.com vérifié (Démo, Compte, trois langues). Ancienne API fermée après contrôle des journaux. Purge horaire du journal de pg_cron. 27 comptes de test supprimés ; la suite nettoie désormais derrière elle. | fusion `13f224e` ; migrations `purge_journal_cron`, `fermeture_ancienne_api`, `comptes_test` (empreintes identiques) ; 174 tests (77 SQL) ; 9 scénarios contre le site en ligne, avant et après la fermeture |
