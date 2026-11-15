@@ -429,7 +429,7 @@ function sendMsg(rid){const inp=$(`[data-in="${CSS.escape(rid)}"]`);if(!inp)retu
  addMsg(rid,mkMsg({u:'me',k:'msg',text}));inp.value='';S.me.msgsTotal++;if(S.me.chatDay!==today()){S.me.chatDay=today();S.me.chatXP=0;}
  if(S.me.chatXP<20){const g=Math.min(2,20-S.me.chatXP);S.me.chatXP+=g;const r=inp.getBoundingClientRect();gainXP(g,{clientX:r.left+Math.min(r.width-40,160),clientY:r.top});}
  mission('chat');if(rid.startsWith('m:'))mission('chatm');checkBadges();
- if(rid.startsWith('dm:'))setTimeout(()=>addMsg(rid,mkMsg({u:rid.slice(3),k:'msg',text:pick(DM_REPLIES)})),1600+R()*2200);
+ if(rid.startsWith('dm:'))setTimeout(()=>addMsg(rid,mkMsg({u:rid.slice(3),k:'msg',text:pick(DM_REPLIES)})),1600+R()*2200);   /* réponse simulée : mode local seulement (sendMsg ne va pas jusqu'ici en mode serveur) */
  else if(R()<.8)setTimeout(()=>addMsg(rid,mkMsg({u:pickUser(),k:'msg',text:`@${S.me.n} ${pick(REPLIES)}`})),1800+R()*3200);save();}
 function copyText(t,label){const done=()=>toast({icon:'copy',title:label||_t("Copié"),text:t.length>48?t.slice(0,46)+'…':t});try{navigator.clipboard.writeText(t).then(done,()=>toast({icon:'info',title:_t("Copie impossible ici"),text:t}));}catch(e){toast({icon:'info',title:_t("Copie impossible ici"),text:t});}}
 
@@ -460,7 +460,8 @@ const ACT={
  /* réclamer une mission : validation, écriture (locale, ou api_mission_claim en mode serveur), puis le même affichage */
  claim:(a,e)=>{const m=S.me.missions.find(x=>x.id===a.dataset.id);if(!m||m.claimed||m.have<m.goal)return;const fini=()=>{const box=$('[data-missions]');if(box)box.innerHTML=missionsH();};if(SRV()){srvReclamer(m,e,fini);return;}m.claimed=true;gainXP(m.xp,e);fini();save();},
  propose:()=>{location.hash='#creer';},stats:()=>statsModal(),
- dm:a=>{const u=a.dataset.u;const rid='dm:'+u;const r=room(rid);if(!r.msgs.length){r.msgs.push(mkMsg({k:'evt',text:`${_t("Début de ta conversation avec {0}",[userOf(u).n])}`}));setTimeout(()=>addMsg(rid,mkMsg({u,k:'msg',text:pick(DM_REPLIES)})),1400);}S.ui.room=rid;if((S.ui.route||'')==='chat')render(false);else location.hash='#chat';},
+ dm:a=>{const u=a.dataset.u;const rid='dm:'+u;const r=room(rid);if(SRV()){S.ui.room=rid;if((S.ui.route||'')==='chat')render(false);else location.hash='#chat';return;}   /* mode serveur : la conversation est chargée par srvSalons */
+  if(!r.msgs.length){r.msgs.push(mkMsg({k:'evt',text:`${_t("Début de ta conversation avec {0}",[userOf(u).n])}`}));setTimeout(()=>addMsg(rid,mkMsg({u,k:'msg',text:pick(DM_REPLIES)})),1400);}S.ui.room=rid;if((S.ui.route||'')==='chat')render(false);else location.hash='#chat';},
  'follow-user':a=>{const u=a.dataset.u,L=S.me.following,i=L.indexOf(u);if(i>=0)L.splice(i,1);else{L.push(u);toast({icon:'users',title:`${_t("Tu suis {0}",[userOf(u).n])}`,text:_t("Ses mises apparaîtront dans tes notifications.")});}$$(`[data-a="follow-user"][data-u="${u}"]`).forEach(b=>{const on=L.includes(u);b.textContent=on?_t("Suivi"):_t("Suivre");b.classList.toggle('b-soft',on);b.classList.toggle('b-ghost',!on);});save();},
  lbp:a=>{S.ui.lbp=a.dataset.v;if(['Semaine','Mois','Saison'].includes(a.dataset.v))S.ui.lbper=a.dataset.v;render(false);},ptab:a=>{S.ui.ptab=a.dataset.v;if((S.ui.route||'')!=='profil'){location.hash='#profil';return;}render(false);},
  watch:a=>{const id=a.dataset.m,L=S.me.watch,i=L.indexOf(id);if(i>=0)L.splice(i,1);else{L.push(id);toast({icon:'star',title:_t("Marché suivi"),text:_t("Tu seras prévenu à chaque signal de foule.")});}$$(`[data-watch="${id}"]`).forEach(e=>{e.innerHTML=watchTxt(L.includes(id));const b=e.closest('button');if(b)b.setAttribute('aria-pressed',L.includes(id));});save();},

@@ -50,6 +50,7 @@ avec la même clé, l'opération n'est appliquée qu'une fois et renvoie le mêm
 | `api_mission_claim(id)` | joueur | récupérer les XP d'une mission terminée |
 | `api_chat_history(salon)` | joueur | les 60 derniers messages d'un salon public et la fiche de leurs auteurs |
 | `api_chat_send(salon, texte)` | joueur | écrire dans le salon général ou celui d'un marché ; anti-spam ; diffusé aux lecteurs du salon |
+| `api_dm_send(joueur, texte)`, `api_dm_history(joueur)`, `api_dm_list()` | joueur | messages privés entre amis (rang Bronze pour écrire) ; conversations de leurs deux participants seulement |
 | `api_users_search(texte)` | joueur | dix joueurs au plus dont le pseudo contient le texte (fiches publiques, jamais d'e-mail) |
 | `api_friend(action, joueur)` | joueur | `add`, `accept`, `cancel`, `decline`, `remove` ; rend les trois listes à jour |
 | Edge Function `connexion` | visiteur | connexion par pseudo, sans jamais révéler d'e-mail ; limite les tentatives |
@@ -119,11 +120,19 @@ dépôt, retrait possible, impossible à écourter), auto-exclusion (`wm.uid()` 
 - Aucune écriture directe du client sur le solde, les positions, les statistiques, les dépôts ou l'état des marchés.
 - Seule la clé publique figure dans le code du site. La clé de service n'existe que dans les Edge Functions.
 
+### Sujets temps réel
+
+| Sujet | Accès | Contenu |
+|---|---|---|
+| `marches` | public | un message par tick des bots et par achat ou vente : marchés modifiés, mises, signal de foule |
+| `salon:general`, `salon:m:<marché>` | public | messages du chat du salon |
+| `joueur:<identifiant>` | **privé** : la règle `wm_joueur_lit_son_sujet` sur `realtime.messages` n'y admet que ce joueur | ses messages privés reçus (`dm`) et ses notifications (`notif`) |
+
 ## 7. Tests du back
 
 `tests/sql/` charge une vraie base Postgres embarquée (PGlite) avec la photo du schéma puis toutes les migrations du
-dépôt, en moins d'une seconde, et exécute les fonctions « en tant que » un visiteur ou un joueur. 69 tests : sécurité,
-comptes, moteur, bots, argent fictif, jeu responsable, missions, chat, pari éclair, amis, invariants (solde jamais négatif, opérations
+dépôt, en moins d'une seconde, et exécute les fonctions « en tant que » un visiteur ou un joueur. 73 tests : sécurité,
+comptes, moteur, bots, argent fictif, jeu responsable, missions, chat, pari éclair, amis, messages privés, invariants (solde jamais négatif, opérations
 simultanées, rejeu d'une clé).
 
 ## 8. Ajouter une fonction

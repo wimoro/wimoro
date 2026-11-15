@@ -34,6 +34,7 @@ const RELIEES = {
   'ACT.fr-cancel': 'api_friend — tests/compte/amis.spec.mjs',
   'ACT.fr-decline': 'api_friend — tests/compte/amis.spec.mjs',
   'ACT.fr-remove': 'api_friend — tests/compte/amis.spec.mjs',
+  'ACT.dm': 'api_dm_history, api_dm_send (conversation privée) — tests/compte/prive.spec.mjs',
   'ACT.pro-sh-dst': 'lecture seule de la liste d’amis (choix du destinataire)',
   'ACT.pro-sh-dm': 'lecture seule de la liste d’amis (choix du destinataire)',
   'FORMS.settings': 'api_profile_update (pseudo unique) — tests/compte/etat.spec.mjs',
@@ -78,7 +79,7 @@ test('une action pas encore reliée est clairement indisponible : message, et ri
   const apres = await lire(page, () => JSON.stringify({ solde: S.me.balance, xp: S.me.xp, pos: S.me.positions, hist: S.me.history, notifs: S.me.notifs.length, prix: MK.btc150k.p, messages: Object.values(S.rooms).reduce((n, r) => n + r.msgs.filter(x => x.k !== 'evt').length, 0) }));
   expect(apres).toBe(avant);
   // seules des lectures ont eu lieu (ouverture du salon général) : aucune écriture
-  expect(await lire(page, n => __fakeSB.calls.slice(n).map(c => c.name).filter(nom => nom !== 'api_chat_history' && !nom.startsWith('salon:')), n0), 'aucune écriture sur le serveur').toEqual([]);
+  expect(await lire(page, n => __fakeSB.calls.slice(n).map(c => c.name).filter(nom => !['api_chat_history', 'api_dm_list'].includes(nom) && !nom.startsWith('salon:')), n0), 'aucune écriture sur le serveur').toEqual([]);
   expect(erreurs).toEqual([]);
 });
 

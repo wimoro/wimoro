@@ -51,6 +51,8 @@ const ERR_TXT={
  trop_de_messages:()=>_t("Trop de messages d’un coup. Réessaie dans une minute."),
  message_trop_long:()=>_t("Message trop long (280 caractères au plus)."),
  salon_indisponible:()=>_t("Ce salon n’est pas encore disponible avec ton compte."),
+ pas_amis:()=>_t("Vous devez être amis pour vous écrire."),
+ rang_insuffisant:()=>_t("Ton rang ne permet pas encore cette action."),
  joueur_inconnu:()=>_t("Ce joueur est introuvable."),
  demande_absente:()=>_t("Cette demande d’ami n’existe plus."),
  trop_de_demandes:()=>_t("Trop de demandes d’ami d’un coup. Réessaie dans une heure."),
@@ -67,7 +69,7 @@ const srvErreur=e=>{if(e&&e.code==='session'){srvSessionPerdue();return;}if(e&&e
 const SRV_BLOQUE=new Set(('share-pick vote '
  +'cp-start cp-stop-do cp-edit cp-manage cp-pause cp-stop cp-open limit-place ord-cancel guard guard-save guard-del dl-create dl-cancel dl-accept dl-share dl-decline duel-open stk-create stack-open '
  +'bz-join bz-rebuy bz-choose sr-start sr-cash sr-play sr-share cl-war-join cl-sim cl-join cl-apply cl-leave-do cl-share cl-promote cl-kick cl-invite cl-call-do cl-war cl-feedopt cl-create-open cl-leave cl-call-open cl-war-open '
- +'cb-place cb-cash cb-add cb-clear cb-rm cb-stake pro-sh-send pro-share follow-user follow-bet follow-pbet share dm ref-copy ref-share propose react '
+ +'cb-place cb-cash cb-add cb-clear cb-rm cb-stake pro-sh-send pro-share follow-user follow-bet follow-pbet share ref-copy ref-share propose react '
  +'wallet wallet-modal demo-login demo-rank demo-rank-open demo-rank-reset').split(/\s+/));
 const SRV_FORMS_BLOQUE=new Set(['create','clan','clcode']);
 const srvBientot=()=>toast({tone:'amber',icon:'info',force:true,title:_t("Bientôt disponible avec ton compte"),text:_t("Cette fonction marche déjà en mode démo. Elle arrive pour les comptes.")});
@@ -91,6 +93,7 @@ const NOTIF_T={
  wd_sent:p=>wdNotifTxt({method:p.method,amt:+p.recv,fee:0,net:p.method&&FIAT[p.method]?FIAT[p.method].n:p.net}),
  kyc_ok:()=>_t('Identité vérifiée : carte, virement et PayPal sont débloqués.'),
  rg_pause:p=>_t("Pause activée jusqu’au {0}.",[fmtDT(+p.at)]),
+ dm_recu:p=>_t("{0} t’a écrit.",[p.n||'']),
  fr_demande:p=>_t("{0} veut t’ajouter en ami.",[p.n||'']),
  fr_acceptee:p=>_t("{0} a accepté ta demande d’ami.",[p.n||'']),
  flash_gagne:p=>_t("Éclair {0}, manche {1} : gagné, +{2}.",[GM[p.g]?GM[p.g].name:p.g,F.int(+p.r),F.usd(+p.pay)]),
@@ -347,7 +350,8 @@ function srvChercher(texte){
    On ne s'abonne qu'aux salons affichés (srvSalons, appelé après chaque rendu). À l'ouverture d'un salon : son historique,
    puis les messages en direct. Chaque message diffusé porte la fiche de son auteur (pseudo, rang) : pas d'autre requête. */
 const SRV_SALONS=new Set(),SRV_MSG_VUS=new Set();
-const srvSalonOuvert=r=>r==='general'||r.startsWith('m:');
+const srvSalonOuvert=r=>r==='general'||r.startsWith('m:')||r.startsWith('dm:');
+const srvPrive=r=>r.startsWith('dm:');
 const srvMoi=()=>String(S.auth.key||'').slice(4);
 function srvChatAjouter(rid,m){
  if(!m||SRV_MSG_VUS.has(m.id))return;SRV_MSG_VUS.add(m.id);
@@ -358,10 +362,15 @@ function srvSalons(){
  const vus=new Set(Array.from(document.querySelectorAll('.feed[data-room]')).map(f=>f.dataset.room).filter(srvSalonOuvert));
  if(document.querySelector('[data-hcmini]'))vus.add('general');
  for(const r of vus)if(!SRV_SALONS.has(r)){SRV_SALONS.add(r);srvSalonOuvrir(r);}
- for(const r of Array.from(SRV_SALONS))if(!vus.has(r)){SRV_SALONS.delete(r);API.unsubscribe('salon:'+r);}
+ for(const r of Array.from(SRV_SALONS))if(!vus.has(r)){SRV_SALONS.delete(r);if(!srvPrive(r))API.unsubscribe('salon:'+r);}
+ if((S.ui.route||'')==='chat'&&!srvDmListeVue){srvDmListeVue=true;srvDmListe();}
 }
+/* les conversations privées du joueur, pour la colonne des salons */
+let srvDmListeVue=false;
+async function srvDmListe(){try{const r=await API.call('api_dm_list');srvFiches(r.users);(r.ids||[]).forEach(u=>room('dm:'+u));if((r.ids||[]).length&&(S.ui.route||'')==='chat')render(false);}catch(e){console.warn('[srv] conversations privées',e.code);}}
 async function srvSalonOuvrir(r){
  try{
+  if(srvPrive(r)){const h=await API.call('api_dm_history',{p_user:r.slice(3)});srvFiches(h.users);(h.msgs||[]).forEach(m=>srvChatAjouter(r,m));return;}
   await API.subscribe('salon:'+r,(evt,d)=>{if(evt==='msg')srvChatAjouter(r,d);});
   const h=await API.call('api_chat_history',{p_room:r});
   srvFiches(h.users);(h.msgs||[]).forEach(m=>srvChatAjouter(r,m));
@@ -372,12 +381,22 @@ async function srvChatEnvoyer(rid,inp,text){
  if(!srvSalonOuvert(rid)){srvBientot();return;}                 /* VIP, clan, privé : pas encore reliés */
  if(srvChatOccupe)return;srvChatOccupe=true;
  try{
-  const r=await API.call('api_chat_send',{p_room:rid,p_text:text});
+  const r=srvPrive(rid)?await API.call('api_dm_send',{p_user:rid.slice(3),p_text:text}):await API.call('api_chat_send',{p_room:rid,p_text:text});
   if(inp.value.trim()===text)inp.value='';
   srvChatAjouter(rid,r.msg);
   const b=inp.getBoundingClientRect();srvAppliquer(r,{clientX:b.left+Math.min(b.width-40,160),clientY:b.top});
  }catch(e){srvErreur(e);}
  finally{srvChatOccupe=false;}
+}
+
+/* ----- Sujet privé du joueur : ses messages privés et ses notifications arrivent en direct, à lui seul ----- */
+function srvPerso(evt,d){
+ if(evt==='dm'){if(d&&d.u)srvChatAjouter('dm:'+d.u,d);return;}
+ if(evt==='notif'&&d&&d.n){
+  if(S.me.notifs.some(x=>x.id===d.n.id))return;
+  S.me.notifs.unshift(notifDe(d.n));S.me.notifs=S.me.notifs.slice(0,30);updateBell();
+  if(/^fr_/.test(d.n.code||'')){srvVu=0;srvRafraichir();}                   /* demande d'ami ou acceptation : les listes viennent du serveur */
+ }
 }
 
 /* ----- Missions : la récompense est donnée par le serveur ----- */
@@ -416,6 +435,7 @@ async function bootServeur(){
  if(SRV_ECLAIR_DU>0)setTimeout(()=>srvEclairRegler(0,3),1200);                 /* des manches jouées avant le rechargement restent à régler */
  API.on('session',()=>srvSessionPerdue());
  API.subscribe('marches',(evt,d)=>{if(evt==='tick')srvTick(d);}).catch(e=>console.warn('[srv] temps réel indisponible',e.code));
+ API.subscribe('joueur:'+etat.uid,srvPerso,true).catch(e=>console.warn('[srv] sujet privé indisponible',e.code));
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)srvRafraichir();});
 }
 /* au retour sur l'onglet : on relit l'état (un autre appareil a pu jouer entre-temps) */

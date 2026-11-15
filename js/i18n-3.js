@@ -54,7 +54,10 @@ I18N_ADD("en",{
 "Ce salon n’est pas encore disponible avec ton compte.":"This room isn't available for accounts yet.",
 "Ce joueur est introuvable.":"This player can't be found.",
 "Cette demande d’ami n’existe plus.":"This friend request no longer exists.",
-"Trop de demandes d’ami d’un coup. Réessaie dans une heure.":"Too many friend requests at once. Try again in an hour."
+"Trop de demandes d’ami d’un coup. Réessaie dans une heure.":"Too many friend requests at once. Try again in an hour.",
+"Vous devez être amis pour vous écrire.":"You need to be friends to message each other.",
+"Ton rang ne permet pas encore cette action.":"Your rank doesn't allow this yet.",
+"{0} t’a écrit.":"{0} sent you a message."
 });
 I18N_ADD("he",{
 "Connexion au serveur impossible. Vérifie ta connexion et réessaie.":"לא ניתן להתחבר לשרת. בדוק את החיבור ונסה שוב.",
@@ -109,5 +112,8 @@ I18N_ADD("he",{
 "Ce salon n’est pas encore disponible avec ton compte.":"החדר הזה עדיין לא זמין לחשבונות.",
 "Ce joueur est introuvable.":"השחקן הזה לא נמצא.",
 "Cette demande d’ami n’existe plus.":"בקשת החברות הזו כבר לא קיימת.",
-"Trop de demandes d’ami d’un coup. Réessaie dans une heure.":"יותר מדי בקשות חברות בבת אחת. נסה שוב בעוד שעה."
+"Trop de demandes d’ami d’un coup. Réessaie dans une heure.":"יותר מדי בקשות חברות בבת אחת. נסה שוב בעוד שעה.",
+"Vous devez être amis pour vous écrire.":"צריך להיות חברים כדי לשלוח הודעות זה לזה.",
+"Ton rang ne permet pas encore cette action.":"הדרגה שלך עדיין לא מאפשרת את הפעולה הזו.",
+"{0} t’a écrit.":"{0} שלח לך הודעה."
 });

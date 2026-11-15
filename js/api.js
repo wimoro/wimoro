@@ -151,6 +151,7 @@ const API=(()=>{
  /* ----- Temps réel : diffusion par sujet. On ne s'abonne qu'à ce qui est à l'écran. ----- */
  async function subscribe(sujet,fnc,prive){
   await lib();if(canaux[sujet])return;
+  if(prive&&sb.realtime&&sb.realtime.setAuth){try{await sb.realtime.setAuth();}catch(e){}}   /* un sujet privé exige le jeton du joueur */
   const c=sb.channel(sujet,{config:{private:!!prive}});
   c.on('broadcast',{event:'*'},m=>{try{fnc(m.event,m.payload||{});}catch(e){console.error('[api] sujet',sujet,e);}});
   canaux[sujet]=c;c.subscribe();

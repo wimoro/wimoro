@@ -78,6 +78,12 @@
     api_notifs_read: function () { etat().notifs.forEach(function (n) { n.read = true; }); return null; },
     api_notif_hide: function (a) { var e = etat(); e.notifs = a.p_id ? e.notifs.filter(function (n) { return n.id !== a.p_id; }) : []; return null; },
     api_present: function () { return null; },
+    api_dm_history: function (a) { dmOk(a.p_user, false); var L = (db.chat['dm:' + [uid(), a.p_user].sort().join(':')] || []).slice(-60), users = {}; users[a.p_user] = ficheDe(a.p_user); return { u: a.p_user, msgs: clone(L), users: users }; },
+    api_dm_list: function () { var ids = [], users = {}; for (var r in db.chat) { var p = r.split(':'); if (p[0] === 'dm' && (p[1] === uid() || p[2] === uid()) && db.chat[r].length) { var o = p[1] === uid() ? p[2] : p[1]; ids.push(o); users[o] = ficheDe(o); } } return { ids: ids, users: users }; },
+    api_dm_send: function (a) { dmOk(a.p_user, true); var e = etat(), t = String(a.p_text || '').trim(), ev = [];
+      if (!t) throw { message: 'message_vide' }; if (t.length > 280) throw { message: 'message_trop_long' };
+      var m = { id: db.seq++, u: uid(), k: 'msg', text: t, at: Date.now() }, r = 'dm:' + [uid(), a.p_user].sort().join(':'); (db.chat[r] = db.chat[r] || []).push(m);
+      e.me.msgsTotal = (e.me.msgsTotal | 0) + 1; var rep = reponse(ev); rep.msg = clone(m); return rep; },
     api_friend: function (a) { var e = etat(), me = e.me, u = a.p_user, ev = [], res = 'rien', f = db.fiches[u];
       if (['add', 'accept', 'cancel', 'decline', 'remove'].indexOf(a.p_action) < 0) throw { message: 'action_invalide' };
       if (!u || u === uid() || !f) throw { message: 'joueur_inconnu' };
@@ -306,6 +312,7 @@
     if (regles.length) { rangMonte(me, avant, ev); badges(e, ev); }
     var rep = reponse(ev); rep.regles = regles; rep.hist = hist; rep.eclair = eclairJson(e); return rep; }
 
+  var dmOk = function (u, ecrire) { var e = etat(); if (!u || u === uid() || !db.fiches[u]) throw { message: 'joueur_inconnu' }; if (e.friends.indexOf(u) < 0) throw { message: 'pas_amis' }; if (ecrire && rangDe(e.me).t < 1) throw { message: 'rang_insuffisant' }; };
   /* ----- Chat : salons publics ----- */
   var salonOk = function (r) { if (r === 'general' || (/^m:/.test(String(r)) && typeof MK !== 'undefined' && MK[String(r).slice(2)])) return; throw { message: 'salon_indisponible' }; };
   var ficheDe = function (id) { if (db.fiches[id]) return clone(db.fiches[id]); var e = db.etats[id]; if (!e) return { n: 'joueur', t: 0, d: 0, tone: 0, color: '#2448FF', photo: '', bio: '', profit: 0, acc: 0, bets: 0, fol: 0, bot: false, pub: 1 };
@@ -400,6 +407,8 @@
     journal: function () { return db.journal || []; },
     count: function (kind, name) { return calls.filter(function (c) { return c.kind === kind && (!name || c.name === name); }).length; },
     sujets: function () { return canaux.map(function (c) { return c.sujet; }); },
+    /** sujets suivis en mode privé (réservés au joueur) */
+    prives: function () { return canaux.filter(function (c) { return c.prive; }).map(function (c) { return c.sujet; }); },
     /** Simule un message diffusé par le serveur sur un sujet. */
     emit: function (sujet, evenement, donnees) { var n = 0; canaux.forEach(function (ch) { if (ch.sujet !== sujet) return; ch.handlers.forEach(function (h) { if (h.type === 'broadcast') { n++; h.cb({ event: evenement, payload: clone(donnees) }); } }); }); return n; },
     etat: function () { return db.etats[uid()]; },

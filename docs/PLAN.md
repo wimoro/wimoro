@@ -194,7 +194,14 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
       280 caractères ; 2 XP par message, 20 XP par jour au plus.
 - [x] Les anciens messages figés en français (11 989, écrits par les anciens bots) ne sont plus servis (K26) ; ils ne
       sont pas supprimés.
-- [ ] Salons privés, de clan et VIP (canaux privés, K09) : annoncés comme indisponibles en mode Compte.
+- [x] Messages privés entre amis (`api_dm_send`, `api_dm_history`, `api_dm_list`) et **sujet privé par joueur**
+      (`joueur:<identifiant>`, règle d'accès sur `realtime.messages`) : un message de A à B n'est ni recevable ni lisible
+      par un troisième joueur (K09). _Recette 5 (fin)._ _Tests_ `tests/sql/prive.spec.mjs`, `tests/compte/prive.spec.mjs`,
+      `tests/e2e/comptes.spec.mjs` (un tiers abonné au sujet privé d'un autre ne reçoit rien, sur le vrai temps réel).
+- [x] Les notifications destinées à un autre joueur (demande d'ami, acceptation, message reçu) lui arrivent en direct.
+- [ ] Salons de clan et VIP : annoncés comme indisponibles en mode Compte.
+- [ ] Limite : écrire en privé demande le rang Bronze (300 XP et 3 paris réglés), comme à l'écran ; le scénario complet
+      entre deux vrais comptes neufs n'a donc pas pu être joué de bout en bout (il l'est côté base et avec le faux serveur).
 - [ ] Cartes de mise et d'analyse, réactions, « suivre cette mise ». Mentions et citations de marché : affichées.
 - [ ] Messages des bots dans le chat (gabarit + paramètres, traduits chez le lecteur) : en mode Compte, le chat ne
       contient pour l'instant que les messages des vrais joueurs.
@@ -204,8 +211,7 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
       (`api_friend`) (B11, K10, K44). Rien n'est supprimé ; 15 XP par nouvelle amitié, une seule fois par paire ; un bot
       accepte tout de suite ; 30 demandes par heure au plus. _Recette 5 (partie amis)._ _Tests_ `tests/sql/amis.spec.mjs`,
       `tests/compte/amis.spec.mjs`, `tests/e2e/comptes.spec.mjs` (deux vrais comptes).
-- [ ] La demande reçue apparaît au chargement suivant ou au retour sur l'onglet, pas encore à la seconde (il faudra un
-      canal privé par joueur, le même que pour les messages privés).
+- [x] La demande reçue apparaît à la seconde, par le sujet privé du joueur (voir 4.5).
 - [ ] Suivre un joueur, profils, classement réel par période (B17, K46).
 - [ ] Duels, clans, copy trading, parrainage.
 
@@ -292,7 +298,13 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 2. **Modèle d'e-mail « mot de passe oublié »** : tableau de bord Supabase → Authentication → Emails → « Reset Password ».
    Ajouter dans le texte la ligne `Ton code : {{ .Token }}` (le site demande un code à 6 chiffres). Sans cette ligne,
    l'e-mail ne contient que le lien, qui marche aussi.
-3. **URL du site** : Authentication → URL Configuration → Site URL = `https://wimoro.com` ; Redirect URLs : ajouter
+3. **Purge du journal des tâches planifiées** — le mode automatique de l'outil refuse cette opération (elle supprime des
+   lignes). Deux façons de la faire toi-même : dire à Claude « autorise et applique la migration purge_journal_cron »
+   après avoir autorisé l'outil dans tes réglages, ou bien dans le tableau de bord Supabase : Integrations → Cron → Jobs →
+   Create job ; nom `wm-purge-cron`, planification `7 * * * *`, type SQL Snippet, et coller :
+   `delete from cron.job_run_details where end_time < now() - interval '6 hours'`. Sans elle, la base grossit de 6 Mo
+   par jour (90 Mo sur 500 le 15 novembre).
+3 bis. **URL du site** : Authentication → URL Configuration → Site URL = `https://wimoro.com` ; Redirect URLs : ajouter
    `https://wimoro.com/**`.
 4. **Envoi des e-mails** : le service intégré est limité à quelques e-mails par heure. Pour de vrais utilisateurs,
    brancher un SMTP (Authentication → Emails → SMTP Settings).
@@ -315,3 +327,4 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 | 15 nov. 2026 | 4.5 : chat des salons publics par le serveur (historique, envoi, direct, anti-spam). Bots : ancres rappelées vers la valeur de référence (plus de polarisation dans le temps). | migrations `chat`, `bots_ancres` ; 133 tests (60 SQL) ; 5 tests de bout en bout dont le chat entre deux comptes |
 | 15 nov. 2026 | 4.4 : pari éclair par le serveur. Moteur extrait dans un module pur, Edge Function `eclair`, mise et règlement. Test du mode Démo rendu stable dans l'intégration continue. | migration `eclair` (empreinte identique) ; 151 tests (65 SQL) ; 6 tests de bout en bout contre le vrai back |
 | 15 nov. 2026 | 4.6 (début) : amis par le serveur. Bots : rappel des ancres renforcé et réglable. | migrations `amis`, `bots_rappel` (empreintes identiques) ; 159 tests (69 SQL) ; 7 tests de bout en bout contre le vrai back |
+| 15 nov. 2026 | 4.5 (suite) : messages privés entre amis et sujet temps réel privé par joueur ; notifications en direct. | migration `messages_prives` (empreinte identique) ; 166 tests (73 SQL) ; 8 tests de bout en bout contre le vrai back |

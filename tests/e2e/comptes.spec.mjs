@@ -308,3 +308,38 @@ test('recette 5 · amis : A cherche B et lui envoie une demande, B l’accepte, 
   expect(a.erreurs).toEqual([]); expect(b.erreurs).toEqual([]);
   await a.ctx.close(); await b.ctx.close();
 });
+
+test('recette 5 · sujet privé : une demande d’ami arrive en direct chez son destinataire, et un tiers abonné à ce sujet ne reçoit rien', async ({ browser }) => {
+  test.setTimeout(120000);
+  // B, déjà inscrit, est sur sa page Amis
+  const ctxB = await browser.newContext(), b = await ctxB.newPage();
+  const erreursB = await ouvrirReel(b, '#connexion');
+  await b.locator('#le').fill(PSEUDO + 'b'); await b.locator('#lp').fill(MDP); await b.locator('form[data-form="login"] [type=submit]').click();
+  await expect(b).toHaveURL(/#accueil/, { timeout: 20000 }); await pret(b);
+  await b.evaluate(() => { location.hash = '#amis'; });
+  const idB = await lire(b, () => S.auth.key.slice(4));
+  // C : un troisième compte
+  const ctxC = await browser.newContext(), c = await ctxC.newPage();
+  await ouvrirReel(c, '#inscription');
+  const f = c.locator('form[data-form="signup"]');
+  await f.locator('[name=pseudo]').fill(PSEUDO + 'c'); await f.locator('[name=email]').fill(`wimoro-e2e-${stamp}-c@example.com`); await f.locator('[name=pw]').fill(MDP);
+  await f.locator('[name=age]').check(); await f.locator('[name=cgu]').check(); await f.locator('[type=submit]').click();
+  await expect(c).toHaveURL(/#bienvenue/, { timeout: 20000 }); await pret(c);
+  // C tente d'écouter le sujet privé de B
+  await c.evaluate(id => { window.__vole = []; return API.subscribe('joueur:' + id, (evt, d) => window.__vole.push([evt, d]), true); }, idB);
+  await c.waitForTimeout(2500);
+  // C envoie une demande d'ami à B : le serveur pousse la notification sur le sujet privé de B
+  const rep = await c.evaluate(id => API.call('api_friend', { p_action: 'add', p_user: id }), idB);
+  expect(rep.r).toBe('envoyee');
+  // B la voit arriver sans recharger : la cloche, puis la liste des demandes reçues
+  await expect.poll(() => lire(b, () => S.me.notifs.map(n => n.text).join(' | ')), { timeout: 20000 }).toContain(PSEUDO + 'c wants to add you');
+  await expect.poll(() => lire(b, () => S.me.freqIn.map(u => userOf(u).n)), { timeout: 20000 }).toEqual([PSEUDO + 'c']);
+  await expect(b.locator('.frow', { hasText: PSEUDO + 'c' }).locator('[data-a="fr-accept"]')).toBeVisible({ timeout: 10000 });
+  // C, lui, n'a rien reçu du sujet de B
+  await c.waitForTimeout(3000);
+  expect(await lire(c, () => window.__vole), 'un tiers ne reçoit rien du sujet privé d’un autre joueur').toEqual([]);
+  // et il ne peut pas lire une conversation qui n'est pas la sienne
+  expect(await c.evaluate(async id => { try { await API.call('api_dm_history', { p_user: id }); return 'lu'; } catch (e) { return e.code; } }, idB)).toBe('pas_amis');
+  expect(erreursB).toEqual([]);
+  await ctxB.close(); await ctxC.close();
+});
