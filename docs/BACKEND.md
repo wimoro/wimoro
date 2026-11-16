@@ -51,6 +51,7 @@ avec la même clé, l'opération n'est appliquée qu'une fois et renvoie le mêm
 | `api_chat_history(salon)` | joueur | les 60 derniers messages d'un salon public et la fiche de leurs auteurs |
 | `api_chat_seen(salons)` | joueur | « j'ai toujours ces salons à l'écran » : les bots ne parlent que là où quelqu'un lit |
 | `api_chat_send(salon, texte)` | joueur | écrire dans le salon général ou celui d'un marché ; anti-spam ; diffusé aux lecteurs du salon |
+| `api_chat_share(salon, marché, côté)`, `api_chat_follow(message)` | joueur | partager une de ses positions dans un salon (rang Bronze, une fois par 24 heures et par position) et suivre la mise partagée par un autre joueur (rang Argent, même pari demandé). Les suivis sont notés dans `wm.chat_suivis` ; ceux des bots, programmés au partage, sont crédités par `wm.chat_suivis_tick` (tâche `wm-suivis`) : compteur de la carte, 20 XP et une « mise suivie » pour l'auteur |
 | `api_dm_send(joueur, texte)`, `api_dm_history(joueur)`, `api_dm_list()` | joueur | messages privés entre amis (rang Bronze pour écrire) ; conversations de leurs deux participants seulement |
 | `api_leaderboard()` | joueur | les 50 meilleurs gains (fiches publiques, vrais joueurs et bots) |
 | `api_users_search(texte)` | joueur | dix joueurs au plus dont le pseudo contient le texte (fiches publiques, jamais d'e-mail) |
@@ -141,7 +142,7 @@ dépôt, retrait possible, impossible à écourter), auto-exclusion (`wm.uid()` 
 | Sujet | Accès | Contenu |
 |---|---|---|
 | `marches` | public | un message par tick des bots et par achat ou vente : marchés modifiés, mises, signal de foule |
-| `salon:general`, `salon:m:<marché>` | public | messages du chat du salon |
+| `salon:general`, `salon:m:<marché>` | public | messages du chat du salon (`msg`), message retiré (`del`), nouveau nombre de suivis d'une mise partagée (`fc`) |
 | `joueur:<identifiant>` | **privé** : la règle `wm_joueur_lit_son_sujet` sur `realtime.messages` n'y admet que ce joueur | ses messages privés reçus (`dm`) et ses notifications (`notif`) |
 
 ## 7. Tests du back

@@ -80,6 +80,8 @@ const ERR_TXT={
  clan_tag_invalide:()=>_t('3 ou 4 lettres ou chiffres.'),
  clan_tag_pris:()=>_t("Tag déjà pris"),
  trop_de_suivis:()=>_t("Tu suis déjà 500 joueurs : c’est le maximum."),
+ deja_partage:()=>_t("Tu as déjà partagé cette mise aujourd’hui."),
+ mise_indisponible:()=>_t("Cette mise n’est plus disponible."),
  duel_indisponible:()=>_t("Ce duel n’est plus disponible."),
  cote_indisponible:()=>_t("La cote du marché ne permet pas ce duel pour l’instant."),
  trop_de_duels:()=>_t("Tu as déjà trop de duels en attente de réponse."),
@@ -107,10 +109,10 @@ const srvErreur=e=>{if(e&&e.code==='session'){srvSessionPerdue();return;}if(e&&e
 /* ----- Ce qui n'est pas encore relié au serveur est clairement indisponible en mode serveur -----
    La liste se vide au fil des lots (voir docs/PLAN.md). Le test tests/compte/garde.spec.mjs vérifie qu'aucune action
    qui touche au solde, à l'XP ou à un état partagé n'est exécutée localement quand le serveur fait autorité. */
-const SRV_BLOQUE=new Set(('share-pick '
+const SRV_BLOQUE=new Set((''
  +'limit-place ord-cancel guard guard-save guard-del stk-create stack-open '
  +'cl-war-join cl-sim cl-promote cl-kick cl-invite cl-call-do cl-war cl-call-open '
- +'pro-sh-send pro-share follow-bet follow-pbet share react '
+ +'pro-sh-send pro-share react '
  +'wallet wallet-modal demo-login demo-rank demo-rank-open demo-rank-reset').split(/\s+/));
 const SRV_FORMS_BLOQUE=new Set([]);
 const srvBientot=()=>toast({tone:'amber',icon:'info',force:true,title:_t("Bientôt disponible avec ton compte"),text:_t("Cette fonction marche déjà en mode démo. Elle arrive pour les comptes.")});
@@ -151,6 +153,7 @@ const NOTIF_T={
  clan_refuse:p=>CK[p.id]?_t("{0} a refusé ta candidature.",[CK[p.id].name]):'',
  clan_cree:p=>_t("Clan {0} [{1}] créé. {2} de frais, non remboursables.",[p.name||'',p.tag||'',F.usd0(CLAN.FEE)]),
  clan_chef:p=>_t("Tu es maintenant le chef du clan {0}.",[CK[p.id]?CK[p.id].name:'']),
+ mise_suivie:p=>_t("{0} a suivi ta mise",[p.n||userOf(p.u).n]),
  parrain_bonus:p=>_t("Bonus de parrainage : {0} offerts grâce au code {1}.",[F.usd0(+p.gain),p.code||'']),
  parrain_inscrit:p=>_t("{0} s’est inscrit avec ton code de parrainage.",[p.n||'']),
  parrain_paye:p=>_t("Parrainage : {0} a placé son premier pari, {1} pour toi.",[p.n||'',F.usd0(+p.gain)]),
@@ -471,8 +474,13 @@ function srvChatAjouter(rid,m){
  if(!m||SRV_MSG_VUS.has(m.id))return;SRV_MSG_VUS.add(m.id);
  if(m.f)srvFiches({[m.u]:m.f});
  const text=m.tpl?srvBotTexte(m.tpl):m.text;if(m.tpl&&!text)return;             /* gabarit sur un marché inconnu de l'écran : ignoré */
- addMsg(rid,mkMsg({u:m.u===srvMoi()?'me':m.u,k:'msg',text,at:m.at,sid:m.id}));
+ const moi=m.u===srvMoi()?'me':m.u;
+ if(m.k==='bet'){if(!m.bet||!MK[m.bet.m])return;                                /* mise partagée : une carte, avec son nombre de suivis */
+  addMsg(rid,mkMsg({u:moi,k:'bet',text:'',bet:{m:m.bet.m,s:m.bet.s,amt:+m.bet.amt,price:+m.bet.price},followers:m.fc|0,at:m.at,sid:m.id}));return;}
+ addMsg(rid,mkMsg({u:moi,k:'msg',text,at:m.at,sid:m.id}));
 }
+/* le serveur annonce qu'une mise partagée vient d'être suivie : son compteur est mis à jour sur place */
+function srvChatSuivis(rid,d){const R=S.rooms[rid];if(!R||!d)return;const x=R.msgs.find(y=>y.sid===d.id);if(x){x.followers=Math.max(x.followers|0,d.fc|0);setFc(x);}}   /* un compteur de suivis ne fait que monter */
 function srvChatRetirer(rid,id){const R=S.rooms[rid];if(!R)return;const i=R.msgs.findIndex(x=>x.sid===id);if(i<0)return;R.msgs.splice(i,1);render(false);}
 /* Message d'un bot : le serveur envoie un gabarit et ses paramètres ({g,i,m,p,s}) ; la phrase est composée ici, dans la
    langue du lecteur, avec les mêmes listes de phrases que le mode Démo. */
@@ -503,7 +511,7 @@ async function srvDmListe(){try{const r=await API.call('api_dm_list');srvFiches(
 async function srvSalonOuvrir(r){
  try{
   if(srvPrive(r)){const h=await API.call('api_dm_history',{p_user:r.slice(3)});srvFiches(h.users);(h.msgs||[]).forEach(m=>srvChatAjouter(r,m));return;}
-  await API.subscribe('salon:'+r,(evt,d)=>{if(evt==='msg')srvChatAjouter(r,d);else if(evt==='del')srvChatRetirer(r,d&&d.id);});
+  await API.subscribe('salon:'+r,(evt,d)=>{if(evt==='msg')srvChatAjouter(r,d);else if(evt==='del')srvChatRetirer(r,d&&d.id);else if(evt==='fc')srvChatSuivis(r,d);});
   const h=await API.call('api_chat_history',{p_room:r});
   srvFiches(h.users);(h.msgs||[]).forEach(m=>srvChatAjouter(r,m));
  }catch(e){SRV_SALONS.delete(r);console.warn('[srv] salon indisponible',r,e.code);}
@@ -754,6 +762,22 @@ async function srvSuivre(u,oui){
  finally{srvSuivreOccupe=false;}
 }
 
+/* ----- Mises partagées dans le chat : la carte, ses suivis et leurs XP sont tenus par le serveur ----- */
+Object.assign(SRV_TOAST,{
+ mise_suivie:p=>toast({icon:'users',title:`${_t("{0} a suivi ta mise",[p.n||userOf(p.u).n])}`,text:'+20 XP',href:String(p.room||'').startsWith('m:')?'#marche-'+p.room.slice(2):'#chat'})
+});
+/* discret : annonce automatique après un pari (case « Annoncer ma mise ») — un refus du serveur y reste silencieux */
+async function srvPartagerMise(rid,m,s,discret){
+ if(!srvSalonOuvert(rid)||srvPrive(rid)){if(!discret)srvBientot();return;}
+ try{const r=await API.call('api_chat_share',{p_room:rid,p_market:m,p_side:s});srvChatAjouter(rid,r.msg);srvAppliquer(r);}
+ catch(e){if(!discret)srvErreur(e);else if(e&&e.code==='session')srvSessionPerdue();}
+}
+async function srvSuivreMise(idLocal){
+ const x=MSG[idLocal];if(!x||!x.sid)return;
+ try{const r=await API.call('api_chat_follow',{p_msg:x.sid});x.followers=Math.max(x.followers|0,r.fc|0);setFc(x);srvAppliquer(r);}
+ catch(e){if(e&&e.code==='session')srvSessionPerdue();else if(!e||e.code!=='deja_suivi')console.warn('[srv] mise non suivie',e&&e.code);}
+}
+
 /* ----- Paris combinés : prix bloqués, mise et gain tenus par le serveur ; le « slip » reste une sélection locale ----- */
 const comboDe=x=>({id:String(x.id),at:+x.at,stake:+x.stake,mult:+x.mult,fee:+x.fee,pay:+x.pay,status:x.status,cash:x.cash==null?undefined:+x.cash,endAt:x.endAt||undefined,
  legs:(x.legs||[]).map(l=>({m:l.m,s:l.s,price:+l.price,mult:+l.mult,res:l.res||null}))});
@@ -924,7 +948,7 @@ function srvPerso(evt,d){
   if(S.me.notifs.some(x=>x.id===d.n.id))return;
   S.me.notifs.unshift(notifDe(d.n));S.me.notifs=S.me.notifs.slice(0,30);updateBell();
   if(SRV_TOAST[d.n.code]){try{SRV_TOAST[d.n.code](d.n.p||{});}catch(e){}}                             /* ce que le serveur vient de faire pour le joueur, annoncé comme en mode Démo */
-  if(/^fr_|^duel_|^combo_|^parrain_|^prop_|^copie_|^clan_|^marche_resolu$|^admin_solde$|^kyc_ok$|^blitz_gagne$/.test(d.n.code||'')){srvVu=0;srvRafraichir();}                   /* demande d'ami ou acceptation : les listes viennent du serveur */
+  if(/^fr_|^duel_|^combo_|^parrain_|^prop_|^copie_|^clan_|^mise_|^marche_resolu$|^admin_solde$|^kyc_ok$|^blitz_gagne$/.test(d.n.code||'')){srvVu=0;srvRafraichir();}                   /* demande d'ami ou acceptation : les listes viennent du serveur */
  }
 }
 

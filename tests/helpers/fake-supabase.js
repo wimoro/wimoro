@@ -342,6 +342,22 @@
       if (!a.p_user || a.p_user === uid() || !f) throw { message: 'joueur_inconnu' };
       if (a.p_on && i < 0) { if (L.length >= 500) throw { message: 'trop_de_suivis' }; L.push(a.p_user); f.fol = (f.fol | 0) + 1; } else if (!a.p_on && i >= 0) { L.splice(i, 1); f.fol = Math.max(0, (f.fol | 0) - 1); }
       var rep = reponse([]), users = {}; users[a.p_user] = clone(f); rep.following = clone(L); rep.users = users; return rep; },
+    /* Mises partagées : mêmes règles que supabase/migrations/…_chat_mises.sql */
+    api_chat_share: function (a) { salonOk(a.p_room); var e = etat(), me = e.me, ev = [];
+      if (a.p_side !== 'oui' && a.p_side !== 'non') throw { message: 'cote_invalide' }; if (rangDe(me).t < 1) throw { message: 'rang_insuffisant' };
+      var pos = e.positions.filter(function (p) { return p.m === a.p_market && p.s === a.p_side && p.sh > 0.05; })[0]; if (!pos) throw { message: 'position_absente' };
+      var deja = false; for (var r in db.chat) db.chat[r].forEach(function (x) { if (x.u === uid() && x.k === 'bet' && x.bet.m === a.p_market && x.bet.s === a.p_side && x.at > Date.now() - 864e5) deja = true; });
+      if (deja) throw { message: 'deja_partage' };
+      var m = { id: db.seq++, u: uid(), k: 'bet', text: '', at: Date.now(), bet: { m: a.p_market, s: a.p_side, amt: Math.round(pos.sh * pos.avg / 100), price: Math.round(pos.avg) }, fc: 0, suivis: {} };
+      (db.chat[a.p_room] = db.chat[a.p_room] || []).push(m); var avant = rangDe(me); me.xp += 5; ev.push({ k: 'xp', n: 5, src: 'partage' }); rangMonte(me, avant, ev);
+      var rep = reponse(ev); rep.msg = clone(m); delete rep.msg.suivis; return rep; },
+    api_chat_follow: function (a) { var e = etat(), me = e.me, ev = [], m = null, salon = null; for (var r in db.chat) db.chat[r].forEach(function (x) { if (x.id === +a.p_msg && x.k === 'bet') { m = x; salon = r; } });
+      if (rangDe(me).t < 2) throw { message: 'rang_insuffisant' }; if (!m || m.u === uid()) throw { message: 'mise_indisponible' };
+      if (!e.positions.some(function (p) { return p.m === m.bet.m && p.s === m.bet.s && p.sh > 0.05; })) throw { message: 'position_absente' };
+      m.suivis = m.suivis || {}; if (m.suivis[uid()]) throw { message: 'deja_suivi' }; m.suivis[uid()] = 1; m.fc = (m.fc | 0) + 1;
+      var auteur = db.etats[m.u]; if (auteur) { auteur.me.xp += 20; auteur.me.followed = (auteur.me.followed | 0) + 1; }
+      var avant = rangDe(me); me.xp += 5; ev.push({ k: 'xp', n: 5, src: 'suivre' }); rangMonte(me, avant, ev);
+      var rep = reponse(ev); rep.id = m.id; rep.fc = m.fc; return rep; },
     api_buy: function (a) {
       var e = etat(), me = e.me, total = r2(+a.p_total), cle = uid() + ':' + a.p_key;
       if (a.p_side !== 'oui' && a.p_side !== 'non') throw { message: 'cote_invalide' };
@@ -723,6 +739,11 @@
     /** le joueur copié parie / vend, côté serveur (voir copieSuivre, copieSortir) */
     copieSuivre: function (u, mid, s, mise) { return copieSuivre(u, mid, s, mise); },
     copieSortir: function (u, mid, s) { return copieSortir(u, mid, s); },
+    /** un bot suit la mise partagée du joueur (tâche wm-suivis du serveur) : compteur, 20 XP, notification en direct */
+    suiviBot: function (idMsg, nom) { var e = etat(), m = null, salon = null; for (var r in db.chat) db.chat[r].forEach(function (x) { if (x.id === +idMsg && x.k === 'bet') { m = x; salon = r; } }); if (!m) return 0;
+      m.fc = (m.fc | 0) + 1; e.me.xp += 20; e.me.followed = (e.me.followed | 0) + 1;
+      var n = notif('users', 'mise_suivie', { u: 'bot-suiveur', n: nom || 'karim', m: m.bet.m, id: m.id, room: salon }, salon.indexOf('m:') === 0 ? '#marche-' + salon.slice(2) : '#chat').n; persist();
+      window.__fakeSB.emit('salon:' + salon, 'fc', { id: m.id, fc: m.fc }); window.__fakeSB.emit('joueur:' + uid(), 'notif', { n: n }); return m.fc; },
     /** diffuse l'état actuel de marchés, comme un tick du serveur */
     tick: function (ids, extra) { var d = { t: Date.now(), m: marchesDe(ids || Object.keys(db.marches)) }; for (var k in extra || {}) d[k] = extra[k]; return window.__fakeSB.emit('marches', 'tick', d); }
   };

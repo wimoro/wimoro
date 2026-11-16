@@ -700,3 +700,74 @@ test('suivre un joueur : tenu par le vrai serveur, compteur d’abonnés à jour
   expect(await lire(page, id => USERS[id].fol, ami)).toBe(avant.abonnes);
   expect(erreurs).toEqual([]);
 });
+
+test('partager une mise : la carte est posée par le vrai serveur et vue en direct par un autre joueur ; un à trois joueurs la suivent (compteur et XP en direct) ; suivre sans le rang Argent est refusé', async ({ browser }) => {
+  test.setTimeout(240000);
+  const MARCHE = 'clasico', SALON = 'm:' + MARCHE;
+  const entrer = async email => {
+    const ctx = await browser.newContext(), page = await ctx.newPage();
+    const erreurs = await ouvrirReel(page, '#connexion');
+    await page.locator('#le').fill(email); await page.locator('#lp').fill(MDP); await page.locator('form[data-form="login"] [type=submit]').click();
+    await expect(page).toHaveURL(/#accueil/, { timeout: 20000 }); await pret(page);
+    return { ctx, page, erreurs };
+  };
+  const essai = (page, nom, args) => page.evaluate(async ([nom, args]) => { try { await API.call(nom, args); return 'accepté'; } catch (e) { return e.code; } }, [nom, args]);
+  const cartes = (page, auteur) => lire(page, ([s, u]) => (S.rooms[s] ? S.rooms[s].msgs : []).filter(x => x.k === 'bet' && x.u === u).map(x => ({ m: x.bet.m, s: x.bet.s, amt: x.bet.amt, suivis: x.followers | 0, sid: x.sid })), [SALON, auteur]);
+  const a = await entrer(EMAIL), b = await entrer(`wimoro-e2e-${stamp}-b@example.com`);
+  const idA = await lire(a.page, () => srvMoi());
+  const rang = await lire(a.page, () => ({ t: myRank().t, xp: S.me.xp, regles: S.me.settled }));
+  expect(rang.t, 'partager demande le rang Bronze ; compte A : ' + JSON.stringify(rang)).toBeGreaterThanOrEqual(1);
+
+  // on ne partage que ce qu'on tient : une position que A n'a pas est refusée par le vrai serveur
+  const sans = await lire(a.page, () => { for (const id of Object.keys(MK)) for (const s of ['oui', 'non']) if (!S.me.positions.some(p => p.m === id && p.s === s)) return { m: id, s }; return null; });
+  expect(sans).toBeTruthy();
+  expect(await essai(a.page, 'api_chat_share', { p_room: 'general', p_market: sans.m, p_side: sans.s })).toBe('position_absente');
+  // A tient une position Oui sur le marché (prise dans un scénario précédent ; sinon 2 $ maintenant), puis les deux joueurs ouvrent la page du marché
+  if (!(await lire(a.page, m => S.me.positions.some(p => p.m === m && p.s === 'oui' && p.sh > 0.05), MARCHE))) {
+    expect(await lire(a.page, () => S.me.balance), 'A a de quoi miser 2 $').toBeGreaterThanOrEqual(2);
+    await a.page.evaluate(m => API.call('api_buy', { p_market: m, p_side: 'oui', p_total: 2, p_key: crypto.randomUUID(), p_opts: {} }), MARCHE);
+  }
+  for (const p of [a.page, b.page]) { await p.evaluate(m => { location.hash = '#marche-' + m; }, MARCHE); await p.reload(); await pret(p); await expect(p.locator('.feed[data-room="' + SALON + '"]')).toBeAttached(); }
+  const avant = await lire(a.page, () => ({ xp: S.me.xp, suivies: S.me.followed }));
+  const pos = await lire(a.page, m => { const i = S.me.positions.findIndex(p => p.m === m && p.s === 'oui'), p = S.me.positions[i]; return { i, valeur: p ? p.sh * p.avg / 100 : 0 }; }, MARCHE);
+  expect(pos.i).toBeGreaterThanOrEqual(0);
+  const i = pos.i;
+
+  // A partage sa position depuis le salon du marché : la carte vient du serveur (+5 XP)
+  await a.page.locator('[data-a="share"][data-room="' + SALON + '"]').first().click();
+  await a.page.locator('[data-a="share-pick"][data-i="' + i + '"]').click();
+  await expect.poll(async () => (await cartes(a.page, 'me')).length, { timeout: 20000 }).toBe(1);
+  const partageA = Date.now();
+  const [carte] = await cartes(a.page, 'me');
+  expect(carte).toMatchObject({ m: MARCHE, s: 'oui' });
+  expect(Math.abs(carte.amt - pos.valeur), 'la carte porte la valeur d’achat de la position, arrondie au dollar').toBeLessThanOrEqual(0.51);
+  expect(typeof carte.sid).toBe('number');
+  await expect(a.page.locator('.feed[data-room="' + SALON + '"] .betc')).toHaveCount(1);
+  expect(await lire(a.page, () => S.me.xp)).toBeGreaterThanOrEqual(avant.xp + 5);
+
+  // B la reçoit en direct, au nom de A ; sans le rang Argent, le vrai serveur refuse qu'il la suive, et l'écran montre le cadenas
+  await expect.poll(async () => (await cartes(b.page, idA)).map(c => c.sid), { timeout: 20000 }).toEqual([carte.sid]);
+  expect(await lire(b.page, id => USERS[id] && USERS[id].n, idA)).toBe(PSEUDO);
+  await expect(b.page.locator('.feed[data-room="' + SALON + '"] .betc [data-a="lock"][data-g="follow"]')).toHaveCount(1);
+  expect(await essai(b.page, 'api_chat_follow', { p_msg: carte.sid })).toBe('rang_insuffisant');
+  expect(await essai(a.page, 'api_chat_follow', { p_msg: carte.sid })).not.toBe('accepté');           // on ne suit pas sa propre mise
+
+  // un à trois joueurs la suivent dans les 25 secondes (tâche du serveur) : compteur en direct chez A et chez B, 20 XP par suivi
+  await expect.poll(async () => (await cartes(a.page, 'me'))[0].suivis, { timeout: 60000 }).toBeGreaterThanOrEqual(1);
+  await a.page.waitForTimeout(Math.max(0, 32000 - (Date.now() - partageA)));                           // le dernier suivi est dû 18 s après le partage, crédité dans les 5 s
+  const n = (await cartes(a.page, 'me'))[0].suivis;
+  expect(n).toBeGreaterThanOrEqual(1); expect(n).toBeLessThanOrEqual(3);
+  await expect.poll(async () => (await cartes(b.page, idA))[0].suivis, { timeout: 20000 }).toBe(n);
+  await expect.poll(() => lire(a.page, () => S.me.followed), { timeout: 20000 }).toBe(avant.suivies + n);
+  expect(await lire(a.page, () => S.me.xp)).toBeGreaterThanOrEqual(avant.xp + 5 + 20 * n);
+  expect(await lire(a.page, () => S.me.notifs.filter(x => /followed your bet/.test(x.text)).length)).toBeGreaterThanOrEqual(n);
+  await expect(a.page.locator('.feed[data-room="' + SALON + '"] .betc .fc[data-fc]')).toHaveText(n === 1 ? /1 / : new RegExp(String(n)));
+
+  // la même position ne se partage qu'une fois par jour ; rechargée, la carte et son compteur reviennent du serveur
+  expect(await essai(a.page, 'api_chat_share', { p_room: 'general', p_market: MARCHE, p_side: 'oui' })).toBe('deja_partage');
+  await a.page.reload(); await pret(a.page);
+  await expect.poll(async () => (await cartes(a.page, 'me')).map(c => [c.sid, c.suivis]), { timeout: 20000 }).toEqual([[carte.sid, n]]);
+  expect(await lire(a.page, () => S.me.followed)).toBe(avant.suivies + n);
+  expect(a.erreurs).toEqual([]); expect(b.erreurs).toEqual([]);
+  await a.ctx.close(); await b.ctx.close();
+});
