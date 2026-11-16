@@ -205,3 +205,11 @@ I18N_ADD("en",{
 I18N_ADD("he",{
 "Tu suis déjà 500 joueurs : c’est le maximum.":"אתה כבר עוקב אחרי 500 שחקנים: זה המקסימום."
 });
+I18N_ADD("en",{
+"Tu as déjà partagé cette mise aujourd’hui.":"You already shared this bet today.",
+"Cette mise n’est plus disponible.":"This bet is no longer available."
+});
+I18N_ADD("he",{
+"Tu as déjà partagé cette mise aujourd’hui.":"כבר שיתפת את ההימור הזה היום.",
+"Cette mise n’est plus disponible.":"ההימור הזה כבר לא זמין."
+});

@@ -182,7 +182,8 @@ function placeBet(ctx,ev){const st=tState(ctx),m=MK[st.m],c=calcT(st);if(!c.ok)r
  betEffets(ctx,ev,st,m,c,before);}
 function betEffets(ctx,ev,st,m,c,before){
  updateHeader();gainXP(10,ev);mission('bet');
- if(!SRV()){/* suivre une mise et l'annoncer dans le chat : en mode serveur, ces effets arrivent avec le lot « chat » */
+ if(SRV()){if(st.followOf)srvSuivreMise(st.followOf);if(st.announce&&can('share'))srvPartagerMise('m:'+m.id,m.id,st.side,true);}   /* mode Compte : suivi et annonce tenus par le serveur */
+ if(!SRV()){
  if(st.followOf){const x=MSG[st.followOf];if(x){x.followers++;setFc(x);setTimeout(()=>gainXP(5),550);}}
  if(st.announce&&can('share')){const x=mkMsg({u:'me',k:'bet',text:'',bet:{m:m.id,s:st.side,amt:Math.round(c.amt),price:Math.round(c.price)}});addMsg('m:'+m.id,x);setTimeout(()=>gainXP(5),800);scheduleFollowers(x,'m:'+m.id);}
  }
@@ -453,7 +454,7 @@ const ACT={
  'follow-bet':a=>{const x=MSG[a.dataset.id];if(!x)return;gate('follow',()=>openBet(x.bet.m,x.bet.s,Math.min(x.bet.amt,50),{followOf:x.id,followUser:x.u}));},
  'follow-pbet':a=>gate('follow',()=>openBet(a.dataset.m,a.dataset.s,50,{followUser:a.dataset.u})),
  share:a=>gate('share',()=>shareModal(a.dataset.room)),
- 'share-pick':a=>{const p=S.me.positions[+a.dataset.i],rid=a.dataset.room;if(!p)return;const x=mkMsg({u:'me',k:'bet',text:'',bet:{m:p.m,s:p.s,amt:Math.round(p.sh*p.avg/100),price:Math.round(p.avg)}});closeModal();addMsg(rid,x);gainXP(5);scheduleFollowers(x,rid);save();},
+ 'share-pick':a=>{const p=S.me.positions[+a.dataset.i],rid=a.dataset.room;if(!p)return;if(SRV()){closeModal();srvPartagerMise(rid,p.m,p.s);return;}const x=mkMsg({u:'me',k:'bet',text:'',bet:{m:p.m,s:p.s,amt:Math.round(p.sh*p.avg/100),price:Math.round(p.avg)}});closeModal();addMsg(rid,x);gainXP(5);scheduleFollowers(x,rid);save();},
  cite:a=>citeModal(a.dataset.room),
  'cite-pick':a=>{const rid=a.dataset.room;closeModal();const i=$(`[data-in="${CSS.escape(rid)}"]`);if(i){i.value=(i.value.trim()?i.value.trim()+' ':'')+'#'+a.dataset.m+' ';i.focus();}},
  lock:a=>lockModal(a.dataset.g),tier:a=>tierModal(+a.dataset.t),
