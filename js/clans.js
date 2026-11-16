@@ -254,9 +254,9 @@ Object.assign(ACT,{
  'cl-invite':()=>{const c=myClan();if(!c||!isOfficer())return;const fr=friendsOf().filter(u=>!clanMates(c).includes(u)&&!(SRV()&&USERS[u]&&USERS[u].clan));if(!fr.length){toast({icon:'info',title:_t("Tous tes amis sont déjà dans le clan")});return;}const u=fr[0];if(SRV()){srvClanInviter(u);return;}c.members.push({u,since:now(),pts:0});userOf(u).clan=c.id;c.n++;clanFeedPush(c,{u:'me',txt:`${_t("{0} rejoint le clan sur invitation de {1}.",[duelUserN(u),S.me.n])}`});save();toast({tone:'green',icon:'userplus',title:`${_t("{0} a rejoint le clan",[duelUserN(u)])}`,text:_t("Invitation acceptée.")});render(false);},
  'cl-call-open':()=>clanCallModal(),
  'cl-call-do':()=>{const c=myClan();const sel=$('#clcm'),side=$('#ov .sd.on');if(!c||!sel)return;if(SRV()){srvClanAppel(sel.value,side?side.dataset.clcs:'oui');return;}clanCall(c,sel.value,side?side.dataset.clcs:'oui');closeModal();toast({tone:'blue',icon:'target',force:true,title:_t("Appel de clan lancé"),text:_t("Les membres le voient en tête du fil et dans le chat.")});S.ui.cltab='activite';render(false);},
- 'cl-war':()=>{const c=myClan();if(!c)return;clanWarDeclare(c);toast({tone:'blue',icon:'swords',force:true,title:`${_t("Guerre déclarée contre {0}",[CK[c.war.foe].name])}`,text:_t("48 h, buy-in par participant, score des 10 meilleurs.")});render(false);},
+ 'cl-war':()=>{const c=myClan();if(!c)return;if(SRV()){srvClanGuerre();return;}clanWarDeclare(c);toast({tone:'blue',icon:'swords',force:true,title:`${_t("Guerre déclarée contre {0}",[CK[c.war.foe].name])}`,text:_t("48 h, buy-in par participant, score des 10 meilleurs.")});render(false);},
  'cl-war-open':a=>{S.ui.cltab='guerre';if(location.hash===a.getAttribute('href'))render(false);},
- 'cl-war-join':()=>{const c=myClan();if(c)clanWarJoin(c);render(false);},
+ 'cl-war-join':()=>{const c=myClan();if(SRV()){if(c)srvClanGuerreRejoindre();return;}if(c)clanWarJoin(c);render(false);},
  'cl-feedopt':a=>{S.me.prefs=S.me.prefs||{};S.me.prefs.clanFeed=a.checked;save();}
 });
 document.addEventListener('click',e=>{const b=e.target.closest('[data-clcs]');if(!b)return;$$('#ov [data-clcs]').forEach(x=>x.classList.toggle('on',x===b));});

@@ -139,7 +139,7 @@ test('recette 3 · dépôt fictif → achat → rechargement → vente → recon
   expect(apresVente.solde).toBeGreaterThan(195); expect(apresVente.solde).toBeLessThan(200); // acheter puis revendre coûte l'écart et les frais
 
   // une fonction pas encore reliée est annoncée comme telle, et rien ne s'annule après 20 secondes (B05)
-  await page.evaluate(() => { const b = document.createElement('button'); b.dataset.a = 'cl-war'; document.body.appendChild(b); b.click(); b.remove(); });   // guerres de clans : pas encore reliées
+  await page.evaluate(() => { const b = document.createElement('button'); b.dataset.a = 'pro-share'; document.body.appendChild(b); b.click(); b.remove(); });   // partage du Mode Pro dans le chat : pas encore relié
   await expect(toast('Coming soon for accounts')).toBeVisible();
   await page.waitForTimeout(20000);
   expect(await lire(page, () => ({ solde: S.me.balance, xp: S.me.xp, pos: S.me.positions.length }))).toEqual({ solde: apresVente.solde, xp: 210, pos: apresVente.pos });
@@ -708,6 +708,12 @@ test('clans : rejoindre un clan ouvert sur le vrai serveur ; le tag est vu par u
   expect(await essai('api_clan_call', { p_market: 'clasico', p_side: 'oui' })).toBe('role_insuffisant');
   expect(await essai('api_clan_promote', { p_user: idA })).toBe('role_insuffisant');
   expect(await essai('api_clan_kick', { p_user: idA })).toBe('role_insuffisant');
+  // guerres de clans : seul le chef d'un clan de joueurs en déclare une ; sans guerre en cours, aucun buy-in n'est pris
+  const soldeAvantGuerre = await lire(a.page, () => S.me.balance);
+  expect(await essai('api_clan_war', {})).toBe('role_insuffisant');
+  expect(await essai('api_clan_war_join', {})).toBe('guerre_absente');
+  await a.page.evaluate(() => srvClanRelire());
+  expect(await lire(a.page, () => ({ guerre: myClan() ? myClan().war || null : 'hors clan', solde: S.me.balance }))).toEqual({ guerre: null, solde: soldeAvantGuerre });
   // quitter : 7 jours d'attente, tenus par le serveur
   await a.page.evaluate(() => { location.hash = '#clan-c1'; });
   await a.page.locator('[data-a="cl-leave"]').first().click();

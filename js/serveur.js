@@ -77,6 +77,9 @@ const ERR_TXT={
  clan_complet:()=>_t("{0} membres maximum.",[CLAN.MAX]),
  deja_invite:()=>_t("Tu as déjà invité ce joueur aujourd’hui."),
  role_insuffisant:()=>_t("Ton rôle dans le clan ne permet pas cette action."),
+ guerre_en_cours:()=>_t("Une guerre est déjà en cours."),
+ guerre_absente:()=>_t("Aucune guerre en cours."),
+ guerre_deja:()=>_t("Tu participes déjà à cette guerre."),
  compte_trop_recent:()=>_t("Ton compte doit avoir plus de {0} jours ({1} aujourd’hui).",[CLAN.MIN_AGE_D,accountAgeD()]),
  clan_nom_invalide:()=>_t("3 à 28 caractères."),
  clan_tag_invalide:()=>_t('3 ou 4 lettres ou chiffres.'),
@@ -116,7 +119,7 @@ const srvErreur=e=>{if(e&&e.code==='session'){srvSessionPerdue();return;}if(e&&e
    qui touche au solde, à l'XP ou à un état partagé n'est exécutée localement quand le serveur fait autorité. */
 const SRV_BLOQUE=new Set((''
  +'limit-place ord-cancel guard guard-save guard-del '
- +'cl-war-join cl-sim cl-war '
+ +'cl-sim '
  +'pro-sh-send pro-share '
  +'wallet wallet-modal demo-login demo-rank demo-rank-open demo-rank-reset').split(/\s+/));
 const SRV_FORMS_BLOQUE=new Set([]);
@@ -166,6 +169,9 @@ const NOTIF_T={
  clan_officier:p=>_t("Tu es maintenant officier du clan {0}.",[CK[p.id]?CK[p.id].name:'']),
  clan_exclu:p=>_t("Tu as été exclu du clan {0}.",[CK[p.id]?CK[p.id].name:'']),
  clan_invite:p=>_t("{0} t’invite à rejoindre son clan. Code d’invitation : {1}.",[userOf(p.u).n,p.code||'']),
+ guerre_won:p=>_t("Guerre gagnée contre {0}",[srvClanNom(p.foe)])+' : '+_t("+{0} pour toi, cagnotte {1} partagée entre les participants.",[F.usd(+p.gain),F.usd0(+p.pot)]),
+ guerre_lost:p=>_t("Guerre perdue contre {0}",[srvClanNom(p.foe)])+' : '+_t("{0} points contre {1}. La cagnotte va aux vainqueurs.",[p.a,p.b]),
+ guerre_draw:p=>_t("Égalité")+' '+_t("contre {0}",[srvClanNom(p.foe)]),
  clan_appel_suivi:p=>MK[p.m]?_t("{0} membres ont suivi ton appel de clan sur {1}.",[p.n,MK[p.m].short]):'',
  mise_suivie:p=>_t("{0} a suivi ta mise",[p.n||userOf(p.u).n]),
  parrain_bonus:p=>_t("Bonus de parrainage : {0} offerts grâce au code {1}.",[F.usd0(+p.gain),p.code||'']),
@@ -497,8 +503,10 @@ function srvChatAjouter(rid,m,mes){
  if(m.f)srvFiches({[m.u]:m.f});
  const text=m.tpl?srvBotTexte(m.tpl):m.text;if(m.tpl&&!text)return;             /* gabarit sur un marché inconnu de l'écran : ignoré */
  const moi=m.u===srvMoi()?'me':m.u;
- if(m.k==='evt'){const e=m.ev||{},k=MK[e.m];if(e.code!=='appel'||!k)return;
-  addMsg(rid,mkMsg({k:'evt',text:_t("Appel de clan : {0}, côté {1}. Chacun suit avec sa mise, dans ses limites.",[k.short,e.s==='oui'?_t("Oui"):_t("Non")]),at:m.at,sid:m.id}));return;}
+ if(m.k==='evt'){const e=m.ev||{},k=MK[e.m],f=CK[e.foe];
+  const t=e.code==='appel'&&k?_t("Appel de clan : {0}, côté {1}. Chacun suit avec sa mise, dans ses limites.",[k.short,e.s==='oui'?_t("Oui"):_t("Non")])
+   :e.code==='guerre'&&f?_t("Guerre de clans contre {0} [{1}] ! 48 h pour marquer des points. Buy-in {2}.",[f.name,f.tag,F.usd0(+e.k)]):'';
+  if(t)addMsg(rid,mkMsg({k:'evt',text:t,at:m.at,sid:m.id}));return;}
  if(m.k==='bet'){if(!m.bet||!MK[m.bet.m])return;                                /* mise partagée : une carte, avec son nombre de suivis */
   addMsg(rid,mkMsg({u:moi,k:'bet',text:'',bet:{m:m.bet.m,s:m.bet.s,amt:+m.bet.amt,price:+m.bet.price},followers:m.fc|0,r:srvReactions(m.r),my:srvMiennes(mes,m.id),at:m.at,sid:m.id}));return;}
  addMsg(rid,mkMsg({u:moi,k:'msg',text,r:srvReactions(m.r),my:srvMiennes(mes,m.id),at:m.at,sid:m.id}));
@@ -741,11 +749,23 @@ function srvClanFil(c,p,me,moi){
   return f.code==='rejoint'?_t("{0} a rejoint le clan.",[n]):f.code==='quitte'?_t("{0} a quitté le clan.",[n]):f.code==='fonde'?_t("{0} a fondé le clan.",[n])
    :f.code==='mise'?(k?_t("{0} vient de miser {1} sur {2}.",[n,F.usd0(+q.amt),k.short]):''):f.code==='officier'?_t("{0} est nommé officier.",[nom(q.u)])
    :f.code==='exclu'?_t("{0} a été exclu du clan.",[nom(q.u)]):f.code==='invite'?_t("{0} rejoint le clan sur invitation de {1}.",[n,nom(q.par)])
-   :f.code==='appel'?(k?_t("Appel de clan : {0} épingle {1} côté {2}.",[n,k.short,cote(q.s)]):''):'';};
+   :f.code==='appel'?(k?_t("Appel de clan : {0} épingle {1} côté {2}.",[n,k.short,cote(q.s)]):'')
+   :f.code==='guerre'?(CK[q.foe]?_t("Guerre déclarée contre {0} [{1}] : 48 h, buy-in {2} par participant.",[CK[q.foe].name,CK[q.foe].tag,F.usd0(+q.k)]):''):'';};
  const connu=f=>!!nom(f.u)&&(!(f.p||{}).u||!!nom(f.p.u))&&(!(f.p||{}).par||!!nom(f.p.par));          /* un joueur cité n'existe plus : la ligne n'est pas affichée */
  c.feed=(p.feed||[]).filter(connu).map(f=>({u:f.u===moi?'me':f.u,txt:phrase(f),at:+f.at})).filter(f=>f.txt);
  c.calls=(p.calls||[]).map(k=>({id:'k'+k.id,m:k.m,s:k.s,by:k.by===moi?'me':k.by,at:+k.at,followers:Array.from({length:k.n|0},()=>'')}));
+ /* la guerre du clan : les deux camps et leurs points viennent du serveur (adversaires et membres simulés compris) */
+ const w=p.war&&CK[p.war.foe]?p.war:null,adv=w?CK[w.foe].tag.toLowerCase():'';
+ c.war=w?{id:'w'+w.id,foe:w.foe,at:+w.at,endAt:+w.endAt,pot:+w.pot,buyin:+w.buyin,status:'live',
+  mine:(w.mine||[]).map(x=>({u:x.u===moi?'me':x.u,pts:+x.pts,paid:x.u===moi?+w.buyin:undefined})),theirs:(w.theirs||[]).map(x=>({u:adv+'_'+x.i,pts:+x.pts}))}:null;
+ c.wars=(p.wars||[]).filter(x=>CK[x.foe]).map(x=>({foe:x.foe,at:+x.at,status:x.status,a:+x.a,b:+x.b,pot:+x.pot}));
 }
+const srvClanNom=id=>CK[id]?CK[id].name:'';
+/* déclarer la guerre (le chef) ; y participer (chaque membre, avec son buy-in) : tout est tenu par le serveur */
+function srvClanGuerre(){srvClanAgir('api_clan_war',{},()=>{const c=myClan();if(!c||!c.war)return;
+ toast({tone:'blue',icon:'swords',force:true,title:`${_t("Guerre déclarée contre {0}",[srvClanNom(c.war.foe)])}`,text:_t("48 h, buy-in par participant, score des 10 meilleurs.")});});}
+function srvClanGuerreRejoindre(){if(typeof rgBlocked==='function'&&rgBlocked('bet'))return;srvClanAgir('api_clan_war_join',{},()=>{const c=myClan();if(!c||!c.war)return;updateHeader();
+ toast({tone:'blue',icon:'shield',force:true,title:_t("Tu participes à la guerre"),text:`${_t("{0} dans la cagnotte de guerre (séquestre Wimoro). Tes points suivent tes mises pendant 48 h.",[F.usd0(c.war.buyin)])}`});});}
 let srvClanOccupe=false,srvClanLu=0;
 /* une action de chef ou d'officier : le serveur décide, l'écran relit le clan */
 async function srvClanAgir(nom,args,apres){
@@ -849,6 +869,8 @@ function srvReactionRecue(d){
 
 /* ----- Mises partagées dans le chat : la carte, ses suivis et leurs XP sont tenus par le serveur ----- */
 Object.assign(SRV_TOAST,{
+ guerre_won:p=>toast({tone:'green',icon:'trophy',force:true,title:`${_t("Guerre gagnée contre {0}",[srvClanNom(p.foe)])}`,text:`${_t("+{0} pour toi, cagnotte {1} partagée entre les participants.",[F.usd(+p.gain),F.usd0(+p.pot)])}`,href:'#clan-'+p.id}),
+ guerre_lost:p=>toast({tone:'red',icon:'shield',force:true,title:`${_t("Guerre perdue contre {0}",[srvClanNom(p.foe)])}`,text:`${_t("{0} points contre {1}. La cagnotte va aux vainqueurs.",[p.a,p.b])}`,href:'#clan-'+p.id}),
  mise_suivie:p=>toast({icon:'users',title:`${_t("{0} a suivi ta mise",[p.n||userOf(p.u).n])}`,text:'+20 XP',href:String(p.room||'').startsWith('m:')?'#marche-'+p.room.slice(2):'#chat'})
 });
 /* discret : annonce automatique après un pari (case « Annoncer ma mise ») — un refus du serveur y reste silencieux */
@@ -1081,7 +1103,7 @@ function srvPerso(evt,d){
   if(S.me.notifs.some(x=>x.id===d.n.id))return;
   S.me.notifs.unshift(notifDe(d.n));S.me.notifs=S.me.notifs.slice(0,30);updateBell();
   if(SRV_TOAST[d.n.code]){try{SRV_TOAST[d.n.code](d.n.p||{});}catch(e){}}                             /* ce que le serveur vient de faire pour le joueur, annoncé comme en mode Démo */
-  if(/^fr_|^duel_|^stack_|^combo_|^parrain_|^prop_|^copie_|^clan_|^mise_|^marche_resolu$|^admin_solde$|^kyc_ok$|^blitz_gagne$/.test(d.n.code||'')){srvVu=0;srvRafraichir();}                   /* demande d'ami ou acceptation : les listes viennent du serveur */
+  if(/^fr_|^duel_|^stack_|^guerre_|^combo_|^parrain_|^prop_|^copie_|^clan_|^mise_|^marche_resolu$|^admin_solde$|^kyc_ok$|^blitz_gagne$/.test(d.n.code||'')){srvVu=0;srvRafraichir();}                   /* demande d'ami ou acceptation : les listes viennent du serveur */
  }
 }
 
