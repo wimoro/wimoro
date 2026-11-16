@@ -122,7 +122,34 @@
   /* manche commencée à l'instant `debut` : prix de départ, prix d'arrivée, issue */
   function serieIssue(d, debut) { const p0 = prixAu(d, debut), p1 = prixAu(d, debut + SERIE_MS), m = Math.abs(p1 / p0 - 1); return { p0, p1, out: m <= d.be ? 'be' : p1 > p0 ? 'oui' : 'non' }; }
 
+  /* ----- Blitz Royale : tournoi à élimination. Tout se déduit de l'heure, sauf les vrais joueurs, tenus par le serveur -----
+     Un Blitz par créneau de 15 minutes : inscriptions jusqu'au départ (2 minutes après le début du créneau), puis au plus
+     10 manches de 60 secondes séparées par 10 secondes de pause. Les joueurs simulés et leurs choix sont semés par Blitz et
+     par manche : deux machines calculent la même salle. */
+  const BZ = { ROUNDS: 10, ROUND_MS: 60000, CHOICE_MS: 30000, PAUSE_MS: 10000, BUYIN: 10, PRIME_BUYIN: 25, REBUY: 50, PRIME_H_UTC: 20, RAKE: .05,
+    PERIODE: 900000, ATTENTE: 120000, GID: 'btc', BOTS: [1900, 3100] };
+  const bzId = t => Math.floor(t / BZ.PERIODE);
+  const bzDebut = id => id * BZ.PERIODE + BZ.ATTENTE;
+  const bzManche = (id, i) => { const a = bzDebut(id) + (i - 1) * (BZ.ROUND_MS + BZ.PAUSE_MS); return { debut: a, fin: a + BZ.ROUND_MS }; };
+  const bzPrime = id => new Date(bzDebut(id)).getUTCHours() === BZ.PRIME_H_UTC;          // 21 h, heure de Paris en hiver
+  /* issue de la manche i : 1 = Haut, 0 = Bas, 2 = break even ; `haut` : sens du prix à la clôture des choix (il oriente les joueurs simulés) */
+  function bzIssue(id, i) { const d = JEUX[BZ.GID], m = bzManche(id, i), p0 = prixAu(d, m.debut), p1 = prixAu(d, m.fin), e = Math.abs(p1 / p0 - 1);
+    return { p0, p1, out: e <= d.be ? 2 : p1 > p0 ? 1 : 0, haut: prixAu(d, m.debut + BZ.CHOICE_MS) > p0 }; }
+  /* les joueurs simulés du Blitz `id` : effectif, puis manche par manche leurs choix et les survivants */
+  const BZC = {};
+  function bzBots(id) { if (BZC[id]) return BZC[id];
+    const prime = bzPrime(id), A = rng(hash('blitz' + id)), n = (BZ.BOTS[0] + Math.floor(A() * (BZ.BOTS[1] - BZ.BOTS[0]))) * (prime ? 2 : 1), manches = []; let vivants = n;
+    for (let i = 1; i <= BZ.ROUNDS && vivants > 0; i++) { const x = bzIssue(id, i), rr = rng(hash('blitz' + id + ':' + i)); let o = 0, e = 0, b = 0, u = 0;
+      for (let k = 0; k < vivants; k++) { if (rr() < .01) { u++; continue; } const y = rr(); if (y < .04) e++; else if (y < .5 + (x.haut ? .08 : -.08)) o++; else b++; }
+      const reste = x.out === 2 ? e : x.out === 1 ? o : b;
+      manches.push({ i, out: x.out, p0: x.p0, p1: x.p1, avant: vivants, haut: o, be: e, bas: b, sans: u, vivants: reste }); vivants = reste; }
+    const anciens = Object.keys(BZC); if (anciens.length > 8) delete BZC[anciens[0]];
+    return (BZC[id] = { id, n, prime, buyin: prime ? BZ.PRIME_BUYIN : BZ.BUYIN, manches, survivants: vivants }); }
+  /* jackpot reporté sur le Blitz `id` : les entrées des Blitz précédents où aucun joueur simulé n'a survécu (5 au plus) */
+  function bzReport(id, prof) { prof = prof || 0; if (prof >= 5) return 0; const p = bzBots(id - 1); return p.survivants > 0 ? 0 : p.n * p.buyin + bzReport(id - 1, prof + 1); }
+
   racine.MoteurEclair = { FCAL, FDUR, FOPEN, FVOL, FEPOCH, FTICK, FK, CAP_BE, JEUX, LISTE, hash, rng, round, t0, tick, ouvert, graine, niveau, plan, issue,
     depart, mises, poser, etat, regler, beP, beMult, beRoom, beMax, frais, prix, gain, cle, total, taux,
-    SERIE_MS, SERIE_CHOIX, SERIE_MAX, prixAu, serieCotes, serieIssue, beProb, beMultFair };
+    SERIE_MS, SERIE_CHOIX, SERIE_MAX, prixAu, serieCotes, serieIssue, beProb, beMultFair,
+    BZ, bzId, bzDebut, bzManche, bzPrime, bzIssue, bzBots, bzReport };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

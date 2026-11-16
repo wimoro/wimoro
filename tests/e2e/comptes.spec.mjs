@@ -433,3 +433,36 @@ test('La Série : lancée, jouée et réglée par le vrai serveur ; la manche ga
   expect(await lire(page, () => S.me.balance)).toBeCloseTo(solde0 - 5 + stack, 2);
   expect(erreurs).toEqual([]);
 });
+
+test('Blitz Royale : la salle affichée est celle du moteur ; l’inscription au prochain Blitz est prise par le vrai serveur, une seule fois', async ({ page }) => {
+  test.setTimeout(120000);
+  const erreurs = await ouvrirReel(page, '#connexion');
+  await page.locator('#le').fill(EMAIL); await page.locator('#lp').fill(MDP); await page.locator('form[data-form="login"] [type=submit]').click();
+  await expect(page).toHaveURL(/#accueil/, { timeout: 20000 }); await pret(page);
+  await page.evaluate(() => { location.hash = '#blitz'; });
+  await expect.poll(() => lire(page, () => !!(S.bz.royale && S.bz.royale.sid)), { timeout: 20000 }).toBe(true);
+  const vu = await lire(page, () => { const r = S.bz.royale, b = MoteurEclair.bzBots(r.sid); return { etat: r.state, cible: r.target, moteur: b.n, buyin: r.buyin, attendu: b.buyin, inscrits: r.bots.length }; });
+  expect(['lobby', 'live', 'done']).toContain(vu.etat);
+  expect(vu.cible).toBe(vu.moteur); expect(vu.buyin).toBe(vu.attendu); expect(vu.inscrits).toBeGreaterThan(100);
+  await expect(page.locator('[data-bzcard] .bzcard')).toBeVisible();
+
+  const appel = (action, corps) => page.evaluate(async ([action, corps]) => { try { const r = await API.fn('eclair', Object.assign({ action }, corps)); return { ok: true, r }; } catch (e) { return { ok: false, code: e.code }; } }, [action, corps]);
+  const etat = await appel('blitz_state', { id: await lire(page, () => MoteurEclair.bzId(Date.now() + FSKEW)) });
+  expect(etat.ok).toBe(true); expect(etat.r.blitz).toMatchObject({ moi: null }); expect(Array.isArray(etat.r.blitz.vivants)).toBe(true);
+  const prochain = await lire(page, () => MoteurEclair.bzId(Date.now() + FSKEW) + 1);          // toujours ouvert aux inscriptions
+  const solde0 = await lire(page, () => S.me.balance), buyin = await lire(page, id => MoteurEclair.bzBots(id).buyin, prochain);
+  const cle = await lire(page, () => crypto.randomUUID());
+  const entree = await appel('blitz_join', { id: prochain, key: cle });
+  expect(entree.ok).toBe(true);
+  expect(entree.r.blitz).toMatchObject({ id: prochain, moi: { paye: buyin, rachat: false, regle: false } }); expect(entree.r.blitz.n).toBeGreaterThanOrEqual(1);
+  expect(entree.r.me.balance).toBeCloseTo(solde0 - buyin, 2);
+  expect((await appel('blitz_join', { id: prochain, key: cle })).r.rejoue, 'même clé : rien de plus').toBe(true);
+  expect(await appel('blitz_join', { id: prochain, key: await lire(page, () => crypto.randomUUID()) })).toEqual({ ok: false, code: 'deja_inscrit' });
+  expect(await appel('blitz_choose', { id: prochain, choice: 'oui' })).toEqual({ ok: false, code: 'blitz_inconnu' });   // ce Blitz n'a pas commencé
+  expect(await appel('blitz_settle', { id: prochain })).toEqual({ ok: false, code: 'blitz_inconnu' });
+  expect(await appel('blitz_join', { id: prochain + 5, key: cle })).toEqual({ ok: false, code: 'blitz_inconnu' });
+  await page.reload(); await pret(page);
+  expect(await lire(page, () => S.me.balance)).toBeCloseTo(solde0 - buyin, 2);                // l'entrée est bien en base
+  expect(await lire(page, () => SRV_BZ.aRegler)).toContain(prochain);
+  expect(erreurs).toEqual([]);
+});

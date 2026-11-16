@@ -13,6 +13,12 @@
 //   { action: 'serie_play', gid, choice }       →  { ok: true, now, me, ev, serie }      (cote et frais : serveur)
 //   { action: 'serie_cash' }                    →  { ok: true, now, me, ev, serie, hist, regle }
 //   { action: 'serie_settle' }                  →  { ok: true, now, me, ev, serie, hist, regles }  (issue : serveur)
+// Blitz Royale (un tournoi par créneau de 15 minutes ; la salle simulée se déduit de l'heure, les vrais joueurs sont en base) :
+//   { action: 'blitz_state', id }           →  { ok: true, now, blitz }               (vrais joueurs, ma situation, clôture)
+//   { action: 'blitz_join', id, key }       →  { ok: true, now, me, ev, blitz }       (buy-in : serveur)
+//   { action: 'blitz_choose', id, choice }  →  { ok: true, now, me, ev, blitz }       (manche et fenêtre de choix : serveur)
+//   { action: 'blitz_rebuy', id }           →  { ok: true, now, me, ev, blitz }
+//   { action: 'blitz_settle', id }          →  { ok: true, now, me, ev, blitz, hist } (issues, survivants simulés, jackpot : serveur)
 // Refus : { ok: false, code } avec un code stable (mises_fermees, deja_mise, solde_insuffisant, pause, be_plein…).
 // La fonction vérifie elle-même la session auprès du service d'authentification (getUser) : verify_jwt est désactivé.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
@@ -153,6 +159,55 @@ Deno.serve(async (req: Request) => {
       if (r.data?.serie?.state !== "running") break;
     }
     return json(req, { ok: true, now: Date.now(), ...dernier, regles, hist });
+  }
+
+  // ── Blitz Royale ──
+  const BZ = ME.BZ;
+  const issues = (id: number, n: number): number[] => Array.from({ length: n }, (_, k) => ME.bzIssue(id, k + 1).out);
+  const finies = (id: number, t: number) => { let n = 0; for (let i = 1; i <= BZ.ROUNDS; i++) if (t >= ME.bzManche(id, i).fin) n = i; return n; };
+  // un Blitz dont on peut parler maintenant : celui du créneau, le précédent (à régler) ou le suivant (inscriptions)
+  const blitz = (id: unknown, t: number, avant = 1, apres = 1) => { const n = Number(id), k = ME.bzId(t); return Number.isInteger(n) && n >= k - avant && n <= k + apres ? n : null; };
+
+  if (corps?.action === "blitz_state") {
+    const t = Date.now(), id = blitz(corps.id, t);
+    if (id === null) return refus(req, "blitz_inconnu");
+    const r = await appel("srv_blitz_etat", { p_user: joueur, p: { id, issues: issues(id, finies(id, t)) } }, "blitz, état");
+    return r.non ?? json(req, { ok: true, ...r.data, now: Date.now() });
+  }
+
+  if (corps?.action === "blitz_join") {
+    const t = Date.now(), id = blitz(corps.id, t, 0, 1);
+    if (id === null) return refus(req, "blitz_inconnu");
+    const r = await appel("srv_blitz_join", { p_user: joueur, p: { id, buyin: ME.bzBots(id).buyin, debut: ME.bzDebut(id), key: corps.key ?? null } }, "blitz, entrée");
+    return r.non ?? json(req, { ok: true, now: Date.now(), ...r.data });
+  }
+
+  if (corps?.action === "blitz_choose") {
+    const t = Date.now(), id = blitz(corps.id, t, 0, 0);
+    const choix = ({ oui: 1, non: 0, be: 2 } as Record<string, number>)[String(corps.choice ?? "")];
+    if (id === null) return refus(req, "blitz_inconnu");
+    if (choix === undefined) return refus(req, "cote_invalide");
+    let manche = 0;                                          // la manche dont les choix sont ouverts à l'heure du serveur
+    for (let i = 1; i <= BZ.ROUNDS; i++) { const m = ME.bzManche(id, i); if (t >= m.debut && t < m.debut + BZ.CHOICE_MS) manche = i; }
+    if (!manche) return refus(req, "choix_fermes");
+    const r = await appel("srv_blitz_choose", { p_user: joueur, p: { id, manche, debut: ME.bzManche(id, manche).debut, choice: choix, issues: issues(id, manche - 1) } }, "blitz, choix");
+    return r.non ?? json(req, { ok: true, now: Date.now(), ...r.data });
+  }
+
+  if (corps?.action === "blitz_rebuy") {
+    const t = Date.now(), id = blitz(corps.id, t, 0, 0);
+    if (id === null) return refus(req, "blitz_inconnu");
+    const r = await appel("srv_blitz_rebuy", { p_user: joueur, p: { id, issue1: ME.bzIssue(id, 1).out, fin1: ME.bzManche(id, 1).fin, debut2: ME.bzManche(id, 2).debut, prix: BZ.REBUY } }, "blitz, rachat");
+    return r.non ?? json(req, { ok: true, now: Date.now(), ...r.data });
+  }
+
+  if (corps?.action === "blitz_settle") {
+    const t = Date.now(), id = blitz(corps.id, t, 3000, 0);   // un Blitz passé (jusqu'à un mois) ou celui du créneau
+    if (id === null) return refus(req, "blitz_inconnu");
+    const b = ME.bzBots(id);
+    const vivants = Array.from({ length: BZ.ROUNDS }, (_, k) => b.manches[k] ? b.manches[k].vivants : 0);
+    const r = await appel("srv_blitz_clore", { p_user: joueur, p: { id, debut: ME.bzDebut(id), issues: issues(id, BZ.ROUNDS), bots: { n: b.n, buyin: b.buyin, vivants }, report: ME.bzReport(id) } }, "blitz, clôture");
+    return r.non ?? json(req, { ok: true, now: Date.now(), ...r.data });
   }
 
   return refus(req, "requete");
