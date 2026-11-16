@@ -61,7 +61,7 @@
 
   /* ----- Les fonctions du contrat ----- */
   var RPC = {
-    api_state: function () { var e0 = etat(); regler(e0, []); rgMaj(e0, []); var e = clone(e0); e.deps = e0.deps.map(depJson); e.eclair = eclairJson(e0); delete e.eclairMises; e.serie = serieJson(e0); e.duels = duelsJson(e0); delete e.duelsL; e.blitz = Object.keys(e0.blitzJ || {}).filter(function (i) { return !e0.blitzJ[i].regle; }).map(Number); delete e.blitzJ; e.now = Date.now() + (CFG.decalage || 0); return e; },
+    api_state: function () { var e0 = etat(); regler(e0, []); rgMaj(e0, []); var e = clone(e0); e.deps = e0.deps.map(depJson); e.eclair = eclairJson(e0); delete e.eclairMises; e.serie = serieJson(e0); e.duels = duelsJson(e0); delete e.duelsL; e.combos = clone(e0.combosL || []); delete e.combosL; e.blitz = Object.keys(e0.blitzJ || {}).filter(function (i) { return !e0.blitzJ[i].regle; }).map(Number); delete e.blitzJ; e.now = Date.now() + (CFG.decalage || 0); return e; },
     api_pseudo_libre: function (a) { return /^[A-Za-z0-9._]{3,20}$/.test(a.p_pseudo || '') && !pseudoPris(a.p_pseudo); },
     api_profile_update: function (a) { var p = a.p || {}, me = etat().me;
       if ('n' in p) { if (!/^[A-Za-z0-9._]{3,20}$/.test(p.n || '')) throw { message: 'pseudo_invalide' }; if (pseudoPris(p.n, uid())) throw { message: 'pseudo_pris' }; me.n = p.n; }
@@ -143,6 +143,25 @@
       if (a.p_action === 'cancel' && d.by === uid()) { e.me.balance = Math.round((e.me.balance + d.stake) * 100) / 100; d.st = 'expired'; } else if (a.p_action === 'decline' && d.opp === uid()) d.st = 'declined'; else throw { message: 'duel_indisponible' };
       d.settleAt = Date.now(); var rep = reponse([]); rep.duels = duelsJson(e); return rep; },
     api_duel_code: function (a) { var code = String(a.p_code || '').toUpperCase(), d = (CFG.liens || {})[code], u = {}; if (!d) throw { message: 'duel_indisponible' }; u[d.by] = ficheDe(d.by); return { duel: clone(d), users: u }; },
+    /* Paris combinés : mêmes règles que supabase/migrations/…_combines.sql */
+    api_combos: function () { return clone(etat().combosL || []); },
+    api_combo_place: function (a) { var p = a.p || {}, e = etat(), me = e.me, cle = uid() + ':' + p.key, r2 = function (x) { return Math.round(x * 100) / 100; }, legs = [], vus = {}, mult = 1, rep;
+      if (!(p.stake >= 2 && p.stake <= 1000)) throw { message: 'montant_invalide' }; if (!p.key) throw { message: 'cle_absente' }; if (!Array.isArray(p.legs) || p.legs.length < 2 || p.legs.length > 6) throw { message: 'combine_incomplet' };
+      if (db.ops[cle]) { rep = clone(db.ops[cle]); rep.rejoue = true; return rep; }
+      if (e.rg && e.rg.pause > Date.now()) throw { message: 'pause' };
+      p.legs.forEach(function (l) { var m = marche(l.m); if (!m) throw { message: 'marche_inconnu' }; if (m.st !== 'open') throw { message: 'marche_ferme' }; if (['oui', 'non'].indexOf(l.s) < 0) throw { message: 'cote_invalide' };
+        if (vus[l.m]) throw { message: 'selection_en_double' }; vus[l.m] = 1; var prix = l.s === 'oui' ? m.p : 100 - m.p, mu = 100 / Math.max(1, prix); mult *= mu; legs.push({ m: l.m, s: l.s, price: prix, mult: mu, res: null }); });
+      if (me.balance < p.stake) throw { message: 'solde_insuffisant' };
+      var brut = r2(p.stake * mult), frais = r2(brut * .05), c = { id: db.seq++, at: Date.now(), stake: +p.stake, mult: mult, fee: frais, pay: Math.min(r2(brut - frais), 50000), status: 'open', legs: legs, cash: null, endAt: null };
+      me.balance = r2(me.balance - p.stake); me.played++; (e.combosL = e.combosL || []).unshift(c);
+      var ev = [], av = rangDe(me), n = 10 + 5 * legs.length; me.xp += n; ev.push({ k: 'xp', n: n, src: 'combo' }); rangMonte(me, av, ev);
+      rep = reponse(ev); rep.combo = clone(c); rep.combos = clone(e.combosL); db.ops[cle] = clone(rep); return rep; },
+    api_combo_cash: function (a) { var e = etat(), me = e.me, c = (e.combosL || []).filter(function (x) { return x.id === +a.p_id; })[0], pr = 1; if (!c || c.status !== 'open') throw { message: 'combine_indisponible' };
+      c.legs.forEach(function (l) { if (l.res === 'lost') pr = 0; else if (l.res !== 'won') { var m = marche(l.m); pr *= (l.s === 'oui' ? m.p : 100 - m.p) / 100; } });
+      var v = Math.floor(c.pay * pr * .95 * 100) / 100; if (v <= 0) throw { message: 'combine_indisponible' };
+      var pnl = Math.round((v - c.stake) * 100) / 100, h = { k: 'res', q: 'combo|c|' + c.legs.length + '|' + v, s: 'oui', win: pnl >= 0, pnl: pnl, at: Date.now() };
+      c.status = 'cashed'; c.cash = v; c.endAt = Date.now(); me.balance = Math.round((me.balance + v) * 100) / 100; me.settled++; if (pnl >= 0) me.wins++; me.realized = Math.round(((me.realized || 0) + pnl) * 100) / 100; e.history.unshift(clone(h));
+      var rep = reponse([]); rep.combo = clone(c); rep.combos = clone(e.combosL); rep.hist = [h]; return rep; },
     api_dm_list: function () { var ids = [], users = {}; for (var r in db.chat) { var p = r.split(':'); if (p[0] === 'dm' && (p[1] === uid() || p[2] === uid()) && db.chat[r].length) { var o = p[1] === uid() ? p[2] : p[1]; ids.push(o); users[o] = ficheDe(o); } } return { ids: ids, users: users }; },
     api_dm_send: function (a) { dmOk(a.p_user, true); var e = etat(), t = String(a.p_text || '').trim(), ev = [];
       if (!t) throw { message: 'message_vide' }; if (t.length > 280) throw { message: 'message_trop_long' };

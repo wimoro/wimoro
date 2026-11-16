@@ -136,7 +136,7 @@ test('recette 3 · dépôt fictif → achat → rechargement → vente → recon
   expect(apresVente.solde).toBeGreaterThan(195); expect(apresVente.solde).toBeLessThan(200); // acheter puis revendre coûte l'écart et les frais
 
   // une fonction pas encore reliée est annoncée comme telle, et rien ne s'annule après 20 secondes (B05)
-  await page.evaluate(() => { const b = document.createElement('button'); b.dataset.a = 'cb-place'; document.body.appendChild(b); b.click(); b.remove(); });   // combiné : pas encore relié
+  await page.evaluate(() => { const b = document.createElement('button'); b.dataset.a = 'cp-start'; document.body.appendChild(b); b.click(); b.remove(); });   // copy trading : pas encore relié
   await expect(toast('Coming soon for accounts')).toBeVisible();
   await page.waitForTimeout(20000);
   expect(await lire(page, () => ({ solde: S.me.balance, xp: S.me.xp, pos: S.me.positions.length }))).toEqual({ solde: apresVente.solde, xp: 210, pos: apresVente.pos });
@@ -508,4 +508,34 @@ test('duels : A défie B (mise prise par le vrai serveur), B sans solde ne peut 
   expect(await lire(a.page, () => S.me.duels.map(x => x.status))).toEqual(['active', 'declined']);
   expect(a.erreurs).toEqual([]); expect(b.erreurs).toEqual([]);
   await a.ctx.close(); await b.ctx.close();
+});
+
+test('combiné : composé à l’écran, validé par le vrai serveur (prix bloqués, mise prise), retrouvé après rechargement, puis encaissé', async ({ page }) => {
+  test.setTimeout(120000);
+  const erreurs = await ouvrirReel(page, '#connexion');
+  await page.locator('#le').fill(EMAIL); await page.locator('#lp').fill(MDP); await page.locator('form[data-form="login"] [type=submit]').click();
+  await expect(page).toHaveURL(/#accueil/, { timeout: 20000 }); await pret(page);
+  const clic = (a, data = {}) => page.evaluate(([a, data]) => { const b = document.createElement('button'); b.dataset.a = a; Object.assign(b.dataset, data); document.body.appendChild(b); b.click(); b.remove(); }, [a, data]);
+  const solde0 = await lire(page, () => S.me.balance), avant = await lire(page, () => (S.me.combos || []).length);
+  await clic('cb-add', { m: 'btc150k', s: 'oui' }); await clic('cb-add', { m: 'clasico', s: 'non' });
+  expect(await lire(page, () => slip().legs.length)).toBe(2);
+  await clic('cb-open');
+  await page.locator('[data-a="cb-place"]').click();
+  await expect.poll(() => lire(page, () => (S.me.combos || []).length), { timeout: 20000 }).toBe(avant + 1);
+  const c = await lire(page, () => { const x = S.me.combos[0]; return { id: x.id, stake: x.stake, mult: x.mult, pay: x.pay, status: x.status, legs: x.legs.map(l => ({ m: l.m, s: l.s, price: l.price, mult: l.mult })) }; });
+  expect(c.status).toBe('open'); expect(c.legs.map(l => l.m + ':' + l.s)).toEqual(['btc150k:oui', 'clasico:non']);
+  expect(c.mult).toBeCloseTo(c.legs[0].mult * c.legs[1].mult, 6);                             // cote = produit des cotes bloquées par le serveur
+  expect(c.pay).toBeCloseTo(Math.round(c.stake * c.mult * 100) / 100 * 0.95, 1);
+  for (const l of c.legs) expect(l.mult).toBeCloseTo(100 / l.price, 6);
+  expect(await lire(page, () => S.me.balance)).toBeCloseTo(solde0 - c.stake, 2);
+  await page.reload(); await pret(page);
+  expect(await lire(page, () => ({ id: S.me.combos[0].id, st: S.me.combos[0].status }))).toEqual({ id: c.id, st: 'open' });
+  await page.evaluate(() => { location.hash = '#combines'; });
+  await page.locator('[data-a="cb-cash"][data-id="' + c.id + '"]').click();
+  await expect.poll(() => lire(page, () => S.me.combos[0].status), { timeout: 20000 }).toBe('cashed');
+  const cash = await lire(page, () => S.me.combos[0].cash);
+  expect(cash).toBeGreaterThan(0); expect(cash).toBeLessThan(c.stake);                        // encaissé aussitôt : la valeur du moment, moins les 5 %
+  expect(await lire(page, () => S.me.balance)).toBeCloseTo(solde0 - c.stake + cash, 2);
+  expect(await page.evaluate(async id => { try { await API.call('api_combo_cash', { p_id: +id }); return 'encaissé deux fois'; } catch (e) { return e.code; } }, c.id)).toBe('combine_indisponible');
+  expect(erreurs).toEqual([]);
 });
