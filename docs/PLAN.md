@@ -248,9 +248,22 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 - [x] Suivre un joueur (`api_follow`) : liste et compteur d'abonnés tenus par le serveur. Partages en image de la Série et du
       clan : disponibles (ils ne font que dessiner une image, avec le vrai code de parrainage). _Tests_
       `tests/sql/suivre.spec.mjs`, `tests/compte/suivre.spec.mjs`, `tests/e2e/comptes.spec.mjs` (suivre pour de vrai).
-- [ ] Encore « Bientôt disponible » en mode Compte, hors clans : partager une mise dans le chat et la suivre, réactions sous
-      les messages, partage du Mode Pro, duels « stack » et duels éclair. La connexion par portefeuille et les outils
-      « démo » (changer de rang à la main) n'existent, par nature, qu'en mode Démo.
+- [x] Partager une mise dans le chat et la suivre (`api_chat_share`, `api_chat_follow`), mêmes règles que la démo : rang
+      Bronze pour partager une de ses positions (+5 XP), la carte est vue en direct par les lecteurs du salon ; un à trois
+      joueurs la suivent dans les vingt secondes, chaque suivi rapporte 20 XP à l'auteur et compte pour ses rangs (« mises
+      suivies ») ; rang Argent pour suivre la mise d'un autre joueur après avoir parié comme lui (+5 XP). La case « Annoncer
+      ma mise dans le chat du marché » du ticket passe par la même fonction. _Choix_ : une même position (marché et côté) ne
+      se partage qu'une fois par 24 heures et une mise ne se suit qu'une fois — bornes ajoutées côté serveur pour que les XP
+      ne se fabriquent pas en boucle ; quand la borne refuse l'annonce automatique d'un pari, l'écran ne dit rien (le pari,
+      lui, est passé). Les suivis des bots sont programmés au moment du partage et crédités par la tâche `wm-suivis` (toutes
+      les 5 secondes, sans effet tant que personne ne partage). _Tests_ `tests/sql/chat-mises.spec.mjs` (3),
+      `tests/compte/mises.spec.mjs` (2), `tests/e2e/comptes.spec.mjs` (partage pour de vrai, carte reçue en direct par un
+      autre joueur, suivis crédités par le vrai serveur, refus sans le rang Argent).
+- [ ] Limite : un vrai joueur qui suit la mise d'un autre n'a pas été joué contre la vraie base (les comptes de test n'ont
+      pas le rang Argent) ; c'est prouvé dans la base embarquée et avec le faux serveur. Le refus, lui, est joué pour de vrai.
+- [ ] Encore « Bientôt disponible » en mode Compte, hors clans : réactions sous les messages, partage du Mode Pro, duels
+      « stack » et duels éclair. La connexion par portefeuille et les outils « démo » (changer de rang à la main)
+      n'existent, par nature, qu'en mode Démo.
 - [ ] Clans, seconde partie, annoncée « Bientôt disponible » en mode Compte : guerres de clans (cagnotte), appels de clan,
       chat de clan, promotions, exclusions et invitations nominatives, récap en image. Le classement et les divisions des
       clans de démonstration restent ceux de l'écran (ils ne bougent pas en mode Compte).
@@ -491,3 +504,4 @@ Rien d'obligatoire. Le détail et les constats sont dans `docs/EXPLOITATION.md`,
 | 16 nov. 2026 | Clans en mode Compte, première partie (appartenance, création, contribution, tag public). | migration `clans` (empreinte identique) ; 264 tests (134 SQL) ; 18 scénarios de bout en bout contre le vrai back |
 | 16 nov. 2026 | Recette finale sur le site en ligne. Lot « ordres limites » remis à niveau dans sa branche (273 tests, dont 141 SQL), toujours en attente de la confirmation Supabase. | 130 tests d'écran et 18 scénarios réels sur <https://wimoro.com> ; base : 20 comptes, 10 000 bots, aucun compte de test, 56 migrations, aucune erreur de tâche planifiée |
 | 16 nov. 2026 | Suivre un joueur ; partages en image de la Série et du clan. | migration `suivre` (empreinte identique) ; 267 tests (135 SQL) ; 19 scénarios de bout en bout contre le vrai back |
+| 16 nov. 2026 | Partager une mise dans le chat et la suivre. | migration `chat_mises` (empreinte identique) ; 272 tests (138 SQL) ; 20 scénarios de bout en bout contre le vrai back ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
