@@ -22,7 +22,7 @@ test('B04 · mode Compte : 3 minutes sans message du serveur, rien ne change', a
   expect(apres).toEqual(avant);
   expect(apres.local, 'les prix ne sont pas mémorisés localement').toBeNull();
   const plan = await lire(page, () => ({ lances: PLAN.filter(t => t.quand === 'tous').map(t => t.nom), eteints: PLAN.filter(t => (t.quand || 'local') === 'local').length, serveur: PLAN.filter(t => t.quand === 'serveur').map(t => t.nom) }));
-  expect(plan.serveur).toEqual(['serveur : série', 'serveur : blitz', 'serveur : présence']);                 // l'horloge de la Série (affichage et demande de règlement), le signal de présence
+  expect(plan.serveur).toEqual(['serveur : série', 'serveur : propositions', 'serveur : blitz', 'serveur : présence']);                 // l'horloge de la Série (affichage et demande de règlement), le signal de présence
   expect(plan.lances.length).toBeGreaterThanOrEqual(4);
   expect(plan.eteints).toBeGreaterThanOrEqual(15);
   expect(erreurs).toEqual([]);

@@ -169,3 +169,17 @@ I18N_ADD("en",{
 I18N_ADD("he",{
 "Ce combiné n’est plus disponible.":"הצירוף הזה כבר לא זמין."
 });
+I18N_ADD("en",{
+"Certains caractères ne sont pas acceptés : chevrons, guillemets droits, accent grave, barre oblique inverse.":"Some characters are not accepted: angle brackets, straight quotes, backtick, backslash.",
+"Tu as déjà proposé ce pari : il est en vote.":"You already proposed this market: it is in the vote.",
+"Tu as déjà envoyé 5 propositions aujourd’hui. Reviens demain.":"You already sent 5 proposals today. Come back tomorrow.",
+"Cette proposition n’est plus en vote.":"This proposal is no longer in the vote.",
+"Tu as déjà voté pour cette proposition.":"You already voted on this proposal."
+});
+I18N_ADD("he",{
+"Certains caractères ne sont pas acceptés : chevrons, guillemets droits, accent grave, barre oblique inverse.":"חלק מהתווים אינם מתקבלים: סוגריים משולשים, מירכאות ישרות, גרש הפוך, לוכסן הפוך.",
+"Tu as déjà proposé ce pari : il est en vote.":"כבר הצעת את ההימור הזה: הוא בהצבעה.",
+"Tu as déjà envoyé 5 propositions aujourd’hui. Reviens demain.":"כבר שלחת 5 הצעות היום. חזור מחר.",
+"Cette proposition n’est plus en vote.":"ההצעה הזו כבר לא בהצבעה.",
+"Tu as déjà voté pour cette proposition.":"כבר הצבעת על ההצעה הזו."
+});

@@ -55,6 +55,16 @@ const ERR_TXT={
  combine_incomplet:()=>_t("Combiné incomplet"),
  selection_en_double:()=>_t("Ce marché est déjà dans ton combiné."),
  combine_indisponible:()=>_t("Ce combiné n’est plus disponible."),
+ texte_refuse:()=>_t("Certains caractères ne sont pas acceptés : chevrons, guillemets droits, accent grave, barre oblique inverse."),
+ question_invalide:()=>_t("Vérifie la liste « Avant d’envoyer »."),
+ categorie_invalide:()=>_t("Vérifie la liste « Avant d’envoyer »."),
+ date_invalide:()=>_t("Vérifie la liste « Avant d’envoyer »."),
+ source_invalide:()=>_t("Vérifie la liste « Avant d’envoyer »."),
+ regles_invalides:()=>_t("Vérifie la liste « Avant d’envoyer »."),
+ proposition_en_double:()=>_t("Tu as déjà proposé ce pari : il est en vote."),
+ trop_de_propositions:()=>_t("Tu as déjà envoyé 5 propositions aujourd’hui. Reviens demain."),
+ proposition_indisponible:()=>_t("Cette proposition n’est plus en vote."),
+ deja_vote:()=>_t("Tu as déjà voté pour cette proposition."),
  duel_indisponible:()=>_t("Ce duel n’est plus disponible."),
  cote_indisponible:()=>_t("La cote du marché ne permet pas ce duel pour l’instant."),
  trop_de_duels:()=>_t("Tu as déjà trop de duels en attente de réponse."),
@@ -82,12 +92,12 @@ const srvErreur=e=>{if(e&&e.code==='session'){srvSessionPerdue();return;}if(e&&e
 /* ----- Ce qui n'est pas encore relié au serveur est clairement indisponible en mode serveur -----
    La liste se vide au fil des lots (voir docs/PLAN.md). Le test tests/compte/garde.spec.mjs vérifie qu'aucune action
    qui touche au solde, à l'XP ou à un état partagé n'est exécutée localement quand le serveur fait autorité. */
-const SRV_BLOQUE=new Set(('share-pick vote '
+const SRV_BLOQUE=new Set(('share-pick '
  +'cp-start cp-stop-do cp-edit cp-manage cp-pause cp-stop cp-open limit-place ord-cancel guard guard-save guard-del stk-create stack-open '
  +'sr-share cl-war-join cl-sim cl-join cl-apply cl-leave-do cl-share cl-promote cl-kick cl-invite cl-call-do cl-war cl-feedopt cl-create-open cl-leave cl-call-open cl-war-open '
- +'pro-sh-send pro-share follow-user follow-bet follow-pbet share propose react '
+ +'pro-sh-send pro-share follow-user follow-bet follow-pbet share react '
  +'wallet wallet-modal demo-login demo-rank demo-rank-open demo-rank-reset').split(/\s+/));
-const SRV_FORMS_BLOQUE=new Set(['create','clan','clcode']);
+const SRV_FORMS_BLOQUE=new Set(['clan','clcode']);
 const srvBientot=()=>toast({tone:'amber',icon:'info',force:true,title:_t("Bientôt disponible avec ton compte"),text:_t("Cette fonction marche déjà en mode démo. Elle arrive pour les comptes.")});
 function srvGarde(type,nom){
  if(!SRV())return true;
@@ -112,6 +122,8 @@ const NOTIF_T={
  duel_expire:p=>_t("Duel expiré sans réponse : {0}. Ta mise t’est rendue.",[MK[p.m]?MK[p.m].short:p.m]),
  duel_gagne:p=>_t("{0} contre {1} : {2}.",[_t("Duel gagné"),userOf(p.u).n,MK[p.m]?MK[p.m].short:p.m]),
  duel_perdu:p=>_t("{0} contre {1} : {2}.",[_t("Duel perdu"),userOf(p.u).n,MK[p.m]?MK[p.m].short:p.m]),
+ prop_vote:p=>_t("Ta proposition « {0} » est en vote.",[p.q||'']),
+ prop_live:p=>_t("Ton pari « {0} » est en ligne.",[p.q||'']),
  parrain_bonus:p=>_t("Bonus de parrainage : {0} offerts grâce au code {1}.",[F.usd0(+p.gain),p.code||'']),
  parrain_inscrit:p=>_t("{0} s’est inscrit avec ton code de parrainage.",[p.n||'']),
  parrain_paye:p=>_t("Parrainage : {0} a placé son premier pari, {1} pour toi.",[p.n||'',F.usd0(+p.gain)]),
@@ -171,6 +183,7 @@ function hydrater(e){
  {const b=e.eclair&&e.eclair.b||{};if(Object.keys(b).length){me.fmy={r:e.eclair.r,b:{}};for(const g in b)me.fmy.b[g]=miseDe(b[g]);}SRV_ECLAIR_DU=e.eclair?(e.eclair.du|0):0;}
  me.serie=serieDe(e.serie);SRV_BZ.aRegler=(e.blitz||[]).slice();
  me.combos=(e.combos||[]).map(comboDe);
+ srvProps(e.props,me);                                                        /* propositions de marché : les siennes, et celles à voter */
  if(e.ref){me.refCode=e.ref.code||'';me.refBy=e.ref.by||undefined;                         /* parrainage : code, parrain et filleuls viennent du serveur */
   me.referrals=(e.ref.list||[]).map(r=>({n:r.n,at:+r.at,st:r.st==='done'?'done':'pending',paid:+r.paid||0,doneAt:r.doneAt?+r.doneAt:undefined}));}
  if(e.duels){srvFiches(e.duels.users);me.duels=(e.duels.liste||[]).map(x=>duelDe(x,e.uid));}   /* au démarrage, l'identifiant du joueur vient de l'état lui-même */
@@ -532,6 +545,55 @@ async function srvSerieRegler(){
 }
 planifier('serveur : série',1000,()=>{if(typeof serieTick==='function')serieTick();},'serveur');
 
+/* ----- Propositions de marché : envoi, votes et mise en ligne tenus par le serveur. Tant qu'une proposition du joueur est
+   en vote, l'écran relit le compte toutes les 3 secondes ; le pari validé arrive comme un marché du serveur. ----- */
+let SRV_COMM=null,srvPropOccupe=false;
+const propDe=x=>{const d=x.code&&SRV_COMM?SRV_COMM[x.code]:null;                 /* contenu de démonstration : titre traduit, comme en mode Démo */
+ return {id:String(x.id),q:d?d.q:x.q,cat:x.cat,date:x.date||'',time:x.time||'21:00',src:x.src||'',rules:x.rules||'',p0:+x.p0,status:x.status,for:+x.for,against:+x.against,need:+x.need,at:+x.at,mid:x.mid||undefined,by:x.by||(d?d.by:undefined)};};
+function srvProps(p,me){
+ if(!p)return;me=me||S.me;
+ if(!SRV_COMM){SRV_COMM={};for(const c of COMM_PROPS)SRV_COMM[c.id]=Object.assign({},c);}
+ srvFiches(p.users);me.props=(p.mine||[]).map(propDe);me.voted={};
+ COMM_PROPS.length=0;for(const x of p.vote||[]){const pr=propDe(x);COMM_PROPS.push(pr);if(x.voted)me.voted[pr.id]=x.voted;}
+}
+/* une réponse du serveur : compteurs mis à jour sur place ; un pari passé en ligne est annoncé une fois son marché chargé */
+function srvPropsAppliquer(r,ev){
+ const avant=new Map((S.me.props||[]).map(p=>[p.id,p.status]));
+ srvProps(r.props);srvAppliquer(r,ev);
+ const neufs=S.me.props.filter(p=>p.status==='live'&&avant.get(p.id)==='vote');
+ for(const pr of S.me.props){
+  $$(`[data-prv="${pr.id}"]`).forEach(e=>e.textContent=`${_t("{0} pour, {1} contre",[pr.for,pr.against])}`);
+  $$(`[data-prb="${pr.id}"]`).forEach(e=>e.style.width=Math.min(100,pr.for/pr.need*100)+'%');
+  $$(`[data-prc="${pr.id}"]`).forEach(e=>e.textContent=`${Math.min(pr.for,pr.need)} / ${pr.need}`);}
+ if(neufs.length)srvMarches().then(()=>{for(const pr of neufs){const m=MK[pr.mid];if(!m)continue;
+   toast({tone:'blue',icon:'check',force:true,title:_t("Ton pari est en ligne"),text:F.kv(m.short,'+'+F.xp(50)),href:'#marche-'+m.id,dur:6000});if(typeof confetti==='function')confetti(40);}
+  refreshMine();}).catch(e=>console.warn('[srv] marchés indisponibles',e&&e.code));
+}
+async function srvPropCreer(dr){
+ if(srvPropOccupe)return;srvPropOccupe=true;
+ try{const r=await API.call('api_proposal_create',{p:{q:dr.q.trim(),cat:dr.cat,date:dr.date,time:dr.time,src:dr.src.trim(),rules:dr.rules.trim(),p0:+dr.p0}});
+  srvProps(r.props);
+  S.ui.draft={q:'',cat:dr.cat,date:'',time:'21:00',src:'',rules:'',p0:50};S.ui.crTab='mine';
+  toast({tone:'blue',icon:'check',title:_t("Proposition envoyée au vote"),text:_t("Tu la retrouves dans Mes paris créés, sur l’accueil et sur ton profil.")});
+  srvAppliquer(r);render(true);}
+ catch(e){srvErreur(e);}
+ finally{srvPropOccupe=false;}
+}
+async function srvPropVoter(p,v,ev){
+ if(srvPropOccupe)return;srvPropOccupe=true;
+ try{const r=await API.call('api_proposal_vote',{p_id:+p.id,p_vote:v});srvProps(r.props);srvAppliquer(r,ev);render(false);}
+ catch(e){srvErreur(e);if(e&&(e.code==='proposition_indisponible'||e.code==='deja_vote')){srvVu=0;srvRafraichir();}}
+ finally{srvPropOccupe=false;}
+}
+async function srvPropsTick(){
+ if(!SRV()||srvPropOccupe||!(S.me.props||[]).some(p=>p.status==='vote'))return;
+ srvPropOccupe=true;
+ try{srvPropsAppliquer(await API.call('api_proposals'));}
+ catch(e){if(e&&e.code==='session')srvSessionPerdue();}
+ finally{srvPropOccupe=false;}
+}
+planifier('serveur : propositions',3000,srvPropsTick,'serveur');
+
 /* ----- Paris combinés : prix bloqués, mise et gain tenus par le serveur ; le « slip » reste une sélection locale ----- */
 const comboDe=x=>({id:String(x.id),at:+x.at,stake:+x.stake,mult:+x.mult,fee:+x.fee,pay:+x.pay,status:x.status,cash:x.cash==null?undefined:+x.cash,endAt:x.endAt||undefined,
  legs:(x.legs||[]).map(l=>({m:l.m,s:l.s,price:+l.price,mult:+l.mult,res:l.res||null}))});
@@ -701,7 +763,7 @@ function srvPerso(evt,d){
  if(evt==='notif'&&d&&d.n){
   if(S.me.notifs.some(x=>x.id===d.n.id))return;
   S.me.notifs.unshift(notifDe(d.n));S.me.notifs=S.me.notifs.slice(0,30);updateBell();
-  if(/^fr_|^duel_|^combo_|^parrain_|^marche_resolu$|^admin_solde$|^kyc_ok$|^blitz_gagne$/.test(d.n.code||'')){srvVu=0;srvRafraichir();}                   /* demande d'ami ou acceptation : les listes viennent du serveur */
+  if(/^fr_|^duel_|^combo_|^parrain_|^prop_|^marche_resolu$|^admin_solde$|^kyc_ok$|^blitz_gagne$/.test(d.n.code||'')){srvVu=0;srvRafraichir();}                   /* demande d'ami ou acceptation : les listes viennent du serveur */
  }
 }
 

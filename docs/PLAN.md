@@ -239,6 +239,14 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 - [ ] Limite : le paiement d'un duel gagné n'a pas été joué contre la vraie base (il faudrait résoudre un vrai marché) ; il est
       prouvé dans la base embarquée et avec le faux serveur.
 - [ ] Clans, copy trading.
+- [x] Propositions de marché : à partir du rang Or, un joueur propose un pari ; la communauté (les bots) vote au rythme de la
+      démo, les autres joueurs peuvent voter (+2 XP) ; à 25 votes le pari passe en ligne pour tout le monde, avec son carnet
+      et son chat (+10 XP à l'envoi, +50 XP à la mise en ligne). Les trois propositions « À voter » de la démo existent sur
+      le serveur comme contenu de démonstration. _Tests_ `tests/sql/propositions.spec.mjs` (4),
+      `tests/compte/propositions.spec.mjs` (2), `tests/e2e/comptes.spec.mjs` (refus du vrai serveur sans le rang Or, vote réel).
+- [ ] Limite : l'envoi d'une proposition et sa mise en ligne n'ont pas été joués contre la vraie base (les comptes de test
+      n'ont pas le rang Or, et je ne modifie pas le rang d'un compte à la main) ; ils sont prouvés dans la base embarquée
+      et avec le faux serveur.
 - [ ] **Ordres limites, stop loss, take profit : lot prêt et testé, en attente de ta confirmation.** L'outil Supabase a demandé
       une confirmation manuelle pour cette migration (elle contient des suppressions de lignes dans ses fonctions) ; personne
       n'était là, la demande a expiré, et je n'ai pas contourné ce garde-fou. Le lot est rangé dans la branche
@@ -381,6 +389,10 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 | Parrainage | Sans limite de filleuls, comme en mode Démo ; code accepté seulement à la création du compte. | Règle du jeu inchangée. Limite connue : une même personne peut créer plusieurs comptes pour se parrainer elle-même (argent fictif ; chaque compte demande une adresse e-mail distincte). |
 | Garde-fou de l'outil Supabase | Jamais contourné. | Quand l'outil demande une confirmation manuelle et que personne ne répond, la migration n'est pas appliquée et le lot attend, sans être fusionné. Je ne réécris pas le SQL pour échapper au contrôle et je ne passe pas par un autre chemin. |
 | Ordres limites : XP | 10 XP à la première exécution d'un achat limite, et non au dépôt de l'ordre (15 XP du premier ordre limite : inchangé). | Plus strict que la démo : sinon placer puis annuler un ordre rapporterait de l'XP sans jamais parier. |
+| Propositions : texte des joueurs | Refusé s'il contient des chevrons, des guillemets droits, un accent grave ou une barre oblique inverse ; apostrophes rendues typographiques ; une seule ligne. | Ce texte est montré à tous les joueurs : il ne doit jamais pouvoir être lu comme du code par un navigateur. |
+| Propositions : votes | Les votes de la communauté se déduisent du temps écoulé (un vote favorable toutes les 1,5 seconde), sans tâche de fond ; la mise en ligne se fait au premier passage d'un joueur. Les votes des joueurs sont comptés dans la table des votes. | Même rythme que la démo, sans rien faire tourner en permanence ; le vote d'un compte supprimé disparaît avec lui. |
+| Propositions : bornes | 5 propositions par joueur et par 24 heures. | Borne technique : chaque proposition validée crée un vrai marché visible par tous et rapporte de l'XP. |
+| Propositions : modération | Comme dans la démo, 25 votes suffisent : pas de validation préalable. | Règle du jeu inchangée. Un marché proposé par un joueur apparaît dans le panel d'administration, d'où il peut être fermé ou résolu. |
 | Protection de `main` | Non activée. | Elle changerait ta façon de publier ; elle reste proposée, facultative. |
 
 ## À faire par l'humain
@@ -421,3 +433,4 @@ Rien d'obligatoire. Le détail et les constats sont dans `docs/EXPLOITATION.md`,
 | 16 nov. 2026 | Paris combinés en mode Compte. | migration `combines` (empreinte identique) ; 227 tests (108 SQL) ; 14 scénarios de bout en bout contre le vrai back |
 | 16 nov. 2026 | Parrainage en mode Compte. Correctif : solde à jour dès la réponse du chargement après un duel expiré. | migration `parrainage` (empreinte identique) ; 235 tests (113 SQL) ; 15 scénarios de bout en bout contre le vrai back |
 | 16 nov. 2026 | État du joueur assemblé par blocs enregistrés ; parrainage sans attente ; ordres limites prêts mais en attente de confirmation (branche `lot/ordres-limites`). | migrations `parrainage_sans_attente` et `etat_blocs` (empreintes identiques) ; 238 tests (116 SQL) ; 15 scénarios de bout en bout contre le vrai back |
+| 16 nov. 2026 | Propositions de marché en mode Compte. | migrations `propositions` et `propositions_votes` (empreintes identiques) ; 244 tests (120 SQL) ; 16 scénarios de bout en bout contre le vrai back |
