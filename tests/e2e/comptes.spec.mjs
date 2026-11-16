@@ -678,3 +678,25 @@ test('clans : rejoindre un clan ouvert sur le vrai serveur ; le tag est vu par u
   expect(a.erreurs).toEqual([]); expect(b.erreurs).toEqual([]);
   await a.ctx.close(); await b.ctx.close();
 });
+
+test('suivre un joueur : tenu par le vrai serveur, compteur d’abonnés à jour, gardé après rechargement, puis ne plus suivre', async ({ page }) => {
+  test.setTimeout(120000);
+  const erreurs = await ouvrirReel(page, '#connexion');
+  await page.locator('#le').fill(EMAIL); await page.locator('#lp').fill(MDP); await page.locator('form[data-form="login"] [type=submit]').click();
+  await expect(page).toHaveURL(/#accueil/, { timeout: 20000 }); await pret(page);
+  const ami = await lire(page, () => S.me.friends[0]);                                          // B, ami depuis un scénario précédent
+  expect(ami, 'A a un ami').toBeTruthy();
+  const avant = await lire(page, id => ({ suivis: S.me.following.includes(id), abonnes: USERS[id].fol }), ami);
+  expect(avant.suivis).toBe(false);
+  await page.evaluate(id => { location.hash = '#joueur-' + id; }, ami);
+  await page.locator('[data-a="follow-user"][data-u="' + ami + '"]').first().click();
+  await expect.poll(() => lire(page, id => S.me.following.includes(id), ami), { timeout: 20000 }).toBe(true);
+  expect(await lire(page, id => USERS[id].fol, ami)).toBe(avant.abonnes + 1);
+  await page.reload(); await pret(page);
+  expect(await lire(page, id => ({ suivis: S.me.following.includes(id), abonnes: USERS[id].fol }), ami)).toEqual({ suivis: true, abonnes: avant.abonnes + 1 });
+  await page.evaluate(id => { location.hash = '#joueur-' + id; }, ami);
+  await page.locator('[data-a="follow-user"][data-u="' + ami + '"]').first().click();
+  await expect.poll(() => lire(page, id => S.me.following.includes(id), ami), { timeout: 20000 }).toBe(false);
+  expect(await lire(page, id => USERS[id].fol, ami)).toBe(avant.abonnes);
+  expect(erreurs).toEqual([]);
+});
