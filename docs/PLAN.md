@@ -239,6 +239,13 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 - [ ] Limite : le paiement d'un duel gagné n'a pas été joué contre la vraie base (il faudrait résoudre un vrai marché) ; il est
       prouvé dans la base embarquée et avec le faux serveur.
 - [ ] Clans, copy trading, parrainage.
+- [x] Paris combinés : 2 à 6 sélections, prix bloqués à la validation, 5 % du gain brut, gain plafonné à 50 000 $, encaissement
+      anticipé à la valeur du moment, règlement sélection par sélection à la résolution des marchés (`api_combo_place`,
+      `api_combo_cash`, `api_combos`). La sélection en cours (le « slip ») reste locale à l'écran. _Tests_
+      `tests/sql/combines.spec.mjs` (3), `tests/compte/combines.spec.mjs` (2), `tests/e2e/comptes.spec.mjs` (composé, validé,
+      rechargé, encaissé contre le vrai serveur).
+- [ ] Limite : le paiement d'un combiné gagné n'a pas été joué contre la vraie base (il faudrait résoudre de vrais marchés) ; il
+      est prouvé dans la base embarquée et avec le faux serveur.
 
 ### 4.7 Argent fictif et KYC
 - [x] `api_demo_deposit` (crypto, carte, virement, PayPal), `api_demo_withdraw`, `api_demo_kyc`, `api_demo_settle`
@@ -347,6 +354,7 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 | Blitz : joueurs simulés | Leurs choix sont tirés une fois par manche (1 % ne choisit pas) ; le jackpot reporté ne compte que leurs entrées. | Même allure qu'en mode Démo, mais calculable à l'identique par l'écran et le serveur. |
 | Blitz : paiement | Réglé à la demande : le premier inscrit qui revient après la fin déclenche le paiement de tous les inscrits. | Pas de tâche planifiée capable d'exécuter le moteur (JavaScript) ; aucun gain ne se perd, il attend au plus le retour d'un inscrit (un mois). |
 | Duels | Seuls les duels sur un marché sont reliés. Les frais d'ouverture ne sont pas rendus si le duel est refusé ou expire (règle du mode Démo). Un duel accepté ajoute son montant au volume du marché, sans déplacer le prix. | Les duels éclair demandent le moteur côté serveur (lot à part) ; le duel de stack dure une semaine et repose sur un adversaire simulé. |
+| Ordre des lots restants | Combinés avant clans. | Les clans sont le plus gros module, presque entièrement simulé (annuaire de 100 clans, divisions, guerres) : je traite d'abord les fonctions à règles nettes (combinés, ordres limites, parrainage, copy trading, propositions). |
 | Protection de `main` | Non activée. | Elle changerait ta façon de publier ; elle reste proposée, facultative. |
 
 ## À faire par l'humain
@@ -384,3 +392,4 @@ Rien d'obligatoire. Le détail et les constats sont dans `docs/EXPLOITATION.md`,
 | 16 nov. 2026 | 4.4 (suite) : La Série en mode Compte. | migration `serie` (empreinte identique), Edge Function `eclair` version 2 ; 206 tests (95 SQL) ; 11 scénarios de bout en bout contre le vrai back |
 | 16 nov. 2026 | 4.4 (fin) : Blitz Royale en mode Compte. | migration `blitz` (empreinte identique), Edge Function `eclair` version 3 ; 214 tests (100 SQL) ; 12 scénarios de bout en bout contre le vrai back |
 | 16 nov. 2026 | 4.6 (suite) : duels entre amis sur un marché. Stabilité : page d'administration et tests du Blitz. | migration `duels` (empreinte identique) ; 222 tests (105 SQL) ; 13 scénarios de bout en bout contre le vrai back |
+| 16 nov. 2026 | Paris combinés en mode Compte. | migration `combines` (empreinte identique) ; 227 tests (108 SQL) ; 14 scénarios de bout en bout contre le vrai back |

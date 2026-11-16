@@ -163,3 +163,9 @@ I18N_ADD("he",{
 "Tu as déjà trop de duels en attente de réponse.":"יש לך כבר יותר מדי דו-קרבות שממתינים לתשובה.",
 "Résultat officiel du marché : {0}.":"התוצאה הרשמית של השוק: {0}."
 });
+I18N_ADD("en",{
+"Ce combiné n’est plus disponible.":"This parlay is no longer available."
+});
+I18N_ADD("he",{
+"Ce combiné n’est plus disponible.":"הצירוף הזה כבר לא זמין."
+});

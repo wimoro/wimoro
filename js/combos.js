@@ -38,13 +38,14 @@ function comboPlace(){if(!S.me.logged){needLogin(_t("Connecte-toi pour valider u
  if(c.L.length<COMBO.MIN_LEGS){toast({tone:'amber',icon:'info',title:_t("Combiné incomplet"),text:`${_t("Il faut au moins {0} sélections.",[COMBO.MIN_LEGS])}`});return false;}
  if(c.stake<COMBO.MIN){toast({tone:'amber',icon:'info',title:_t("Mise trop petite"),text:`${_t("Mise minimale : {0}.",[F.usd0(COMBO.MIN)])}`});return false;}
  if(c.insuf){toast({tone:'amber',icon:'wallet',title:_t("Solde insuffisant"),text:_t("Dépose des fonds pour continuer."),href:'#depot'});return false;}
+ if(SRV()){srvComboValider(c);return false;}                   /* mode Compte : prix bloqués et mise prise par le serveur */
  const before=myRank();S.me.balance-=c.stake;const cb={id:'cb'+now().toString(36)+Math.floor(R()*1e3).toString(36),at:now(),stake:c.stake,mult:c.mult,fee:c.fee,pay:c.pay,status:'open',legs:c.L.map(l=>({m:l.m,s:l.s,price:legPrice(l.mk,l.s),mult:legMult(l.mk,l.s),res:null}))};
  combosAll().unshift(cb);S.me.played++;S.me.cbPlayed=(S.me.cbPlayed||0)+1;slip().legs=[];gainXP(10+5*cb.legs.length);if(typeof clanRecordBet==='function')clanRecordBet(null,c.stake);updateHeader();save();slipBar();closeModal();checkRank(before);
  toast({tone:'green',icon:'layers',force:true,title:`${_t("Combiné validé : {0} à ×{1}",[F.usd(cb.stake),F.d2(cb.mult)])}`,text:`${_t("{0} sélections. Gain si tout passe : {1}. Tu peux encaisser à tout moment avant la clôture.",[cb.legs.length,F.usd(cb.pay)])}`,href:'#combines'});
  if((S.ui.route||'')==='combines')render(false);return cb;}
 /* valeur du moment : gain promis × probabilité implicite actuelle, moins les frais d'encaissement */
 function comboValue(cb){if(cb.status!=='open')return 0;let p=1;for(const l of cb.legs){const m=MK[l.m];if(!m)return 0;if(l.res==='lost')return 0;if(l.res!=='won')p*=legPrice(m,l.s)/100;}return cb.pay*p*(1-COMBO.CASH_FEE);}
-function comboCash(id){const cb=comboOf(id);if(!cb||cb.status!=='open')return false;const v=comboValue(cb);if(v<=0)return false;const before=myRank();cb.status='cashed';cb.cash=v;cb.endAt=now();S.me.balance+=v;S.me.settled++;const pnl=v-cb.stake;if(pnl>=0)S.me.wins++;S.me.realized+=pnl;
+function comboCash(id){const cb=comboOf(id);if(!cb||cb.status!=='open')return false;const v=comboValue(cb);if(v<=0)return false;if(SRV()){srvComboEncaisser(cb);return false;}const before=myRank();cb.status='cashed';cb.cash=v;cb.endAt=now();S.me.balance+=v;S.me.settled++;const pnl=v-cb.stake;if(pnl>=0)S.me.wins++;S.me.realized+=pnl;
  S.me.history.unshift({k:'combo',q:`${_t("Combiné {0} sélections, encaissé à {1}",[cb.legs.length,F.usd(v)])}`,s:'oui',win:pnl>=0,pnl,at:now()});gainXP(10);updateHeader();save();checkRank(before);checkBadges();
  toast({tone:pnl>=0?'green':'amber',icon:'wallet',force:true,title:`${_t("Encaissé : {0}",[F.usd(v)])}`,text:`${_t("{0}{1} par rapport à ta mise de {2}.",[pnl>=0?'+':'−',F.usd(Math.abs(pnl)),F.usd(cb.stake)])}`});if((S.ui.route||'')==='combines')render(false);return true;}
 /* règlement d'un marché : toute sélection perdante fait tomber le combiné, toutes gagnantes = payé */

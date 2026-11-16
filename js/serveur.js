@@ -52,6 +52,9 @@ const ERR_TXT={
  elimine:()=>_t("Tu as été éliminé cette fois."),
  rachat_indisponible:()=>_t("Le rachat n’est plus possible."),
  rachat_fait:()=>_t("Le rachat n’est plus possible."),
+ combine_incomplet:()=>_t("Combiné incomplet"),
+ selection_en_double:()=>_t("Ce marché est déjà dans ton combiné."),
+ combine_indisponible:()=>_t("Ce combiné n’est plus disponible."),
  duel_indisponible:()=>_t("Ce duel n’est plus disponible."),
  cote_indisponible:()=>_t("La cote du marché ne permet pas ce duel pour l’instant."),
  trop_de_duels:()=>_t("Tu as déjà trop de duels en attente de réponse."),
@@ -82,7 +85,7 @@ const srvErreur=e=>{if(e&&e.code==='session'){srvSessionPerdue();return;}if(e&&e
 const SRV_BLOQUE=new Set(('share-pick vote '
  +'cp-start cp-stop-do cp-edit cp-manage cp-pause cp-stop cp-open limit-place ord-cancel guard guard-save guard-del stk-create stack-open '
  +'sr-share cl-war-join cl-sim cl-join cl-apply cl-leave-do cl-share cl-promote cl-kick cl-invite cl-call-do cl-war cl-feedopt cl-create-open cl-leave cl-call-open cl-war-open '
- +'cb-place cb-cash cb-add cb-clear cb-rm cb-stake pro-sh-send pro-share follow-user follow-bet follow-pbet share ref-copy ref-share propose react '
+ +'pro-sh-send pro-share follow-user follow-bet follow-pbet share ref-copy ref-share propose react '
  +'wallet wallet-modal demo-login demo-rank demo-rank-open demo-rank-reset').split(/\s+/));
 const SRV_FORMS_BLOQUE=new Set(['create','clan','clcode']);
 const srvBientot=()=>toast({tone:'amber',icon:'info',force:true,title:_t("Bientôt disponible avec ton compte"),text:_t("Cette fonction marche déjà en mode démo. Elle arrive pour les comptes.")});
@@ -109,6 +112,8 @@ const NOTIF_T={
  duel_expire:p=>_t("Duel expiré sans réponse : {0}. Ta mise t’est rendue.",[MK[p.m]?MK[p.m].short:p.m]),
  duel_gagne:p=>_t("{0} contre {1} : {2}.",[_t("Duel gagné"),userOf(p.u).n,MK[p.m]?MK[p.m].short:p.m]),
  duel_perdu:p=>_t("{0} contre {1} : {2}.",[_t("Duel perdu"),userOf(p.u).n,MK[p.m]?MK[p.m].short:p.m]),
+ combo_gagne:p=>_t("Combiné gagné : +{0}",[F.usd(+p.gain)]),
+ combo_perdu:p=>_t("Combiné {0} sélections : perdu sur {1}",[p.n,MK[p.m]?MK[p.m].short:p.m]),
  blitz_gagne:p=>_t("Blitz gagné : +{0}",[F.usd(+p.gain-+p.paye)]),
  admin_solde:p=>+p.delta>=0?_t("Ton solde a été crédité de {0} par l’équipe Wimoro.",[F.usd(+p.delta)]):_t("Ton solde a été débité de {0} par l’équipe Wimoro.",[F.usd(-p.delta)]),
  dep_credited:p=>depNotifTxt({method:p.method,usd:+p.usd,amt:+p.amt,coin:p.coin,net:p.method&&FIAT[p.method]?FIAT[p.method].n:p.net}),
@@ -134,7 +139,9 @@ const histSerie=h=>{const [,gid,won,step,mult]=h.q.split('|'),nom=GM[gid]?GM[gid
  return {k:'serie',q:h.win?_t("La Série {0} : {1} sur {1}, encaissé à ×{2}",[nom,won,F.d1(+mult)]):_t("La Série {0} : {1} sur {2}",[nom,won,step]),s:h.s,win:!!h.win,pnl:+h.pnl,at:h.at};};
 const histBlitz=h=>{const [,res,n]=h.q.split('|');return {k:'blitz',q:res==='g'?_t("Blitz Royale : survivant sur {0}",[F.int(+n)]):_t("Blitz Royale : éliminé"),s:h.s,win:!!h.win,pnl:+h.pnl,at:h.at};};
 const histDuel=h=>{const [,u,m]=h.q.split('|');return {k:'duel',q:_t("Duel contre {0} : {1}",[userOf(u).n,MK[m]?MK[m].short:m]),s:h.s,win:!!h.win,pnl:+h.pnl,at:h.at};};
-const histDe=h=>{if(typeof h.q==='string'&&h.q.startsWith('duel|'))return histDuel(h);if(h.k==='flash'&&typeof h.q==='string'&&h.q.startsWith('serie|'))return histSerie(h);if(h.k==='flash'&&typeof h.q==='string'&&h.q.startsWith('blitz|'))return histBlitz(h);if(h.k==='flash'&&typeof h.q==='string'&&h.q.startsWith('eclair|')){const [,gid,r]=h.q.split('|'),d=GM[gid];
+const histCombo=h=>{const [,res,n,x]=h.q.split('|');
+ return {k:'combo',q:res==='c'?_t("Combiné {0} sélections, encaissé à {1}",[n,F.usd(+x)]):res==='g'?_t("Combiné {0} sélections gagné à ×{1}",[n,F.d2(+x)]):_t("Combiné {0} sélections : perdu sur {1}",[n,MK[x]?MK[x].short:x]),s:h.s,win:!!h.win,pnl:+h.pnl,at:h.at};};
+const histDe=h=>{if(typeof h.q==='string'&&h.q.startsWith('combo|'))return histCombo(h);if(typeof h.q==='string'&&h.q.startsWith('duel|'))return histDuel(h);if(h.k==='flash'&&typeof h.q==='string'&&h.q.startsWith('serie|'))return histSerie(h);if(h.k==='flash'&&typeof h.q==='string'&&h.q.startsWith('blitz|'))return histBlitz(h);if(h.k==='flash'&&typeof h.q==='string'&&h.q.startsWith('eclair|')){const [,gid,r]=h.q.split('|'),d=GM[gid];
   return {k:'flash',q:d?_t("Éclair {0}, manche {1} : {2}",[d.name,F.int(+r),sideLabel(d,h.s)]):h.q,s:h.s==='non'?'non':'oui',eq:h.s==='be',win:!!h.win,pnl:+h.pnl,at:h.at};}
  return {k:h.k,m:h.m||undefined,q:h.m&&MK[h.m]?MK[h.m].q:(h.q||h.m||''),s:h.s,win:!!h.win,pnl:+h.pnl,at:h.at};};
 const miseDe=m=>({id:m.id,s:m.s,amt:+m.amt,fee:+m.fee,net:+m.net,price:m.price,mult:+m.mult,tk:m.tk|0});
@@ -160,6 +167,7 @@ function hydrater(e){
  /* pari éclair : les mises de la manche en cours sont rendues par le serveur (flashBoot les replace sur leurs paris) */
  {const b=e.eclair&&e.eclair.b||{};if(Object.keys(b).length){me.fmy={r:e.eclair.r,b:{}};for(const g in b)me.fmy.b[g]=miseDe(b[g]);}SRV_ECLAIR_DU=e.eclair?(e.eclair.du|0):0;}
  me.serie=serieDe(e.serie);SRV_BZ.aRegler=(e.blitz||[]).slice();
+ me.combos=(e.combos||[]).map(comboDe);
  if(e.duels){srvFiches(e.duels.users);me.duels=(e.duels.liste||[]).map(x=>duelDe(x,e.uid));}   /* au démarrage, l'identifiant du joueur vient de l'état lui-même */
  me.notifs=(e.notifs||[]).map(notifDe);me.missions=(e.missions||[]).map(missionDe);me.badges=(e.badges||[]).slice();
  me.friends=(e.friends||[]).slice();me.freqIn=(e.freqIn||[]).slice();me.freqOut=(e.freqOut||[]).slice();me.following=(e.following||[]).slice();
@@ -519,6 +527,28 @@ async function srvSerieRegler(){
 }
 planifier('serveur : série',1000,()=>{if(typeof serieTick==='function')serieTick();},'serveur');
 
+/* ----- Paris combinés : prix bloqués, mise et gain tenus par le serveur ; le « slip » reste une sélection locale ----- */
+const comboDe=x=>({id:String(x.id),at:+x.at,stake:+x.stake,mult:+x.mult,fee:+x.fee,pay:+x.pay,status:x.status,cash:x.cash==null?undefined:+x.cash,endAt:x.endAt||undefined,
+ legs:(x.legs||[]).map(l=>({m:l.m,s:l.s,price:+l.price,mult:+l.mult,res:l.res||null}))});
+let srvComboOccupe=false;
+async function srvComboValider(c){if(srvComboOccupe)return;srvComboOccupe=true;
+ try{const r=await API.call('api_combo_place',{p:{legs:c.L.map(l=>({m:l.m,s:l.s})),stake:c.stake,key:cleOp()}});
+  srvAppliquer(r);S.me.combos=(r.combos||[]).map(comboDe);const cb=comboDe(r.combo);slip().legs=[];updateHeader();slipBar();closeModal();
+  toast({tone:'green',icon:'layers',force:true,title:`${_t("Combiné validé : {0} à ×{1}",[F.usd(cb.stake),F.d2(cb.mult)])}`,text:`${_t("{0} sélections. Gain si tout passe : {1}. Tu peux encaisser à tout moment avant la clôture.",[cb.legs.length,F.usd(cb.pay)])}`,href:'#combines'});
+  if((S.ui.route||'')==='combines')render(false);}
+ catch(e){srvErreur(e);}
+ finally{srvComboOccupe=false;}
+}
+async function srvComboEncaisser(cb){if(srvComboOccupe)return;srvComboOccupe=true;
+ try{const r=await API.call('api_combo_cash',{p_id:+cb.id});
+  srvAppliquer(r);S.me.combos=(r.combos||[]).map(comboDe);for(const h of r.hist||[])S.me.history.unshift(histDe(h));updateHeader();
+  const v=+r.combo.cash,pnl=v-(+r.combo.stake);
+  toast({tone:pnl>=0?'green':'amber',icon:'wallet',force:true,title:`${_t("Encaissé : {0}",[F.usd(v)])}`,text:`${_t("{0}{1} par rapport à ta mise de {2}.",[pnl>=0?'+':'−',F.usd(Math.abs(pnl)),F.usd(+r.combo.stake)])}`});
+  if((S.ui.route||'')==='combines')render(false);}
+ catch(e){srvErreur(e);}
+ finally{srvComboOccupe=false;}
+}
+
 /* ----- Duels entre amis sur un marché : mises sous séquestre et règlement tenus par le serveur -----
    Le serveur rend les duels du joueur (créés ou reçus) ; l'écran les met à sa forme et garde son affichage. Les duels
    sur une manche éclair et les duels de stack ne sont pas encore reliés. */
@@ -666,7 +696,7 @@ function srvPerso(evt,d){
  if(evt==='notif'&&d&&d.n){
   if(S.me.notifs.some(x=>x.id===d.n.id))return;
   S.me.notifs.unshift(notifDe(d.n));S.me.notifs=S.me.notifs.slice(0,30);updateBell();
-  if(/^fr_|^duel_|^marche_resolu$|^admin_solde$|^kyc_ok$|^blitz_gagne$/.test(d.n.code||'')){srvVu=0;srvRafraichir();}                   /* demande d'ami ou acceptation : les listes viennent du serveur */
+  if(/^fr_|^duel_|^combo_|^marche_resolu$|^admin_solde$|^kyc_ok$|^blitz_gagne$/.test(d.n.code||'')){srvVu=0;srvRafraichir();}                   /* demande d'ami ou acceptation : les listes viennent du serveur */
  }
 }
 
