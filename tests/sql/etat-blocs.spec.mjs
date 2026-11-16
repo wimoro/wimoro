@@ -19,10 +19,11 @@ test('l’état garde les mêmes champs qu’avant, dans les blocs enregistrés'
   expect(e.me.balance).toBe(100);
   expect(e.duels).toMatchObject({ liste: [] });
   expect(e.ref).toMatchObject({ bonus: 10, by: null, list: [] });
-  expect(await q(db, 'select cle, fonction, avant from wm.etat_blocs order by avant desc, ordre')).toEqual([
+  // les lots suivants ajoutent leurs propres blocs : on vérifie ceux du socle, pas la liste complète
+  expect(await q(db, 'select cle, fonction, avant from wm.etat_blocs order by avant desc, ordre')).toEqual(expect.arrayContaining([
     { cle: 'duels_expirer', fonction: 'wm.duels_expirer', avant: true }, { cle: 'ref_regler', fonction: 'wm.ref_regler', avant: true },
     { cle: 'serie', fonction: 'wm.serie_etat', avant: false }, { cle: 'blitz', fonction: 'wm.blitz_etat', avant: false }, { cle: 'duels', fonction: 'wm.duels_etat', avant: false },
-    { cle: 'combos', fonction: 'wm.combos_etat', avant: false }, { cle: 'ref', fonction: 'wm.ref_etat', avant: false }]);
+    { cle: 'combos', fonction: 'wm.combos_etat', avant: false }, { cle: 'ref', fonction: 'wm.ref_etat', avant: false }]));
   expect(await refus(db, alice, 'select * from wm.etat_blocs')).toMatch(/permission denied/);
   expect(await refus(db, alice, 'select * from wm.suites_blocs')).toMatch(/permission denied/);
   expect(await refus(db, alice, `insert into wm.etat_blocs (cle, fonction) values ('x', 'wm.me')`)).toMatch(/permission denied/);
@@ -57,5 +58,5 @@ test('résolution d’un marché : chaque bloc enregistré est appelé, son rés
   await enTantQue(db, chef, s => s(`select public.api_admin('resoudre', $1::jsonb)`, [JSON.stringify({ id: 'clasico', issue: 'oui' })]));
   expect((await q(db, 'select n from wm.essai where user_id = $1', [chef]))[0].n).toBe(100);
   const [j] = await q(db, `select detail from wm.admin_journal where action = 'marche_resolu' order by id desc limit 1`);
-  expect(j.detail.suites.clasico).toEqual({ duels: 0, combines: 0, essai: 7 });
+  expect(j.detail.suites.clasico).toMatchObject({ duels: 0, combines: 0, essai: 7 });
 });
