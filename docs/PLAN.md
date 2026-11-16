@@ -313,10 +313,21 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
       l'expiration du jeton du joueur (une heure au plus). Un membre qui vient de quitter son clan peut donc encore recevoir
       les nouveaux messages pendant ce délai s'il garde sa connexion ouverte ; il ne peut plus ni relire l'historique, ni
       écrire, ni réagir, et un nouvel abonnement lui est refusé. L'écran, lui, se désabonne dès le départ.
-- [ ] Clans, suite, annoncée « Bientôt disponible » en mode Compte : guerres de clans (cagnotte), appels de clan, promotions,
-      exclusions et invitations nominatives, fil d'activité du clan. Ces fonctions sont celles d'un chef ou d'un officier :
-      elles ne concernent que les clans créés par des joueurs (rang Argent, compte de 14 jours). Le classement et les
-      divisions des clans de démonstration restent ceux de l'écran (ils ne bougent pas en mode Compte).
+- [x] Fil d'activité du clan, tenu par le serveur : arrivées, départs, fondation, mises des membres qui l'acceptent (réglage
+      « Partager mes mises… », coché par défaut), promotions, exclusions, appels. Il ne se lit que de l'intérieur du clan.
+- [x] Outils du chef et des officiers (`api_clan_promote`, `api_clan_kick`, `api_clan_invite`, `api_clan_call`) : le chef
+      nomme jusqu'à 5 officiers ; chef et officiers excluent (un officier n'exclut qu'un simple membre), invitent un ami,
+      lancent un appel de clan (épinglé en tête du fil, annoncé dans le chat du clan, suivi quelques secondes plus tard
+      par 2 à 5 membres : son auteur en est prévenu). _Choix_ : un ami simulé (bot) invité rejoint aussitôt, comme dans la
+      démo ; un vrai joueur n'est **jamais** ajouté d'office : il reçoit une notification avec le code d'invitation et
+      décide ; un membre exclu attend 7 jours comme après un départ ; quand le chef s'en va, un vrai membre lui succède
+      plutôt qu'un bot ; six appels par heure au plus. _Tests_ `tests/sql/clans-chefs.spec.mjs` (5),
+      `tests/compte/clans-chefs.spec.mjs` (3), `tests/e2e/comptes.spec.mjs` (fil d'activité lu sur le vrai serveur,
+      refus des pouvoirs de chef à un simple membre).
+- [ ] Limite : les outils de chef n'ont pas été joués contre la vraie base (il faut créer un clan : rang Argent et compte de
+      14 jours, que les comptes de test n'ont pas) ; ils sont prouvés dans la base embarquée et avec le faux serveur.
+- [ ] Clans, encore « Bientôt disponible » en mode Compte : guerres de clans (cagnotte). Le classement et les divisions des
+      clans de démonstration restent ceux de l'écran (ils ne bougent pas en mode Compte).
 - [ ] Limite : la création d'un clan n'a pas été jouée contre la vraie base (rang Argent et compte de 14 jours demandés) ;
       elle est prouvée dans la base embarquée et avec le faux serveur.
 - [x] Copy trading : à partir du rang Or, copier un profil public qui l'autorise (budget, mise fixe ou pourcentage, catégories,
@@ -566,3 +577,4 @@ Rien d'obligatoire. Le détail et les constats sont dans `docs/EXPLOITATION.md`,
 | 16 nov. 2026 | Chat de clan, réservé aux membres (sujet privé). | migration `clan_chat` (empreinte identique) ; 287 tests (149 SQL) ; 21 scénarios de bout en bout contre le vrai back, dont trois comptes sur le chat du clan ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
 | 16 nov. 2026 | Duels sur une manche éclair. | migration `duels_eclair` (empreinte identique), Edge Function `eclair` version 4 ; 296 tests (154 SQL) ; 22 scénarios de bout en bout contre le vrai back, dont un duel éclair réglé par le vrai serveur ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
 | 16 nov. 2026 | Duels de stack contre un joueur simulé. | migration `stacks` (empreinte identique) ; 302 tests (158 SQL) ; 23 scénarios de bout en bout contre le vrai back ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
+| 16 nov. 2026 | Clans : fil d'activité, outils du chef et des officiers, appels de clan. | migration `clans_chefs` (empreinte identique) ; 310 tests (163 SQL) ; 23 scénarios de bout en bout contre le vrai back ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |

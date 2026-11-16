@@ -75,6 +75,8 @@ const ERR_TXT={
  clan_deja:()=>_t("Tu es déjà dans un clan."),
  clan_attente:()=>{const j=Math.max(1,Math.ceil(clanLeaveWait()/86400e3));return _t("Tu as quitté un clan il y a moins de {0} jours : encore {1} jour{2}.",[CLAN.LEAVE_WAIT_D,j,j>1?'s':'']);},
  clan_complet:()=>_t("{0} membres maximum.",[CLAN.MAX]),
+ deja_invite:()=>_t("Tu as déjà invité ce joueur aujourd’hui."),
+ role_insuffisant:()=>_t("Ton rôle dans le clan ne permet pas cette action."),
  compte_trop_recent:()=>_t("Ton compte doit avoir plus de {0} jours ({1} aujourd’hui).",[CLAN.MIN_AGE_D,accountAgeD()]),
  clan_nom_invalide:()=>_t("3 à 28 caractères."),
  clan_tag_invalide:()=>_t('3 ou 4 lettres ou chiffres.'),
@@ -114,7 +116,7 @@ const srvErreur=e=>{if(e&&e.code==='session'){srvSessionPerdue();return;}if(e&&e
    qui touche au solde, à l'XP ou à un état partagé n'est exécutée localement quand le serveur fait autorité. */
 const SRV_BLOQUE=new Set((''
  +'limit-place ord-cancel guard guard-save guard-del '
- +'cl-war-join cl-sim cl-promote cl-kick cl-invite cl-call-do cl-war cl-call-open '
+ +'cl-war-join cl-sim cl-war '
  +'pro-sh-send pro-share '
  +'wallet wallet-modal demo-login demo-rank demo-rank-open demo-rank-reset').split(/\s+/));
 const SRV_FORMS_BLOQUE=new Set([]);
@@ -161,6 +163,10 @@ const NOTIF_T={
  clan_refuse:p=>CK[p.id]?_t("{0} a refusé ta candidature.",[CK[p.id].name]):'',
  clan_cree:p=>_t("Clan {0} [{1}] créé. {2} de frais, non remboursables.",[p.name||'',p.tag||'',F.usd0(CLAN.FEE)]),
  clan_chef:p=>_t("Tu es maintenant le chef du clan {0}.",[CK[p.id]?CK[p.id].name:'']),
+ clan_officier:p=>_t("Tu es maintenant officier du clan {0}.",[CK[p.id]?CK[p.id].name:'']),
+ clan_exclu:p=>_t("Tu as été exclu du clan {0}.",[CK[p.id]?CK[p.id].name:'']),
+ clan_invite:p=>_t("{0} t’invite à rejoindre son clan. Code d’invitation : {1}.",[userOf(p.u).n,p.code||'']),
+ clan_appel_suivi:p=>MK[p.m]?_t("{0} membres ont suivi ton appel de clan sur {1}.",[p.n,MK[p.m].short]):'',
  mise_suivie:p=>_t("{0} a suivi ta mise",[p.n||userOf(p.u).n]),
  parrain_bonus:p=>_t("Bonus de parrainage : {0} offerts grâce au code {1}.",[F.usd0(+p.gain),p.code||'']),
  parrain_inscrit:p=>_t("{0} s’est inscrit avec ton code de parrainage.",[p.n||'']),
@@ -491,6 +497,8 @@ function srvChatAjouter(rid,m,mes){
  if(m.f)srvFiches({[m.u]:m.f});
  const text=m.tpl?srvBotTexte(m.tpl):m.text;if(m.tpl&&!text)return;             /* gabarit sur un marché inconnu de l'écran : ignoré */
  const moi=m.u===srvMoi()?'me':m.u;
+ if(m.k==='evt'){const e=m.ev||{},k=MK[e.m];if(e.code!=='appel'||!k)return;
+  addMsg(rid,mkMsg({k:'evt',text:_t("Appel de clan : {0}, côté {1}. Chacun suit avec sa mise, dans ses limites.",[k.short,e.s==='oui'?_t("Oui"):_t("Non")]),at:m.at,sid:m.id}));return;}
  if(m.k==='bet'){if(!m.bet||!MK[m.bet.m])return;                                /* mise partagée : une carte, avec son nombre de suivis */
   addMsg(rid,mkMsg({u:moi,k:'bet',text:'',bet:{m:m.bet.m,s:m.bet.s,amt:+m.bet.amt,price:+m.bet.price},followers:m.fc|0,r:srvReactions(m.r),my:srvMiennes(mes,m.id),at:m.at,sid:m.id}));return;}
  addMsg(rid,mkMsg({u:moi,k:'msg',text,r:srvReactions(m.r),my:srvMiennes(mes,m.id),at:m.at,sid:m.id}));
@@ -722,10 +730,42 @@ function srvClan(p,me,moi){
  if(!p)return;me=me||S.me;moi=moi||srvMoi();
  srvFiches(p.users);for(const x of p.clans||[])srvClanObjet(x,moi);
  me.clan=p.mine&&CK[p.mine.id]?{id:p.mine.id,role:p.mine.role,since:+p.mine.since}:null;
+ if(me.clan)srvClanFil(CK[me.clan.id],p,me,moi);
  me.clanXP=p.mine?+p.mine.xp||0:0;me.clanVol=p.mine?{[today()]:+p.mine.jour||0}:{};me.clanSkipped=p.mine?p.mine.ecartes|0:0;
  me.clanApps=Object.assign({},p.apps||{});me.clanLeftAt=p.leftAt?+p.leftAt:0;
 }
-let srvClanOccupe=false;
+/* Le fil d'activité et les appels du clan du joueur : le serveur envoie des codes, l'écran compose les phrases de la démo. */
+function srvClanFil(c,p,me,moi){
+ const nom=u=>u===moi?(me.n||''):((USERS[u]||{}).n||''),cote=s=>s==='oui'?_t("Oui"):_t("Non");
+ const phrase=f=>{const n=nom(f.u),q=f.p||{},k=MK[q.m];
+  return f.code==='rejoint'?_t("{0} a rejoint le clan.",[n]):f.code==='quitte'?_t("{0} a quitté le clan.",[n]):f.code==='fonde'?_t("{0} a fondé le clan.",[n])
+   :f.code==='mise'?(k?_t("{0} vient de miser {1} sur {2}.",[n,F.usd0(+q.amt),k.short]):''):f.code==='officier'?_t("{0} est nommé officier.",[nom(q.u)])
+   :f.code==='exclu'?_t("{0} a été exclu du clan.",[nom(q.u)]):f.code==='invite'?_t("{0} rejoint le clan sur invitation de {1}.",[n,nom(q.par)])
+   :f.code==='appel'?(k?_t("Appel de clan : {0} épingle {1} côté {2}.",[n,k.short,cote(q.s)]):''):'';};
+ const connu=f=>!!nom(f.u)&&(!(f.p||{}).u||!!nom(f.p.u))&&(!(f.p||{}).par||!!nom(f.p.par));          /* un joueur cité n'existe plus : la ligne n'est pas affichée */
+ c.feed=(p.feed||[]).filter(connu).map(f=>({u:f.u===moi?'me':f.u,txt:phrase(f),at:+f.at})).filter(f=>f.txt);
+ c.calls=(p.calls||[]).map(k=>({id:'k'+k.id,m:k.m,s:k.s,by:k.by===moi?'me':k.by,at:+k.at,followers:Array.from({length:k.n|0},()=>'')}));
+}
+let srvClanOccupe=false,srvClanLu=0;
+/* une action de chef ou d'officier : le serveur décide, l'écran relit le clan */
+async function srvClanAgir(nom,args,apres){
+ if(srvClanOccupe)return;srvClanOccupe=true;
+ try{const r=await API.call(nom,args);srvClan(r.clan);srvAppliquer(r);if(apres)apres(r);srvClanVue();}
+ catch(e){srvErreur(e);}
+ finally{srvClanOccupe=false;}
+}
+function srvClanInviter(u){const n=duelUserN(u);srvClanAgir('api_clan_invite',{p_user:u},r=>{
+ if(r.r==='rejoint')toast({tone:'green',icon:'userplus',title:`${_t("{0} a rejoint le clan",[n])}`,text:_t("Invitation acceptée.")});
+ else toast({tone:'blue',icon:'send',force:true,title:`${_t("Invitation envoyée à {0}",[n])}`,text:_t("Il rejoindra le clan s’il le souhaite, avec le code d’invitation.")});});}
+function srvClanAppel(m,s){srvClanAgir('api_clan_call',{p_market:m,p_side:s},()=>{closeModal();
+ toast({tone:'blue',icon:'target',force:true,title:_t("Appel de clan lancé"),text:_t("Les membres le voient en tête du fil et dans le chat.")});S.ui.cltab='activite';
+ setTimeout(srvClanRelire,14500);});}                           /* quelques secondes plus tard, des membres l'ont suivi : le serveur le dit */
+async function srvClanRelire(){
+ if(!SRV()||srvClanOccupe||!myClan())return;srvClanOccupe=true;srvClanLu=Date.now();
+ try{const r=await API.call('api_clan');srvClan(r.clan);srvAppliquer(r);srvClanVue();}
+ catch(e){if(e&&e.code==='session')srvSessionPerdue();}
+ finally{srvClanOccupe=false;}
+}
 const srvClanVue=()=>{updateHeader();if((S.ui.route||'').startsWith('clan'))render(false);};
 async function srvClanRejoindre(c,viaCode,code,err){
  if(srvClanOccupe)return;srvClanOccupe=true;
@@ -761,8 +801,9 @@ async function srvClanCreer(f,name,tag){
 }
 /* une candidature en attente : l'écran relit toutes les 3 secondes, jusqu'à la réponse de l'officier */
 async function srvClanTick(){
- if(!SRV()||srvClanOccupe||!Object.keys(S.me.clanApps||{}).length)return;
- srvClanOccupe=true;
+ const k0=myClan(),surMonClan=!!k0&&(S.ui.route||'')==='clan-'+k0.id&&Date.now()-srvClanLu>20000;
+ if(!SRV()||srvClanOccupe||(!Object.keys(S.me.clanApps||{}).length&&!surMonClan))return;
+ srvClanOccupe=true;srvClanLu=Date.now();
  try{const avant=Object.keys(S.me.clanApps),r=await API.call('api_clan');srvClan(r.clan);srvAppliquer(r);
   const k=myClan(),finies=avant.filter(id=>!(id in S.me.clanApps));
   if(k&&finies.includes(k.id))toast({tone:'green',icon:'shield',force:true,title:`${_t("Bienvenue chez {0} [{1}]",[k.name,k.tag])}`,text:_t("Ta candidature a été acceptée par un officier."),href:'#clan-'+k.id});

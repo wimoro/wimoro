@@ -700,6 +700,14 @@ test('clans : rejoindre un clan ouvert sur le vrai serveur ; le tag est vu par u
     await a.page.reload(); await pret(a.page);
     expect(await lire(a.page, () => S.me.clanXP + (S.me.clanSkipped || 0))).toBeGreaterThanOrEqual(1);   // 2 $ de contribution, ou mise écartée si un autre membre tient déjà ce marché
   }
+  // le fil d'activité du clan vient du serveur : l'arrivée de A, puis sa mise ; un simple membre n'a aucun pouvoir de chef
+  await a.page.evaluate(() => srvClanRelire());
+  const filA = () => lire(a.page, () => (myClan() ? myClan().feed : []).map(f => f.txt));
+  await expect.poll(async () => (await filA()).includes(PSEUDO + ' joined the clan.'), { timeout: 20000 }).toBe(true);
+  if (solde >= 2 && (await lire(a.page, () => S.me.clanXP)) >= 1) expect((await filA()).some(t => t.startsWith(PSEUDO + ' just bet $2 on ')), 'la mise comptée pour le clan est dans son fil').toBe(true);
+  expect(await essai('api_clan_call', { p_market: 'clasico', p_side: 'oui' })).toBe('role_insuffisant');
+  expect(await essai('api_clan_promote', { p_user: idA })).toBe('role_insuffisant');
+  expect(await essai('api_clan_kick', { p_user: idA })).toBe('role_insuffisant');
   // quitter : 7 jours d'attente, tenus par le serveur
   await a.page.evaluate(() => { location.hash = '#clan-c1'; });
   await a.page.locator('[data-a="cl-leave"]').first().click();
