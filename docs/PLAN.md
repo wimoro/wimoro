@@ -280,9 +280,22 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 - [ ] Encore « Bientôt disponible » en mode Compte, hors clans : partage du Mode Pro dans le chat, duels « stack » et duels
       éclair. La connexion par portefeuille et les outils « démo » (changer de rang à la main) n'existent, par nature,
       qu'en mode Démo.
-- [ ] Clans, seconde partie, annoncée « Bientôt disponible » en mode Compte : guerres de clans (cagnotte), appels de clan,
-      chat de clan, promotions, exclusions et invitations nominatives, récap en image. Le classement et les divisions des
-      clans de démonstration restent ceux de l'écran (ils ne bougent pas en mode Compte).
+- [x] Chat de clan : un salon réservé aux membres (`clan:<identifiant>`). Écrire, relire, réagir et partager une mise y
+      suivent les règles des autres salons ; un joueur d'un autre clan reçoit « salon indisponible ». Les messages ne passent
+      par aucun sujet public : ils sont diffusés sur le sujet **privé** du clan, qu'une règle d'accès n'ouvre qu'à ses
+      membres (`wm.clan_sujet`, règle `wm_membre_lit_son_clan`). À sa première ouverture, le salon reçoit du serveur les
+      trois messages d'accueil de la démo ; les bots n'y parlent pas ensuite, mais ils y réagissent. Le panel
+      d'administration voit et peut masquer les messages des salons de clan (pas les messages privés). _Tests_
+      `tests/sql/clan-chat.spec.mjs` (5), `tests/compte/clan-chat.spec.mjs` (1), `tests/e2e/comptes.spec.mjs` (trois vrais
+      comptes : un membre écrit, l'autre membre le reçoit en direct, le joueur hors du clan qui écoutait ne reçoit rien).
+- [ ] Limite connue (Supabase Realtime) : le droit d'écouter un sujet privé est vérifié à l'abonnement, puis gardé jusqu'à
+      l'expiration du jeton du joueur (une heure au plus). Un membre qui vient de quitter son clan peut donc encore recevoir
+      les nouveaux messages pendant ce délai s'il garde sa connexion ouverte ; il ne peut plus ni relire l'historique, ni
+      écrire, ni réagir, et un nouvel abonnement lui est refusé. L'écran, lui, se désabonne dès le départ.
+- [ ] Clans, suite, annoncée « Bientôt disponible » en mode Compte : guerres de clans (cagnotte), appels de clan, promotions,
+      exclusions et invitations nominatives, fil d'activité du clan. Ces fonctions sont celles d'un chef ou d'un officier :
+      elles ne concernent que les clans créés par des joueurs (rang Argent, compte de 14 jours). Le classement et les
+      divisions des clans de démonstration restent ceux de l'écran (ils ne bougent pas en mode Compte).
 - [ ] Limite : la création d'un clan n'a pas été jouée contre la vraie base (rang Argent et compte de 14 jours demandés) ;
       elle est prouvée dans la base embarquée et avec le faux serveur.
 - [x] Copy trading : à partir du rang Or, copier un profil public qui l'autorise (budget, mise fixe ou pourcentage, catégories,
@@ -529,3 +542,4 @@ Rien d'obligatoire. Le détail et les constats sont dans `docs/EXPLOITATION.md`,
 | 16 nov. 2026 | Partager une mise dans le chat et la suivre. | migration `chat_mises` (empreinte identique) ; 272 tests (138 SQL) ; 20 scénarios de bout en bout contre le vrai back ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
 | 16 nov. 2026 | Correctif : le curseur d'une fenêtre n'est plus repris au champ que le joueur a choisi (échec intermittent de l'intégration continue sur « mot de passe oublié »). | test ajouté (échoue avant, passe après) ; 273 tests (138 SQL) |
 | 16 nov. 2026 | Réactions sous les messages (joueurs, bots, messages privés). | migration `reactions` (empreinte identique) ; 281 tests (144 SQL) ; 21 scénarios de bout en bout contre le vrai back ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
+| 16 nov. 2026 | Chat de clan, réservé aux membres (sujet privé). | migration `clan_chat` (empreinte identique) ; 287 tests (149 SQL) ; 21 scénarios de bout en bout contre le vrai back, dont trois comptes sur le chat du clan ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |

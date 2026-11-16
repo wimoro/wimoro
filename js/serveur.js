@@ -469,7 +469,10 @@ function srvChercher(texte){
    On ne s'abonne qu'aux salons affichés (srvSalons, appelé après chaque rendu). À l'ouverture d'un salon : son historique,
    puis les messages en direct. Chaque message diffusé porte la fiche de son auteur (pseudo, rang) : pas d'autre requête. */
 const SRV_SALONS=new Set(),SRV_MSG_VUS=new Set();
-const srvSalonOuvert=r=>r==='general'||r.startsWith('m:')||r.startsWith('dm:');
+/* le salon de son propre clan : réservé aux membres, diffusé sur un sujet privé (« clan:<identifiant> ») */
+const srvSalonClan=r=>{const c=typeof myClan==='function'?myClan():null;return !!c&&r==='clan:'+c.id;};
+const srvSujet=r=>r.startsWith('clan:')?r:'salon:'+r;
+const srvSalonOuvert=r=>r==='general'||r.startsWith('m:')||r.startsWith('dm:')||srvSalonClan(r);
 const srvPrive=r=>r.startsWith('dm:');
 const srvMoi=()=>String(S.auth.key||'').slice(4);
 function srvChatAjouter(rid,m,mes){
@@ -494,6 +497,7 @@ function srvChatRetirer(rid,id){const R=S.rooms[rid];if(!R)return;const i=R.msgs
 /* Message d'un bot : le serveur envoie un gabarit et ses paramètres ({g,i,m,p,s}) ; la phrase est composée ici, dans la
    langue du lecteur, avec les mêmes listes de phrases que le mode Démo. */
 function srvBotTexte(t){
+ if(t.g==='C'){const L=typeof CLAN_ACCUEIL!=='undefined'?CLAN_ACCUEIL:[];return L.length?L[Math.abs(t.i|0)%L.length]():'';}   /* accueil d'un salon de clan */
  const m=MK[t.m];if(!m)return '';
  const lignes=t.g==='G'?GLOBAL_LINES:(MLINES[t.m]||[]).concat(GEN_LINES),p=Number(t.p)||0;
  return lignes[Math.abs(t.i|0)%lignes.length].replace(/\{id\}/g,m.id).replace(/\{pct\}/g,F.pct(p)).replace(/\{side\}/g,t.s?_t("Oui"):_t("Non"))
@@ -503,7 +507,7 @@ function srvSalons(){
  const vus=new Set(Array.from(document.querySelectorAll('.feed[data-room]')).map(f=>f.dataset.room).filter(srvSalonOuvert));
  if(document.querySelector('[data-hcmini]'))vus.add('general');
  for(const r of vus)if(!SRV_SALONS.has(r)){SRV_SALONS.add(r);srvSalonOuvrir(r);}
- for(const r of Array.from(SRV_SALONS))if(!vus.has(r)){SRV_SALONS.delete(r);if(!srvPrive(r))API.unsubscribe('salon:'+r);}
+ for(const r of Array.from(SRV_SALONS))if(!vus.has(r)){SRV_SALONS.delete(r);if(!srvPrive(r))API.unsubscribe(srvSujet(r));}
  if((S.ui.route||'')==='chat'&&!srvDmListeVue){srvDmListeVue=true;srvDmListe();}
  if((S.ui.route||'')==='classement')srvClassement();
 }
@@ -520,14 +524,14 @@ async function srvDmListe(){try{const r=await API.call('api_dm_list');srvFiches(
 async function srvSalonOuvrir(r){
  try{
   if(srvPrive(r)){const h=await API.call('api_dm_history',{p_user:r.slice(3)});srvFiches(h.users);(h.msgs||[]).forEach(m=>srvChatAjouter(r,m,h.mes||{}));return;}
-  await API.subscribe('salon:'+r,(evt,d)=>{if(evt==='msg')srvChatAjouter(r,d);else if(evt==='del')srvChatRetirer(r,d&&d.id);else if(evt==='fc')srvChatSuivis(r,d);else if(evt==='re')srvChatReactions(r,d);});
+  await API.subscribe(srvSujet(r),(evt,d)=>{if(evt==='msg')srvChatAjouter(r,d);else if(evt==='del')srvChatRetirer(r,d&&d.id);else if(evt==='fc')srvChatSuivis(r,d);else if(evt==='re')srvChatReactions(r,d);},r.startsWith('clan:'));
   const h=await API.call('api_chat_history',{p_room:r});
   srvFiches(h.users);(h.msgs||[]).forEach(m=>srvChatAjouter(r,m,h.mes||{}));
  }catch(e){SRV_SALONS.delete(r);console.warn('[srv] salon indisponible',r,e.code);}
 }
 let srvChatOccupe=false;
 async function srvChatEnvoyer(rid,inp,text){
- if(!srvSalonOuvert(rid)){srvBientot();return;}                 /* VIP, clan, privé : pas encore reliés */
+ if(!srvSalonOuvert(rid)){srvBientot();return;}                 /* VIP, clan d'un autre : pas reliés */
  if(srvChatOccupe)return;srvChatOccupe=true;
  try{
   const r=srvPrive(rid)?await API.call('api_dm_send',{p_user:rid.slice(3),p_text:text}):await API.call('api_chat_send',{p_room:rid,p_text:text});
@@ -692,7 +696,7 @@ async function srvCopieRegler(c,action,modale){
 
 /* ----- Clans : l'appartenance, la création (frais), les candidatures et la contribution sont tenues par le serveur.
    L'annuaire des 100 clans de démonstration reste celui de l'écran (le serveur a le même : tests/fixtures/clans-demo.json) ;
-   les clans créés par des joueurs viennent du serveur et s'y ajoutent. Guerres, appels, chat de clan : indisponibles. ----- */
+   les clans créés par des joueurs viennent du serveur et s'y ajoutent. Le chat du clan est un salon réservé à ses membres (sujet privé). Guerres et appels de clan : indisponibles. ----- */
 function srvClanObjet(x,moi){
  const m=x.members||[],chefMoi=x.chief===moi;
  const c=CK[x.id]||{id:x.id,div:'bronze',roi:0,coef:1,war:null,calls:[],feed:[],wars:[],rank:20,srv:true};
