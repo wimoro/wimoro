@@ -65,6 +65,11 @@ const ERR_TXT={
  trop_de_propositions:()=>_t("Tu as déjà envoyé 5 propositions aujourd’hui. Reviens demain."),
  proposition_indisponible:()=>_t("Cette proposition n’est plus en vote."),
  deja_vote:()=>_t("Tu as déjà voté pour cette proposition."),
+ budget_min:()=>_t("Budget minimum : {0}.",[F.usd0(COPY.MIN_BUDGET)]),
+ budget_solde:()=>_t("Ce budget dépasse ton solde."),
+ trop_de_copies:()=>_t("Tu peux copier {0} joueurs en même temps.",[COPY.MAX_ACTIVE]),
+ copie_indisponible:()=>_t("Ce joueur ne peut pas être copié pour l’instant."),
+ copie_existe:()=>_t("Tu copies déjà ce joueur."),
  duel_indisponible:()=>_t("Ce duel n’est plus disponible."),
  cote_indisponible:()=>_t("La cote du marché ne permet pas ce duel pour l’instant."),
  trop_de_duels:()=>_t("Tu as déjà trop de duels en attente de réponse."),
@@ -93,7 +98,7 @@ const srvErreur=e=>{if(e&&e.code==='session'){srvSessionPerdue();return;}if(e&&e
    La liste se vide au fil des lots (voir docs/PLAN.md). Le test tests/compte/garde.spec.mjs vérifie qu'aucune action
    qui touche au solde, à l'XP ou à un état partagé n'est exécutée localement quand le serveur fait autorité. */
 const SRV_BLOQUE=new Set(('share-pick '
- +'cp-start cp-stop-do cp-edit cp-manage cp-pause cp-stop cp-open limit-place ord-cancel guard guard-save guard-del stk-create stack-open '
+ +'limit-place ord-cancel guard guard-save guard-del stk-create stack-open '
  +'sr-share cl-war-join cl-sim cl-join cl-apply cl-leave-do cl-share cl-promote cl-kick cl-invite cl-call-do cl-war cl-feedopt cl-create-open cl-leave cl-call-open cl-war-open '
  +'pro-sh-send pro-share follow-user follow-bet follow-pbet share react '
  +'wallet wallet-modal demo-login demo-rank demo-rank-open demo-rank-reset').split(/\s+/));
@@ -124,6 +129,13 @@ const NOTIF_T={
  duel_perdu:p=>_t("{0} contre {1} : {2}.",[_t("Duel perdu"),userOf(p.u).n,MK[p.m]?MK[p.m].short:p.m]),
  prop_vote:p=>_t("Ta proposition « {0} » est en vote.",[p.q||'']),
  prop_live:p=>_t("Ton pari « {0} » est en ligne.",[p.q||'']),
+ copie_debut:p=>_t("Tu copies maintenant {0} (budget {1}, {2}).",[userOf(p.u).n,F.usd0(+p.budget),cModeTxt({mode:p.mode,pct:+p.pct,cap:+p.cap,per:+p.per})]),
+ copie_ouverte:p=>_t("Copie de {0} : {1} sur {2}, {3}.",[userOf(p.u).n,F.usd(+p.amt),p.s==='oui'?_t("Oui"):_t("Non"),MK[p.m]?MK[p.m].short:p.m]),
+ copie_sortie:p=>_t("{0} a vendu ses parts {1} sur {2} : {3} sur ta copie.",[userOf(p.u).n,p.s==='oui'?_t("Oui"):_t("Non"),MK[p.m]?MK[p.m].short:p.m,F.signed(+p.pnl)]),
+ copie_a_sec:p=>_t("{0} sur la copie de {1} : ses nouveaux paris ne sont plus copiés.",[p.why==='budget'?_t("Budget épuisé"):_t("Solde insuffisant"),userOf(p.u).n]),
+ copie_stop:p=>_t("Arrêt de perte atteint sur la copie de {0} : positions vendues, {1}.",[userOf(p.u).n,F.signed(+p.pnl)]),
+ copie_fin:p=>_t("{0} n’est plus copiable : ta copie est arrêtée, tes positions restent ouvertes.",[userOf(p.u).n]),
+ copie_revenu:p=>_t("Revenus de copie : {0} grâce à tes {1} copieurs.",[F.signed(+p.gain),F.int(+p.n)]),
  parrain_bonus:p=>_t("Bonus de parrainage : {0} offerts grâce au code {1}.",[F.usd0(+p.gain),p.code||'']),
  parrain_inscrit:p=>_t("{0} s’est inscrit avec ton code de parrainage.",[p.n||'']),
  parrain_paye:p=>_t("Parrainage : {0} a placé son premier pari, {1} pour toi.",[p.n||'',F.usd0(+p.gain)]),
@@ -158,7 +170,9 @@ const histCombo=h=>{const [,res,n,x]=h.q.split('|');
  return {k:'combo',q:res==='c'?_t("Combiné {0} sélections, encaissé à {1}",[n,F.usd(+x)]):res==='g'?_t("Combiné {0} sélections gagné à ×{1}",[n,F.d2(+x)]):_t("Combiné {0} sélections : perdu sur {1}",[n,MK[x]?MK[x].short:x]),s:h.s,win:!!h.win,pnl:+h.pnl,at:h.at};};
 const histDe=h=>{if(typeof h.q==='string'&&h.q.startsWith('combo|'))return histCombo(h);if(typeof h.q==='string'&&h.q.startsWith('duel|'))return histDuel(h);if(h.k==='flash'&&typeof h.q==='string'&&h.q.startsWith('serie|'))return histSerie(h);if(h.k==='flash'&&typeof h.q==='string'&&h.q.startsWith('blitz|'))return histBlitz(h);if(h.k==='flash'&&typeof h.q==='string'&&h.q.startsWith('eclair|')){const [,gid,r]=h.q.split('|'),d=GM[gid];
   return {k:'flash',q:d?_t("Éclair {0}, manche {1} : {2}",[d.name,F.int(+r),sideLabel(d,h.s)]):h.q,s:h.s==='non'?'non':'oui',eq:h.s==='be',win:!!h.win,pnl:+h.pnl,at:h.at};}
- return {k:h.k,m:h.m||undefined,q:h.m&&MK[h.m]?MK[h.m].q:(h.q||h.m||''),s:h.s,win:!!h.win,pnl:+h.pnl,at:h.at};};
+ /* une vente faite pour le joueur par le serveur porte son origine : « via|copy|identifiant du joueur copié » */
+ const via=h.k==='sell'&&typeof h.q==='string'&&h.q.startsWith('via|')?h.q.split('|'):null;
+ return {k:h.k,m:h.m||undefined,q:h.m&&MK[h.m]?MK[h.m].q:(via?h.m||'':(h.q||h.m||'')),s:h.s,win:!!h.win,pnl:+h.pnl,at:h.at,via:via?via[1]:undefined,of:via&&via[2]?userOf(via[2]).n:undefined};};
 const miseDe=m=>({id:m.id,s:m.s,amt:+m.amt,fee:+m.fee,net:+m.net,price:m.price,mult:+m.mult,tk:m.tk|0});
 
 /* ----- Annuaire : les fiches des joueurs viennent du serveur, clé = identifiant du joueur ----- */
@@ -183,6 +197,7 @@ function hydrater(e){
  {const b=e.eclair&&e.eclair.b||{};if(Object.keys(b).length){me.fmy={r:e.eclair.r,b:{}};for(const g in b)me.fmy.b[g]=miseDe(b[g]);}SRV_ECLAIR_DU=e.eclair?(e.eclair.du|0):0;}
  me.serie=serieDe(e.serie);SRV_BZ.aRegler=(e.blitz||[]).slice();
  me.combos=(e.combos||[]).map(comboDe);
+ srvCopies(e.copies,me);                                                      /* copy trading : ses copies, et ses copieurs */
  srvProps(e.props,me);                                                        /* propositions de marché : les siennes, et celles à voter */
  if(e.ref){me.refCode=e.ref.code||'';me.refBy=e.ref.by||undefined;                         /* parrainage : code, parrain et filleuls viennent du serveur */
   me.referrals=(e.ref.list||[]).map(r=>({n:r.n,at:+r.at,st:r.st==='done'?'done':'pending',paid:+r.paid||0,doneAt:r.doneAt?+r.doneAt:undefined}));}
@@ -204,7 +219,7 @@ function hydrater(e){
 function srvAppliquer(r,ev){if(!r)return;srvEtat(r);srvEvenements(r,ev);}
 /* 1. l'état : ce que dit le serveur remplace ce que l'écran croyait */
 function srvEtat(r){
- if(r.me){const garde={since:S.me.since,createdAt:S.me.createdAt,logged:true,interests:(r.me.interests||S.me.interests||[]).slice()};Object.assign(S.me,r.me,garde);}
+ if(r.me){const garde={since:S.me.since,createdAt:S.me.createdAt,logged:true,copiers:S.me.copiers|0,interests:(r.me.interests||S.me.interests||[]).slice()};Object.assign(S.me,r.me,garde);}
 }
 /* 2. les événements : XP gagnée, notification, badge, mission, passage de rang */
 function srvEvenements(r,ev){
@@ -594,6 +609,54 @@ async function srvPropsTick(){
 }
 planifier('serveur : propositions',3000,srvPropsTick,'serveur');
 
+/* ----- Copy trading : le serveur reproduit les paris et les ventes du joueur copié, surveille l'arrêt de perte et reverse
+   la part des frais. L'écran ne simule plus rien en mode Compte (copyFire, traderExit, copyGuard, copierFees éteints). ----- */
+const copieDe=c=>({id:String(c.id),u:c.u,at:+c.at,status:c.status,why:c.why||undefined,budget:+c.budget,mode:c.mode,per:+c.per,pct:+c.pct,cap:+c.cap,cats:c.cats&&c.cats.length?c.cats.slice():null,stop:+c.stop,
+ realized:+c.realized,n:c.n|0,given:+c.given,endPnl:+c.endPnl,kept:c.kept|0,end:c.end||undefined,
+ holds:(c.holds||[]).filter(h=>MK[h.m]).map(h=>({m:h.m,s:h.s,sh:+h.sh,cost:+h.cost})),
+ log:(c.log||[]).map(x=>({k:x.k,m:x.m,s:x.s,amt:x.amt==null?undefined:+x.amt,pnl:x.pnl==null?undefined:+x.pnl,why:x.why,at:+x.at}))});
+function srvCopies(p,me){if(!p)return;me=me||S.me;srvFiches(p.users);me.copies=(p.list||[]).map(copieDe);me.copiers=p.copiers|0;me.copyEarn=+p.earn||0;}
+const SRV_TOAST={
+ copie_ouverte:p=>{const m=MK[p.m];if(m)toast({tone:'blue',icon:'copy',title:`${_t("Copie de {0}",[userOf(p.u).n])}`,text:`${_t("{0} sur {1}, {2}",[F.usd(+p.amt),p.s==='oui'?_t("Oui"):_t("Non"),m.short])}`,href:'#copie'});},
+ copie_sortie:p=>{const m=MK[p.m];if(m)toast({tone:+p.pnl>=0?'green':'red',icon:'copy',title:`${_t("{0} a vendu, ta copie aussi",[userOf(p.u).n])}`,text:F.kv(m.short,F.signed(+p.pnl)),href:'#copie'});},
+ copie_a_sec:p=>toast({tone:'amber',icon:'copy',title:F.kv(p.why==='budget'?_t("Budget épuisé"):_t("Solde insuffisant"),userOf(p.u).n),text:_t("Ses nouveaux paris ne sont plus copiés."),href:'#copie'}),
+ copie_stop:p=>toast({tone:'red',icon:'copy',title:`${_t("Arrêt de perte : {0}",[userOf(p.u).n])}`,text:`${_t("Copie arrêtée et positions vendues, {0}.",[F.signed(+p.pnl)])}`,href:'#copie',dur:6000}),
+ copie_revenu:p=>toast({tone:'green',icon:'copy',title:`${_t("Tes {0} copieurs t’ont rapporté {1}",[F.int(+p.n),F.signed(+p.gain)])}`,text:`${_t("{0} % des frais de leurs paris copiés, crédités sur ton solde.",[sharePct()])}`,href:'#copie',dur:3600})
+};
+let srvCopieOccupe=false;
+async function srvCopieDemarrer(st,cfg,u){
+ if(srvCopieOccupe)return;srvCopieOccupe=true;
+ try{
+  const p={u,budget:cfg.budget,mode:cfg.mode,per:cfg.per,pct:cfg.pct,cap:cfg.cap,cats:cfg.cats||[],stop:cfg.stop};
+  if(st.edit)p.edit=+st.edit;
+  else if(($('[data-cp-existing]')||{}).checked){p.withOpen=true;p.existing=playerBets(u).map(b=>({m:b.m.id,s:b.s,amt:b.amt}));}   /* « copier aussi ses paris en cours » */
+  const r=await API.call('api_copy_start',{p});
+  srvCopies(r.copies);S.ui.cp=null;closeModal();
+  const c=S.me.copies.find(x=>x.id===String(r.copie)),U=userOf(u),n=r.ouvertes|0;
+  if(st.edit)toast({icon:'check',title:`${_t("Réglages enregistrés")}`,text:c?`${cModeTxt(c)} · ${cCatsTxt(c)}`:'',dur:2600});
+  else toast({tone:'blue',icon:'copy',title:`${_t("Tu copies {0}",[U.n])}`,text:n?`${_t("{0} position{1} copiée{1}. Ses prochains paris seront copiés automatiquement.",[n,n>1?'s':''])}`:_t("Ses prochains paris seront copiés automatiquement."),href:'#copie'});
+  srvAppliquer(r);copyRefresh();
+  if(n){srvVu=0;srvRafraichir();}                                    /* des paris ont été copiés tout de suite : positions et solde relus */
+ }catch(e){srvErreur(e);}
+ finally{srvCopieOccupe=false;}
+}
+async function srvCopieRegler(c,action,modale){
+ if(srvCopieOccupe)return;srvCopieOccupe=true;
+ try{
+  const r=await API.call('api_copy_set',{p_id:+c.id,p_action:action}),U=userOf(c.u);
+  srvCopies(r.copies);srvAppliquer(r);
+  const neuf=S.me.copies.find(x=>x.id===c.id);
+  if(action==='pause'||action==='resume'){
+   toast({icon:'copy',title:action==='pause'?`${_t("Copie de {0} en pause",[U.n])}`:`${_t("Copie de {0} reprise",[U.n])}`,text:action==='pause'?_t("Ses nouveaux paris ne sont plus copiés, tes positions restent ouvertes."):_t("Ses prochains paris seront copiés."),force:true,dur:2600});
+   if(modale&&neuf){modale.innerHTML=copyManageH(neuf);fixText(modale);}
+  }else{const vendre=action==='stop_close',kept=r.kept|0;closeModal();
+   toast({icon:'check',force:true,title:`${_t("Copie de {0} arrêtée",[U.n])}`,text:vendre?`${_t("Positions vendues, {0}.",[F.signed(+r.endPnl)])}`:kept?`${_t("{0} position{1} dans ton portefeuille.",[kept,kept>1?'s restent ouvertes':' reste ouverte'])}`:'',dur:3200});
+   if(vendre){srvVu=0;srvRafraichir();}}                             /* positions vendues : portefeuille, solde et historique relus */
+  copyRefresh();
+ }catch(e){srvErreur(e);if(e&&e.code==='copie_indisponible'){srvVu=0;srvRafraichir();}}
+ finally{srvCopieOccupe=false;}
+}
+
 /* ----- Paris combinés : prix bloqués, mise et gain tenus par le serveur ; le « slip » reste une sélection locale ----- */
 const comboDe=x=>({id:String(x.id),at:+x.at,stake:+x.stake,mult:+x.mult,fee:+x.fee,pay:+x.pay,status:x.status,cash:x.cash==null?undefined:+x.cash,endAt:x.endAt||undefined,
  legs:(x.legs||[]).map(l=>({m:l.m,s:l.s,price:+l.price,mult:+l.mult,res:l.res||null}))});
@@ -763,7 +826,8 @@ function srvPerso(evt,d){
  if(evt==='notif'&&d&&d.n){
   if(S.me.notifs.some(x=>x.id===d.n.id))return;
   S.me.notifs.unshift(notifDe(d.n));S.me.notifs=S.me.notifs.slice(0,30);updateBell();
-  if(/^fr_|^duel_|^combo_|^parrain_|^prop_|^marche_resolu$|^admin_solde$|^kyc_ok$|^blitz_gagne$/.test(d.n.code||'')){srvVu=0;srvRafraichir();}                   /* demande d'ami ou acceptation : les listes viennent du serveur */
+  if(SRV_TOAST[d.n.code]){try{SRV_TOAST[d.n.code](d.n.p||{});}catch(e){}}                             /* ce que le serveur vient de faire pour le joueur, annoncé comme en mode Démo */
+  if(/^fr_|^duel_|^combo_|^parrain_|^prop_|^copie_|^marche_resolu$|^admin_solde$|^kyc_ok$|^blitz_gagne$/.test(d.n.code||'')){srvVu=0;srvRafraichir();}                   /* demande d'ami ou acceptation : les listes viennent du serveur */
  }
 }
 

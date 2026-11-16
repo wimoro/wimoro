@@ -61,7 +61,7 @@
 
   /* ----- Les fonctions du contrat ----- */
   var RPC = {
-    api_state: function () { var e0 = etat(); regler(e0, []); rgMaj(e0, []); var e = clone(e0); e.deps = e0.deps.map(depJson); e.eclair = eclairJson(e0); delete e.eclairMises; e.serie = serieJson(e0); e.duels = duelsJson(e0); delete e.duelsL; e.combos = clone(e0.combosL || []); delete e.combosL; propsAvancer([]); e.props = propsEtat(); if (!e.ref) e.ref = { code: 'TESTEUR-7K3', bonus: 10, by: null, list: [] }; e.blitz = Object.keys(e0.blitzJ || {}).filter(function (i) { return !e0.blitzJ[i].regle; }).map(Number); delete e.blitzJ; e.now = Date.now() + (CFG.decalage || 0); return e; },
+    api_state: function () { var e0 = etat(); regler(e0, []); rgMaj(e0, []); var e = clone(e0); e.deps = e0.deps.map(depJson); e.eclair = eclairJson(e0); delete e.eclairMises; e.serie = serieJson(e0); e.duels = duelsJson(e0); delete e.duelsL; e.combos = clone(e0.combosL || []); delete e.combosL; e.copies = copiesEtat(e0); delete e.copiesL; propsAvancer([]); e.props = propsEtat(); if (!e.ref) e.ref = { code: 'TESTEUR-7K3', bonus: 10, by: null, list: [] }; e.blitz = Object.keys(e0.blitzJ || {}).filter(function (i) { return !e0.blitzJ[i].regle; }).map(Number); delete e.blitzJ; e.now = Date.now() + (CFG.decalage || 0); return e; },
     api_pseudo_libre: function (a) { return /^[A-Za-z0-9._]{3,20}$/.test(a.p_pseudo || '') && !pseudoPris(a.p_pseudo); },
     api_profile_update: function (a) { var p = a.p || {}, me = etat().me;
       if ('n' in p) { if (!/^[A-Za-z0-9._]{3,20}$/.test(p.n || '')) throw { message: 'pseudo_invalide' }; if (pseudoPris(p.n, uid())) throw { message: 'pseudo_pris' }; me.n = p.n; }
@@ -292,6 +292,29 @@
       x.votes[uid()] = a.p_vote; if (a.p_vote === 'for') x.pour++; else x.contre++;
       var avant = rangDe(me); me.xp += 2; ev.push({ k: 'xp', n: 2, src: 'vote' }); rangMonte(me, avant, ev); propsAvancer(ev);
       var rep = reponse(ev); rep.props = propsEtat(); return rep; },
+    /* Copy trading : mêmes règles que supabase/migrations/…_copies.sql */
+    api_copy_start: function (a) { var p = a.p || {}, e = etat(), me = e.me, ev = [], L = (e.copiesL = e.copiesL || []), c;
+      if (rangDe(me).t < 3) throw { message: 'rang_insuffisant' };
+      var budget = r2(+p.budget), mode = p.mode === 'prop' ? 'prop' : 'fixed', per = r2(+p.per || 0), pct = Math.round(+p.pct || 0), cap = r2(+p.cap || 0), stop = +p.stop || 0, cats = (p.cats || []).length ? p.cats.slice() : null;
+      if (!(budget >= 50)) throw { message: 'budget_min' };
+      if (mode === 'fixed' && (per < 5 || per > budget)) throw { message: 'mise_copie_invalide' };
+      if (mode === 'prop' && (pct < 1 || pct > 100 || (cap > 0 && cap < 5))) throw { message: 'mise_copie_invalide' };
+      if (p.edit) { c = L.filter(function (x) { return x.id === +p.edit && x.status !== 'stopped'; })[0]; if (!c) throw { message: 'copie_indisponible' };
+        c.budget = budget; c.mode = mode; c.per = per; c.pct = pct; c.cap = mode === 'prop' ? cap : 0; c.cats = cats; c.stop = stop; var rep0 = reponse([]); rep0.copies = copiesEtat(e); rep0.copie = c.id; return rep0; }
+      if (!p.u || p.u === uid() || (CFG.nonCopiables || []).indexOf(p.u) >= 0) throw { message: 'copie_indisponible' };
+      if (budget > me.balance) throw { message: 'budget_solde' };
+      if (L.some(function (x) { return x.u === p.u && x.status !== 'stopped'; })) throw { message: 'copie_existe' };
+      if (L.filter(function (x) { return x.status !== 'stopped'; }).length >= 10) throw { message: 'trop_de_copies' };
+      var premier = !L.length, avant = rangDe(me);
+      c = { id: db.seq++, u: p.u, at: Date.now(), status: 'active', why: null, budget: budget, mode: mode, per: per, pct: pct, cap: mode === 'prop' ? cap : 0, cats: cats, stop: stop, realized: 0, n: 0, given: 0, endPnl: 0, kept: 0, end: null, holds: [], log: [] };
+      L.unshift(c);
+      if (premier) { me.xp += 15; ev.push({ k: 'xp', n: 15, src: 'copie' }); rangMonte(me, avant, ev); }
+      ev.push(notif('copy', 'copie_debut', { u: p.u, budget: budget, mode: mode, per: per, pct: pct, cap: c.cap }, '#copie'));
+      var n = 0; if (p.withOpen) (p.existing || []).slice(0, 3).forEach(function (b) { if (copieExecuter(e, c, b.m, b.s, +b.amt).r === 'ok') n++; });
+      var rep = reponse(ev); rep.copies = copiesEtat(e); rep.copie = c.id; rep.ouvertes = n; return rep; },
+    api_copy_set: function (a) { var e = etat(), c = (e.copiesL || []).filter(function (x) { return x.id === +a.p_id && x.status !== 'stopped'; })[0]; if (!c) throw { message: 'copie_indisponible' };
+      if (a.p_action === 'pause') c.status = 'paused'; else if (a.p_action === 'resume') c.status = 'active'; else if (a.p_action === 'stop' || a.p_action === 'stop_close') copieArreter(e, c, 'manual', a.p_action === 'stop_close'); else throw { message: 'action_invalide' };
+      var rep = reponse([]); rep.copies = copiesEtat(e); rep.copie = c.id; rep.endPnl = c.endPnl; rep.kept = c.kept; return rep; },
     api_buy: function (a) {
       var e = etat(), me = e.me, total = r2(+a.p_total), cle = uid() + ':' + a.p_key;
       if (a.p_side !== 'oui' && a.p_side !== 'non') throw { message: 'cote_invalide' };
@@ -384,6 +407,46 @@
       var auteur = db.etats[x.by], n = { id: 'n' + (db.seq++), ic: 'check', code: 'prop_live', p: { id: x.id, q: court, m: mid }, href: '#marche-' + mid, at: Date.now(), read: false };
       if (auteur) { auteur.me.xp += 50; auteur.notifs.unshift(n); if (x.by === uid()) { ev.push({ k: 'xp', n: 50, src: 'proposition' }); ev.push({ k: 'notif', n: clone(n) }); } }
       window.__fakeSB.emit('marches', 'etat', { id: mid, st: 'open' }); }); }
+  /* ----- Copy trading : exécution d'un pari copié (wm.copie_executer), vente d'un lot (wm.copie_vendre), arrêt ----- */
+  function copiesEtat(e) { var L = e.copiesL || [], users = {}; L.forEach(function (c) { users[c.u] = (e.users || {})[c.u] || { n: 'joueur.copie', t: 4, d: 0, tone: 0, bets: 120, acc: 61, profit: 900, pub: 1, bot: true }; });
+    return { list: clone(L), users: clone(users), copiers: e.copieurs | 0, earn: e.copieGains || 0 }; }
+  function copieLatent(c) { return c.holds.reduce(function (n, h) { var m = marche(h.m); return n + h.sh * (h.s === 'oui' ? m.p : 100 - m.p) / 100 - h.cost; }, 0); }
+  function copieExecuter(e, c, mid, s, mise) { var me = e.me, m = marche(mid); if (c.status !== 'active' || !m || m.st !== 'open') return { r: 'ferme' };
+    if (c.cats && c.cats.length && c.cats.indexOf(MK[mid].cat) < 0) return { r: 'cat' };
+    var libre = Math.max(0, c.budget + c.realized - c.holds.reduce(function (n, h) { return n + h.cost; }, 0)), amt = c.per;
+    if (c.mode === 'prop') { amt = mise * c.pct / 100; if (c.cap > 0) amt = Math.min(amt, c.cap); amt = Math.min(amt, libre); }
+    amt = Math.floor(amt * 100 + 1e-9) / 100; if (amt < 5 || libre < amt) return { r: 'budget' }; if (me.balance < amt) return { r: 'balance' };
+    var q = quoteBuy(carnet(mid), s, amt, rangDe(me).t >= 5); if (!q.full || !(q.sh > 0)) return { r: 'liq' };
+    var fee = r2(q.fee), cout = r2(amt - fee);
+    me.balance = r2(me.balance - amt); me.played = (me.played | 0) + 1; me.maxBet = Math.max(me.maxBet || 0, amt); me.realized = r2((me.realized || 0) - fee);
+    var pos = e.positions.filter(function (p) { return p.m === mid && p.s === s; })[0];
+    if (pos) { pos.avg = r6((pos.avg * pos.sh + q.avg * q.sh) / (pos.sh + q.sh)); pos.sh = r8(pos.sh + q.sh); } else e.positions.push({ m: mid, s: s, sh: r8(q.sh), avg: r6(q.avg) });
+    var h = c.holds.filter(function (x) { return x.m === mid && x.s === s; })[0]; if (h) { h.sh = r8(h.sh + q.sh); h.cost = r2(h.cost + cout); } else c.holds.push({ m: mid, s: s, sh: r8(q.sh), cost: cout });
+    c.realized = r2(c.realized - fee); c.n++; c.given = Math.round((c.given + fee * 0.2) * 1e4) / 1e4; c.log.unshift({ k: 'open', m: mid, s: s, amt: amt, at: Date.now() });
+    var p0 = m.p; m.p = r6(borne(m.p + q.impact * (s === 'oui' ? 1 : -1), 1, 99)); m.vol = r2(m.vol + cout); m.people = (m.people | 0) + 1; pousser(m); reequilibrer(mid, m.p - p0);
+    return { r: 'ok', amt: amt }; }
+  function copieVendre(e, c, h) { var me = e.me, m = marche(h.m), pos = e.positions.filter(function (p) { return p.m === h.m && p.s === h.s; })[0], sh = Math.min(h.sh, pos ? pos.sh : 0), pnl;
+    if (sh > 1e-6) { var q = quoteSell(carnet(h.m), h.s, sh), vendu = Math.min(sh, q.sh); if (!(vendu > 1e-9)) return 0;
+      var pro = Math.floor(q.pro * 100 + 1e-9) / 100, cout = h.cost * (vendu / h.sh); pnl = r2(pro - cout);
+      var reste = r8(pos.sh - vendu); if (reste < 0.05) reste = 0; me.realized = r2((me.realized || 0) + pro - r2(vendu * pos.avg / 100)); pos.sh = reste; if (!reste) e.positions = e.positions.filter(function (p) { return p !== pos; });
+      me.balance = r2(me.balance + pro); e.history.unshift({ k: 'sell', m: h.m, q: 'via|copy|' + c.u, s: h.s, win: pnl >= 0, pnl: pnl, at: Date.now() });
+      var p0 = m.p; m.p = r6(borne(m.p + q.impact * (h.s === 'oui' ? -1 : 1), 1, 99)); m.vol = r2(m.vol + pro); pousser(m); reequilibrer(h.m, m.p - p0);
+      h.sh = r8(h.sh - vendu); h.cost = r2(h.cost - cout); if (h.sh < 0.05) c.holds = c.holds.filter(function (x) { return x !== h; }); }
+    else { pnl = r2(h.sh * (h.s === 'oui' ? m.p : 100 - m.p) / 100 - h.cost); c.holds = c.holds.filter(function (x) { return x !== h; }); }
+    c.realized = r2(c.realized + pnl); return pnl; }
+  function copieArreter(e, c, why, vendre) { if (vendre) c.holds.slice().forEach(function (h) { copieVendre(e, c, h); });
+    c.endPnl = r2(c.realized + copieLatent(c)); c.kept = c.holds.length; c.holds = []; c.status = 'stopped'; c.why = why; c.end = Date.now(); }
+  /* le joueur copié parie ou vend, côté serveur : ses copies suivent, le copieur est prévenu sur son sujet privé */
+  function copieSuivre(u, mid, s, mise) { var e = etat(), sujet = 'joueur:' + uid(), envois = [];
+    (e.copiesL || []).filter(function (c) { return c.u === u && c.status === 'active'; }).forEach(function (c) { var r = copieExecuter(e, c, mid, s, mise);
+      if (r.r === 'ok') { envois.push(notif('copy', 'copie_ouverte', { u: u, amt: r.amt, s: s, m: mid }, '#copie').n);
+        if (c.stop > 0 && c.realized + copieLatent(c) <= -c.budget * c.stop / 100) { copieArreter(e, c, 'stop', true); envois.push(notif('copy', 'copie_stop', { u: u, pnl: c.endPnl }, '#copie').n); } }
+      else if (r.r === 'budget' || r.r === 'balance') { c.log.unshift({ k: 'skip', m: mid, s: s, why: r.r, at: Date.now() }); envois.push(notif('copy', 'copie_a_sec', { u: u, why: r.r }, '#copie').n); } });
+    persist(); envois.forEach(function (n) { window.__fakeSB.emit(sujet, 'notif', { n: n }); }); return envois.length; }
+  function copieSortir(u, mid, s) { var e = etat(), sujet = 'joueur:' + uid(), envois = [];
+    (e.copiesL || []).filter(function (c) { return c.u === u && c.status === 'active'; }).forEach(function (c) { var h = c.holds.filter(function (x) { return x.m === mid && x.s === s; })[0]; if (!h) return;
+      var pnl = copieVendre(e, c, h); c.log.unshift({ k: 'exit', m: mid, s: s, pnl: pnl, at: Date.now() }); envois.push(notif('copy', 'copie_sortie', { u: u, m: mid, s: s, pnl: pnl }, '#copie').n); });
+    persist(); envois.forEach(function (n) { window.__fakeSB.emit(sujet, 'notif', { n: n }); }); return envois.length; }
   /* ----- Argent fictif : mêmes barèmes que wm.argent() ----- */
   var ARGENT = { coins: { USDC: { min: 5, fixe: true, nets: ['Base', 'Ethereum', 'Arbitrum', 'Solana', 'Polygon'] }, USDT: { min: 5, fixe: true, nets: ['Ethereum', 'Tron', 'Arbitrum', 'Solana'] }, ETH: { min: 0.002, nets: ['Ethereum', 'Base', 'Arbitrum'] }, BTC: { min: 0.0001, nets: ['Bitcoin', 'Lightning'] }, SOL: { min: 0.03, nets: ['Solana'] } },
     nets: { Base: { conf: 12, fmt: 'evm', wfee: 0.05 }, Ethereum: { conf: 12, fmt: 'evm', wfee: 2 }, Arbitrum: { conf: 12, fmt: 'evm', wfee: 0.1 }, Polygon: { conf: 30, fmt: 'evm', wfee: 0.05 }, Solana: { conf: 1, fmt: 'sol', wfee: 0.01 }, Tron: { conf: 20 }, Bitcoin: { conf: 2 }, Lightning: { conf: 1 } },
@@ -617,6 +680,9 @@
     etat: function () { return db.etats[uid()]; },
     /** marché du faux serveur (modifiable par un test pour simuler l'activité d'autres joueurs) */
     marche: function (id) { var m = marche(id); persist(); return m; },
+    /** le joueur copié parie / vend, côté serveur (voir copieSuivre, copieSortir) */
+    copieSuivre: function (u, mid, s, mise) { return copieSuivre(u, mid, s, mise); },
+    copieSortir: function (u, mid, s) { return copieSortir(u, mid, s); },
     /** diffuse l'état actuel de marchés, comme un tick du serveur */
     tick: function (ids, extra) { var d = { t: Date.now(), m: marchesDe(ids || Object.keys(db.marches)) }; for (var k in extra || {}) d[k] = extra[k]; return window.__fakeSB.emit('marches', 'tick', d); }
   };

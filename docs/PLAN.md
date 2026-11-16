@@ -238,7 +238,17 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 - [ ] Duels sur une manche éclair et duels de stack : annoncés comme indisponibles en mode Compte.
 - [ ] Limite : le paiement d'un duel gagné n'a pas été joué contre la vraie base (il faudrait résoudre un vrai marché) ; il est
       prouvé dans la base embarquée et avec le faux serveur.
-- [ ] Clans, copy trading.
+- [ ] Clans.
+- [x] Copy trading : à partir du rang Or, copier un profil public qui l'autorise (budget, mise fixe ou pourcentage, catégories,
+      arrêt de perte) ; chaque pari et chaque vente du joueur copié sont reproduits par le serveur, avec le même carnet que les
+      paris ordinaires ; pause, réglages, arrêt en gardant ou en vendant les positions ; 20 % des frais reversés au joueur
+      copié ; un joueur qui passe en profil privé n'est plus copié. Les bots copiés placent des paris au rythme de la démo
+      (tâche `wm-copies`, toutes les 20 secondes, sans effet tant que personne ne copie). _Tests_ `tests/sql/copies.spec.mjs` (7),
+      `tests/compte/copies.spec.mjs` (2), `tests/e2e/comptes.spec.mjs` (page lue sur le vrai serveur, refus sans le rang Or,
+      pari ordinaire toujours accepté avec le nouveau suivi).
+- [ ] Limites : une copie n'a pas été jouée contre la vraie base (les comptes de test n'ont pas le rang Or) ; elle est prouvée
+      dans la base embarquée et avec le faux serveur. Le cas « copieur occupé au même instant » (il n'est alors pas attendu, sa
+      copie saute ce pari) demande deux connexions simultanées, que la base embarquée n'a pas.
 - [x] Propositions de marché : à partir du rang Or, un joueur propose un pari ; la communauté (les bots) vote au rythme de la
       démo, les autres joueurs peuvent voter (+2 XP) ; à 25 votes le pari passe en ligne pour tout le monde, avec son carnet
       et son chat (+10 XP à l'envoi, +50 XP à la mise en ligne). Les trois propositions « À voter » de la démo existent sur
@@ -393,6 +403,9 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 | Propositions : votes | Les votes de la communauté se déduisent du temps écoulé (un vote favorable toutes les 1,5 seconde), sans tâche de fond ; la mise en ligne se fait au premier passage d'un joueur. Les votes des joueurs sont comptés dans la table des votes. | Même rythme que la démo, sans rien faire tourner en permanence ; le vote d'un compte supprimé disparaît avec lui. |
 | Propositions : bornes | 5 propositions par joueur et par 24 heures. | Borne technique : chaque proposition validée crée un vrai marché visible par tous et rapporte de l'XP. |
 | Propositions : modération | Comme dans la démo, 25 votes suffisent : pas de validation préalable. | Règle du jeu inchangée. Un marché proposé par un joueur apparaît dans le panel d'administration, d'où il peut être fermé ou résolu. |
+| Copy trading : pas de chaîne | Un pari copié ne déclenche pas les copies de ceux qui copient le copieur. | Sinon deux joueurs qui se copient l'un l'autre boucleraient sans fin. Seuls les paris placés par un joueur lui-même sont suivis. |
+| Copy trading : bots copiés | Leurs paris sont créés par une tâche de fond, seulement pour les bots copiés, au rythme de la démo. | Les 10 000 bots animent les marchés en masse et n'ont pas de paris individuels ; il faut bien que le joueur copié « parie » pour que la copie vive, comme dans la démo. |
+| Copy trading : rien n'est supprimé | Une copie arrêtée et un lot vendu restent en base à l'état terminé. | L'historique d'une copie reste lisible, et aucune ligne n'est effacée. |
 | Protection de `main` | Non activée. | Elle changerait ta façon de publier ; elle reste proposée, facultative. |
 
 ## À faire par l'humain
@@ -434,3 +447,4 @@ Rien d'obligatoire. Le détail et les constats sont dans `docs/EXPLOITATION.md`,
 | 16 nov. 2026 | Parrainage en mode Compte. Correctif : solde à jour dès la réponse du chargement après un duel expiré. | migration `parrainage` (empreinte identique) ; 235 tests (113 SQL) ; 15 scénarios de bout en bout contre le vrai back |
 | 16 nov. 2026 | État du joueur assemblé par blocs enregistrés ; parrainage sans attente ; ordres limites prêts mais en attente de confirmation (branche `lot/ordres-limites`). | migrations `parrainage_sans_attente` et `etat_blocs` (empreintes identiques) ; 238 tests (116 SQL) ; 15 scénarios de bout en bout contre le vrai back |
 | 16 nov. 2026 | Propositions de marché en mode Compte. | migrations `propositions` et `propositions_votes` (empreintes identiques) ; 244 tests (120 SQL) ; 16 scénarios de bout en bout contre le vrai back |
+| 16 nov. 2026 | Copy trading en mode Compte. Test de La Série : comparaison de prix rendue proportionnelle (elle échouait par hasard sur un prix élevé). | migration `copies` (empreinte identique) ; 253 tests (127 SQL) ; 17 scénarios de bout en bout contre le vrai back |

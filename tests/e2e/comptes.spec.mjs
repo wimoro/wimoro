@@ -136,7 +136,7 @@ test('recette 3 · dépôt fictif → achat → rechargement → vente → recon
   expect(apresVente.solde).toBeGreaterThan(195); expect(apresVente.solde).toBeLessThan(200); // acheter puis revendre coûte l'écart et les frais
 
   // une fonction pas encore reliée est annoncée comme telle, et rien ne s'annule après 20 secondes (B05)
-  await page.evaluate(() => { const b = document.createElement('button'); b.dataset.a = 'cp-start'; document.body.appendChild(b); b.click(); b.remove(); });   // copy trading : pas encore relié
+  await page.evaluate(() => { const b = document.createElement('button'); b.dataset.a = 'cl-join'; document.body.appendChild(b); b.click(); b.remove(); });   // clans : pas encore reliés
   await expect(toast('Coming soon for accounts')).toBeVisible();
   await page.waitForTimeout(20000);
   expect(await lire(page, () => ({ solde: S.me.balance, xp: S.me.xp, pos: S.me.positions.length }))).toEqual({ solde: apresVente.solde, xp: 210, pos: apresVente.pos });
@@ -414,7 +414,8 @@ test('La Série : lancée, jouée et réglée par le vrai serveur ; la manche ga
   expect(await lire(page, () => S.me.balance)).toBeCloseTo(solde0 - 5, 2);
   // Le moteur est déterministe : l'écran peut calculer l'issue de la manche à partir de l'heure de début donnée par le serveur.
   const prevu = await lire(page, () => { const s = S.me.serie, d = MoteurEclair.JEUX[s.gid]; return MoteurEclair.serieIssue(d, s.rStart + FSKEW); });
-  expect(prevu.p0, 'même prix de départ sur l’écran et sur le serveur').toBeCloseTo(await lire(page, () => S.me.serie.p0), 6);
+  const p0Serveur = await lire(page, () => S.me.serie.p0);                                      // écart relatif : un prix de 97 000 $ ne se compare pas au millionième de dollar
+  expect(Math.abs(prevu.p0 - p0Serveur) / Math.max(1, Math.abs(p0Serveur)), 'même prix de départ sur l’écran et sur le serveur').toBeLessThan(1e-9);
   await page.locator('[data-a="sr-play"][data-v="' + prevu.out + '"]').click();
   await expect.poll(() => lire(page, () => S.me.serie.choice), { timeout: 20000 }).toBe(prevu.out);
   const { mult, fee } = await lire(page, () => ({ mult: S.me.serie.mult, fee: S.me.serie.fee }));
@@ -604,5 +605,29 @@ test('propositions de marché : un compte sans le rang Or est refusé par le vra
   expect(await page.evaluate(async id => { try { await API.call('api_proposal_vote', { p_id: +id, p_vote: 'for' }); return 'deux votes'; } catch (e) { return e.code; } }, p.id)).toBe('deja_vote');
   await page.reload(); await pret(page);
   expect(await lire(page, id => ({ vote: S.me.voted[id], xp: S.me.xp }), p.id)).toEqual({ vote: 'against', xp: xp0 + 2 });
+  expect(erreurs).toEqual([]);
+});
+
+test('copy trading : la page vient du vrai serveur ; sans le rang Or, copier est refusé par le serveur ; un pari ordinaire passe toujours (suivi des copies sans effet)', async ({ page }) => {
+  test.setTimeout(120000);
+  const erreurs = await ouvrirReel(page, '#connexion');
+  await page.locator('#le').fill(EMAIL); await page.locator('#lp').fill(MDP); await page.locator('form[data-form="login"] [type=submit]').click();
+  await expect(page).toHaveURL(/#accueil/, { timeout: 20000 }); await pret(page);
+  await page.evaluate(() => { location.hash = '#copie'; });
+  await pret(page);
+  expect(await lire(page, () => ({ copies: S.me.copies.length, copieurs: S.me.copiers, gains: S.me.copyEarn }))).toEqual({ copies: 0, copieurs: 0, gains: 0 });
+  // un bot du vrai serveur : copiable, mais pas par un compte sans le rang Or
+  const bot = await page.evaluate(async () => { const r = await API.call('api_leaderboard', {}); const l = (r.top || r.list || r.rows || []).find(x => x.bot || x.is_demo) || (r.top || r.list || r.rows || [])[0]; return l && (l.id || l.u || l.user_id); }).catch(() => null);
+  const cible = bot || await lire(page, () => COMM_PROPS.map(p => p.by).find(Boolean));          // à défaut : l'auteur (un bot) d'une proposition de démonstration
+  expect(cible, 'un bot du serveur est connu de l’écran').toBeTruthy();
+  const demande = { u: cible, budget: 100, mode: 'fixed', per: 20, pct: 10, cap: 0, cats: [], stop: 30 };
+  expect(await page.evaluate(async p => { try { await API.call('api_copy_start', { p }); return 'accepté'; } catch (e) { return e.code; } }, demande)).toBe('rang_insuffisant');
+  expect(await page.evaluate(async () => { try { await API.call('api_copy_set', { p_id: 1, p_action: 'stop' }); return 'accepté'; } catch (e) { return e.code; } })).toBe('copie_indisponible');
+  // les paris ordinaires passent par le nouveau suivi des copies (déclencheur de fin d'opération) : ils marchent comme avant
+  const solde = await lire(page, () => S.me.balance);
+  if (solde >= 5) {
+    const r = await page.evaluate(async () => { const x = await API.call('api_buy', { p_market: 'clasico', p_side: 'oui', p_total: 2, p_key: crypto.randomUUID(), p_opts: {} }); return { solde: x.me.balance, sh: x.q.sh }; });
+    expect(r.solde).toBeCloseTo(solde - 2, 2); expect(r.sh).toBeGreaterThan(0);
+  }
   expect(erreurs).toEqual([]);
 });
