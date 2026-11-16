@@ -466,3 +466,46 @@ test('Blitz Royale : la salle affichée est celle du moteur ; l’inscription au
   expect(await lire(page, () => SRV_BZ.aRegler)).toContain(prochain);
   expect(erreurs).toEqual([]);
 });
+
+test('duels : A défie B (mise prise par le vrai serveur), B sans solde ne peut pas accepter et refuse, A est remboursé ; contre un bot ami, le duel part aussitôt', async ({ browser }) => {
+  test.setTimeout(180000);
+  const entrer = async email => {
+    const ctx = await browser.newContext(), page = await ctx.newPage();
+    const erreurs = await ouvrirReel(page, '#connexion');
+    await page.locator('#le').fill(email); await page.locator('#lp').fill(MDP); await page.locator('form[data-form="login"] [type=submit]').click();
+    await expect(page).toHaveURL(/#accueil/, { timeout: 20000 }); await pret(page);
+    return { ctx, page, erreurs };
+  };
+  const a = await entrer(EMAIL), b = await entrer(`wimoro-e2e-${stamp}-b@example.com`);
+  const idB = await lire(b.page, () => srvMoi());
+  expect(await lire(a.page, id => S.me.friends.includes(id), idB), 'A et B sont amis depuis le scénario précédent').toBe(true);
+  const solde0 = await lire(a.page, () => S.me.balance);
+  // A ouvre la fenêtre de défi vers B et l'envoie
+  await a.page.evaluate(id => { const x = document.createElement('button'); x.dataset.a = 'duel-open'; x.dataset.m = 'clasico'; x.dataset.u = id; document.body.appendChild(x); x.click(); x.remove(); }, idB);
+  await a.page.locator('[data-a="dl-create"]').click();
+  await expect.poll(() => lire(a.page, () => (S.me.duels || []).length), { timeout: 20000 }).toBe(1);
+  const d = await lire(a.page, () => { const x = S.me.duels[0]; return { id: x.id, stake: x.stake, fee: x.fee, status: x.status, by: x.by }; });
+  expect(d).toMatchObject({ status: 'open', by: 'me' });
+  expect(await lire(a.page, () => S.me.balance)).toBeCloseTo(solde0 - d.stake - d.fee, 2);
+  // B le reçoit en direct (notification sur son sujet privé), ne peut pas l'accepter sans solde, puis le refuse
+  await expect.poll(() => lire(b.page, () => (S.me.duels || []).map(x => x.id)), { timeout: 30000 }).toEqual([d.id]);
+  expect(await lire(b.page, () => ({ by: S.me.duels[0].by === 'me', opp: S.me.duels[0].opp, st: S.me.duels[0].status }))).toEqual({ by: false, opp: 'me', st: 'open' });
+  expect(await b.page.evaluate(async id => { try { await API.call('api_duel_accept', { p: { id: +id } }); return 'accepté'; } catch (e) { return e.code; } }, d.id)).toBe('solde_insuffisant');
+  await b.page.evaluate(id => { location.hash = '#duel-' + id; }, d.id);
+  await b.page.locator('[data-a="dl-decline"][data-id="' + d.id + '"]').click();
+  await expect(b.page).toHaveURL(/#duels/, { timeout: 20000 });
+  await expect.poll(() => lire(a.page, () => S.me.duels[0].status), { timeout: 30000 }).toBe('declined');   // A l'apprend en direct
+  expect(await lire(a.page, () => S.me.balance)).toBeCloseTo(solde0 - d.fee, 2);               // la mise revient, pas les frais d'ouverture
+  expect(await a.page.evaluate(async id => { try { await API.call('api_duel_close', { p_id: +id, p_action: 'cancel' }); return 'annulé'; } catch (e) { return e.code; } }, d.id)).toBe('duel_indisponible');
+
+  // contre un bot devenu ami : accepté aussitôt par le serveur, à la cote du marché
+  const bot = await a.page.evaluate(async () => { const r = await API.call('api_users_search', { p_q: 'ma' }); const id = (r.ids || []).find(i => r.users[i].bot); if (!id) return null; await API.call('api_friend', { p_action: 'add', p_user: id }); return id; });
+  expect(bot, 'un bot trouvé par la recherche').toBeTruthy();
+  const duel = await a.page.evaluate(async id => (await API.call('api_duel_create', { p: { m: 'clasico', side: 'non', stake: 5, opp: id, key: crypto.randomUUID() } })).duel, bot);
+  expect(duel).toMatchObject({ st: 'active', opp: bot, stake: 5 });
+  expect(duel.pot).toBeCloseTo(5 * 100 / duel.price, 1); expect(duel.oppStake).toBeCloseTo(duel.pot - 5, 1);
+  await a.page.reload(); await pret(a.page);
+  expect(await lire(a.page, () => S.me.duels.map(x => x.status))).toEqual(['active', 'declined']);
+  expect(a.erreurs).toEqual([]); expect(b.erreurs).toEqual([]);
+  await a.ctx.close(); await b.ctx.close();
+});

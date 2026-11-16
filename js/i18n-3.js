@@ -151,3 +151,15 @@ I18N_ADD("he",{
 "Tu es déjà inscrit à ce Blitz.":"כבר נרשמת לבליץ הזה.",
 "Le rachat n’est plus possible.":"הרכישה החוזרת כבר לא אפשרית."
 });
+I18N_ADD("en",{
+"Ce duel n’est plus disponible.":"This duel is no longer available.",
+"La cote du marché ne permet pas ce duel pour l’instant.":"The market price doesn't allow this duel right now.",
+"Tu as déjà trop de duels en attente de réponse.":"You already have too many duels awaiting a reply.",
+"Résultat officiel du marché : {0}.":"Official market result: {0}."
+});
+I18N_ADD("he",{
+"Ce duel n’est plus disponible.":"הדו-קרב הזה כבר לא זמין.",
+"La cote du marché ne permet pas ce duel pour l’instant.":"מחיר השוק לא מאפשר את הדו-קרב הזה כרגע.",
+"Tu as déjà trop de duels en attente de réponse.":"יש לך כבר יותר מדי דו-קרבות שממתינים לתשובה.",
+"Résultat officiel du marché : {0}.":"התוצאה הרשמית של השוק: {0}."
+});

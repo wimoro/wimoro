@@ -61,7 +61,7 @@
 
   /* ----- Les fonctions du contrat ----- */
   var RPC = {
-    api_state: function () { var e0 = etat(); regler(e0, []); rgMaj(e0, []); var e = clone(e0); e.deps = e0.deps.map(depJson); e.eclair = eclairJson(e0); delete e.eclairMises; e.serie = serieJson(e0); e.blitz = Object.keys(e0.blitzJ || {}).filter(function (i) { return !e0.blitzJ[i].regle; }).map(Number); delete e.blitzJ; e.now = Date.now() + (CFG.decalage || 0); return e; },
+    api_state: function () { var e0 = etat(); regler(e0, []); rgMaj(e0, []); var e = clone(e0); e.deps = e0.deps.map(depJson); e.eclair = eclairJson(e0); delete e.eclairMises; e.serie = serieJson(e0); e.duels = duelsJson(e0); delete e.duelsL; e.blitz = Object.keys(e0.blitzJ || {}).filter(function (i) { return !e0.blitzJ[i].regle; }).map(Number); delete e.blitzJ; e.now = Date.now() + (CFG.decalage || 0); return e; },
     api_pseudo_libre: function (a) { return /^[A-Za-z0-9._]{3,20}$/.test(a.p_pseudo || '') && !pseudoPris(a.p_pseudo); },
     api_profile_update: function (a) { var p = a.p || {}, me = etat().me;
       if ('n' in p) { if (!/^[A-Za-z0-9._]{3,20}$/.test(p.n || '')) throw { message: 'pseudo_invalide' }; if (pseudoPris(p.n, uid())) throw { message: 'pseudo_pris' }; me.n = p.n; }
@@ -117,6 +117,32 @@
     api_leaderboard: function () { var ids = Object.keys(db.fiches).filter(function (id) { return id !== uid() && db.fiches[id].pub !== 0; }).sort(function (x, y) { return (db.fiches[y].profit || 0) - (db.fiches[x].profit || 0); }).slice(0, 50), users = {};
       ids.forEach(function (id) { users[id] = ficheDe(id); }); return { ids: ids, users: users }; },
     api_dm_history: function (a) { dmOk(a.p_user, false); var L = (db.chat['dm:' + [uid(), a.p_user].sort().join(':')] || []).slice(-60), users = {}; users[a.p_user] = ficheDe(a.p_user); return { u: a.p_user, msgs: clone(L), users: users }; },
+    /* Duels entre amis sur un marché : mêmes règles que supabase/migrations/…_duels.sql (frais simplifiés : 2 %) */
+    api_duels: function () { return duelsJson(etat()); },
+    api_duel_create: function (a) { var p = a.p || {}, e = etat(), me = e.me, cle = uid() + ':' + p.key, r2 = function (x) { return Math.round(x * 100) / 100; }, rep;
+      if (['oui', 'non'].indexOf(p.side) < 0) throw { message: 'cote_invalide' }; if (!(p.stake >= 5 && p.stake <= 5000)) throw { message: 'montant_invalide' }; if (!p.key) throw { message: 'cle_absente' };
+      if (db.ops[cle]) { rep = clone(db.ops[cle]); rep.rejoue = true; return rep; }
+      if (e.rg && e.rg.pause > Date.now()) throw { message: 'pause' }; var m = marche(p.m); if (!m) throw { message: 'marche_inconnu' }; if (m.st !== 'open') throw { message: 'marche_ferme' };
+      if (p.opp && e.friends.indexOf(p.opp) < 0) throw { message: 'pas_amis' };
+      var fee = r2(p.stake * .02), prix = Math.round(p.side === 'oui' ? m.p : 100 - m.p); if (me.balance < p.stake + fee) throw { message: 'solde_insuffisant' };
+      me.balance = r2(me.balance - p.stake - fee); me.played++;
+      var d = { id: db.seq++, code: 'D' + ('000000' + db.seq.toString(16).toUpperCase()).slice(-7), m: p.m, side: p.side, by: uid(), opp: p.opp || null, stake: +p.stake, fee: fee, st: 'open', at: Date.now(), expiresAt: Date.now() + 48 * 3600e3,
+        price0: prix, price: null, oppStake: null, oppFee: null, pot: null, winSide: null, acceptAt: null, settleAt: null };
+      if (p.opp && (db.fiches[p.opp] || {}).bot) { d.st = 'active'; d.price = prix; d.pot = r2(d.stake * 100 / prix); d.oppStake = r2(d.pot * (100 - prix) / 100); d.oppFee = 0; d.acceptAt = Date.now(); }
+      (e.duelsL = e.duelsL || []).unshift(d); rep = reponse([]); rep.duel = clone(d); rep.duels = duelsJson(e); db.ops[cle] = clone(rep); return rep; },
+    api_duel_accept: function (a) { var p = a.p || {}, e = etat(), me = e.me, L = e.duelsL = e.duelsL || [], code = String(p.code || '').toUpperCase(), r2 = function (x) { return Math.round(x * 100) / 100; };
+      var d = L.filter(function (x) { return (p.id && x.id === +p.id) || (code && x.code === code); })[0];
+      if (!d && code && (CFG.liens || {})[code]) { d = clone(CFG.liens[code]); L.unshift(d); }
+      if (!d || d.st !== 'open' || d.by === uid() || (d.opp && d.opp !== uid())) throw { message: 'duel_indisponible' };
+      var m = marche(d.m); if (!m || m.st !== 'open') throw { message: 'marche_ferme' };
+      var prix = Math.round(d.side === 'oui' ? m.p : 100 - m.p), pot = r2(d.stake * 100 / prix), autre = r2(pot * (100 - prix) / 100), fee = r2(autre * .02);
+      if (me.balance < autre + fee) throw { message: 'solde_insuffisant' };
+      me.balance = r2(me.balance - autre - fee); me.played++; d.opp = uid(); d.st = 'active'; d.price = prix; d.pot = pot; d.oppStake = autre; d.oppFee = fee; d.acceptAt = Date.now();
+      var rep = reponse([]); rep.duel = clone(d); rep.duels = duelsJson(e); return rep; },
+    api_duel_close: function (a) { var e = etat(), d = (e.duelsL || []).filter(function (x) { return x.id === +a.p_id; })[0]; if (!d || d.st !== 'open') throw { message: 'duel_indisponible' };
+      if (a.p_action === 'cancel' && d.by === uid()) { e.me.balance = Math.round((e.me.balance + d.stake) * 100) / 100; d.st = 'expired'; } else if (a.p_action === 'decline' && d.opp === uid()) d.st = 'declined'; else throw { message: 'duel_indisponible' };
+      d.settleAt = Date.now(); var rep = reponse([]); rep.duels = duelsJson(e); return rep; },
+    api_duel_code: function (a) { var code = String(a.p_code || '').toUpperCase(), d = (CFG.liens || {})[code], u = {}; if (!d) throw { message: 'duel_indisponible' }; u[d.by] = ficheDe(d.by); return { duel: clone(d), users: u }; },
     api_dm_list: function () { var ids = [], users = {}; for (var r in db.chat) { var p = r.split(':'); if (p[0] === 'dm' && (p[1] === uid() || p[2] === uid()) && db.chat[r].length) { var o = p[1] === uid() ? p[2] : p[1]; ids.push(o); users[o] = ficheDe(o); } } return { ids: ids, users: users }; },
     api_dm_send: function (a) { dmOk(a.p_user, true); var e = etat(), t = String(a.p_text || '').trim(), ev = [];
       if (!t) throw { message: 'message_vide' }; if (t.length > 280) throw { message: 'message_trop_long' };
@@ -396,6 +422,7 @@
           e.history.unshift(clone(h)); hist.push(h); rangMonte(me, avant, ev); } }
       rep = reponse(ev); rep.blitz = vue(iss); rep.hist = hist; return rep; }
     return null; }
+  var duelsJson = function (e) { var L = e.duelsL || [], users = {}; L.forEach(function (d) { var o = d.by === uid() ? d.opp : d.by; if (o) users[o] = ficheDe(o); }); return { liste: clone(L), users: users }; };
   function eclairMiser(b) { var ME = MoteurEclair, e = etat(), me = e.me, t = Date.now(), d = ME.JEUX[b.gid], amt = Math.round(Number(b.amt) * 100) / 100, cle = uid() + ':' + b.key;
     if (!d) throw { message: 'jeu_inconnu' }; if (['oui', 'non', 'be'].indexOf(b.side) < 0) throw { message: 'cote_invalide' };
     if (!(amt >= 1) || !(amt <= 10000)) throw { message: 'montant_invalide' }; if (!b.key) throw { message: 'cle_absente' };
