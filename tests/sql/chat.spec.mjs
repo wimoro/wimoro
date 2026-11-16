@@ -67,7 +67,7 @@ test('K13 · anti-spam : trop vite, message répété, plus de 12 par minute, vi
 });
 
 test('salons : seuls le général et les marchés existants sont ouverts à tous ; privé et clan d’un autre restent fermés ; le salon VIP demande son rang', async () => {
-  for (const salon of ['dm:' + bob, 'clan:abc', 'm:marche-inconnu', 'blitz', '', null]) {
+  for (const salon of ['dm:' + bob, 'clan:abc', 'm:marche-inconnu', 'serie', '', null]) {
     expect(await refusEnvoi(alice, salon, 'coucou'), String(salon)).toMatch(/salon_indisponible/);
     expect(await refus(db, alice, 'select public.api_chat_history($1)', [salon]), String(salon)).toMatch(/salon_indisponible/);
   }

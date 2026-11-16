@@ -468,6 +468,15 @@ test('Blitz Royale : la salle affichée est celle du moteur ; l’inscription au
   await page.reload(); await pret(page);
   expect(await lire(page, () => S.me.balance)).toBeCloseTo(solde0 - buyin, 2);                // l'entrée est bien en base
   expect(await lire(page, () => SRV_BZ.aRegler)).toContain(prochain);
+  // chat du Blitz : ouvert par le vrai serveur avec des messages de bots (phrases du Blitz) ; le joueur y écrit, et son message revient après rechargement
+  const filBlitz = page.locator('.feed[data-room="blitz"]');
+  await expect.poll(() => lire(page, () => (S.rooms.blitz ? S.rooms.blitz.msgs : []).filter(x => x.sid != null && (USERS[x.u] || {}).bot && BZ_LINES.includes(x.text)).length), { timeout: 20000 }).toBeGreaterThanOrEqual(6);
+  const texteBlitz = 'Test automatique ' + stamp + ' : chat du Blitz';
+  const champBlitz = page.locator('.composer input[data-in="blitz"]'); await champBlitz.fill(texteBlitz); await champBlitz.press('Enter');
+  await expect(filBlitz.locator('.msg.mine', { hasText: texteBlitz })).toHaveCount(1, { timeout: 15000 });
+  expect(await lire(page, () => API.topics().filter(t => /blitz/.test(t)))).toEqual(['salon:blitz']);
+  await page.reload(); await pret(page);
+  await expect(page.locator('.feed[data-room="blitz"] .msg.mine', { hasText: texteBlitz })).toHaveCount(1, { timeout: 20000 });
   expect(erreurs).toEqual([]);
 });
 
