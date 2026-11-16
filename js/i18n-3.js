@@ -183,3 +183,13 @@ I18N_ADD("he",{
 "Cette proposition n’est plus en vote.":"ההצעה הזו כבר לא בהצבעה.",
 "Tu as déjà voté pour cette proposition.":"כבר הצבעת על ההצעה הזו."
 });
+I18N_ADD("en",{
+"Ce joueur ne peut pas être copié pour l’instant.":"This player cannot be copied right now.",
+"Tu copies déjà ce joueur.":"You are already copying this player.",
+"{0} n’est plus copiable : ta copie est arrêtée, tes positions restent ouvertes.":"{0} can no longer be copied: your copy has stopped, your positions stay open."
+});
+I18N_ADD("he",{
+"Ce joueur ne peut pas être copié pour l’instant.":"לא ניתן להעתיק את השחקן הזה כרגע.",
+"Tu copies déjà ce joueur.":"אתה כבר מעתיק את השחקן הזה.",
+"{0} n’est plus copiable : ta copie est arrêtée, tes positions restent ouvertes.":"כבר לא ניתן להעתיק את {0}: ההעתקה שלך נעצרה, הפוזיציות שלך נשארות פתוחות."
+});

@@ -83,7 +83,7 @@ function copyExec(c,m,s,traderAmt){
 }
 /* Le joueur copié place un pari : toutes les copies actives le reproduisent. */
 function copyFire(u,m,s,traderAmt){
- if(!S.me.logged)return;let any=false;
+ if(!S.me.logged||SRV())return;let any=false;
  for(const c of copiesAll()){
   if(c.u!==u||c.status!=='active')continue;
   const U=userOf(u),side=s==='oui'?_t("Oui"):_t("Non"),r=copyExec(c,m,s,traderAmt);
@@ -117,6 +117,7 @@ function copySell(c,h){
 }
 /* Le joueur copié vend : les copies actives qui détiennent ce lot le vendent aussi. */
 function traderExit(u){
+ if(SRV())return;
  const cs=copiesAll().filter(c=>c.u===u&&c.status==='active'&&c.holds.length);if(!cs.length)return;
  const c0=pick(cs),h0=pick(c0.holds),m=MK[h0.m],U=userOf(u),side=h0.s==='oui'?_t("Oui"):_t("Non");
  addMsg('m:'+m.id,mkMsg({k:'evt',text:`${_t("{0} a vendu ses parts {1}",[U.n,side])}`}));
@@ -127,7 +128,7 @@ function traderExit(u){
  if(any){updateHeader();copyGuard();save();copyRefresh();}
 }
 /* Arrêt de perte : si la perte de la copie atteint sa limite, elle s'arrête et vend ses positions. */
-function copyGuard(){let hit=false;for(const c of copiesAll()){if(c.status==='stopped'||!c.stop)continue;if(c.realized+cUnreal(c)<=-c.budget*c.stop/100){copyStop(c,'stop',true);hit=true;}}return hit;}
+function copyGuard(){if(SRV())return false;let hit=false;for(const c of copiesAll()){if(c.status==='stopped'||!c.stop)continue;if(c.realized+cUnreal(c)<=-c.budget*c.stop/100){copyStop(c,'stop',true);hit=true;}}return hit;}
 function copyStop(c,why,close){
  if(c.status==='stopped')return;
  if(close)for(const h of c.holds.slice())copySell(c,h);
@@ -140,6 +141,7 @@ function copyStop(c,why,close){
 /* ---------- Rémunération quand c'est toi qu'on copie ---------- */
 /* À chacun de tes paris, tes copieurs le reproduisent avec leurs propres réglages ; tu touches une part de leurs frais. */
 function copierFees(amt,feeRate){
+ if(SRV())return 0;                                              /* mode Compte : la part des frais est versée par le serveur */
  const n=S.me.copiers||0;if(!n||!meCopyOk()||!(amt>0)||!(feeRate>0))return 0;
  let tot=0;for(let i=0;i<n;i++){const st=Math.min(amt,pick([20,25,50,75,100,150,200,300,500]));tot+=st*feeRate*COPY.SHARE;}
  if(tot<.005)return 0;
@@ -235,6 +237,7 @@ function copyStart(){
  const st=S.ui.cp;if(!st)return;const k=cpCheck(st);if(!k.ok||!can('copy'))return;
  const u=st.u,el=copyElig(u);if(!el.ok)return;
  const cfg={budget:k.b,mode:st.mode,per:k.p,pct:k.pct,cap:st.mode==='prop'?k.cap:0,cats:st.cats.length?st.cats.slice():null,stop:st.stop};
+ if(SRV()){srvCopieDemarrer(st,cfg,u);return;}                 /* mode Compte : la copie, ses paris et ses ventes sont tenus par le serveur */
  if(st.edit){const c=copiesAll().find(x=>x.id===st.edit);if(!c)return;Object.assign(c,cfg);S.ui.cp=null;closeModal();save();toast({icon:'check',title:`${_t("Réglages enregistrés")}`,text:`${cModeTxt(c)} · ${cCatsTxt(c)}`,dur:2600});copyRefresh();return;}
  if(copyOf(u))return;
  const withOpen=!!($('[data-cp-existing]')||{}).checked;
@@ -300,12 +303,12 @@ Object.assign(ACT,{
  'cp-stop-set':a=>{const st=S.ui.cp;if(!st)return;st.stop=+a.dataset.v;copyModalSync();},
  'cp-start':()=>copyStart(),
  'cp-manage':a=>copyManage(a.dataset.id),
- 'cp-pause':a=>{const c=copiesAll().find(x=>x.id===a.dataset.id);if(!c||c.status==='stopped')return;c.status=c.status==='paused'?'active':'paused';save();toast({icon:'copy',title:c.status==='paused'?`${_t("Copie de {0} en pause",[userOf(c.u).n])}`:`${_t("Copie de {0} reprise",[userOf(c.u).n])}`,text:c.status==='paused'?_t("Ses nouveaux paris ne sont plus copiés, tes positions restent ouvertes."):_t("Ses prochains paris seront copiés."),force:true,dur:2600});const md=a.closest('.modal');if(md){md.innerHTML=copyManageH(c);fixText(md);}copyRefresh();},
+ 'cp-pause':a=>{const c=copiesAll().find(x=>x.id===a.dataset.id);if(!c||c.status==='stopped')return;if(SRV()){srvCopieRegler(c,c.status==='paused'?'resume':'pause',a.closest('.modal'));return;}c.status=c.status==='paused'?'active':'paused';save();toast({icon:'copy',title:c.status==='paused'?`${_t("Copie de {0} en pause",[userOf(c.u).n])}`:`${_t("Copie de {0} reprise",[userOf(c.u).n])}`,text:c.status==='paused'?_t("Ses nouveaux paris ne sont plus copiés, tes positions restent ouvertes."):_t("Ses prochains paris seront copiés."),force:true,dur:2600});const md=a.closest('.modal');if(md){md.innerHTML=copyManageH(c);fixText(md);}copyRefresh();},
  'cp-stop':a=>{const c=copiesAll().find(x=>x.id===a.dataset.id);if(!c||c.status==='stopped')return;const U=userOf(c.u),n=c.holds.length;
   openModal(`<div class="md"><div class="md-h"><div><h3>${_t("Arrêter la copie de {0} ?",[esc(U.n)])}</h3><p>${n?`${_t("Ses prochains paris ne seront plus copiés. Que fais-tu des {0} position{1} copiée{1} encore ouverte{1} ?",[n,n>1?'s':''])}`:_t("Ses prochains paris ne seront plus copiés.")}</p></div><button class="x" data-a="close" aria-label="${_t("Fermer")}">${ic('x')}</button></div>
   ${n?`<button class="btn b-ink lg full" data-a="cp-stop-do" data-id="${c.id}" data-close="0">${_t("Arrêter et garder mes positions")}</button><button class="btn b-white lg full" data-a="cp-stop-do" data-id="${c.id}" data-close="1">${_t("Arrêter et tout vendre au prix du marché")}</button>`:`<button class="btn b-ink lg full" data-a="cp-stop-do" data-id="${c.id}" data-close="0">${_t("Arrêter la copie")}</button>`}
   <button class="btn b-ghost lg full" data-a="close">${_t("Annuler")}</button></div>`);},
- 'cp-stop-do':a=>{const c=copiesAll().find(x=>x.id===a.dataset.id);if(!c)return;const close=a.dataset.close==='1';copyStop(c,'manual',close);closeModal();toast({icon:'check',force:true,title:`${_t("Copie de {0} arrêtée",[userOf(c.u).n])}`,text:close?`${_t("Positions vendues, {0}.",[F.signed(c.endPnl)])}`:c.kept?`${_t("{0} position{1} dans ton portefeuille.",[c.kept,c.kept>1?'s restent ouvertes':' reste ouverte'])}`:'',dur:3200});},
+ 'cp-stop-do':a=>{const c=copiesAll().find(x=>x.id===a.dataset.id);if(!c)return;const close=a.dataset.close==='1';if(SRV()){srvCopieRegler(c,close?'stop_close':'stop');return;}copyStop(c,'manual',close);closeModal();toast({icon:'check',force:true,title:`${_t("Copie de {0} arrêtée",[userOf(c.u).n])}`,text:close?`${_t("Positions vendues, {0}.",[F.signed(c.endPnl)])}`:c.kept?`${_t("{0} position{1} dans ton portefeuille.",[c.kept,c.kept>1?'s restent ouvertes':' reste ouverte'])}`:'',dur:3200});},
  'pe-vis':a=>{if(!S.ui.pe)return;S.ui.pe.prefs.public=a.dataset.v==='pub';const el=$('[data-pepriv]');if(el){el.outerHTML=privSectionH();fixText($('[data-pepriv]'));}peRefresh();}
 });
 Object.assign(VIEWS,{copie:vCopy});PROTECTED.add('copie');TITLES.copie=_t("Copy trading");
