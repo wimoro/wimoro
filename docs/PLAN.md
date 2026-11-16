@@ -261,9 +261,25 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
       autre joueur, suivis crédités par le vrai serveur, refus sans le rang Argent).
 - [ ] Limite : un vrai joueur qui suit la mise d'un autre n'a pas été joué contre la vraie base (les comptes de test n'ont
       pas le rang Argent) ; c'est prouvé dans la base embarquée et avec le faux serveur. Le refus, lui, est joué pour de vrai.
-- [ ] Encore « Bientôt disponible » en mode Compte, hors clans : réactions sous les messages, partage du Mode Pro, duels
-      « stack » et duels éclair. La connexion par portefeuille et les outils « démo » (changer de rang à la main)
-      n'existent, par nature, qu'en mode Démo.
+- [x] Réactions sous les messages (`api_chat_react`), mêmes règles que la démo : quatre réactions, un clic pose la sienne,
+      un second la retire ; le compteur est tenu par le serveur et vu en direct par les lecteurs du salon, ou par l'autre
+      participant d'une conversation privée. Les bots réagissent aussi aux derniers messages des salons regardés (environ
+      une réaction toutes les 20 secondes par salon) ; quand c'est au message d'un joueur, une fois sur deux il reçoit une
+      bulle et 1 XP, comme dans la démo. _Choix_ : le serveur n'envoie que des compteurs, jamais qui a réagi ; retirer sa
+      réaction marque la ligne inactive (rien n'est supprimé) ; 40 réactions par minute et par joueur au plus (nouveau
+      compteur `wm.debit`, réutilisable pour d'autres actions) ; la réaction d'un vrai joueur ne donne pas d'XP à l'auteur
+      (deux comptes pourraient s'en fabriquer) ; un message de bot reste ouvert aux réactions tant qu'il est parmi les 30
+      derniers de son salon. Le panel d'administration nomme désormais les mises partagées (leur texte est vide).
+      _Tests_ `tests/sql/reactions.spec.mjs` (6), `tests/compte/reactions.spec.mjs` (2), `tests/e2e/comptes.spec.mjs`
+      (deux vrais comptes : compteur vu en direct par l'autre, message de bot, retrait, refus du vrai serveur).
+- [ ] Limite : une réaction dans une conversation privée n'a pas été jouée contre la vraie base ; elle est prouvée dans la
+      base embarquée (y compris : un tiers ne peut ni réagir ni rien recevoir) et avec le faux serveur.
+- [x] Conséquence pour les scénarios réels : les XP d'un compte peuvent monter d'un point à tout moment (réaction d'un bot à
+      son message). Les vérifications d'XP « à l'unité près » de `tests/e2e/comptes.spec.mjs` acceptent ces points en plus
+      (`xpVaut`), et rien d'autre.
+- [ ] Encore « Bientôt disponible » en mode Compte, hors clans : partage du Mode Pro dans le chat, duels « stack » et duels
+      éclair. La connexion par portefeuille et les outils « démo » (changer de rang à la main) n'existent, par nature,
+      qu'en mode Démo.
 - [ ] Clans, seconde partie, annoncée « Bientôt disponible » en mode Compte : guerres de clans (cagnotte), appels de clan,
       chat de clan, promotions, exclusions et invitations nominatives, récap en image. Le classement et les divisions des
       clans de démonstration restent ceux de l'écran (ils ne bougent pas en mode Compte).
@@ -375,7 +391,9 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
       tables, plus aucune fonction appelable hors `api_…`. Test avant/après et retour arrière : `tests/sql/fermeture.spec.mjs`.
       Le rangement des policies devenues inutiles (`securite_urgence_nettoyage`) attend une confirmation manuelle ; il n'est
       pas nécessaire à la sécurité.
-- [ ] Limites de fréquence sur le chat et les actions d'argent.
+- [ ] Limites de fréquence sur le chat et les actions d'argent. _Fait_ : chat (1 message par seconde, 12 par minute),
+      réactions (40 par minute, compteur générique `wm.debit`), propositions (5 par jour), partage de mise (une fois par
+      jour et par position). _Reste_ : brancher `wm.debit` sur les actions d'argent (paris, dépôts et retraits fictifs).
 - [x] Advisors : les 50 alertes « fonction SECURITY DEFINER appelable » portaient sur les anciennes fonctions, fermées
       par `fermeture_ancienne_api`. Restent des notes volontaires (« RLS sans règle » : aucun accès client) et l'alerte
       « mots de passe compromis » (réglage du tableau de bord, offre payante).
@@ -510,3 +528,4 @@ Rien d'obligatoire. Le détail et les constats sont dans `docs/EXPLOITATION.md`,
 | 16 nov. 2026 | Suivre un joueur ; partages en image de la Série et du clan. | migration `suivre` (empreinte identique) ; 267 tests (135 SQL) ; 19 scénarios de bout en bout contre le vrai back |
 | 16 nov. 2026 | Partager une mise dans le chat et la suivre. | migration `chat_mises` (empreinte identique) ; 272 tests (138 SQL) ; 20 scénarios de bout en bout contre le vrai back ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
 | 16 nov. 2026 | Correctif : le curseur d'une fenêtre n'est plus repris au champ que le joueur a choisi (échec intermittent de l'intégration continue sur « mot de passe oublié »). | test ajouté (échoue avant, passe après) ; 273 tests (138 SQL) |
+| 16 nov. 2026 | Réactions sous les messages (joueurs, bots, messages privés). | migration `reactions` (empreinte identique) ; 281 tests (144 SQL) ; 21 scénarios de bout en bout contre le vrai back ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |

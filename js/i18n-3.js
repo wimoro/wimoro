@@ -213,3 +213,11 @@ I18N_ADD("he",{
 "Tu as déjà partagé cette mise aujourd’hui.":"כבר שיתפת את ההימור הזה היום.",
 "Cette mise n’est plus disponible.":"ההימור הזה כבר לא זמין."
 });
+I18N_ADD("en",{
+"Ce message n’est plus disponible.":"This message is no longer available.",
+"Pas si vite : attends un peu avant de réagir encore.":"Not so fast: wait a moment before reacting again."
+});
+I18N_ADD("he",{
+"Ce message n’est plus disponible.":"ההודעה הזו כבר לא זמינה.",
+"Pas si vite : attends un peu avant de réagir encore.":"לא כל כך מהר: חכה רגע לפני שתגיב שוב."
+});

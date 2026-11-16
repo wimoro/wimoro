@@ -82,6 +82,8 @@ const ERR_TXT={
  trop_de_suivis:()=>_t("Tu suis déjà 500 joueurs : c’est le maximum."),
  deja_partage:()=>_t("Tu as déjà partagé cette mise aujourd’hui."),
  mise_indisponible:()=>_t("Cette mise n’est plus disponible."),
+ message_indisponible:()=>_t("Ce message n’est plus disponible."),
+ trop_de_reactions:()=>_t("Pas si vite : attends un peu avant de réagir encore."),
  duel_indisponible:()=>_t("Ce duel n’est plus disponible."),
  cote_indisponible:()=>_t("La cote du marché ne permet pas ce duel pour l’instant."),
  trop_de_duels:()=>_t("Tu as déjà trop de duels en attente de réponse."),
@@ -112,7 +114,7 @@ const srvErreur=e=>{if(e&&e.code==='session'){srvSessionPerdue();return;}if(e&&e
 const SRV_BLOQUE=new Set((''
  +'limit-place ord-cancel guard guard-save guard-del stk-create stack-open '
  +'cl-war-join cl-sim cl-promote cl-kick cl-invite cl-call-do cl-war cl-call-open '
- +'pro-sh-send pro-share react '
+ +'pro-sh-send pro-share '
  +'wallet wallet-modal demo-login demo-rank demo-rank-open demo-rank-reset').split(/\s+/));
 const SRV_FORMS_BLOQUE=new Set([]);
 const srvBientot=()=>toast({tone:'amber',icon:'info',force:true,title:_t("Bientôt disponible avec ton compte"),text:_t("Cette fonction marche déjà en mode démo. Elle arrive pour les comptes.")});
@@ -470,14 +472,21 @@ const SRV_SALONS=new Set(),SRV_MSG_VUS=new Set();
 const srvSalonOuvert=r=>r==='general'||r.startsWith('m:')||r.startsWith('dm:');
 const srvPrive=r=>r.startsWith('dm:');
 const srvMoi=()=>String(S.auth.key||'').slice(4);
-function srvChatAjouter(rid,m){
- if(!m||SRV_MSG_VUS.has(m.id))return;SRV_MSG_VUS.add(m.id);
+function srvChatAjouter(rid,m,mes){
+ if(!m)return;
+ if(SRV_MSG_VUS.has(m.id)){srvChatRelu(rid,m,mes);return;}SRV_MSG_VUS.add(m.id);
  if(m.f)srvFiches({[m.u]:m.f});
  const text=m.tpl?srvBotTexte(m.tpl):m.text;if(m.tpl&&!text)return;             /* gabarit sur un marché inconnu de l'écran : ignoré */
  const moi=m.u===srvMoi()?'me':m.u;
  if(m.k==='bet'){if(!m.bet||!MK[m.bet.m])return;                                /* mise partagée : une carte, avec son nombre de suivis */
-  addMsg(rid,mkMsg({u:moi,k:'bet',text:'',bet:{m:m.bet.m,s:m.bet.s,amt:+m.bet.amt,price:+m.bet.price},followers:m.fc|0,at:m.at,sid:m.id}));return;}
- addMsg(rid,mkMsg({u:moi,k:'msg',text,at:m.at,sid:m.id}));
+  addMsg(rid,mkMsg({u:moi,k:'bet',text:'',bet:{m:m.bet.m,s:m.bet.s,amt:+m.bet.amt,price:+m.bet.price},followers:m.fc|0,r:srvReactions(m.r),my:srvMiennes(mes,m.id),at:m.at,sid:m.id}));return;}
+ addMsg(rid,mkMsg({u:moi,k:'msg',text,r:srvReactions(m.r),my:srvMiennes(mes,m.id),at:m.at,sid:m.id}));
+}
+/* message déjà à l'écran, relu dans l'historique (salon rouvert) : ses compteurs sont remis à jour */
+function srvChatRelu(rid,m,mes){
+ if(!mes)return;const R=S.rooms[rid],x=R&&R.msgs.find(y=>y.sid===m.id);if(!x)return;
+ x.r=srvReactions(m.r);x.my=srvMiennes(mes,m.id);refreshReacts(x);
+ if(x.k==='bet'){x.followers=Math.max(x.followers|0,m.fc|0);setFc(x);}
 }
 /* le serveur annonce qu'une mise partagée vient d'être suivie : son compteur est mis à jour sur place */
 function srvChatSuivis(rid,d){const R=S.rooms[rid];if(!R||!d)return;const x=R.msgs.find(y=>y.sid===d.id);if(x){x.followers=Math.max(x.followers|0,d.fc|0);setFc(x);}}   /* un compteur de suivis ne fait que monter */
@@ -510,10 +519,10 @@ let srvDmListeVue=false;
 async function srvDmListe(){try{const r=await API.call('api_dm_list');srvFiches(r.users);(r.ids||[]).forEach(u=>room('dm:'+u));if((r.ids||[]).length&&(S.ui.route||'')==='chat')render(false);}catch(e){console.warn('[srv] conversations privées',e.code);}}
 async function srvSalonOuvrir(r){
  try{
-  if(srvPrive(r)){const h=await API.call('api_dm_history',{p_user:r.slice(3)});srvFiches(h.users);(h.msgs||[]).forEach(m=>srvChatAjouter(r,m));return;}
-  await API.subscribe('salon:'+r,(evt,d)=>{if(evt==='msg')srvChatAjouter(r,d);else if(evt==='del')srvChatRetirer(r,d&&d.id);else if(evt==='fc')srvChatSuivis(r,d);});
+  if(srvPrive(r)){const h=await API.call('api_dm_history',{p_user:r.slice(3)});srvFiches(h.users);(h.msgs||[]).forEach(m=>srvChatAjouter(r,m,h.mes||{}));return;}
+  await API.subscribe('salon:'+r,(evt,d)=>{if(evt==='msg')srvChatAjouter(r,d);else if(evt==='del')srvChatRetirer(r,d&&d.id);else if(evt==='fc')srvChatSuivis(r,d);else if(evt==='re')srvChatReactions(r,d);});
   const h=await API.call('api_chat_history',{p_room:r});
-  srvFiches(h.users);(h.msgs||[]).forEach(m=>srvChatAjouter(r,m));
+  srvFiches(h.users);(h.msgs||[]).forEach(m=>srvChatAjouter(r,m,h.mes||{}));
  }catch(e){SRV_SALONS.delete(r);console.warn('[srv] salon indisponible',r,e.code);}
 }
 let srvChatOccupe=false;
@@ -762,6 +771,26 @@ async function srvSuivre(u,oui){
  finally{srvSuivreOccupe=false;}
 }
 
+/* ----- Réactions sous les messages : compteurs tenus par le serveur, vus en direct par les lecteurs du salon ----- */
+const srvReactions=r=>{const o={};if(r)for(const e of REM)if(r[e]>0)o[e]=r[e]|0;return o;};
+const srvMiennes=(mes,id)=>((mes&&mes[id])||[]).filter(e=>REM.includes(e));
+const srvSalonDe=x=>Object.keys(S.rooms).find(r=>S.rooms[r].msgs.includes(x))||'';
+let srvReagit='';
+async function srvReagir(x,e){
+ const rid=srvSalonDe(x);
+ if(x.sid==null||!srvSalonOuvert(rid)){srvBientot();return;}                    /* salons pas encore reliés (VIP, clan) */
+ const cle=x.id+':'+e;if(srvReagit===cle)return;srvReagit=cle;                  /* un clic à la fois sur la même réaction */
+ try{const r=await API.call('api_chat_react',{p_room:rid,p_msg:String(x.sid),p_emoji:e});x.r=srvReactions(r.r);x.my=srvMiennes({m:r.my},'m');refreshReacts(x);}
+ catch(err){srvErreur(err);}
+ finally{if(srvReagit===cle)srvReagit='';}
+}
+function srvChatReactions(rid,d){const R=S.rooms[rid];if(!R||!d)return;const x=R.msgs.find(y=>y.sid===d.id);if(x){x.r=srvReactions(d.r);refreshReacts(x);}}
+/* un joueur a réagi à mon message : une bulle, comme en mode Démo ; le point d'XP vient du serveur */
+function srvReactionRecue(d){
+ toast({icon:'smile',title:`${_t("{0} a réagi {1} à ton message",[d.n||userOf(d.u).n,REM.includes(d.e)?d.e:''])}`,text:'+1 XP',href:''});
+ srvVu=0;srvRafraichir();
+}
+
 /* ----- Mises partagées dans le chat : la carte, ses suivis et leurs XP sont tenus par le serveur ----- */
 Object.assign(SRV_TOAST,{
  mise_suivie:p=>toast({icon:'users',title:`${_t("{0} a suivi ta mise",[p.n||userOf(p.u).n])}`,text:'+20 XP',href:String(p.room||'').startsWith('m:')?'#marche-'+p.room.slice(2):'#chat'})
@@ -944,6 +973,8 @@ async function srvBzRacheter(){const r=bzR();if(!r||!bzCanRebuy(r)||SRV_BZ.occup
 /* ----- Sujet privé du joueur : ses messages privés et ses notifications arrivent en direct, à lui seul ----- */
 function srvPerso(evt,d){
  if(evt==='dm'){if(d&&d.u)srvChatAjouter('dm:'+d.u,d);return;}
+ if(evt==='re'){if(d&&d.u)srvChatReactions('dm:'+d.u,d);return;}                    /* réaction de l'autre participant, dans une conversation privée */
+ if(evt==='reac'){if(d)srvReactionRecue(d);return;}
  if(evt==='notif'&&d&&d.n){
   if(S.me.notifs.some(x=>x.id===d.n.id))return;
   S.me.notifs.unshift(notifDe(d.n));S.me.notifs=S.me.notifs.slice(0,30);updateBell();

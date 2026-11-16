@@ -12,6 +12,9 @@ const stamp = Date.now().toString(36);
 const PSEUDO = 'e2e_' + stamp, EMAIL = `wimoro-e2e-${stamp}@example.com`, MDP = 'E2e-' + stamp + '-Xy9!';
 const pret = page => expect(page.locator('#view > *').first()).toBeAttached({ timeout: 20000 });
 const lire = (page, fn, arg) => page.evaluate(fn, arg);
+// Les XP d'une action, à l'unité près… plus, parfois, 1 XP par réaction d'un bot à un message récent du joueur (lot « réactions ») :
+// elles arrivent toutes seules, en dehors de l'action testée.
+const xpVaut = (recu, attendu, quoi = 'XP') => { expect(recu, quoi + ' : au moins ce que l’action donne').toBeGreaterThanOrEqual(attendu); expect(recu - attendu, quoi + ' : rien d’autre que quelques réactions de bots').toBeLessThanOrEqual(5); };
 
 async function ouvrirReel(page, hash) {
   const erreurs = [];
@@ -264,7 +267,7 @@ test('recette 2 · pari éclair : mise acceptée par le serveur, toujours là ap
   await expect.poll(() => lire(page, () => !!G(S.ui.fgame).my), { timeout: 15000 }).toBe(true);
   const pendant = await lire(page, () => ({ solde: S.me.balance, xp: S.me.xp, my: G(S.ui.fgame).my, manche: S.flash.round, jeu: S.ui.fgame }));
   expect(pendant.manche).toBe(avant.manche);
-  expect(pendant.solde).toBeCloseTo(avant.solde - 10, 2); expect(pendant.xp).toBe(avant.xp + 10);
+  expect(pendant.solde).toBeCloseTo(avant.solde - 10, 2); xpVaut(pendant.xp, avant.xp + 10, 'XP de la mise');
   expect(pendant.my.amt).toBe(10); expect(pendant.my.net).toBeLessThan(10); expect(pendant.my.net).toBeGreaterThan(9.4);
   await expect(page.locator('#view')).toContainText('Your stake: $10.00');
 
@@ -282,7 +285,7 @@ test('recette 2 · pari éclair : mise acceptée par le serveur, toujours là ap
   const gain = Math.round((prevu.win ? prevu.pay : 0) * 100) / 100;
   const apres = await lire(page, () => ({ solde: S.me.balance, xp: S.me.xp, hist: S.me.history[0], n: S.me.history.length }));
   expect(apres.solde, 'le gain payé par le serveur est celui que l’écran avait calculé').toBeCloseTo(pendant.solde + gain, 2);
-  expect(apres.xp).toBe(pendant.xp + (prevu.win ? (pendant.my.s === 'be' ? 120 : 40) : 0));
+  xpVaut(apres.xp, pendant.xp + (prevu.win ? (pendant.my.s === 'be' ? 120 : 40) : 0), 'XP du règlement');
   expect(apres.n).toBe(avant.hist + 1);
   expect(apres.hist).toMatchObject({ k: 'flash', win: prevu.win });
   expect(apres.hist.pnl).toBeCloseTo(gain - 10, 2);
@@ -601,10 +604,12 @@ test('propositions de marché : un compte sans le rang Or est refusé par le vra
   const xp0 = await lire(page, () => S.me.xp);
   await page.locator('[data-a="vote"][data-id="' + p.id + '"][data-v="against"]').click();
   await expect.poll(() => lire(page, id => S.me.voted[id], p.id), { timeout: 20000 }).toBe('against');
-  expect(await lire(page, id => ({ xp: S.me.xp, contre: COMM_PROPS.find(x => x.id === id).against }), p.id)).toEqual({ xp: xp0 + 2, contre: 10 });
+  const voteFait = await lire(page, id => ({ xp: S.me.xp, contre: COMM_PROPS.find(x => x.id === id).against }), p.id);
+  expect(voteFait.contre).toBe(10); xpVaut(voteFait.xp, xp0 + 2, 'XP du vote');
   expect(await page.evaluate(async id => { try { await API.call('api_proposal_vote', { p_id: +id, p_vote: 'for' }); return 'deux votes'; } catch (e) { return e.code; } }, p.id)).toBe('deja_vote');
   await page.reload(); await pret(page);
-  expect(await lire(page, id => ({ vote: S.me.voted[id], xp: S.me.xp }), p.id)).toEqual({ vote: 'against', xp: xp0 + 2 });
+  const voteRelu = await lire(page, id => ({ vote: S.me.voted[id], xp: S.me.xp }), p.id);
+  expect(voteRelu.vote).toBe('against'); xpVaut(voteRelu.xp, xp0 + 2, 'XP du vote, une seule fois');
   expect(erreurs).toEqual([]);
 });
 
@@ -768,6 +773,65 @@ test('partager une mise : la carte est posée par le vrai serveur et vue en dire
   await a.page.reload(); await pret(a.page);
   await expect.poll(async () => (await cartes(a.page, 'me')).map(c => [c.sid, c.suivis]), { timeout: 20000 }).toEqual([[carte.sid, n]]);
   expect(await lire(a.page, () => S.me.followed)).toBe(avant.suivies + n);
+  expect(a.erreurs).toEqual([]); expect(b.erreurs).toEqual([]);
+  await a.ctx.close(); await b.ctx.close();
+});
+
+test('réactions : A réagit au message de B et à celui d’un bot, B voit les compteurs en direct ; second clic, la réaction est retirée ; rechargé, tout revient du vrai serveur', async ({ browser }) => {
+  test.setTimeout(180000);
+  const SALON = 'm:clasico';
+  const entrer = async email => {
+    const ctx = await browser.newContext(), page = await ctx.newPage();
+    const erreurs = await ouvrirReel(page, '#connexion');
+    await page.locator('#le').fill(email); await page.locator('#lp').fill(MDP); await page.locator('form[data-form="login"] [type=submit]').click();
+    await expect(page).toHaveURL(/#accueil/, { timeout: 20000 }); await pret(page);
+    await page.evaluate(() => { location.hash = '#marche-clasico'; });
+    await expect(page.locator('.feed[data-room="m:clasico"]')).toBeAttached();
+    return { ctx, page, erreurs };
+  };
+  const essai = (page, args) => page.evaluate(async args => { try { await API.call('api_chat_react', args); return 'accepté'; } catch (e) { return e.code; } }, args);
+  const vu = (page, sid) => lire(page, ([s, id]) => { const x = (S.rooms[s] ? S.rooms[s].msgs : []).find(y => y.sid === id); return x ? { id: x.id, r: x.r, my: x.my } : null; }, [SALON, sid]);
+  const reagir = async (page, idLocal, e) => {
+    const msg = page.locator('.feed[data-room="' + SALON + '"] .msg', { has: page.locator('[data-re="' + idLocal + '"]') });
+    const deja = msg.locator('[data-re] > [data-a="react"][data-e="' + e + '"]');
+    if (await deja.count()) await deja.click(); else { await msg.locator('[data-a="react-pal"]').click(); await msg.locator('.pal [data-a="react"][data-e="' + e + '"]').click(); }
+  };
+  const a = await entrer(EMAIL), b = await entrer(`wimoro-e2e-${stamp}-b@example.com`);
+
+  // B écrit dans le salon du marché ; A reçoit le message et y réagit
+  const texte = 'Test automatique ' + stamp + ' : réactions';
+  const champ = b.page.locator('.composer input[data-in="' + SALON + '"]'); await champ.fill(texte); await champ.press('Enter');
+  await expect(a.page.locator('.feed[data-room="' + SALON + '"] .msg', { hasText: texte })).toHaveCount(1, { timeout: 20000 });
+  const sid = await lire(a.page, ([s, t]) => S.rooms[s].msgs.find(x => x.text === t).sid, [SALON, texte]);
+  await reagir(a.page, (await vu(a.page, sid)).id, '🔥');
+  await expect.poll(async () => (await vu(a.page, sid)).my, { timeout: 20000 }).toEqual(['🔥']);
+  const apresA = (await vu(a.page, sid)).r['🔥'];
+  expect(apresA).toBeGreaterThanOrEqual(1);
+  await expect.poll(async () => ((await vu(b.page, sid)).r['🔥'] || 0), { timeout: 20000 }).toBeGreaterThanOrEqual(apresA);   // B le voit sans recharger (les bots peuvent en ajouter)
+  expect((await vu(b.page, sid)).my, 'la réaction de A n’est pas celle de B').toEqual([]);
+
+  // A réagit au dernier message d'un bot : le compteur est gardé par le serveur dans le fil du salon
+  const bot = await lire(a.page, s => { const L = S.rooms[s].msgs.filter(x => x.u !== 'me' && x.sid != null && (USERS[x.u] || {}).bot); const x = L[L.length - 1]; return x ? { id: x.id, sid: x.sid } : null; }, SALON);
+  expect(bot, 'un message de bot dans le salon').toBeTruthy();
+  expect(String(bot.sid)).toMatch(/^b\d+$/);
+  await reagir(a.page, bot.id, '👀');
+  await expect.poll(async () => (await vu(a.page, bot.sid)).my, { timeout: 20000 }).toEqual(['👀']);
+  await expect.poll(async () => ((await vu(b.page, bot.sid)) || { r: {} }).r['👀'] || 0, { timeout: 20000 }).toBeGreaterThanOrEqual(1);
+
+  // ce que le vrai serveur refuse
+  expect(await essai(a.page, { p_room: SALON, p_msg: String(sid), p_emoji: '❤️' })).toBe('reaction_invalide');
+  expect(await essai(a.page, { p_room: SALON, p_msg: '999999999', p_emoji: '🔥' })).toBe('message_indisponible');
+  expect(await essai(a.page, { p_room: 'general', p_msg: String(sid), p_emoji: '🔥' })).toBe('message_indisponible');      // pas dans ce salon
+
+  // second clic : A retire sa réaction au message de B
+  const avantRetrait = (await vu(a.page, sid)).r['🔥'];
+  await reagir(a.page, (await vu(a.page, sid)).id, '🔥');
+  await expect.poll(async () => (await vu(a.page, sid)).my, { timeout: 20000 }).toEqual([]);
+  // rechargé : compteurs et « mes réactions » reviennent du serveur
+  await a.page.reload(); await pret(a.page);
+  await expect.poll(async () => { const x = await vu(a.page, sid); return x && x.my; }, { timeout: 20000 }).toEqual([]);
+  expect(((await vu(a.page, sid)).r['🔥'] || 0)).toBeGreaterThanOrEqual(avantRetrait - 1);
+  await expect.poll(async () => { const x = await vu(a.page, bot.sid); return x ? x.my : 'sorti du fil'; }, { timeout: 20000 }).toEqual(['👀']);
   expect(a.erreurs).toEqual([]); expect(b.erreurs).toEqual([]);
   await a.ctx.close(); await b.ctx.close();
 });

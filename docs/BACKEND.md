@@ -48,7 +48,8 @@ avec la même clé, l'opération n'est appliquée qu'une fois et renvoie le mêm
 | `api_rg_limit(k, v)`, `api_rg_pend_cancel(k)` | joueur | plafond de dépôt par jour, semaine ou mois |
 | `api_rg_pause(heures)`, `api_rg_exclude(mois)` | joueur | pause ; auto-exclusion |
 | `api_mission_claim(id)` | joueur | récupérer les XP d'une mission terminée |
-| `api_chat_history(salon)` | joueur | les 60 derniers messages d'un salon public et la fiche de leurs auteurs |
+| `api_chat_history(salon)` | joueur | les 60 derniers messages d'un salon public, la fiche de leurs auteurs et les réactions du lecteur (`mes`) |
+| `api_chat_react(salon, message, réaction)` | joueur | poser ou retirer sa réaction (🔥 👀 💸 🎯) sous un message de joueur, de bot ou privé (`salon` = `dm:<ami>`). Compteurs dans `chat_messages.reactions` (joueurs) ou dans l'anneau `wm.chat_bots` (bots) ; `wm.chat_reactions` ne garde que les réactions des vrais joueurs ; 40 par minute (`wm.debit`). Les bots réagissent par `wm.chat_bot_reagir`, appelée par la tâche `wm-bots-chat` |
 | `api_chat_seen(salons)` | joueur | « j'ai toujours ces salons à l'écran » : les bots ne parlent que là où quelqu'un lit |
 | `api_chat_send(salon, texte)` | joueur | écrire dans le salon général ou celui d'un marché ; anti-spam ; diffusé aux lecteurs du salon |
 | `api_chat_share(salon, marché, côté)`, `api_chat_follow(message)` | joueur | partager une de ses positions dans un salon (rang Bronze, une fois par 24 heures et par position) et suivre la mise partagée par un autre joueur (rang Argent, même pari demandé). Les suivis sont notés dans `wm.chat_suivis` ; ceux des bots, programmés au partage, sont crédités par `wm.chat_suivis_tick` (tâche `wm-suivis`) : compteur de la carte, 20 XP et une « mise suivie » pour l'auteur |
@@ -142,8 +143,8 @@ dépôt, retrait possible, impossible à écourter), auto-exclusion (`wm.uid()` 
 | Sujet | Accès | Contenu |
 |---|---|---|
 | `marches` | public | un message par tick des bots et par achat ou vente : marchés modifiés, mises, signal de foule |
-| `salon:general`, `salon:m:<marché>` | public | messages du chat du salon (`msg`), message retiré (`del`), nouveau nombre de suivis d'une mise partagée (`fc`) |
-| `joueur:<identifiant>` | **privé** : la règle `wm_joueur_lit_son_sujet` sur `realtime.messages` n'y admet que ce joueur | ses messages privés reçus (`dm`) et ses notifications (`notif`) |
+| `salon:general`, `salon:m:<marché>` | public | messages du chat du salon (`msg`), message retiré (`del`), nouveau nombre de suivis d'une mise partagée (`fc`), nouveaux compteurs de réactions d'un message (`re`, sans dire qui a réagi) |
+| `joueur:<identifiant>` | **privé** : la règle `wm_joueur_lit_son_sujet` sur `realtime.messages` n'y admet que ce joueur | ses messages privés reçus (`dm`), ses notifications (`notif`), une réaction de l'autre participant dans une conversation privée (`re`), un bot qui a réagi à l'un de ses messages (`reac`, +1 XP) |
 
 ## 7. Tests du back
 

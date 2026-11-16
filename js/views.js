@@ -449,7 +449,7 @@ const ACT={
  hroom:a=>{S.ui.homeRoom=a.dataset.room;const box=$('[data-chatbox]');if(box){box.outerHTML=homeChatH();const nb=$('[data-chatbox]');fixText(nb);mountTrails(nb);const f=nb.querySelector('.feed');f.scrollTop=f.scrollHeight;}},
  troom:a=>{const r=a.dataset.room;S.ui.room=r;if((S.ui.route||'')!=='chat'){location.hash='#chat';return;}render(false);const f=$('.feed');if(f)f.scrollTop=f.scrollHeight;},
  mtab:a=>{S.ui.mtab=a.dataset.v;render(false);},
- react:a=>{const x=MSG[a.dataset.id];if(!x)return;const e=a.dataset.e;const i=x.my.indexOf(e);if(i>=0){x.my.splice(i,1);x.r[e]=Math.max(0,(x.r[e]||1)-1);if(!x.r[e])delete x.r[e];}else{x.my.push(e);x.r[e]=(x.r[e]||0)+1;}refreshReacts(x);},
+ react:a=>{const x=MSG[a.dataset.id];if(!x)return;const e=a.dataset.e;if(SRV()){srvReagir(x,e);return;}const i=x.my.indexOf(e);if(i>=0){x.my.splice(i,1);x.r[e]=Math.max(0,(x.r[e]||1)-1);if(!x.r[e])delete x.r[e];}else{x.my.push(e);x.r[e]=(x.r[e]||0)+1;}refreshReacts(x);},
  'react-pal':a=>{const m=a.closest('.msg');if(m)m.classList.toggle('palopen');},
  'follow-bet':a=>{const x=MSG[a.dataset.id];if(!x)return;gate('follow',()=>openBet(x.bet.m,x.bet.s,Math.min(x.bet.amt,50),{followOf:x.id,followUser:x.u}));},
  'follow-pbet':a=>gate('follow',()=>openBet(a.dataset.m,a.dataset.s,50,{followUser:a.dataset.u})),
