@@ -61,7 +61,7 @@
 
   /* ----- Les fonctions du contrat ----- */
   var RPC = {
-    api_state: function () { var e0 = etat(); regler(e0, []); rgMaj(e0, []); var e = clone(e0); e.deps = e0.deps.map(depJson); e.eclair = eclairJson(e0); delete e.eclairMises; e.serie = serieJson(e0); e.duels = duelsJson(e0); delete e.duelsL; e.combos = clone(e0.combosL || []); delete e.combosL; e.copies = copiesEtat(e0); delete e.copiesL; propsAvancer([]); e.props = propsEtat(); if (!e.ref) e.ref = { code: 'TESTEUR-7K3', bonus: 10, by: null, list: [] }; e.blitz = Object.keys(e0.blitzJ || {}).filter(function (i) { return !e0.blitzJ[i].regle; }).map(Number); delete e.blitzJ; e.now = Date.now() + (CFG.decalage || 0); return e; },
+    api_state: function () { var e0 = etat(); regler(e0, []); rgMaj(e0, []); var e = clone(e0); e.deps = e0.deps.map(depJson); e.eclair = eclairJson(e0); delete e.eclairMises; e.serie = serieJson(e0); e.duels = duelsJson(e0); delete e.duelsL; e.combos = clone(e0.combosL || []); delete e.combosL; clanAvancer(e0, []); e.clan = clanEtat(e0); delete e.clanM; delete e.clanApps; delete e.clanParti; e.copies = copiesEtat(e0); delete e.copiesL; propsAvancer([]); e.props = propsEtat(); if (!e.ref) e.ref = { code: 'TESTEUR-7K3', bonus: 10, by: null, list: [] }; e.blitz = Object.keys(e0.blitzJ || {}).filter(function (i) { return !e0.blitzJ[i].regle; }).map(Number); delete e.blitzJ; e.now = Date.now() + (CFG.decalage || 0); return e; },
     api_pseudo_libre: function (a) { return /^[A-Za-z0-9._]{3,20}$/.test(a.p_pseudo || '') && !pseudoPris(a.p_pseudo); },
     api_profile_update: function (a) { var p = a.p || {}, me = etat().me;
       if ('n' in p) { if (!/^[A-Za-z0-9._]{3,20}$/.test(p.n || '')) throw { message: 'pseudo_invalide' }; if (pseudoPris(p.n, uid())) throw { message: 'pseudo_pris' }; me.n = p.n; }
@@ -315,6 +315,28 @@
     api_copy_set: function (a) { var e = etat(), c = (e.copiesL || []).filter(function (x) { return x.id === +a.p_id && x.status !== 'stopped'; })[0]; if (!c) throw { message: 'copie_indisponible' };
       if (a.p_action === 'pause') c.status = 'paused'; else if (a.p_action === 'resume') c.status = 'active'; else if (a.p_action === 'stop' || a.p_action === 'stop_close') copieArreter(e, c, 'manual', a.p_action === 'stop_close'); else throw { message: 'action_invalide' };
       var rep = reponse([]); rep.copies = copiesEtat(e); rep.copie = c.id; rep.endPnl = c.endPnl; rep.kept = c.kept; return rep; },
+    /* Clans : mêmes règles que supabase/migrations/…_clans.sql (annuaire de démonstration : celui de l'écran) */
+    api_clan: function () { var e = etat(), ev = []; clanAvancer(e, ev); var rep = reponse(ev); rep.clan = clanEtat(e); return rep; },
+    api_clan_join: function (a) { var e = etat(), ev = [], id = a.p_clan, code = String(a.p_code || '').trim().toUpperCase();
+      if (!id) { var parCode = clansTous().filter(function (c) { return c.code === code; })[0]; if (!parCode) throw { message: 'clan_inconnu' }; id = parCode.id; }
+      var c = clanVerifier(e, id); if (c.access !== 'open' && code !== c.code) throw { message: 'clan_ferme' };
+      clanEntrer(e, id, 'membre'); ev.push(notif('shield', 'clan_rejoint', { id: id }, '#clan-' + id)); var rep = reponse(ev); rep.clan = clanEtat(e); return rep; },
+    api_clan_apply: function (a) { var e = etat(), c = clanVerifier(e, a.p_clan); if (c.access !== 'apply') throw { message: 'clan_ferme' };
+      e.clanApps = e.clanApps || {}; if (!e.clanApps[a.p_clan]) e.clanApps[a.p_clan] = Date.now(); var rep = reponse([]); rep.clan = clanEtat(e); return rep; },
+    api_clan_leave: function () { var e = etat(); if (!e.clanM) throw { message: 'clan_absent' }; var id = e.clanM.id, j = (db.clans || []).filter(function (x) { return x.id === id; })[0];
+      if (j) { j.members = j.members.filter(function (m) { return m.u !== uid(); }); if (j.chief === uid()) { j.chief = j.members.length ? j.members[0].u : null; if (j.members.length) j.members[0].role = 'chef'; } }
+      e.clanM = null; e.clanParti = Date.now(); var rep = reponse([]); rep.clan = clanEtat(e); return rep; },
+    api_clan_create: function (a) { var p = a.p || {}, e = etat(), me = e.me, ev = [], propre = function (t) { return String(t || '').replace(/'/g, '’').replace(/\s+/g, ' ').trim(); };
+      if (e.clanM) throw { message: 'clan_deja' }; if (e.clanParti && e.clanParti > Date.now() - 7 * 864e5) throw { message: 'clan_attente' };
+      if (rangDe(me).t < 2) throw { message: 'rang_insuffisant' }; if (me.since > Date.now() - 14 * 864e5) throw { message: 'compte_trop_recent' };
+      var nom = propre(p.name), tag = String(p.tag || '').trim().toUpperCase(), desc = propre(p.desc);
+      if (/[<>"`\\]/.test(nom + desc)) throw { message: 'texte_refuse' }; if (nom.length < 3 || nom.length > 28) throw { message: 'clan_nom_invalide' };
+      if (!/^[A-Z0-9]{3,4}$/.test(tag)) throw { message: 'clan_tag_invalide' }; if (clansTous().some(function (c) { return c.tag === tag; })) throw { message: 'clan_tag_pris' };
+      if (me.balance < 50) throw { message: 'solde_insuffisant' };
+      me.balance = r2(me.balance - 50); me.realized = r2((me.realized || 0) - 50); db.clans = db.clans || [];
+      var id = 'u' + (db.clans.length + 1), j = { id: id, name: nom, tag: tag, emblem: { ic: p.ic || 'shield', col: p.col || '#2448FF' }, lang: (p.lang || []).length ? p.lang : ['fr'], cats: (p.cats || []).slice(0, 3), desc: desc, access: p.access || 'open', minRank: +p.minRank || 0, chief: uid(), createdAt: Date.now(), code: 'WMR-U' + String(100 + db.clans.length), members: [] };
+      db.clans.push(j); clanEntrer(e, id, 'chef'); ev.push(notif('shield', 'clan_cree', { id: id, name: nom, tag: tag }, '#clan-' + id));
+      var rep = reponse(ev); rep.clan = clanEtat(e); rep.id = id; return rep; },
     api_buy: function (a) {
       var e = etat(), me = e.me, total = r2(+a.p_total), cle = uid() + ':' + a.p_key;
       if (a.p_side !== 'oui' && a.p_side !== 'non') throw { message: 'cote_invalide' };
@@ -447,6 +469,19 @@
     (e.copiesL || []).filter(function (c) { return c.u === u && c.status === 'active'; }).forEach(function (c) { var h = c.holds.filter(function (x) { return x.m === mid && x.s === s; })[0]; if (!h) return;
       var pnl = copieVendre(e, c, h); c.log.unshift({ k: 'exit', m: mid, s: s, pnl: pnl, at: Date.now() }); envois.push(notif('copy', 'copie_sortie', { u: u, m: mid, s: s, pnl: pnl }, '#copie').n); });
     persist(); envois.forEach(function (n) { window.__fakeSB.emit(sujet, 'notif', { n: n }); }); return envois.length; }
+  /* ----- Clans : l'annuaire de démonstration est lu sur l'écran (CLANS), les clans de joueurs sont dans db.clans ----- */
+  function clansTous() { var demo = (typeof CLANS !== 'undefined' ? CLANS : []).filter(function (c) { return /^c\d+$/.test(c.id); }).map(function (c) { return { id: c.id, tag: c.tag, access: c.access, minRank: c.minRank, code: clanCode({ id: c.id }), n: c.n }; });
+    return demo.concat((db.clans || []).map(function (j) { return { id: j.id, tag: j.tag, access: j.access, minRank: j.minRank, code: j.code, n: j.members.length }; })); }
+  function clanVerifier(e, id) { var c = clansTous().filter(function (x) { return x.id === id; })[0]; if (!c) throw { message: 'clan_inconnu' }; if (e.clanM) throw { message: 'clan_deja' };
+    if (e.clanParti && e.clanParti > Date.now() - 7 * 864e5) throw { message: 'clan_attente' }; if (c.n >= 50) throw { message: 'clan_complet' }; if (rangDe(e.me).t < c.minRank) throw { message: 'rang_insuffisant' }; return c; }
+  function clanEntrer(e, id, role) { e.clanM = { id: id, role: role, since: Date.now(), xp: 0, jour: 0, ecartes: 0 }; e.clanApps = {};
+    var j = (db.clans || []).filter(function (x) { return x.id === id; })[0]; if (j) j.members.push({ u: uid(), role: role, since: Date.now(), pts: 0 }); }
+  function clanAvancer(e, ev) { var apps = e.clanApps || {}; Object.keys(apps).forEach(function (id) { if (apps[id] > Date.now() - 6000) return; delete apps[id];
+      var ok = (CFG.clanRefus || []).indexOf(id) < 0; if (ok) { try { clanVerifier(e, id); clanEntrer(e, id, 'membre'); } catch (x) { ok = false; } }
+      var n = notif('shield', ok ? 'clan_accepte' : 'clan_refuse', { id: id }, '#clan-' + id); if (ev) ev.push(n); }); }
+  function clanEtat(e) { var moi = uid(), users = {}; (db.clans || []).forEach(function (j) { j.members.forEach(function (m) { if (m.u !== moi && db.etats[m.u]) users[m.u] = { n: db.etats[m.u].me.n, t: 0, d: 0, tone: 0, bot: false, pub: 1, clan: j.id }; }); });
+    return { mine: e.clanM ? clone(e.clanM) : null, leftAt: e.clanParti || null, apps: clone(e.clanApps || {}),
+      clans: (db.clans || []).map(function (j) { var x = clone(j); if (!j.members.some(function (m) { return m.u === moi; })) x.code = null; return x; }), users: users }; }
   /* ----- Argent fictif : mêmes barèmes que wm.argent() ----- */
   var ARGENT = { coins: { USDC: { min: 5, fixe: true, nets: ['Base', 'Ethereum', 'Arbitrum', 'Solana', 'Polygon'] }, USDT: { min: 5, fixe: true, nets: ['Ethereum', 'Tron', 'Arbitrum', 'Solana'] }, ETH: { min: 0.002, nets: ['Ethereum', 'Base', 'Arbitrum'] }, BTC: { min: 0.0001, nets: ['Bitcoin', 'Lightning'] }, SOL: { min: 0.03, nets: ['Solana'] } },
     nets: { Base: { conf: 12, fmt: 'evm', wfee: 0.05 }, Ethereum: { conf: 12, fmt: 'evm', wfee: 2 }, Arbitrum: { conf: 12, fmt: 'evm', wfee: 0.1 }, Polygon: { conf: 30, fmt: 'evm', wfee: 0.05 }, Solana: { conf: 1, fmt: 'sol', wfee: 0.01 }, Tron: { conf: 20 }, Bitcoin: { conf: 2 }, Lightning: { conf: 1 } },

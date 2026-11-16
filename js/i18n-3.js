@@ -193,3 +193,9 @@ I18N_ADD("he",{
 "Tu copies déjà ce joueur.":"אתה כבר מעתיק את השחקן הזה.",
 "{0} n’est plus copiable : ta copie est arrêtée, tes positions restent ouvertes.":"כבר לא ניתן להעתיק את {0}: ההעתקה שלך נעצרה, הפוזיציות שלך נשארות פתוחות."
 });
+I18N_ADD("en",{
+"Tu es maintenant le chef du clan {0}.":"You are now the chief of the clan {0}."
+});
+I18N_ADD("he",{
+"Tu es maintenant le chef du clan {0}.":"אתה עכשיו ראש הקלאן {0}."
+});

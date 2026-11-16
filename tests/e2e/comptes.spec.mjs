@@ -136,7 +136,7 @@ test('recette 3 · dépôt fictif → achat → rechargement → vente → recon
   expect(apresVente.solde).toBeGreaterThan(195); expect(apresVente.solde).toBeLessThan(200); // acheter puis revendre coûte l'écart et les frais
 
   // une fonction pas encore reliée est annoncée comme telle, et rien ne s'annule après 20 secondes (B05)
-  await page.evaluate(() => { const b = document.createElement('button'); b.dataset.a = 'cl-join'; document.body.appendChild(b); b.click(); b.remove(); });   // clans : pas encore reliés
+  await page.evaluate(() => { const b = document.createElement('button'); b.dataset.a = 'cl-war'; document.body.appendChild(b); b.click(); b.remove(); });   // guerres de clans : pas encore reliées
   await expect(toast('Coming soon for accounts')).toBeVisible();
   await page.waitForTimeout(20000);
   expect(await lire(page, () => ({ solde: S.me.balance, xp: S.me.xp, pos: S.me.positions.length }))).toEqual({ solde: apresVente.solde, xp: 210, pos: apresVente.pos });
@@ -630,4 +630,51 @@ test('copy trading : la page vient du vrai serveur ; sans le rang Or, copier est
     expect(r.solde).toBeCloseTo(solde - 2, 2); expect(r.sh).toBeGreaterThan(0);
   }
   expect(erreurs).toEqual([]);
+});
+
+test('clans : rejoindre un clan ouvert sur le vrai serveur ; le tag est vu par un autre joueur ; la mise compte pour le clan ; quitter impose 7 jours d’attente', async ({ browser }) => {
+  test.setTimeout(180000);
+  const entrer = async email => {
+    const ctx = await browser.newContext(), page = await ctx.newPage();
+    const erreurs = await ouvrirReel(page, '#connexion');
+    await page.locator('#le').fill(email); await page.locator('#lp').fill(MDP); await page.locator('form[data-form="login"] [type=submit]').click();
+    await expect(page).toHaveURL(/#accueil/, { timeout: 20000 }); await pret(page);
+    return { ctx, page, erreurs };
+  };
+  const a = await entrer(EMAIL);
+  const idA = await lire(a.page, () => srvMoi());
+  expect(await lire(a.page, () => S.me.clan)).toBeNull();
+  // les règles du vrai serveur : rang demandé, clan sur invitation, création réservée au rang Argent
+  const essai = (nom, args) => a.page.evaluate(async ([nom, args]) => { try { await API.call(nom, args); return 'accepté'; } catch (e) { return e.code; } }, [nom, args]);
+  expect(await essai('api_clan_join', { p_clan: 'c82', p_code: null })).toBe('rang_insuffisant');   // c82 : ouvert, mais rang Diamant demandé
+  expect(await essai('api_clan_join', { p_clan: 'c999', p_code: null })).toBe('clan_inconnu');
+  expect(await essai('api_clan_join', { p_clan: 'c3', p_code: 'WMR-0000' })).toBe('clan_ferme');
+  expect(['rang_insuffisant', 'compte_trop_recent']).toContain(await essai('api_clan_create', { p: { name: 'Clan de test e2e', tag: 'E2E', desc: '', access: 'open', minRank: 0 } }));   // rang Argent et compte de 14 jours
+  // rejoindre c1 (ouvert, sans rang minimum), depuis sa page
+  await a.page.evaluate(() => { location.hash = '#clan-c1'; });
+  await a.page.locator('[data-a="cl-join"]').first().click();
+  await expect.poll(() => lire(a.page, () => S.me.clan && S.me.clan.id), { timeout: 20000 }).toBe('c1');
+  const tag = await lire(a.page, () => CK.c1.tag);
+  expect(await lire(a.page, () => tagH('me'))).toContain(tag);
+  // un autre joueur (ami de A depuis un scénario précédent) voit le tag de A, donné par le serveur
+  const b = await entrer(`wimoro-e2e-${stamp}-b@example.com`);
+  expect(await lire(b.page, id => ({ clan: USERS[id] && USERS[id].clan, tag: tagH(id) }), idA)).toMatchObject({ clan: 'c1' });
+  expect(await lire(b.page, id => tagH(id), idA)).toContain(tag);
+  // une mise de A compte pour son clan (comptée par le serveur)
+  const solde = await lire(a.page, () => S.me.balance);
+  if (solde >= 2) {
+    await a.page.evaluate(() => API.call('api_buy', { p_market: 'clasico', p_side: 'non', p_total: 2, p_key: crypto.randomUUID(), p_opts: {} }));
+    await a.page.reload(); await pret(a.page);
+    expect(await lire(a.page, () => S.me.clanXP + (S.me.clanSkipped || 0))).toBeGreaterThanOrEqual(1);   // 2 $ de contribution, ou mise écartée si un autre membre tient déjà ce marché
+  }
+  // quitter : 7 jours d'attente, tenus par le serveur
+  await a.page.evaluate(() => { location.hash = '#clan-c1'; });
+  await a.page.locator('[data-a="cl-leave"]').first().click();
+  await a.page.locator('[data-a="cl-leave-do"]').click();
+  await expect.poll(() => lire(a.page, () => S.me.clan), { timeout: 20000 }).toBeNull();
+  expect(await essai('api_clan_join', { p_clan: 'c4', p_code: null })).toBe('clan_attente');
+  await a.page.reload(); await pret(a.page);
+  expect(await lire(a.page, () => ({ clan: S.me.clan, attente: clanLeaveWait() > 6 * 864e5 }))).toEqual({ clan: null, attente: true });
+  expect(a.erreurs).toEqual([]); expect(b.erreurs).toEqual([]);
+  await a.ctx.close(); await b.ctx.close();
 });

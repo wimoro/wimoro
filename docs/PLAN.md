@@ -238,7 +238,18 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 - [ ] Duels sur une manche éclair et duels de stack : annoncés comme indisponibles en mode Compte.
 - [ ] Limite : le paiement d'un duel gagné n'a pas été joué contre la vraie base (il faudrait résoudre un vrai marché) ; il est
       prouvé dans la base embarquée et avec le faux serveur.
-- [ ] Clans.
+- [x] Clans, première partie : rejoindre un clan ouvert ou entrer avec un code d'invitation, candidater (un officier répond en
+      quelques secondes, comme dans la démo), quitter (7 jours d'attente), créer un clan (rang Argent, compte de 14 jours,
+      50 $ de frais, tag unique) ; le tag suit le joueur aux yeux des autres ; chaque mise compte pour le clan (2 000 $ par
+      jour au plus). L'annuaire des 100 clans de démonstration est le même à l'écran et sur le serveur
+      (`tests/fixtures/clans-demo.json`, vérifié des deux côtés) ; les clans créés par des joueurs s'y ajoutent. _Tests_
+      `tests/sql/clans.spec.mjs` (7), `tests/compte/clans.spec.mjs` (4), `tests/e2e/comptes.spec.mjs` (rejoindre pour de vrai,
+      tag vu par un autre joueur, mise comptée, attente après départ).
+- [ ] Clans, seconde partie, annoncée « Bientôt disponible » en mode Compte : guerres de clans (cagnotte), appels de clan,
+      chat de clan, promotions, exclusions et invitations nominatives, récap en image. Le classement et les divisions des
+      clans de démonstration restent ceux de l'écran (ils ne bougent pas en mode Compte).
+- [ ] Limite : la création d'un clan n'a pas été jouée contre la vraie base (rang Argent et compte de 14 jours demandés) ;
+      elle est prouvée dans la base embarquée et avec le faux serveur.
 - [x] Copy trading : à partir du rang Or, copier un profil public qui l'autorise (budget, mise fixe ou pourcentage, catégories,
       arrêt de perte) ; chaque pari et chaque vente du joueur copié sont reproduits par le serveur, avec le même carnet que les
       paris ordinaires ; pause, réglages, arrêt en gardant ou en vendant les positions ; 20 % des frais reversés au joueur
@@ -406,6 +417,8 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 | Copy trading : pas de chaîne | Un pari copié ne déclenche pas les copies de ceux qui copient le copieur. | Sinon deux joueurs qui se copient l'un l'autre boucleraient sans fin. Seuls les paris placés par un joueur lui-même sont suivis. |
 | Copy trading : bots copiés | Leurs paris sont créés par une tâche de fond, seulement pour les bots copiés, au rythme de la démo. | Les 10 000 bots animent les marchés en masse et n'ont pas de paris individuels ; il faut bien que le joueur copié « parie » pour que la copie vive, comme dans la démo. |
 | Copy trading : rien n'est supprimé | Une copie arrêtée et un lot vendu restent en base à l'état terminé. | L'historique d'une copie reste lisible, et aucune ligne n'est effacée. |
+| Clans : candidature | La réponse vient du serveur au bout de 6 secondes, favorable 8 fois sur 10, y compris pour un clan créé par un joueur. | Même règle que la démo. Une validation par un vrai officier demanderait un écran de plus ; elle fait partie de la seconde partie. |
+| Clans : bots | 4 bots sur 5 portent le tag d'un clan de démonstration (c61 à c100), choisi d'après leur identifiant. | Comme dans la démo, où la plupart des joueurs simulés ont un clan : le chat et les classements montrent des tags. |
 | Protection de `main` | Non activée. | Elle changerait ta façon de publier ; elle reste proposée, facultative. |
 
 ## À faire par l'humain
@@ -448,3 +461,4 @@ Rien d'obligatoire. Le détail et les constats sont dans `docs/EXPLOITATION.md`,
 | 16 nov. 2026 | État du joueur assemblé par blocs enregistrés ; parrainage sans attente ; ordres limites prêts mais en attente de confirmation (branche `lot/ordres-limites`). | migrations `parrainage_sans_attente` et `etat_blocs` (empreintes identiques) ; 238 tests (116 SQL) ; 15 scénarios de bout en bout contre le vrai back |
 | 16 nov. 2026 | Propositions de marché en mode Compte. | migrations `propositions` et `propositions_votes` (empreintes identiques) ; 244 tests (120 SQL) ; 16 scénarios de bout en bout contre le vrai back |
 | 16 nov. 2026 | Copy trading en mode Compte. Test de La Série : comparaison de prix rendue proportionnelle (elle échouait par hasard sur un prix élevé). | migration `copies` (empreinte identique) ; 253 tests (127 SQL) ; 17 scénarios de bout en bout contre le vrai back |
+| 16 nov. 2026 | Clans en mode Compte, première partie (appartenance, création, contribution, tag public). | migration `clans` (empreinte identique) ; 264 tests (134 SQL) ; 18 scénarios de bout en bout contre le vrai back |
