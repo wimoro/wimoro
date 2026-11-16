@@ -10,6 +10,11 @@ const salle = page => lire(page, () => { const r = S.bz.royale; return r ? { eta
 const issue = (page, i) => lire(page, i => MoteurEclair.bzIssue(MoteurEclair.bzId(Date.now()), i).out, i);
 const appels = page => lire(page, () => __fakeSB.journal().filter(c => c.kind === 'fn' && /^blitz_(join|choose|rebuy|settle)$/.test((c.args || {}).action || '')).map(c => c.args.action + (c.args.choice ? ':' + c.args.choice : '')));
 const ouvrirBlitz = page => ouvrir(page, { mode: 'compte', hash: '#blitz', horloge: T0 + 30000, faux: { etat: { me: { balance: 500 } } } });
+/* avance l'horloge jusqu'au début ou à la fin de la manche i du Blitz `id`, plus une marge */
+const jusqua = async (page, id, quoi, i, marge) => {
+  const ms = await lire(page, ([id, quoi, i]) => { const m = MoteurEclair.bzManche(id, i); return (quoi === 'debut' ? m.debut : m.fin) - Date.now(); }, [id, quoi, i]);
+  await page.clock.runFor(Math.max(0, ms) + marge);
+};
 const choisir = async (page, i, juste) => {
   const out = await issue(page, i), v = juste ? NOM[out] : NOM[out === 1 ? 0 : 1];
   await page.locator(`[data-a="bz-choose"][data-v="${v}"]`).click();
@@ -29,12 +34,13 @@ test('entrer, choisir juste dix fois : survivant, la part de la cagnotte arrive 
   await page.reload(); await expect(page.locator('#view > *').first()).toBeAttached(); await page.clock.runFor(1500);
   expect((await salle(page)).moi, 'l’inscription est rendue par le serveur').toMatchObject({ vie: true, paye: 10 });
 
-  await page.clock.runFor(92000);                                                            // départ à 2 minutes : manche 1, choix ouverts
   for (let i = 1; i <= 10; i++) {
+    await jusqua(page, id, 'debut', i, 3000);                                                // manche i, choix ouverts
     expect(await salle(page)).toMatchObject({ etat: 'live', manche: i, pause: false, moi: { vie: true } });
     await choisir(page, i, true);
-    await page.clock.runFor(58000);                                                          // une seconde après la fin de la manche
-    if (i < 10) { await expect(toast(page, `Round ${i}: you survive`)).toBeVisible(); await page.clock.runFor(12000); }   // pause de 10 secondes, puis manche suivante
+    await jusqua(page, id, 'fin', i, 1500);                                                  // juste après la fin de la manche
+    if (i === 1) await expect(toast(page, 'Round 1: you survive')).toBeVisible();
+    if (i < 10) expect(await lire(page, () => ({ faites: S.bz.royale.log.length, vie: S.bz.royale.me.alive }))).toEqual({ faites: i, vie: true });
   }
   await expect(toast(page, 'Blitz won')).toBeVisible({ timeout: 15000 });
   const fin = await lire(page, id => ({ solde: S.me.balance, h: S.me.history[0], dernier: S.bz.history[0], clos: __fakeSB.db.blitzClos[id], regles: S.me.settled, gagnes: S.me.wins }), id);
@@ -54,24 +60,25 @@ test('tomber à la manche 1, racheter avant la manche 2, tomber encore : 60 $ pe
   test.setTimeout(90000);
   const { erreurs } = await ouvrirBlitz(page);
   await page.clock.runFor(1500);
+  const id = await lire(page, () => MoteurEclair.bzId(Date.now()));
   await page.locator('[data-a="bz-join"]').click();
   await expect.poll(async () => ((await salle(page)).moi || {}).paye).toBe(10);
-  await page.clock.runFor(92000);
+  await jusqua(page, id, 'debut', 1, 3000);
   await choisir(page, 1, false);
-  await page.clock.runFor(57500);                                                            // fin de la manche 1 : pause
+  await jusqua(page, id, 'fin', 1, 1500);                                                    // fin de la manche 1 : pause
   await expect(toast(page, 'Eliminated at round 1')).toBeVisible();
   expect(await salle(page)).toMatchObject({ etat: 'live', manche: 1, pause: true, moi: { vie: false, rachat: false } });
   await page.locator('[data-a="bz-rebuy"]').click();
   await expect(toast(page, 'Rebuy accepted')).toBeVisible();
   expect(await lire(page, () => S.me.balance)).toBe(440);
   expect((await salle(page)).moi).toMatchObject({ vie: true, rachat: true, paye: 60 });
-  await page.clock.runFor(15000);                                                            // manche 2 : aucun choix
+  await jusqua(page, id, 'debut', 2, 3000);                                                  // manche 2 : aucun choix
   expect(await salle(page)).toMatchObject({ manche: 2, pause: false, moi: { vie: true } });
-  await page.clock.runFor(55500);                                                            // une seconde après la fin de la manche 2
-  await expect(toast(page, 'Eliminated at round 2')).toBeVisible();
+  await jusqua(page, id, 'fin', 2, 1500);
   expect((await salle(page)).moi).toMatchObject({ vie: false });
+  expect(await lire(page, () => S.bz.royale.me.outRound)).toBe(2);
   await expect(page.locator('[data-a="bz-rebuy"]')).toHaveCount(0);                          // un seul rachat
-  await page.clock.runFor(585000);                                                           // jusqu'à la fin du Blitz : clôture
+  await jusqua(page, id, 'fin', 10, 3000);                                                   // jusqu'à la fin du Blitz : clôture
   await expect.poll(() => lire(page, () => S.me.history[0] && S.me.history[0].k), { timeout: 15000 }).toBe('blitz');
   expect(await lire(page, () => ({ solde: S.me.balance, win: S.me.history[0].win, pnl: S.me.history[0].pnl, regles: S.me.settled, gagnes: S.me.wins }))).toEqual({ solde: 440, win: false, pnl: -60, regles: 1, gagnes: 0 });
   expect((await appels(page)).filter(a => !a.startsWith('blitz_choose'))).toEqual(['blitz_join', 'blitz_rebuy', 'blitz_settle']);

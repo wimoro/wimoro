@@ -107,7 +107,7 @@ function vJournal() {
 }
 const VUES = { chiffres: vChiffres, joueurs: vJoueurs, marches: vMarches, chat: vChat, bots: vBots, journal: vJournal };
 function rendre() {
-  $('#adm-nav').innerHTML = ONGLETS.map(([k, l]) => `<button data-onglet="${k}" aria-current="${k === E.onglet}">${l}</button>`).join('');
+  menu();
   main().innerHTML = VUES[E.onglet]();
 }
 
@@ -120,7 +120,12 @@ const CHARGER = {
   bots: async () => { E.chiffres = await adm('chiffres'); },
   journal: async () => { E.journal = (await adm('journal')).journal; }
 };
-async function ouvrir(onglet) { E.onglet = onglet; rendre(); await essayer(CHARGER[onglet]); rendre(); }
+function menu() { $('#adm-nav').innerHTML = ONGLETS.map(([k, l]) => `<button data-onglet="${k}" aria-current="${k === E.onglet}">${l}</button>`).join(''); }
+async function ouvrir(onglet) {
+  E.onglet = onglet; menu(); main().innerHTML = '<p class="vide">Chargement…</p>';
+  await essayer(CHARGER[onglet]);
+  if (E.onglet === onglet) rendre();                                 // dessiné une seule fois, données chargées : aucune saisie n'est effacée
+}
 
 /* ----- Actions ----- */
 const champs = f => Object.fromEntries(new FormData(f).entries());
