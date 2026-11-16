@@ -74,6 +74,7 @@ function duelSettle(d,winSide,proof){if(d.status!=='active')return;const mine=du
 /* manches éclair : règlement avec les prix relevés */
 const resolveFlash0=resolveFlash;
 resolveFlash=function(){const round=S.flash.round,starts={},ends={};for(const g of GAMES){const gm=G(g.id);starts[g.id]=gm.start;ends[g.id]=g.kind==='dir'?gm.price:gm.start;}resolveFlash0();
+ if(SRV()){srvDuelsApresManche(round);return;}                 /* mode Compte : c'est le serveur qui règle les duels de la manche */
  for(const d of duelsAll()){if(!duelIsFlash(d)||d.round!==round)continue;const g=duelGame(d),gm=G(g.id),r=gm.result;if(!r)continue;
   if(d.status==='open'){duelRefund(d,'expired');continue;}
   if(d.status!=='active')continue;

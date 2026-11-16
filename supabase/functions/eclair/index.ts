@@ -19,6 +19,10 @@
 //   { action: 'blitz_choose', id, choice }  →  { ok: true, now, me, ev, blitz }       (manche et fenêtre de choix : serveur)
 //   { action: 'blitz_rebuy', id }           →  { ok: true, now, me, ev, blitz }
 //   { action: 'blitz_settle', id }          →  { ok: true, now, me, ev, blitz, hist } (issues, survivants simulés, jackpot : serveur)
+// Duels sur une manche éclair (prix et frais du moment : moteur ; manche : horloge de la base ; issue : moteur) :
+//   { action: 'duel_create', gid, side, stake, opp, key }  →  { ok: true, now, me, ev, duel, duels }
+//   { action: 'duel_accept', id | code }                    →  { ok: true, now, me, ev, duel, duels }
+//   { action: 'duel_settle' }                               →  { ok: true, now, me, ev, duels, regles }
 // Refus : { ok: false, code } avec un code stable (mises_fermees, deja_mise, solde_insuffisant, pause, be_plein…).
 // La fonction vérifie elle-même la session auprès du service d'authentification (getUser) : verify_jwt est désactivé.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
@@ -118,6 +122,47 @@ Deno.serve(async (req: Request) => {
     return { non: refus(req, c, c === "serveur" ? 500 : 400) };
   };
   const actif = (gid: unknown) => { const d = ME.JEUX[String(gid ?? "")]; return d && d.kind === "dir" ? d : null; };   // la Série se joue sur un actif à trajectoire
+
+  // ── Duels sur une manche éclair ──
+  // Le prix d'un camp est celui du jeu à l'instant de l'appel (état de la manche en cours), comme à l'écran. La manche du
+  // duel est fixée par l'horloge de la base ; l'issue vient du moteur, une fois la manche terminée.
+  // deno-lint-ignore no-explicit-any
+  const coteDuJeu = (d: any) => { const t = Date.now(), g = ME.etat(d, ME.round(t), ME.tick(t)); return { g, px: ME.prix(d, g) }; };
+
+  if (corps?.action === "duel_create") {
+    const d = ME.JEUX[String(corps.gid ?? "")], camp = String(corps.side ?? ""), mise = Math.round(Number(corps.stake) * 100) / 100;
+    if (!d) return refus(req, "jeu_inconnu");
+    if (!["oui", "non"].includes(camp)) return refus(req, "cote_invalide");
+    if (!(mise >= 5) || !(mise <= 5000)) return refus(req, "montant_invalide");
+    const { g, px } = coteDuJeu(d);
+    const r = await appel("srv_duel_eclair_creer", { p_user: joueur, p: {
+      gid: d.id, side: camp, stake: mise, opp: corps.opp ?? null, key: corps.key ?? null,
+      prix: camp === "oui" ? px.o : px.n, frais: ME.frais(d, g, camp, mise, false), frais_remise: ME.frais(d, g, camp, mise, true),
+    } }, "duel éclair, création");
+    return r.non ?? json(req, { ok: true, now: Date.now(), ...r.data });
+  }
+
+  if (corps?.action === "duel_accept") {
+    const l = await appel("srv_duel_eclair_lire", { p_user: joueur, p: { id: corps.id ?? null, code: corps.code ?? null } }, "duel éclair, lecture");
+    if (l.non) return l.non;
+    const d = ME.JEUX[String(l.data?.gid ?? "")];
+    if (!d) return refus(req, "jeu_inconnu");
+    const { g, px } = coteDuJeu(d);
+    const prix = l.data.side === "oui" ? px.o : px.n, autre = Math.round(Number(l.data.stake) * 100 / prix * (100 - prix)) / 100, camp = l.data.side === "oui" ? "non" : "oui";
+    const r = await appel("srv_duel_eclair_accepter", { p_user: joueur, p: {
+      id: l.data.id, prix, frais: ME.frais(d, g, camp, autre, false), frais_remise: ME.frais(d, g, camp, autre, true),
+    } }, "duel éclair, acceptation");
+    return r.non ?? json(req, { ok: true, now: Date.now(), ...r.data });
+  }
+
+  if (corps?.action === "duel_settle") {
+    const o = await appel("srv_duel_eclair_ouverts", { p_user: joueur }, "duels éclair à régler");
+    if (o.non) return o.non;
+    // deno-lint-ignore no-explicit-any
+    const res = (o.data?.duels ?? []).filter((x: any) => ME.JEUX[x.gid]).map((x: any) => ({ id: x.id, out: ME.issue(ME.JEUX[x.gid], Number(x.round)) }));
+    const r = await appel("srv_duel_eclair_regler", { p_user: joueur, p_res: res }, "duels éclair, règlement");
+    return r.non ?? json(req, { ok: true, now: Date.now(), ...r.data });
+  }
 
   if (corps?.action === "serie_start") {
     const d = actif(corps.gid);
