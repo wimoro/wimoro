@@ -238,7 +238,16 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 - [ ] Duels sur une manche éclair et duels de stack : annoncés comme indisponibles en mode Compte.
 - [ ] Limite : le paiement d'un duel gagné n'a pas été joué contre la vraie base (il faudrait résoudre un vrai marché) ; il est
       prouvé dans la base embarquée et avec le faux serveur.
-- [ ] Clans, copy trading, parrainage.
+- [ ] Clans, copy trading.
+- [x] Parrainage : un code par joueur (PSEUDO-XXX) donné par le serveur, 10 $ pour l'ami à la création de son compte, 10 $ pour
+      le parrain au premier pari de son filleul (quel que soit le jeu), filleuls et gains affichés depuis le serveur, en direct.
+      Le code est lu une seule fois, à la création du compte. Une panne du parrainage n'empêche ni de créer un compte ni de
+      parier ; un bonus manqué est rattrapé au chargement suivant du parrain. _Tests_ `tests/sql/parrainage.spec.mjs` (5),
+      `tests/compte/parrainage.spec.mjs` (3), `tests/e2e/comptes.spec.mjs` (lien d'invitation, bonus de l'ami, bonus du parrain
+      en direct contre le vrai serveur).
+- [x] Correctif trouvé en chemin : après un duel expiré, la réponse du chargement portait encore l'ancien solde (la mise
+      rendue n'apparaissait qu'au chargement suivant). Ce qui se règle au chargement passe maintenant avant la lecture.
+      _Test_ `tests/sql/duels.spec.mjs` (« la réponse elle-même porte la mise rendue » : échouait avant, passe après).
 - [x] Paris combinés : 2 à 6 sélections, prix bloqués à la validation, 5 % du gain brut, gain plafonné à 50 000 $, encaissement
       anticipé à la valeur du moment, règlement sélection par sélection à la résolution des marchés (`api_combo_place`,
       `api_combo_cash`, `api_combos`). La sélection en cours (le « slip ») reste locale à l'écran. _Tests_
@@ -355,6 +364,7 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 | Blitz : paiement | Réglé à la demande : le premier inscrit qui revient après la fin déclenche le paiement de tous les inscrits. | Pas de tâche planifiée capable d'exécuter le moteur (JavaScript) ; aucun gain ne se perd, il attend au plus le retour d'un inscrit (un mois). |
 | Duels | Seuls les duels sur un marché sont reliés. Les frais d'ouverture ne sont pas rendus si le duel est refusé ou expire (règle du mode Démo). Un duel accepté ajoute son montant au volume du marché, sans déplacer le prix. | Les duels éclair demandent le moteur côté serveur (lot à part) ; le duel de stack dure une semaine et repose sur un adversaire simulé. |
 | Ordre des lots restants | Combinés avant clans. | Les clans sont le plus gros module, presque entièrement simulé (annuaire de 100 clans, divisions, guerres) : je traite d'abord les fonctions à règles nettes (combinés, ordres limites, parrainage, copy trading, propositions). |
+| Parrainage | Sans limite de filleuls, comme en mode Démo ; code accepté seulement à la création du compte. | Règle du jeu inchangée. Limite connue : une même personne peut créer plusieurs comptes pour se parrainer elle-même (argent fictif ; chaque compte demande une adresse e-mail distincte). |
 | Protection de `main` | Non activée. | Elle changerait ta façon de publier ; elle reste proposée, facultative. |
 
 ## À faire par l'humain
@@ -393,3 +403,4 @@ Rien d'obligatoire. Le détail et les constats sont dans `docs/EXPLOITATION.md`,
 | 16 nov. 2026 | 4.4 (fin) : Blitz Royale en mode Compte. | migration `blitz` (empreinte identique), Edge Function `eclair` version 3 ; 214 tests (100 SQL) ; 12 scénarios de bout en bout contre le vrai back |
 | 16 nov. 2026 | 4.6 (suite) : duels entre amis sur un marché. Stabilité : page d'administration et tests du Blitz. | migration `duels` (empreinte identique) ; 222 tests (105 SQL) ; 13 scénarios de bout en bout contre le vrai back |
 | 16 nov. 2026 | Paris combinés en mode Compte. | migration `combines` (empreinte identique) ; 227 tests (108 SQL) ; 14 scénarios de bout en bout contre le vrai back |
+| 16 nov. 2026 | Parrainage en mode Compte. Correctif : solde à jour dès la réponse du chargement après un duel expiré. | migration `parrainage` (empreinte identique) ; 235 tests (113 SQL) ; 15 scénarios de bout en bout contre le vrai back |

@@ -13,6 +13,8 @@ import { ouvrir, lire } from '../helpers/app.mjs';
 const AUTORITE = new Set(['balance', 'xp', 'played', 'wins', 'settled', 'deposits', 'flashWins', 'followed', 'realized', 'streak', 'bestStreak', 'copiers', 'msgsTotal', 'positions', 'history', 'deps', 'wds', 'missions', 'badges', 'friends', 'freqIn', 'freqOut', 'following', 'notifs', 'kyc', 'maxBet']);
 // Actions libres en mode Compte qui touchent ces champs : chacune passe par le serveur (ou ne fait que lire).
 const RELIEES = {
+  'ACT.ref-copy': 'le code et le lien viennent du serveur (api_state → ref) — tests/compte/parrainage.spec.mjs',
+  'ACT.ref-share': 'le code et le lien viennent du serveur (api_state → ref) — tests/compte/parrainage.spec.mjs',
   'ACT.cb-place': 'api_combo_place (prix bloqués, mise prise par le serveur) — tests/compte/combines.spec.mjs',
   'ACT.cb-cash': 'api_combo_cash — tests/compte/combines.spec.mjs',
   'ACT.dl-create': 'api_duel_create (mise sous séquestre) — tests/compte/duels.spec.mjs',

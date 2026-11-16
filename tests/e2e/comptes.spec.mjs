@@ -28,7 +28,7 @@ test.describe.configure({ mode: 'serial' });
 test.afterAll(async () => {
   const src = fs.readFileSync('js/api.js', 'utf8');
   const back = 'https://' + /REF='([a-z0-9]+)'/.exec(src)[1] + '.supabase.co', cle = /CLE='([^']+)'/.exec(src)[1];
-  for (const suffixe of ['', '-b', '-c']) {
+  for (const suffixe of ['', '-b', '-c', '-d']) {
     const email = `wimoro-e2e-${stamp}${suffixe}@example.com`;
     const r = await fetch(back + '/auth/v1/token?grant_type=password', { method: 'POST', headers: { apikey: cle, 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password: MDP }) });
     if (!r.ok) continue;                                                                    // compte jamais créé (suite interrompue avant)
@@ -538,4 +538,46 @@ test('combiné : composé à l’écran, validé par le vrai serveur (prix bloqu
   expect(await lire(page, () => S.me.balance)).toBeCloseTo(solde0 - c.stake + cash, 2);
   expect(await page.evaluate(async id => { try { await API.call('api_combo_cash', { p_id: +id }); return 'encaissé deux fois'; } catch (e) { return e.code; } }, c.id)).toBe('combine_indisponible');
   expect(erreurs).toEqual([]);
+});
+
+test('parrainage : le code vient du vrai serveur ; un ami inscrit avec le lien reçoit 10 $, et son premier pari en verse 10 au parrain, en direct', async ({ browser }) => {
+  test.setTimeout(180000);
+  const ca = await browser.newContext(), pa = await ca.newPage();
+  const erreursA = await ouvrirReel(pa, '#connexion');
+  await pa.locator('#le').fill(EMAIL); await pa.locator('#lp').fill(MDP); await pa.locator('form[data-form="login"] [type=submit]').click();
+  await expect(pa).toHaveURL(/#accueil/, { timeout: 20000 }); await pret(pa);
+  await pa.evaluate(() => { location.hash = '#parrainage'; });
+  const code = await lire(pa, () => refCode());
+  expect(code).toMatch(/^[A-Z0-9]{2,10}-[A-Z0-9]{3}$/);
+  await expect(pa.locator('.refcode')).toHaveText(code);
+  const a0 = await lire(pa, () => ({ solde: S.me.balance, filleuls: refsAll().length }));
+
+  // l'ami ouvre le lien d'invitation dans un autre navigateur et crée son compte
+  const cd = await browser.newContext(), pd = await cd.newPage();
+  const erreursD = await ouvrirReel(pd, '?r=' + code.toLowerCase() + '#inscription');
+  const f = pd.locator('form[data-form="signup"]');
+  await expect(f.locator('[name=ref]')).toHaveValue(code);
+  await f.locator('[name=pseudo]').fill(PSEUDO + 'd'); await f.locator('[name=email]').fill(`wimoro-e2e-${stamp}-d@example.com`); await f.locator('[name=pw]').fill(MDP);
+  await f.locator('[name=age]').check(); await f.locator('[name=cgu]').check();
+  await f.locator('[type=submit]').click();
+  await expect(pd).toHaveURL(/#bienvenue/, { timeout: 20000 }); await pret(pd);
+  expect(await lire(pd, () => ({ solde: S.me.balance, par: S.me.refBy, depots: S.me.deposits, lignes: S.me.deps.map(d => d.label), notif: S.me.notifs.map(n => n.text) })))
+    .toEqual({ solde: 10, par: code, depots: 0, lignes: ['parrainage'], notif: ['Referral bonus: $10 free thanks to code ' + code + '.'] });
+  expect(await lire(pd, () => refCode())).toMatch(/^[A-Z0-9]{2,10}-[A-Z0-9]{3}$/);
+  expect(await lire(pd, () => refCode())).not.toBe(code);
+
+  // le parrain est prévenu en direct : un filleul en attente, rien de versé
+  await expect.poll(() => lire(pa, () => refsAll().map(r => r.n + ':' + r.st)), { timeout: 20000 }).toContain(PSEUDO + 'd:pending');
+  expect(await lire(pa, () => ({ solde: S.me.balance, filleuls: refsAll().length }))).toEqual({ solde: a0.solde, filleuls: a0.filleuls + 1 });
+
+  // premier pari du filleul (5 $ pris sur son bonus) : 10 $ pour le parrain, une seule fois
+  expect(await pd.evaluate(async () => (await API.call('api_buy', { p_market: 'btc150k', p_side: 'oui', p_total: 5, p_key: crypto.randomUUID(), p_opts: {} })).me.played)).toBe(1);
+  await expect.poll(() => lire(pa, () => refsAll().map(r => r.n + ':' + r.st + ':' + r.paid)), { timeout: 20000 }).toContain(PSEUDO + 'd:done:10');
+  await expect.poll(() => lire(pa, () => S.me.balance), { timeout: 20000 }).toBeCloseTo(a0.solde + 10, 2);
+  expect(await pd.evaluate(async () => (await API.call('api_buy', { p_market: 'btc150k', p_side: 'oui', p_total: 2, p_key: crypto.randomUUID(), p_opts: {} })).me.played)).toBe(2);
+  await pa.reload(); await pret(pa);
+  expect(await lire(pa, () => S.me.balance)).toBeCloseTo(a0.solde + 10, 2);
+  expect(await lire(pa, () => S.me.notifs.some(n => /placed their first bet, \$10 for you/.test(n.text)))).toBe(true);
+  expect(erreursA).toEqual([]); expect(erreursD).toEqual([]);
+  await ca.close(); await cd.close();
 });

@@ -61,7 +61,7 @@
 
   /* ----- Les fonctions du contrat ----- */
   var RPC = {
-    api_state: function () { var e0 = etat(); regler(e0, []); rgMaj(e0, []); var e = clone(e0); e.deps = e0.deps.map(depJson); e.eclair = eclairJson(e0); delete e.eclairMises; e.serie = serieJson(e0); e.duels = duelsJson(e0); delete e.duelsL; e.combos = clone(e0.combosL || []); delete e.combosL; e.blitz = Object.keys(e0.blitzJ || {}).filter(function (i) { return !e0.blitzJ[i].regle; }).map(Number); delete e.blitzJ; e.now = Date.now() + (CFG.decalage || 0); return e; },
+    api_state: function () { var e0 = etat(); regler(e0, []); rgMaj(e0, []); var e = clone(e0); e.deps = e0.deps.map(depJson); e.eclair = eclairJson(e0); delete e.eclairMises; e.serie = serieJson(e0); e.duels = duelsJson(e0); delete e.duelsL; e.combos = clone(e0.combosL || []); delete e.combosL; if (!e.ref) e.ref = { code: 'TESTEUR-7K3', bonus: 10, by: null, list: [] }; e.blitz = Object.keys(e0.blitzJ || {}).filter(function (i) { return !e0.blitzJ[i].regle; }).map(Number); delete e.blitzJ; e.now = Date.now() + (CFG.decalage || 0); return e; },
     api_pseudo_libre: function (a) { return /^[A-Za-z0-9._]{3,20}$/.test(a.p_pseudo || '') && !pseudoPris(a.p_pseudo); },
     api_profile_update: function (a) { var p = a.p || {}, me = etat().me;
       if ('n' in p) { if (!/^[A-Za-z0-9._]{3,20}$/.test(p.n || '')) throw { message: 'pseudo_invalide' }; if (pseudoPris(p.n, uid())) throw { message: 'pseudo_pris' }; me.n = p.n; }
@@ -530,6 +530,10 @@
       var pseudo = /^[A-Za-z0-9._]{3,20}$/.test(meta.username || '') && !pseudoPris(meta.username) ? meta.username : 'joueur' + id.slice(-6);
       db.comptes[em] = { id: id, password: c.password, pseudo: pseudo };
       db.etats[id] = etatNeuf(id, em, pseudo, true);
+      var code = String(meta.ref || '').trim().toUpperCase();                                  /* parrainage : mêmes règles que …_parrainage.sql */
+      if (/^[A-Z0-9]{2,10}-[A-Z0-9]{3}$/.test(code) && (CFG.codes || []).indexOf(code) >= 0) { var en = db.etats[id]; en.me.balance += 10; en.ref = { code: 'NOUVEAU-A1B', bonus: 10, by: code, list: [] };
+        en.deps.unshift({ id: 'dep-ref', coin: 'USDC', net: 'Wimoro', amt: 10, usd: 10, conf: 12, need: 12, label: 'parrainage', st: 'completed', fee: 0, at: Date.now() });
+        en.notifs.unshift({ id: 'n-ref', ic: 'gift', code: 'parrain_bonus', p: { gain: 10, code: code }, href: '#parrainage', at: Date.now(), read: false }); }
       if (CFG.autoconfirm === false) { persist(); return Promise.resolve({ data: { user: { id: id, email: em, identities: [{}] }, session: null }, error: null }); }
       db.session = { user: { id: id, email: em } }; persist(); fireAuth('SIGNED_IN');
       return Promise.resolve({ data: { user: clone(db.session.user), session: clone(db.session) }, error: null }); },
