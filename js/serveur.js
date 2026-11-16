@@ -79,6 +79,7 @@ const ERR_TXT={
  clan_nom_invalide:()=>_t("3 à 28 caractères."),
  clan_tag_invalide:()=>_t('3 ou 4 lettres ou chiffres.'),
  clan_tag_pris:()=>_t("Tag déjà pris"),
+ trop_de_suivis:()=>_t("Tu suis déjà 500 joueurs : c’est le maximum."),
  duel_indisponible:()=>_t("Ce duel n’est plus disponible."),
  cote_indisponible:()=>_t("La cote du marché ne permet pas ce duel pour l’instant."),
  trop_de_duels:()=>_t("Tu as déjà trop de duels en attente de réponse."),
@@ -108,8 +109,8 @@ const srvErreur=e=>{if(e&&e.code==='session'){srvSessionPerdue();return;}if(e&&e
    qui touche au solde, à l'XP ou à un état partagé n'est exécutée localement quand le serveur fait autorité. */
 const SRV_BLOQUE=new Set(('share-pick '
  +'limit-place ord-cancel guard guard-save guard-del stk-create stack-open '
- +'sr-share cl-war-join cl-sim cl-share cl-promote cl-kick cl-invite cl-call-do cl-war cl-call-open '
- +'pro-sh-send pro-share follow-user follow-bet follow-pbet share react '
+ +'cl-war-join cl-sim cl-promote cl-kick cl-invite cl-call-do cl-war cl-call-open '
+ +'pro-sh-send pro-share follow-bet follow-pbet share react '
  +'wallet wallet-modal demo-login demo-rank demo-rank-open demo-rank-reset').split(/\s+/));
 const SRV_FORMS_BLOQUE=new Set([]);
 const srvBientot=()=>toast({tone:'amber',icon:'info',force:true,title:_t("Bientôt disponible avec ton compte"),text:_t("Cette fonction marche déjà en mode démo. Elle arrive pour les comptes.")});
@@ -739,6 +740,19 @@ async function srvClanTick(){
  finally{srvClanOccupe=false;}
 }
 planifier('serveur : clans',3000,srvClanTick,'serveur');
+
+/* ----- Suivre un joueur : la liste est tenue par le serveur, le compteur d'abonnés de sa fiche aussi ----- */
+let srvSuivreOccupe=false;
+async function srvSuivre(u,oui){
+ if(srvSuivreOccupe)return;srvSuivreOccupe=true;
+ try{const r=await API.call('api_follow',{p_user:u,p_on:!!oui});
+  srvFiches(r.users);S.me.following=(r.following||[]).slice();srvAppliquer(r);
+  const on=S.me.following.includes(u);
+  if(on)toast({icon:'users',title:`${_t("Tu suis {0}",[userOf(u).n])}`,text:_t("Ses mises apparaîtront dans tes notifications.")});
+  $$(`[data-a="follow-user"][data-u="${u}"]`).forEach(b=>{b.textContent=on?_t("Suivi"):_t("Suivre");b.classList.toggle('b-soft',on);b.classList.toggle('b-ghost',!on);});}
+ catch(e){srvErreur(e);}
+ finally{srvSuivreOccupe=false;}
+}
 
 /* ----- Paris combinés : prix bloqués, mise et gain tenus par le serveur ; le « slip » reste une sélection locale ----- */
 const comboDe=x=>({id:String(x.id),at:+x.at,stake:+x.stake,mult:+x.mult,fee:+x.fee,pay:+x.pay,status:x.status,cash:x.cash==null?undefined:+x.cash,endAt:x.endAt||undefined,

@@ -245,6 +245,12 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
       (`tests/fixtures/clans-demo.json`, vérifié des deux côtés) ; les clans créés par des joueurs s'y ajoutent. _Tests_
       `tests/sql/clans.spec.mjs` (7), `tests/compte/clans.spec.mjs` (4), `tests/e2e/comptes.spec.mjs` (rejoindre pour de vrai,
       tag vu par un autre joueur, mise comptée, attente après départ).
+- [x] Suivre un joueur (`api_follow`) : liste et compteur d'abonnés tenus par le serveur. Partages en image de la Série et du
+      clan : disponibles (ils ne font que dessiner une image, avec le vrai code de parrainage). _Tests_
+      `tests/sql/suivre.spec.mjs`, `tests/compte/suivre.spec.mjs`, `tests/e2e/comptes.spec.mjs` (suivre pour de vrai).
+- [ ] Encore « Bientôt disponible » en mode Compte, hors clans : partager une mise dans le chat et la suivre, réactions sous
+      les messages, partage du Mode Pro, duels « stack » et duels éclair. La connexion par portefeuille et les outils
+      « démo » (changer de rang à la main) n'existent, par nature, qu'en mode Démo.
 - [ ] Clans, seconde partie, annoncée « Bientôt disponible » en mode Compte : guerres de clans (cagnotte), appels de clan,
       chat de clan, promotions, exclusions et invitations nominatives, récap en image. Le classement et les divisions des
       clans de démonstration restent ceux de l'écran (ils ne bougent pas en mode Compte).
@@ -484,3 +490,4 @@ Rien d'obligatoire. Le détail et les constats sont dans `docs/EXPLOITATION.md`,
 | 16 nov. 2026 | Copy trading en mode Compte. Test de La Série : comparaison de prix rendue proportionnelle (elle échouait par hasard sur un prix élevé). | migration `copies` (empreinte identique) ; 253 tests (127 SQL) ; 17 scénarios de bout en bout contre le vrai back |
 | 16 nov. 2026 | Clans en mode Compte, première partie (appartenance, création, contribution, tag public). | migration `clans` (empreinte identique) ; 264 tests (134 SQL) ; 18 scénarios de bout en bout contre le vrai back |
 | 16 nov. 2026 | Recette finale sur le site en ligne. Lot « ordres limites » remis à niveau dans sa branche (273 tests, dont 141 SQL), toujours en attente de la confirmation Supabase. | 130 tests d'écran et 18 scénarios réels sur <https://wimoro.com> ; base : 20 comptes, 10 000 bots, aucun compte de test, 56 migrations, aucune erreur de tâche planifiée |
+| 16 nov. 2026 | Suivre un joueur ; partages en image de la Série et du clan. | migration `suivre` (empreinte identique) ; 267 tests (135 SQL) ; 19 scénarios de bout en bout contre le vrai back |

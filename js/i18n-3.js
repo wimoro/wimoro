@@ -199,3 +199,9 @@ I18N_ADD("en",{
 I18N_ADD("he",{
 "Tu es maintenant le chef du clan {0}.":"אתה עכשיו ראש הקלאן {0}."
 });
+I18N_ADD("en",{
+"Tu suis déjà 500 joueurs : c’est le maximum.":"You already follow 500 players: that is the maximum."
+});
+I18N_ADD("he",{
+"Tu suis déjà 500 joueurs : c’est le maximum.":"אתה כבר עוקב אחרי 500 שחקנים: זה המקסימום."
+});

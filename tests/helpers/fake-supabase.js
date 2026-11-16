@@ -337,6 +337,11 @@
       var id = 'u' + (db.clans.length + 1), j = { id: id, name: nom, tag: tag, emblem: { ic: p.ic || 'shield', col: p.col || '#2448FF' }, lang: (p.lang || []).length ? p.lang : ['fr'], cats: (p.cats || []).slice(0, 3), desc: desc, access: p.access || 'open', minRank: +p.minRank || 0, chief: uid(), createdAt: Date.now(), code: 'WMR-U' + String(100 + db.clans.length), members: [] };
       db.clans.push(j); clanEntrer(e, id, 'chef'); ev.push(notif('shield', 'clan_cree', { id: id, name: nom, tag: tag }, '#clan-' + id));
       var rep = reponse(ev); rep.clan = clanEtat(e); rep.id = id; return rep; },
+    /* Suivre un joueur : mêmes règles que supabase/migrations/…_suivre.sql */
+    api_follow: function (a) { var e = etat(), L = (e.following = e.following || []), i = L.indexOf(a.p_user), f = (e.users || {})[a.p_user];
+      if (!a.p_user || a.p_user === uid() || !f) throw { message: 'joueur_inconnu' };
+      if (a.p_on && i < 0) { if (L.length >= 500) throw { message: 'trop_de_suivis' }; L.push(a.p_user); f.fol = (f.fol | 0) + 1; } else if (!a.p_on && i >= 0) { L.splice(i, 1); f.fol = Math.max(0, (f.fol | 0) - 1); }
+      var rep = reponse([]), users = {}; users[a.p_user] = clone(f); rep.following = clone(L); rep.users = users; return rep; },
     api_buy: function (a) {
       var e = etat(), me = e.me, total = r2(+a.p_total), cle = uid() + ':' + a.p_key;
       if (a.p_side !== 'oui' && a.p_side !== 'non') throw { message: 'cote_invalide' };
