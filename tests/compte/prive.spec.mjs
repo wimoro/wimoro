@@ -60,3 +60,31 @@ test('le serveur refuse d’écrire à quelqu’un qui n’est pas un ami : mess
   await expect(page.locator('.toast', { hasText: 'need to be friends' }).first()).toBeVisible();
   expect(await messages(page)).toEqual([]);
 });
+
+test('partager une mise dans une conversation privée : elle part au serveur pour cet ami, la carte s’affiche ; quand il la suit, le compteur arrive par le sujet privé', async ({ page }) => {
+  const etat = { ...AMIS, me: { xp: 400, settled: 4, wins: 2, deposits: 0, balance: 500 }, positions: [{ m: 'btc150k', s: 'oui', sh: 200, avg: 50 }], prefs: { v: 1, tmode: 'all' } };
+  const { erreurs } = await ouvrir(page, { mode: 'compte', hash: '#amis', faux: { fiches: { [AMI]: FICHE }, etat } });
+  await page.locator('.frow', { hasText: 'lea_reelle' }).locator('[data-a="dm"]').click();
+  await expect(page).toHaveURL(/#chat/);
+  await expect(page.locator(`.composer input[data-in="dm:${AMI}"]`)).toBeVisible();
+  const cartes = () => lire(page, u => room('dm:' + u).msgs.filter(x => x.k === 'bet').map(x => ({ u: x.u, m: x.bet.m, s: x.bet.s, suivis: x.followers | 0, sid: x.sid })), AMI);
+  await page.locator('.composer [data-a="share"]').first().click();
+  await page.locator('[data-a="share-pick"][data-i="0"]').click();
+  await expect.poll(async () => (await cartes()).length).toBe(1);
+  expect((await cartes())[0]).toMatchObject({ u: 'me', m: 'btc150k', s: 'oui', suivis: 0 });
+  expect(await appels(page, 'api_chat_share')).toEqual([{ p_room: 'dm:' + AMI, p_market: 'btc150k', p_side: 'oui' }]);
+  await expect(page.locator('.toast', { hasText: 'Coming soon for accounts' })).toHaveCount(0);
+  expect(await lire(page, () => S.me.xp)).toBe(405);                                              // +5 XP, donnés par le serveur
+  await expect(page.locator(`.feed[data-room="dm:${AMI}"] .betc`)).toHaveCount(1);
+  expect(await lire(page, () => __fakeSB.sujets().filter(s => s.startsWith('salon:dm'))), 'aucun sujet public pour une conversation privée').toEqual([]);
+  // l'ami la suit : le serveur envoie le nouveau compteur sur le sujet privé du joueur
+  const sid = (await cartes())[0].sid;
+  await page.evaluate(([moi, ami, id]) => __fakeSB.emit('joueur:' + moi, 'fc', { id, fc: 1, u: ami }), [UID, AMI, sid]);
+  await expect.poll(async () => (await cartes())[0].suivis).toBe(1);
+  // rechargé : la carte revient de l'historique de la conversation
+  await page.reload(); await pret(page);
+  await aller(page, 'chat');
+  await page.locator(`[data-a="troom"][data-room="dm:${AMI}"]`).first().click();
+  await expect(page.locator(`.feed[data-room="dm:${AMI}"] .betc`)).toHaveCount(1);
+  expect(erreurs).toEqual([]);
+});

@@ -935,7 +935,7 @@ Object.assign(SRV_TOAST,{
 });
 /* discret : annonce automatique après un pari (case « Annoncer ma mise ») — un refus du serveur y reste silencieux */
 async function srvPartagerMise(rid,m,s,discret){
- if(!srvSalonOuvert(rid)||srvPrive(rid)){if(!discret)srvBientot();return;}
+ if(!srvSalonOuvert(rid)){if(!discret)srvBientot();return;}                      /* dans une conversation privée aussi : la carte ne va qu'à l'ami */
  try{const r=await API.call('api_chat_share',{p_room:rid,p_market:m,p_side:s});srvChatAjouter(rid,r.msg);srvAppliquer(r);}
  catch(e){if(!discret)srvErreur(e);else if(e&&e.code==='session')srvSessionPerdue();}
 }
@@ -1157,7 +1157,8 @@ async function srvBzRacheter(){const r=bzR();if(!r||!bzCanRebuy(r)||SRV_BZ.occup
 /* ----- Sujet privé du joueur : ses messages privés et ses notifications arrivent en direct, à lui seul ----- */
 function srvPerso(evt,d){
  if(evt==='dm'){if(d&&d.u)srvChatAjouter('dm:'+d.u,d);return;}
- if(evt==='re'){if(d&&d.u)srvChatReactions('dm:'+d.u,d);return;}                    /* réaction de l'autre participant, dans une conversation privée */
+ if(evt==='re'){if(d&&d.u)srvChatReactions('dm:'+d.u,d);return;}
+ if(evt==='fc'){if(d&&d.u)srvChatSuivis('dm:'+d.u,d);return;}                       /* mise partagée en privé : son compteur de suivis */                    /* réaction de l'autre participant, dans une conversation privée */
  if(evt==='reac'){if(d)srvReactionRecue(d);return;}
  if(evt==='notif'&&d&&d.n){
   if(S.me.notifs.some(x=>x.id===d.n.id))return;
