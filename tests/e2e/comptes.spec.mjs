@@ -864,3 +864,49 @@ test('réactions : A réagit au message de B et à celui d’un bot, B voit les 
   expect(a.erreurs).toEqual([]); expect(b.erreurs).toEqual([]);
   await a.ctx.close(); await b.ctx.close();
 });
+
+test('duel éclair contre un bot ami : mise prise par le vrai serveur, accepté aussitôt au prix du serveur ; à la fin de la manche, réglé comme le moteur de l’écran le calcule', async ({ page }) => {
+  test.setTimeout(240000);
+  const erreurs = await ouvrirReel(page, '#connexion');
+  await page.locator('#le').fill(EMAIL); await page.locator('#lp').fill(MDP); await page.locator('form[data-form="login"] [type=submit]').click();
+  await expect(page).toHaveURL(/#accueil/, { timeout: 20000 }); await pret(page);
+  const bot = await lire(page, () => S.me.friends.find(u => USERS[u] && USERS[u].bot));
+  expect(bot, 'A a un bot pour ami (scénario des duels)').toBeTruthy();
+  await page.evaluate(() => { location.hash = '#duels'; });
+  const avant = await lire(page, () => ({ solde: S.me.balance, xp: S.me.xp, duels: S.me.duels.length }));
+  expect(avant.solde, 'A a de quoi miser 5 $ et ses frais').toBeGreaterThanOrEqual(6);
+  // la fenêtre « Défier », sur une manche éclair du Bitcoin, contre le bot
+  await page.evaluate(u => { const b = document.createElement('button'); b.dataset.a = 'duel-open'; b.dataset.m = 'flash:btc'; b.dataset.u = u; document.body.appendChild(b); b.click(); b.remove(); }, bot);
+  await page.locator('[data-dl="stake"]').fill('5');
+  await page.locator('[data-a="dl-create"]').click();
+  await expect.poll(() => lire(page, n => S.me.duels.length > n && S.me.duels[0].status, avant.duels), { timeout: 20000 }).toBe('active');
+  const d = await lire(page, () => { const x = S.me.duels[0]; return { id: x.id, m: x.m, round: x.round, side: x.side, stake: x.stake, fee: x.fee, price: x.price, pot: x.pot, opp: x.opp, by: x.by }; });
+  expect(d).toMatchObject({ m: 'flash:btc', stake: 5, opp: bot, by: 'me', side: 'oui' });
+  expect(d.pot).toBeCloseTo(5 * 100 / d.price, 1);                                              // la cagnotte : la mise divisée par le prix du serveur
+  expect(d.fee).toBeGreaterThan(0); expect(d.fee).toBeLessThan(0.3);
+  const manche = await lire(page, () => S.flash.round);
+  expect([manche, manche + 1], 'la manche en cours, ou la suivante s’il restait moins de dix secondes de mises').toContain(d.round);
+  expect(await lire(page, () => S.me.balance)).toBeCloseTo(avant.solde - 5 - d.fee, 2);
+  // le moteur est déterministe : l'écran sait ce que cette manche donnera
+  const out = await lire(page, r => MoteurEclair.issue(MoteurEclair.JEUX.btc, r), d.round);
+  const attendu = out === 2 ? 'void' : out === 1 ? 'won' : 'lost';
+  await page.reload(); await pret(page);                                                        // en cours de route : le duel vient du serveur
+  expect(['active', attendu]).toContain(await lire(page, id => S.me.duels.find(x => x.id === id).status, d.id));
+  // fin de la manche (une minute et demie au plus) : réglé par le vrai serveur, comme prévu
+  await expect.poll(() => lire(page, id => S.me.duels.find(x => x.id === id).status, d.id), { timeout: 150000, intervals: [2000] }).toBe(attendu);
+  await expect.poll(() => lire(page, () => S.me.balance), { timeout: 20000 }).toBeCloseTo(avant.solde - 5 - d.fee + (out === 1 ? d.pot : out === 2 ? 5 : 0), 2);
+  if (out !== 2) {
+    await expect.poll(() => lire(page, () => S.me.history[0] && S.me.history[0].k), { timeout: 20000 }).toBe('duel');
+    expect(await lire(page, () => ({ win: S.me.history[0].win, q: S.me.history[0].q }))).toMatchObject({ win: out === 1 });
+    expect(await lire(page, () => S.me.history[0].q)).toContain('Flash Bitcoin');
+  }
+  xpVaut(await lire(page, () => S.me.xp), avant.xp + (out === 1 ? 20 : 0), 'XP du duel');
+  // le vrai serveur refuse : régler n'a plus rien à faire ; une mise trop petite ; un jeu inconnu
+  const essai = corps => page.evaluate(async corps => { try { const r = await API.fn('eclair', corps); return r.regles === undefined ? 'accepté' : 'réglés : ' + r.regles; } catch (e) { return e.code; } }, corps);
+  expect(await essai({ action: 'duel_settle' })).toBe('réglés : 0');
+  expect(await essai({ action: 'duel_create', gid: 'btc', side: 'oui', stake: 1, opp: bot, key: crypto.randomUUID() })).toBe('montant_invalide');
+  expect(await essai({ action: 'duel_create', gid: 'pas-un-jeu', side: 'oui', stake: 5, opp: bot, key: crypto.randomUUID() })).toBe('jeu_inconnu');
+  await page.reload(); await pret(page);
+  expect(await lire(page, id => S.me.duels.find(x => x.id === id).status, d.id)).toBe(attendu);
+  expect(erreurs).toEqual([]);
+});

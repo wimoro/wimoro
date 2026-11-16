@@ -196,9 +196,10 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 - [ ] Limite : un Blitz entier (dix manches puis le paiement) n'a pas été joué contre le vrai serveur — il faudrait attendre
       un créneau réel de 15 minutes dans un test. Le paiement est prouvé dans la base embarquée et avec le faux serveur.
 - [ ] Limite : le chat du Blitz, les salons VIP et de clan restent fermés à l'écriture en mode Compte.
-- [ ] Limite assumée de la maquette : le pari éclair, la Série et le Blitz sont **déterministes** (tout se déduit de l'heure,
-      avec un moteur public). Un joueur qui lit le code peut donc connaître l'issue d'une manche à l'avance. Sans
-      conséquence avec de l'argent fictif ; à remplacer par un tirage secret côté serveur avant tout argent réel.
+- [ ] Limite assumée de la maquette : le pari éclair, la Série, le Blitz et les duels éclair sont **déterministes** (tout se
+      déduit de l'heure, avec un moteur public). Un joueur qui lit le code peut donc connaître l'issue d'une manche à
+      l'avance — y compris pour défier un autre joueur. Sans conséquence avec de l'argent fictif ; à remplacer par un
+      tirage secret côté serveur avant tout argent réel.
 
 ### 4.5 Chat
 - [x] Salons publics (général et salon de chaque marché) : historique, envoi, réception en direct ; on ne s'abonne qu'au
@@ -235,7 +236,17 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
       d'administration). `api_duel_create`, `api_duel_accept`, `api_duel_close`, `api_duel_code`, `api_duels`. _Tests_
       `tests/sql/duels.spec.mjs` (5), `tests/compte/duels.spec.mjs` (3), `tests/e2e/comptes.spec.mjs` (deux vrais comptes : défi,
       refus faute de solde, remboursement ; duel contre un bot).
-- [ ] Duels sur une manche éclair et duels de stack : annoncés comme indisponibles en mode Compte.
+- [x] Duels sur une manche éclair : défier un ami sur la manche en cours (ou la suivante s'il reste moins de dix secondes
+      de mises), mise et frais pris tout de suite ; l'ami prend l'autre camp au prix du moment, avant la fermeture des
+      mises ; le gagnant prend la cagnotte à la fin de la manche ; un « break even » annule le duel et rend les deux mises ;
+      sans réponse, la mise du défieur lui est rendue ; un bot défié accepte aussitôt. Prix, frais et issue viennent du
+      moteur éclair exécuté par le serveur (Edge Function `eclair`, actions `duel_create`, `duel_accept`, `duel_settle`),
+      la manche de l'horloge de la base. _Tests_ `tests/sql/duels-eclair.spec.mjs` (5), `tests/compte/duels-eclair.spec.mjs`
+      (4), `tests/e2e/comptes.spec.mjs` (duel contre un bot joué jusqu'au règlement par le vrai serveur).
+- [ ] Limite : un duel éclair entre deux vrais joueurs n'a pas été joué contre la vraie base (il est prouvé dans la base
+      embarquée et avec le faux serveur) ; contre un bot, il l'est de bout en bout. Comme le pari éclair, il repose sur le
+      moteur déterministe : voir la limite assumée ci-dessus.
+- [ ] Duels de stack : annoncés comme indisponibles en mode Compte.
 - [ ] Limite : le paiement d'un duel gagné n'a pas été joué contre la vraie base (il faudrait résoudre un vrai marché) ; il est
       prouvé dans la base embarquée et avec le faux serveur.
 - [x] Clans, première partie : rejoindre un clan ouvert ou entrer avec un code d'invitation, candidater (un officier répond en
@@ -277,9 +288,9 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 - [x] Conséquence pour les scénarios réels : les XP d'un compte peuvent monter d'un point à tout moment (réaction d'un bot à
       son message). Les vérifications d'XP « à l'unité près » de `tests/e2e/comptes.spec.mjs` acceptent ces points en plus
       (`xpVaut`), et rien d'autre.
-- [ ] Encore « Bientôt disponible » en mode Compte, hors clans : partage du Mode Pro dans le chat, duels « stack » et duels
-      éclair. La connexion par portefeuille et les outils « démo » (changer de rang à la main) n'existent, par nature,
-      qu'en mode Démo.
+- [ ] Encore « Bientôt disponible » en mode Compte, hors clans : partage du Mode Pro dans le chat, duels de stack. La
+      connexion par portefeuille et les outils « démo » (changer de rang à la main) n'existent, par nature, qu'en mode
+      Démo.
 - [x] Chat de clan : un salon réservé aux membres (`clan:<identifiant>`). Écrire, relire, réagir et partager une mise y
       suivent les règles des autres salons ; un joueur d'un autre clan reçoit « salon indisponible ». Les messages ne passent
       par aucun sujet public : ils sont diffusés sur le sujet **privé** du clan, qu'une règle d'accès n'ouvre qu'à ses
@@ -543,3 +554,4 @@ Rien d'obligatoire. Le détail et les constats sont dans `docs/EXPLOITATION.md`,
 | 16 nov. 2026 | Correctif : le curseur d'une fenêtre n'est plus repris au champ que le joueur a choisi (échec intermittent de l'intégration continue sur « mot de passe oublié »). | test ajouté (échoue avant, passe après) ; 273 tests (138 SQL) |
 | 16 nov. 2026 | Réactions sous les messages (joueurs, bots, messages privés). | migration `reactions` (empreinte identique) ; 281 tests (144 SQL) ; 21 scénarios de bout en bout contre le vrai back ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
 | 16 nov. 2026 | Chat de clan, réservé aux membres (sujet privé). | migration `clan_chat` (empreinte identique) ; 287 tests (149 SQL) ; 21 scénarios de bout en bout contre le vrai back, dont trois comptes sur le chat du clan ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
+| 16 nov. 2026 | Duels sur une manche éclair. | migration `duels_eclair` (empreinte identique), Edge Function `eclair` version 4 ; 296 tests (154 SQL) ; 22 scénarios de bout en bout contre le vrai back, dont un duel éclair réglé par le vrai serveur ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |

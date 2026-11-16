@@ -625,6 +625,39 @@
     L.push(m); me.balance = r2(me.balance - amt); me.played = (me.played | 0) + 1;
     me.xp += 10; ev.push({ k: 'xp', n: 10, src: 'eclair' }); rangMonte(me, avant, ev); missionAvance(e, 'flashbet', ev); badges(e, ev);
     var rep = reponse(ev); rep.mise = clone(m); delete rep.mise.etat; db.ops[cle] = clone(rep); return rep; }
+  /* Duels sur une manche éclair : mêmes règles que supabase/migrations/…_duels_eclair.sql (prix, frais et issue : moteur partagé) */
+  function duelEclairAction(b) { var ME = MoteurEclair, e = etat(), me = e.me, t = Date.now() + (CFG.decalage || 0), L = e.duelsL = e.duelsL || [], ev = [], rep;
+    var cote = function (d) { var g = ME.etat(d, ME.round(t), ME.tick(t)); return { g: g, px: ME.prix(d, g) }; }, flash = function (z) { return String(z.m).indexOf('flash:') === 0; };
+    if (b.action === 'duel_create') { var d = ME.JEUX[b.gid], cle = uid() + ':' + b.key, mise = r2(Number(b.stake));
+      if (!d) throw { message: 'jeu_inconnu' }; if (['oui', 'non'].indexOf(b.side) < 0) throw { message: 'cote_invalide' }; if (!(mise >= 5 && mise <= 5000)) throw { message: 'montant_invalide' }; if (!b.key) throw { message: 'cle_absente' };
+      if (db.ops[cle]) { rep = clone(db.ops[cle]); rep.rejoue = true; return rep; }
+      if (e.rg && e.rg.pause > Date.now()) throw { message: 'pause' }; if (b.opp && e.friends.indexOf(b.opp) < 0) throw { message: 'pas_amis' };
+      var q = cote(d), prix = b.side === 'oui' ? q.px.o : q.px.n, fee = r2(ME.frais(d, q.g, b.side, mise, rangDe(me).t >= 5)); if (me.balance < mise + fee) throw { message: 'solde_insuffisant' };
+      var manche = ME.round(t) + (t - ME.t0(ME.round(t)) >= 20000 ? 1 : 0), ferme = ME.t0(manche) + ME.FOPEN - (CFG.decalage || 0);       /* la suivante s'il reste moins de dix secondes de mises */
+      me.balance = r2(me.balance - mise - fee); me.played++;
+      var x = { id: db.seq++, code: 'D' + ('000000' + db.seq.toString(16).toUpperCase()).slice(-7), m: 'flash:' + d.id, round: manche, side: b.side, by: uid(), opp: b.opp || null, stake: mise, fee: fee, st: 'open', at: Date.now(),
+        expiresAt: Math.min(Date.now() + 120000, ferme), price0: prix, price: null, oppStake: null, oppFee: null, pot: null, winSide: null, acceptAt: null, settleAt: null };
+      if (b.opp && (db.fiches[b.opp] || {}).bot) { x.st = 'active'; x.price = prix; x.pot = r2(mise * 100 / prix); x.oppStake = r2(x.pot * (100 - prix) / 100); x.oppFee = 0; x.acceptAt = Date.now(); }
+      L.unshift(x); rep = reponse([]); rep.duel = clone(x); rep.duels = duelsJson(e); db.ops[cle] = clone(rep); return rep; }
+    if (b.action === 'duel_accept') { var code = String(b.code || '').toUpperCase(), y = L.filter(function (z) { return (b.id && z.id === +b.id) || (code && z.code === code); })[0];
+      if (!y && code && (CFG.liens || {})[code]) { y = clone(CFG.liens[code]); L.unshift(y); }
+      if (!y || y.st !== 'open' || !flash(y) || y.by === uid() || (y.opp && y.opp !== uid())) throw { message: 'duel_indisponible' };
+      if (t - ME.t0(y.round) >= ME.FOPEN) throw { message: 'mises_fermees' };
+      var dj = ME.JEUX[y.m.slice(6)], qa = cote(dj), pa = y.side === 'oui' ? qa.px.o : qa.px.n, pot = r2(y.stake * 100 / pa), autre = r2(pot * (100 - pa) / 100), fa = r2(ME.frais(dj, qa.g, y.side === 'oui' ? 'non' : 'oui', autre, rangDe(me).t >= 5));
+      if (me.balance < autre + fa) throw { message: 'solde_insuffisant' };
+      me.balance = r2(me.balance - autre - fa); me.played++; y.opp = uid(); y.st = 'active'; y.price = pa; y.pot = pot; y.oppStake = autre; y.oppFee = fa; y.acceptAt = Date.now();
+      rep = reponse([]); rep.duel = clone(y); rep.duels = duelsJson(e); return rep; }
+    if (b.action === 'duel_settle') { var n = 0, avant = rangDe(me);
+      L.forEach(function (z) { if (!flash(z) || ['open', 'active'].indexOf(z.st) < 0 || t < ME.t0(z.round) + ME.FDUR) return;
+        var defieur = z.by === uid(), mien = defieur ? z.side : (z.side === 'oui' ? 'non' : 'oui'), maMise = defieur ? z.stake : z.oppStake, autre = defieur ? z.opp : z.by, out = ME.issue(ME.JEUX[z.m.slice(6)], z.round); n++; z.settleAt = Date.now();
+        if (z.st === 'open') { z.st = 'expired'; if (defieur) { me.balance = r2(me.balance + z.stake); ev.push(notif('swords', 'duel_expire', { m: z.m, r: z.round, id: z.id }, '#duels')); } return; }
+        if (out === 2) { z.st = 'void'; me.balance = r2(me.balance + maMise); ev.push(notif('swords', 'duel_nul', { m: z.m, r: z.round, id: z.id }, '#duel-' + z.id)); return; }
+        z.st = 'regle'; z.winSide = out === 1 ? 'oui' : 'non'; var gagne = z.winSide === mien, pnl = gagne ? r2(z.pot - maMise) : -maMise; me.settled = (me.settled | 0) + 1; me.realized = r2((me.realized || 0) + pnl);
+        if (gagne) { me.balance = r2(me.balance + z.pot); me.wins = (me.wins | 0) + 1; me.xp += 20; ev.push({ k: 'xp', n: 20, src: 'duel' }); }
+        e.history.unshift({ k: 'res', q: 'duel|' + autre + '|' + z.m + '|' + z.round, s: mien, win: gagne, pnl: pnl, at: Date.now() });
+        ev.push(notif('swords', gagne ? 'duel_gagne' : 'duel_perdu', { id: z.id, m: z.m, r: z.round, u: autre, pnl: pnl }, '#duel-' + z.id)); });
+      if (n) rangMonte(me, avant, ev); rep = reponse(ev); rep.duels = duelsJson(e); rep.regles = n; return rep; }
+    return null; }
   function eclairRegler() { var ME = MoteurEclair, e = etat(), me = e.me, r = ME.round(Date.now()), ev = [], regles = [], hist = [], avant = rangDe(me);
     (e.eclairMises || []).forEach(function (m) { if (m.etat !== 'ouverte' || m.r >= r) return;
       var x = ME.regler(ME.JEUX[m.g], m.r, m), pay = x.win ? r2(x.pay) : 0, pnl = r2(pay - m.amt), at = ME.t0(m.r + 1), tard = m.r < r - 1;
@@ -672,11 +705,11 @@
     var b = (opt && opt.body) || {}; rec('fn', name, { pseudo: b.pseudo });
     var ko = function (code) { return Promise.resolve({ data: null, error: { message: 'Edge Function returned a non-2xx status code', context: { json: function () { return Promise.resolve({ ok: false, code: code }); } } } }); };
     if (name === 'eclair') {
-      calls[calls.length - 1].args = { action: b.action, gid: b.gid, side: b.side, amt: b.amt, stake: b.stake, choice: b.choice, id: b.id };
+      calls[calls.length - 1].args = { action: b.action, gid: b.gid, side: b.side, amt: b.amt, stake: b.stake, choice: b.choice, id: b.id, opp: b.opp, code: b.code };
       if (CFG.horsLigne) return Promise.reject(new TypeError('Failed to fetch'));
       var forcee = (CFG.fn || {}).eclair; if (forcee) return ko(forcee);
       if (!uid()) return ko('session');
-      try { var rep = b.action === 'bet' ? eclairMiser(b) : b.action === 'settle' ? eclairRegler() : /^serie_/.test(b.action || '') ? serieAction(b) : /^blitz_/.test(b.action || '') ? blitzAction(b) : null; if (!rep) return ko('requete'); persist(); rep.ok = true; rep.now = Date.now() + (CFG.decalage || 0);
+      try { var rep = b.action === 'bet' ? eclairMiser(b) : b.action === 'settle' ? eclairRegler() : /^serie_/.test(b.action || '') ? serieAction(b) : /^blitz_/.test(b.action || '') ? blitzAction(b) : /^duel_/.test(b.action || '') ? duelEclairAction(b) : null; if (!rep) return ko('requete'); persist(); rep.ok = true; rep.now = Date.now() + (CFG.decalage || 0);
         return new Promise(function (ok) { setTimeout(function () { ok({ data: clone(rep), error: null }); }, CFG.latence || 3); }); }
       catch (e) { return ko(e.message || 'serveur'); }
     }

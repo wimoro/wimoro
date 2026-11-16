@@ -135,12 +135,13 @@ const NOTIF_T={
  badge:p=>_t("Badge débloqué : {0}.",[badgeNom(p.id)]),
  bet_placed:p=>_t("Pari placé : {0} sur {1}, {2}.",[F.usd(+p.amt),p.s==='oui'?_t("Oui"):_t("Non"),MK[p.m]?MK[p.m].short:p.m]),
  marche_resolu:p=>+p.pay>0?_t("Marché résolu : {0}. Tu gagnes {1}.",[MK[p.m]?MK[p.m].short:p.m,F.usd(+p.pay)]):_t("Marché résolu : {0}. Ta position {1} est perdue.",[MK[p.m]?MK[p.m].short:p.m,p.s==='oui'?_t("Oui"):_t("Non")]),
- duel_recu:p=>_t("{0} te défie : {1}, {0} dit {2} pour {3}.",[userOf(p.u).n,MK[p.m]?MK[p.m].short:p.m,p.s==='oui'?_t("Oui"):_t("Non"),F.usd0(+p.k)]),
- duel_accepte:p=>_t("{0} a accepté ton duel : {1}, cagnotte {2}.",[userOf(p.u).n,MK[p.m]?MK[p.m].short:p.m,F.usd(+p.pot)]),
- duel_decline:p=>_t("{0} a décliné ton duel sur {1}. Ta mise t’est rendue.",[userOf(p.u).n,MK[p.m]?MK[p.m].short:p.m]),
- duel_expire:p=>_t("Duel expiré sans réponse : {0}. Ta mise t’est rendue.",[MK[p.m]?MK[p.m].short:p.m]),
- duel_gagne:p=>_t("{0} contre {1} : {2}.",[_t("Duel gagné"),userOf(p.u).n,MK[p.m]?MK[p.m].short:p.m]),
- duel_perdu:p=>_t("{0} contre {1} : {2}.",[_t("Duel perdu"),userOf(p.u).n,MK[p.m]?MK[p.m].short:p.m]),
+ duel_recu:p=>_t("{0} te défie : {1}, {0} dit {2} pour {3}.",[userOf(p.u).n,srvDuelNom(p),srvDuelCamp(p,p.s),F.usd0(+p.k)]),
+ duel_accepte:p=>_t("{0} a accepté ton duel : {1}, cagnotte {2}.",[userOf(p.u).n,srvDuelNom(p),F.usd(+p.pot)]),
+ duel_decline:p=>_t("{0} a décliné ton duel sur {1}. Ta mise t’est rendue.",[userOf(p.u).n,srvDuelNom(p)]),
+ duel_expire:p=>_t("Duel expiré sans réponse : {0}. Ta mise t’est rendue.",[srvDuelNom(p)]),
+ duel_nul:p=>_t("Duel annulé : break even sur {0}, les deux mises sont rendues.",[srvDuelEstEclair(p.m)&&GM[String(p.m).slice(6)]?GM[String(p.m).slice(6)].name:srvDuelNom(p)]),
+ duel_gagne:p=>_t("{0} contre {1} : {2}.",[_t("Duel gagné"),userOf(p.u).n,srvDuelNom(p)]),
+ duel_perdu:p=>_t("{0} contre {1} : {2}.",[_t("Duel perdu"),userOf(p.u).n,srvDuelNom(p)]),
  prop_vote:p=>_t("Ta proposition « {0} » est en vote.",[p.q||'']),
  prop_live:p=>_t("Ton pari « {0} » est en ligne.",[p.q||'']),
  copie_debut:p=>_t("Tu copies maintenant {0} (budget {1}, {2}).",[userOf(p.u).n,F.usd0(+p.budget),cModeTxt({mode:p.mode,pct:+p.pct,cap:+p.cap,per:+p.per})]),
@@ -185,7 +186,10 @@ const rgDe=r=>({lim:{day:+(r.lim||{}).day||0,week:+(r.lim||{}).week||0,month:+(r
 const histSerie=h=>{const [,gid,won,step,mult]=h.q.split('|'),nom=GM[gid]?GM[gid].name:gid;
  return {k:'serie',q:h.win?_t("La Série {0} : {1} sur {1}, encaissé à ×{2}",[nom,won,F.d1(+mult)]):_t("La Série {0} : {1} sur {2}",[nom,won,step]),s:h.s,win:!!h.win,pnl:+h.pnl,at:h.at};};
 const histBlitz=h=>{const [,res,n]=h.q.split('|');return {k:'blitz',q:res==='g'?_t("Blitz Royale : survivant sur {0}",[F.int(+n)]):_t("Blitz Royale : éliminé"),s:h.s,win:!!h.win,pnl:+h.pnl,at:h.at};};
-const histDuel=h=>{const [,u,m]=h.q.split('|');return {k:'duel',q:_t("Duel contre {0} : {1}",[userOf(u).n,MK[m]?MK[m].short:m]),s:h.s,win:!!h.win,pnl:+h.pnl,at:h.at};};
+/* le nom d'un duel dans une notification ou l'historique : son marché, ou son jeu éclair et sa manche */
+const srvDuelNom=p=>typeof duelShort==='function'&&String(p.m||'').startsWith('flash:')?duelShort({m:p.m,round:+p.r||0}):(MK[p.m]?MK[p.m].short:p.m);
+const srvDuelCamp=(p,s)=>typeof duelSideTxt==='function'?duelSideTxt({m:p.m},s):(s==='oui'?_t("Oui"):_t("Non"));
+const histDuel=h=>{const [,u,m,r]=h.q.split('|');return {k:'duel',q:_t("Duel contre {0} : {1}",[userOf(u).n,srvDuelNom({m,r})]),s:h.s,win:!!h.win,pnl:+h.pnl,at:h.at};};
 const histCombo=h=>{const [,res,n,x]=h.q.split('|');
  return {k:'combo',q:res==='c'?_t("Combiné {0} sélections, encaissé à {1}",[n,F.usd(+x)]):res==='g'?_t("Combiné {0} sélections gagné à ×{1}",[n,F.d2(+x)]):_t("Combiné {0} sélections : perdu sur {1}",[n,MK[x]?MK[x].short:x]),s:h.s,win:!!h.win,pnl:+h.pnl,at:h.at};};
 const histDe=h=>{if(typeof h.q==='string'&&h.q.startsWith('combo|'))return histCombo(h);if(typeof h.q==='string'&&h.q.startsWith('duel|'))return histDuel(h);if(h.k==='flash'&&typeof h.q==='string'&&h.q.startsWith('serie|'))return histSerie(h);if(h.k==='flash'&&typeof h.q==='string'&&h.q.startsWith('blitz|'))return histBlitz(h);if(h.k==='flash'&&typeof h.q==='string'&&h.q.startsWith('eclair|')){const [,gid,r]=h.q.split('|'),d=GM[gid];
@@ -833,14 +837,16 @@ async function srvComboEncaisser(cb){if(srvComboOccupe)return;srvComboOccupe=tru
  finally{srvComboOccupe=false;}
 }
 
-/* ----- Duels entre amis sur un marché : mises sous séquestre et règlement tenus par le serveur -----
-   Le serveur rend les duels du joueur (créés ou reçus) ; l'écran les met à sa forme et garde son affichage. Les duels
-   sur une manche éclair et les duels de stack ne sont pas encore reliés. */
+/* ----- Duels entre amis, sur un marché ou sur une manche éclair : mises sous séquestre et règlement tenus par le serveur -----
+   Le serveur rend les duels du joueur (créés ou reçus) ; l'écran les met à sa forme et garde son affichage. Un duel
+   éclair passe par l'Edge Function « eclair » (prix, frais et issue : moteur du serveur). Les duels de stack ne sont pas
+   encore reliés. */
 const duelDe=(x,qui)=>{const moi=qui||srvMoi(),par=x.by===moi?'me':x.by,adv=x.opp?(x.opp===moi?'me':x.opp):null,mien=par==='me'?x.side:(x.side==='oui'?'non':'oui');
  const st=x.st==='regle'?(x.winSide===mien?'won':'lost'):x.st;
- return {id:String(x.id),code:x.code,kind:'market',m:x.m,round:0,side:x.side,by:par,opp:adv,stake:+x.stake,fee:+x.fee||0,status:st,at:+x.at,expiresAt:+x.expiresAt,price0:x.price0||0,
+ const jeu=typeof x.m==='string'&&x.m.startsWith('flash:')?GM[x.m.slice(6)]:null;
+ return {id:String(x.id),code:x.code,kind:'market',m:x.m,round:jeu?+x.round||0:0,side:x.side,by:par,opp:adv,stake:+x.stake,fee:+x.fee||0,status:st,at:+x.at,expiresAt:+x.expiresAt,price0:x.price0||0,
   price:x.price||undefined,oppStake:x.oppStake==null?undefined:+x.oppStake,oppFee:+x.oppFee||0,pot:x.pot==null?undefined:+x.pot,acceptAt:x.acceptAt||undefined,settleAt:x.settleAt||undefined,winSide:x.winSide||undefined,
-  proof:x.winSide?{txt:_t("Résultat officiel du marché : {0}.",[x.winSide==='oui'?_t("Oui"):_t("Non")]),at:x.settleAt}:undefined};};
+  proof:x.winSide?(jeu?{txt:jeu.rs(x.winSide==='oui'),at:x.settleAt}:{txt:_t("Résultat officiel du marché : {0}.",[x.winSide==='oui'?_t("Oui"):_t("Non")]),at:x.settleAt}):undefined};};
 function srvDuelsEtat(x){if(!x)return;srvFiches(x.users);S.me.duels=(x.liste||[]).map(d=>duelDe(d));}
 let srvDuelOccupe=false;
 async function srvDuelAppel(nom,args){if(srvDuelOccupe)return null;srvDuelOccupe=true;
@@ -848,17 +854,41 @@ async function srvDuelAppel(nom,args){if(srvDuelOccupe)return null;srvDuelOccupe
  catch(e){srvErreur(e);return null;}
  finally{srvDuelOccupe=false;}
 }
+/* duel sur une manche éclair : même réponse que les fonctions des marchés, donnée par l'Edge Function */
+async function srvDuelEclair(action,corps){if(srvDuelOccupe)return null;srvDuelOccupe=true;
+ try{const r=await API.fn('eclair',Object.assign({action},corps||{}));if(typeof r.now==='number')FSKEW=r.now-Date.now();srvAppliquer(r);srvDuelsEtat(r.duels);updateHeader();return r;}
+ catch(e){if(e.code==='mises_fermees')toast({tone:'amber',icon:'lock',title:_t("Mises fermées"),text:errTxt(e)});else srvErreur(e);return null;}
+ finally{srvDuelOccupe=false;}
+}
+const srvDuelEstEclair=m=>String(m||'').startsWith('flash:');
+/* fin d'une manche : s'il reste un duel éclair de cette manche (ou d'une plus ancienne), le serveur le règle ou le rend */
+let srvDuelsRegle=false;
+function srvDuelsApresManche(manche){
+ if(!(S.me.duels||[]).some(d=>srvDuelEstEclair(d.m)&&['open','active'].includes(d.status)&&d.round<=manche))return;
+ setTimeout(()=>srvDuelsEclairRegler(0),900);                  /* une petite seconde : l'horloge du serveur change de manche */
+}
+async function srvDuelsEclairRegler(essai){
+ if(srvDuelsRegle)return;srvDuelsRegle=true;let reste=false;
+ try{const r=await API.fn('eclair',{action:'duel_settle'});if(typeof r.now==='number')FSKEW=r.now-Date.now();srvAppliquer(r);srvDuelsEtat(r.duels);updateHeader();
+  reste=(S.me.duels||[]).some(d=>srvDuelEstEclair(d.m)&&['open','active'].includes(d.status)&&d.round<S.flash.round);
+  if(r.regles>0){srvVu=0;srvRafraichir();}                       /* un duel réglé : l'historique et les statistiques viennent du serveur */
+  if((S.ui.route||'').startsWith('duel'))render(false);}
+ catch(e){if(e.code==='session'||e.code==='exclu'||e.code==='suspendu')srvErreur(e);else console.warn('[srv] règlement des duels éclair remis à plus tard',e.code);}
+ finally{srvDuelsRegle=false;}
+ if(reste&&(essai|0)<3)setTimeout(()=>srvDuelsEclairRegler((essai|0)+1),1500);
+}
 async function srvDuelCreer(st){const stake=F.parse(st.stake);
- if(String(st.m).startsWith('flash:')){srvBientot();return;}                              /* duel sur une manche éclair : pas encore relié */
  if(typeof rgBlocked==='function'&&rgBlocked('bet'))return;
- const r=await srvDuelAppel('api_duel_create',{p:{m:st.m,side:st.side,stake,opp:st.opp||null,key:cleOp()}});if(!r)return;
+ const r=srvDuelEstEclair(st.m)?await srvDuelEclair('duel_create',{gid:String(st.m).slice(6),side:st.side,stake,opp:st.opp||null,key:cleOp()})
+  :await srvDuelAppel('api_duel_create',{p:{m:st.m,side:st.side,stake,opp:st.opp||null,key:cleOp()}});if(!r)return;
  const d=duelOf(String(r.duel.id));closeModal();if(!d)return;
  if(st.opp){toast({tone:'blue',icon:'swords',force:true,title:`${_t("Défi envoyé à {0}",[duelUserN(st.opp)])}`,text:`${_t("{0} : tu dis {1} pour {2}. Ta mise est bloquée sous séquestre.",[duelShort(d),duelSideTxt(d,d.side),F.usd0(stake)])}`,href:'#duel-'+d.id});if((S.ui.route||'').startsWith('duel'))render(false);}
  else duelShareOpen(d);
 }
 async function srvDuelAccepter(id){const connu=duelOf(id),lien=!connu&&S.ui.duelLink?S.ui.duelLink:null;if(!connu&&!lien)return;
  if(typeof rgBlocked==='function'&&rgBlocked('bet'))return;
- const r=await srvDuelAppel('api_duel_accept',{p:lien?{code:lien.c}:{id:+id}});if(!r)return;
+ const eclair=srvDuelEstEclair(connu?connu.m:lien.m);
+ const r=eclair?await srvDuelEclair('duel_accept',lien?{code:lien.c}:{id:+id}):await srvDuelAppel('api_duel_accept',{p:lien?{code:lien.c}:{id:+id}});if(!r)return;
  S.ui.duelLink=null;const d=duelOf(String(r.duel.id));if(!d)return;
  toast({tone:'blue',icon:'swords',force:true,title:_t("Duel accepté"),text:`${_t("Tu dis {0} pour {1}. Cagnotte {2} sous séquestre.",[duelSideTxt(d,duelMySide(d)),F.usd(d.oppStake),F.usd(d.pot)])}`,href:'#duel-'+d.id});
  location.hash='#duel-'+d.id;render(false);
@@ -1026,6 +1056,7 @@ async function bootServeur(){
  const [etat]=await Promise.all([API.loadState(),srvMarches().catch(e=>console.warn('[srv] marchés indisponibles',e.code))]);
  hydrater(etat);srvArgentSuivre();
  if(SRV_ECLAIR_DU>0)setTimeout(()=>srvEclairRegler(0,3),1200);                 /* des manches jouées avant le rechargement restent à régler */
+ setTimeout(()=>srvDuelsApresManche(S.flash.round-1),1500);                     /* de même pour un duel éclair dont la manche s'est terminée entre-temps */
  API.on('session',()=>srvSessionPerdue());
  API.subscribe('marches',(evt,d)=>{if(evt==='tick')srvTick(d);else if(evt==='etat')srvMarchesEtat();}).then(srvMarchesRattraper).catch(e=>console.warn('[srv] temps réel indisponible',e.code));
  API.subscribe('joueur:'+etat.uid,srvPerso,true).catch(e=>console.warn('[srv] sujet privé indisponible',e.code));
