@@ -118,6 +118,21 @@ test('B09 · mot de passe oublié : code à 6 chiffres, nouveau mot de passe, co
   await expect(page).toHaveURL(/#accueil/);
 });
 
+test('fenêtre à plusieurs champs : le curseur va au premier, mais n’est pas repris au champ que le joueur a déjà choisi', async ({ page }) => {
+  // Avant : 60 ms après l'ouverture, le curseur revenait de force au premier champ. Sur un appareil lent, ce qu'on tapait dans
+  // « nouveau mot de passe » partait dans « code » (plein, donc perdu) : le mot de passe restait vide.
+  const { erreurs } = await ouvrir(page, { mode: 'visiteur', hash: '#connexion', lang: 'fr', faux: { comptes: COMPTES } });
+  const actif = () => lire(page, () => document.activeElement && document.activeElement.id);
+  await page.evaluate(() => { forgotModal(2, 'alice@test.dev'); });
+  await expect.poll(actif).toBe('fc');                                                           // sans rien faire : le premier champ, comme avant
+  await page.evaluate(() => { forgotModal(2, 'alice@test.dev'); document.getElementById('fp').focus(); });   // le joueur passe tout de suite au second
+  await page.waitForTimeout(250);
+  expect(await actif()).toBe('fp');
+  await page.keyboard.insertText('nouveau-mdp-9');
+  expect(await lire(page, () => [document.getElementById('fc').value, document.getElementById('fp').value])).toEqual(['', 'nouveau-mdp-9']);
+  expect(erreurs).toEqual([]);
+});
+
 test('B09 · arrivée par le lien de l’e-mail : la fenêtre « nouveau mot de passe » s’ouvre', async ({ page }) => {
   await ouvrir(page, { mode: 'compte', lang: 'fr', faux: { comptes: { 'real@test.dev': { id: '11111111-1111-4111-8111-111111111111', password: 'ancien-mdp-1', pseudo: 'realuser' } } } });
   await page.evaluate(() => API.emit('recuperation', {}));

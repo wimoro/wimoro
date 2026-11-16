@@ -394,6 +394,10 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 - [x] Suite Playwright sur chaque pull request. Les comptes de test se suppriment eux-mêmes à la fin de la suite
       (`api_test_end`) ; les 27 accumulés pendant les travaux ont été supprimés.
 - [x] Tests SQL des invariants : solde jamais négatif, paris et retraits simultanés, rejeu d'une même clé, argent ni créé ni perdu.
+- [x] Fenêtres à plusieurs champs : 60 ms après l'ouverture, le curseur revenait de force au premier champ, même si le joueur
+      avait déjà choisi le suivant (sur un appareil lent, le mot de passe tapé partait dans le champ « code » et se perdait).
+      Trouvé par un échec de l'intégration continue sur « mot de passe oublié ». _Test_ `tests/compte/comptes.spec.mjs`
+      (« fenêtre à plusieurs champs »), qui échouait avant et passe après.
 - [x] Recette finale, 10 points, le 16 nov. 2026, sur le site en ligne (<https://wimoro.com>) : 130 tests d'écran (mode Démo,
       visiteur et mode Compte avec le faux serveur, trois langues) et 18 scénarios avec de vrais comptes contre le vrai
       serveur, tous verts ; en local, 264 tests dont 134 sur la base. Point par point :
@@ -505,3 +509,4 @@ Rien d'obligatoire. Le détail et les constats sont dans `docs/EXPLOITATION.md`,
 | 16 nov. 2026 | Recette finale sur le site en ligne. Lot « ordres limites » remis à niveau dans sa branche (273 tests, dont 141 SQL), toujours en attente de la confirmation Supabase. | 130 tests d'écran et 18 scénarios réels sur <https://wimoro.com> ; base : 20 comptes, 10 000 bots, aucun compte de test, 56 migrations, aucune erreur de tâche planifiée |
 | 16 nov. 2026 | Suivre un joueur ; partages en image de la Série et du clan. | migration `suivre` (empreinte identique) ; 267 tests (135 SQL) ; 19 scénarios de bout en bout contre le vrai back |
 | 16 nov. 2026 | Partager une mise dans le chat et la suivre. | migration `chat_mises` (empreinte identique) ; 272 tests (138 SQL) ; 20 scénarios de bout en bout contre le vrai back ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
+| 16 nov. 2026 | Correctif : le curseur d'une fenêtre n'est plus repris au champ que le joueur a choisi (échec intermittent de l'intégration continue sur « mot de passe oublié »). | test ajouté (échoue avant, passe après) ; 273 tests (138 SQL) |
