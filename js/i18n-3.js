@@ -200,6 +200,16 @@ I18N_ADD("he",{
 "Tu es maintenant le chef du clan {0}.":"אתה עכשיו ראש הקלאן {0}."
 });
 I18N_ADD("en",{
+"Cet ordre n’est plus en attente.":"This order is no longer pending.",
+"Trop d’ordres en attente : annules-en un avant d’en placer un autre.":"Too many pending orders: cancel one before placing another.",
+"Ordre annulé : le marché {0} est résolu.":"Order cancelled: the market {0} is resolved."
+});
+I18N_ADD("he",{
+"Cet ordre n’est plus en attente.":"ההוראה הזו כבר לא ממתינה.",
+"Trop d’ordres en attente : annules-en un avant d’en placer un autre.":"יותר מדי הוראות ממתינות: בטל אחת לפני שתציב אחרת.",
+"Ordre annulé : le marché {0} est résolu.":"ההוראה בוטלה: השוק {0} הוכרע."
+});
+I18N_ADD("en",{
 "Tu suis déjà 500 joueurs : c’est le maximum.":"You already follow 500 players: that is the maximum."
 });
 I18N_ADD("he",{

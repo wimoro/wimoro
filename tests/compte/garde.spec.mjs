@@ -13,6 +13,10 @@ import { ouvrir, lire } from '../helpers/app.mjs';
 const AUTORITE = new Set(['balance', 'xp', 'played', 'wins', 'settled', 'deposits', 'flashWins', 'followed', 'realized', 'streak', 'bestStreak', 'copiers', 'msgsTotal', 'positions', 'history', 'deps', 'wds', 'missions', 'badges', 'friends', 'freqIn', 'freqOut', 'following', 'notifs', 'kyc', 'maxBet']);
 // Actions libres en mode Compte qui touchent ces champs : chacune passe par le serveur (ou ne fait que lire).
 const RELIEES = {
+  'ACT.limit-place': 'api_order_place (montant réservé, exécution par le serveur) — tests/compte/ordres.spec.mjs',
+  'ACT.ord-cancel': 'api_order_cancel — tests/compte/ordres.spec.mjs',
+  'ACT.guard-save': 'api_guard_set — tests/compte/ordres.spec.mjs',
+  'ACT.guard-del': 'api_guard_del — tests/compte/ordres.spec.mjs',
   'ACT.pro-share': 'fenêtre de partage (interface) ; l’envoi passe par api_ana_share — tests/compte/analyses.spec.mjs',
   'ACT.pro-sh-send': 'api_ana_share (instantané remis au propre par le serveur) — tests/compte/analyses.spec.mjs',
   'ACT.cl-war': 'api_clan_war (le chef déclare la guerre) — tests/compte/clans-guerres.spec.mjs',
@@ -104,13 +108,12 @@ test('une action pas encore reliée est clairement indisponible : message, et ri
   const { erreurs } = await ouvrir(page, { mode: 'compte', hash: '#marche-btc150k', faux: { marches: [{ market_id: 'btc150k', current_probability: 60, anchor_probability: 60, volume_total: 5e6, liquidity_depth: 30000 }] } });
   const avant = await lire(page, () => JSON.stringify({ solde: S.me.balance, xp: S.me.xp, pos: S.me.positions, hist: S.me.history, notifs: S.me.notifs.length, prix: MK.btc150k.p, messages: Object.values(S.rooms).reduce((n, r) => n + r.msgs.length, 0) }));
   const n0 = await lire(page, () => __fakeSB.calls.length);
-  await page.locator('[data-a="limit-place"], [data-a="otype"][data-v="limit"]').first().click({ force: true }).catch(() => {});
   await page.evaluate(() => { location.hash = '#chat'; });
   await page.evaluate(() => { location.hash = '#eclair'; });
   await page.evaluate(() => { const b = document.createElement('button'); b.dataset.a = 'cl-sim'; document.body.appendChild(b); b.click(); b.remove(); });   // outil de simulation des clans : réservé au mode Démo
   await expect(page.locator('.toast', { hasText: 'Coming soon for accounts' }).first()).toBeVisible();
   await page.evaluate(() => { ACT.withdraw && document.dispatchEvent(new Event('x')); });
-  for (const a of ['cl-sim', 'limit-place', 'ord-cancel', 'guard-save', 'demo-rank'])
+  for (const a of ['cl-sim', 'demo-rank', 'demo-rank-reset'])
     await page.evaluate(nom => { const b = document.createElement('button'); b.dataset.a = nom; b.dataset.u = 'x'; b.dataset.m = 'btc150k'; document.body.appendChild(b); b.click(); b.remove(); }, a);
   const apres = await lire(page, () => JSON.stringify({ solde: S.me.balance, xp: S.me.xp, pos: S.me.positions, hist: S.me.history, notifs: S.me.notifs.length, prix: MK.btc150k.p, messages: Object.values(S.rooms).reduce((n, r) => n + r.msgs.filter(x => x.k !== 'evt').length, 0) }));
   expect(apres).toBe(avant);

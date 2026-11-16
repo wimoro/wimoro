@@ -61,7 +61,7 @@
 
   /* ----- Les fonctions du contrat ----- */
   var RPC = {
-    api_state: function () { var e0 = etat(); regler(e0, []); rgMaj(e0, []); stacksAvancer(e0, []); guerresAvancer(e0, []); var e = clone(e0); e.stacks = stacksJson(e0); delete e.stacksL; e.deps = e0.deps.map(depJson); e.eclair = eclairJson(e0); delete e.eclairMises; e.serie = serieJson(e0); e.duels = duelsJson(e0); delete e.duelsL; e.combos = clone(e0.combosL || []); delete e.combosL; clanAvancer(e0, []); e.clan = clanEtat(e0); delete e.clanM; delete e.clanApps; delete e.clanParti; e.copies = copiesEtat(e0); delete e.copiesL; propsAvancer([]); e.props = propsEtat(); if (!e.ref) e.ref = { code: 'TESTEUR-7K3', bonus: 10, by: null, list: [] }; e.blitz = Object.keys(e0.blitzJ || {}).filter(function (i) { return !e0.blitzJ[i].regle; }).map(Number); delete e.blitzJ; e.now = Date.now() + (CFG.decalage || 0); return e; },
+    api_state: function () { var e0 = etat(); regler(e0, []); rgMaj(e0, []); stacksAvancer(e0, []); guerresAvancer(e0, []); var e = clone(e0); e.stacks = stacksJson(e0); delete e.stacksL; e.deps = e0.deps.map(depJson); e.eclair = eclairJson(e0); delete e.eclairMises; e.serie = serieJson(e0); e.duels = duelsJson(e0); delete e.duelsL; e.combos = clone(e0.combosL || []); delete e.combosL; e.orders = clone(e0.ordres || []); delete e.ordres; e.guards = clone(e0.gardes || []); delete e.gardes; clanAvancer(e0, []); e.clan = clanEtat(e0); delete e.clanM; delete e.clanApps; delete e.clanParti; e.copies = copiesEtat(e0); delete e.copiesL; propsAvancer([]); e.props = propsEtat(); if (!e.ref) e.ref = { code: 'TESTEUR-7K3', bonus: 10, by: null, list: [] }; e.blitz = Object.keys(e0.blitzJ || {}).filter(function (i) { return !e0.blitzJ[i].regle; }).map(Number); delete e.blitzJ; e.now = Date.now() + (CFG.decalage || 0); return e; },
     api_pseudo_libre: function (a) { return /^[A-Za-z0-9._]{3,20}$/.test(a.p_pseudo || '') && !pseudoPris(a.p_pseudo); },
     api_profile_update: function (a) { var p = a.p || {}, me = etat().me;
       if ('n' in p) { if (!/^[A-Za-z0-9._]{3,20}$/.test(p.n || '')) throw { message: 'pseudo_invalide' }; if (pseudoPris(p.n, uid())) throw { message: 'pseudo_pris' }; me.n = p.n; }
@@ -405,6 +405,38 @@
       var id = 'u' + (db.clans.length + 1), j = { id: id, name: nom, tag: tag, emblem: { ic: p.ic || 'shield', col: p.col || '#2448FF' }, lang: (p.lang || []).length ? p.lang : ['fr'], cats: (p.cats || []).slice(0, 3), desc: desc, access: p.access || 'open', minRank: +p.minRank || 0, chief: uid(), createdAt: Date.now(), code: 'WMR-U' + String(100 + db.clans.length), members: [] };
       db.clans.push(j); clanEntrer(e, id, 'chef'); ev.push(notif('shield', 'clan_cree', { id: id, name: nom, tag: tag }, '#clan-' + id));
       var rep = reponse(ev); rep.clan = clanEtat(e); rep.id = id; return rep; },
+    /* Ordres limite, stop loss, take profit : mêmes règles que supabase/migrations/…_ordres.sql */
+    api_order_place: function (a) { var p = a.p || {}, e = etat(), me = e.me, cle = uid() + ':' + p.key, o, rep, ev = [];
+      if (p.s !== 'oui' && p.s !== 'non') throw { message: 'cote_invalide' };
+      if (p.k !== 'buy' && p.k !== 'sell') throw { message: 'ordre_invalide' };
+      if (!(+p.lp >= 1 && +p.lp <= 99 && +p.lp === Math.floor(+p.lp))) throw { message: 'prix_invalide' };
+      if (!p.key) throw { message: 'cle_absente' };
+      if (db.ops[cle]) { rep = clone(db.ops[cle]); rep.rejoue = true; return rep; }
+      if (e.rg && e.rg.pause > Date.now()) throw { message: 'pause' };
+      var m = marche(p.m); if (!m) throw { message: 'marche_inconnu' }; if (m.st !== 'open') throw { message: 'marche_ferme' };
+      e.ordres = e.ordres || [];
+      if (e.ordres.filter(function (x) { return x.status === 'open'; }).length >= 50) throw { message: 'trop_ordres' };
+      var modele = { id: db.seq++, m: p.m, s: p.s, k: p.k, lp: +p.lp, init: 0, cash: 0, sh: 0, spent: 0, fee: 0, pro: 0, pnl: 0, status: 'open', why: null, at: Date.now(), last: null, end: null };
+      if (p.k === 'buy') { var amt = r2(+p.amt); if (!(amt >= 1)) throw { message: 'montant_min' }; if (me.balance < amt) throw { message: 'solde_insuffisant' };
+        var premier = !e.ordres.some(function (x) { return x.k === 'buy'; }), avant = rangDe(me);
+        me.balance = r2(me.balance - amt); o = modele; o.init = amt; o.cash = amt;
+        if (premier) { me.xp += 15; ev.push({ k: 'xp', n: 15, src: 'ordre' }); rangMonte(me, avant, ev); } }
+      else { var pos = e.positions.filter(function (x) { return x.m === p.m && x.s === p.s; })[0]; if (!pos || !(pos.sh > 0.05)) throw { message: 'position_absente' };
+        var sh = Math.min(+p.sh, pos.sh); if (!(sh > 0.05)) throw { message: 'quantite_invalide' }; o = modele; o.init = sh; o.sh = sh; }
+      e.ordres.unshift(o);
+      var fill = ordreRemplir(e, o, ev);
+      ev.push(notif('check', 'ordre_place', { id: o.id, k: o.k, m: o.m, s: o.s, lp: o.lp, n: o.init, done: o.status === 'filled' }, '#marche-' + o.m));
+      rep = reponse(ev); var bloc = ordresRep(e, o.m); for (var k in bloc) rep[k] = bloc[k]; rep.ordre = clone(o); rep.fill = fill; db.ops[cle] = clone(rep); return rep; },
+    api_order_cancel: function (a) { var e = etat(), o = (e.ordres || []).filter(function (x) { return x.id === +a.p_id && x.status === 'open'; })[0]; if (!o) throw { message: 'ordre_indisponible' };
+      var rendu = o.k === 'buy' ? o.cash : 0; e.me.balance = r2(e.me.balance + rendu); o.cash = 0; o.status = 'cancelled'; o.why = 'user'; o.end = Date.now();
+      var rep = reponse([]), bloc = ordresRep(e, o.m); for (var k in bloc) rep[k] = bloc[k]; rep.ordre = clone(o); rep.rendu = rendu; return rep; },
+    api_guard_set: function (a) { var p = a.p || {}, e = etat(), stop = +p.stop || 0, tp = +p.tp || 0, m = marche(p.m); if (!m) throw { message: 'marche_inconnu' };
+      if (!stop && !tp) throw { message: 'seuil_absent' };
+      if (!e.positions.some(function (x) { return x.m === p.m && x.s === p.s && x.sh > 0.05; })) throw { message: 'position_absente' };
+      var px = p.s === 'oui' ? m.p : 100 - m.p; if (stop && stop >= px) throw { message: 'stop_invalide' }; if (tp && tp <= px) throw { message: 'tp_invalide' };
+      e.gardes = (e.gardes || []).filter(function (g) { return !(g.m === p.m && g.s === p.s); }); e.gardes.push({ m: p.m, s: p.s, stop: stop, tp: tp, at: Date.now() });
+      var rep = reponse([]); rep.guards = clone(e.gardes); return rep; },
+    api_guard_del: function (a) { var e = etat(); e.gardes = (e.gardes || []).filter(function (g) { return !(g.m === a.p_market && g.s === a.p_side); }); var rep = reponse([]); rep.guards = clone(e.gardes); return rep; },
     /* Suivre un joueur : mêmes règles que supabase/migrations/…_suivre.sql */
     api_follow: function (a) { var e = etat(), L = (e.following = e.following || []), i = L.indexOf(a.p_user), f = (e.users || {})[a.p_user];
       if (!a.p_user || a.p_user === uid() || !f) throw { message: 'joueur_inconnu' };
@@ -596,6 +628,47 @@
       war: e.clanM ? (((db.guerres || {})[e.clanM.id] || []).filter(function (g) { return g.status === 'live'; }).map(function (g) { return guerreVue(e, g); })[0] || null) : null,
       wars: e.clanM ? ((db.guerres || {})[e.clanM.id] || []).filter(function (g) { return g.status !== 'live'; }).slice(0, 10).map(function (g) { return { foe: g.foe, at: g.regle, status: g.status, a: g.a, b: g.b, pot: g.pot }; }) : [],
       clans: (db.clans || []).map(function (j) { var x = clone(j); if (!j.members.some(function (m) { return m.u === moi; })) x.code = null; return x; }), users: users }; }
+  /* ----- Ordres limite : exécution (wm.ordre_remplir) et écritures d'une vente (wm.vente_ecrire) ----- */
+  function ordresRep(e, mid) { return { orders: clone(e.ordres || []), guards: clone(e.gardes || []), positions: clone(e.positions), marches: marchesDe(fratrie(mid)) }; }
+  function venteEcrire(e, mid, s, sh, q, via) { var me = e.me, m = marche(mid), pos = e.positions.filter(function (x) { return x.m === mid && x.s === s; })[0];
+    var pro = Math.floor(q.pro * 100 + 1e-9) / 100, pnl = r2(pro - r2(sh * pos.avg / 100)), reste = r8(pos.sh - sh); if (reste < 0.05) reste = 0;
+    pos.sh = reste; if (!reste) { e.positions = e.positions.filter(function (x) { return x !== pos; }); e.gardes = (e.gardes || []).filter(function (g) { return !(g.m === mid && g.s === s); }); }
+    me.balance = r2(me.balance + pro); me.realized = r2((me.realized || 0) + pnl);
+    var hist = { k: 'sell', m: mid, q: 'via|' + via, s: s, win: pnl >= 0, pnl: pnl, at: Date.now() }; e.history.unshift(clone(hist));
+    var p0 = m.p; m.p = r6(borne(m.p + q.impact * (s === 'oui' ? -1 : 1), 1, 99)); m.vol = r2(m.vol + pro); pousser(m); reequilibrer(mid, m.p - p0);
+    return { pro: pro, pnl: pnl, reste: reste, hist: hist }; }
+  function ordreRemplir(e, o, ev) { var me = e.me, m = marche(o.m), q, fini, premier;
+    if (o.status !== 'open' || !m || m.st !== 'open') return null;
+    if (o.k === 'buy') { q = quoteBuyCap(carnet(o.m), o.s, o.cash, rangDe(me).t >= 5, o.lp / 100); if (!(q.sh > 1e-9)) return null;
+      var total = q.rest <= 0 ? o.cash : Math.min(o.cash, r2(q.a + q.fee)); if (total < 0.01) return null;
+      var fee = Math.min(total, r2(q.fee)), cout = r2(total - fee), reste = r2(o.cash - total); fini = reste < 0.5; premier = o.sh === 0;
+      var pos = e.positions.filter(function (x) { return x.m === o.m && x.s === o.s; })[0];
+      if (pos) { pos.avg = r6((pos.avg * pos.sh + q.avg * q.sh) / (pos.sh + q.sh)); pos.sh = r8(pos.sh + q.sh); } else e.positions.push({ m: o.m, s: o.s, sh: r8(q.sh), avg: r6(q.avg) });
+      if (fini) me.balance = r2(me.balance + reste);
+      me.realized = r2((me.realized || 0) - fee);
+      o.cash = fini ? 0 : reste; o.sh = r8(o.sh + q.sh); o.spent = r2(o.spent + total); o.fee = r2(o.fee + fee); o.last = Date.now(); if (fini) { o.status = 'filled'; o.end = Date.now(); }
+      var p0 = m.p; m.p = r6(borne(m.p + q.impact * (o.s === 'oui' ? 1 : -1), 1, 99)); m.vol = r2(m.vol + cout); m.people = (m.people | 0) + 1; pousser(m); reequilibrer(o.m, m.p - p0);
+      if (premier) { var avant = rangDe(me); me.played = (me.played | 0) + 1; me.maxBet = Math.max(me.maxBet || 0, o.init); me.xp += 10; ev.push({ k: 'xp', n: 10, src: 'ordre' }); rangMonte(me, avant, ev); missionAvance(e, 'bet', ev); }
+      badges(e, ev);
+      return { k: 'buy', sh: q.sh, avg: q.avg, total: total, fee: fee, done: fini, premier: premier }; }
+    var p2 = e.positions.filter(function (x) { return x.m === o.m && x.s === o.s; })[0], sh = Math.min(o.sh, p2 ? p2.sh : 0);
+    if (!(sh > 0.05)) { o.status = 'cancelled'; o.why = 'noshares'; o.end = Date.now(); return { k: 'sell', annule: 'noshares', rendu: 0 }; }
+    q = quoteSellCap(carnet(o.m), o.s, sh, o.lp / 100); if (!(q.sh > 1e-9) || Math.floor(q.pro * 100) / 100 < 0.01) return null;
+    var vendu = Math.min(sh, q.sh); premier = o.pro === 0; var v = venteEcrire(e, o.m, o.s, vendu, q, 'limit'), r = r8(o.sh - vendu); fini = r < 0.05;
+    o.sh = fini ? 0 : r; o.pro = r2(o.pro + v.pro); o.pnl = r2(o.pnl + v.pnl); o.last = Date.now(); if (fini) { o.status = 'filled'; o.end = Date.now(); }
+    return { k: 'sell', sh: vendu, avg: q.avg, pro: v.pro, pnl: v.pnl, done: fini, premier: premier, hist: v.hist }; }
+  /* la tâche de fond du serveur (wm.ordres_tick), déclenchée par un test : exécute, puis prévient le joueur sur son sujet privé */
+  function ordresTick() { var e = etat(), sujet = 'joueur:' + uid(), n = 0, envois = [];
+    (e.ordres || []).filter(function (o) { return o.status === 'open'; }).forEach(function (o) { var ev = [], f = ordreRemplir(e, o, ev); if (!f) return; n++;
+      if (f.annule) envois.push(['notif', { n: notif('info', 'ordre_annule', { id: o.id, m: o.m, s: o.s, k: o.k, why: f.annule, rendu: 0 }, '#marche-' + o.m).n }]);
+      else if (f.done || f.premier) envois.push(['notif', { n: notif('check', 'ordre_execute', { k: f.k, sh: f.sh, avg: f.avg, total: f.total, pro: f.pro, pnl: f.pnl, done: f.done, premier: f.premier, id: o.id, m: o.m, s: o.s }, '#marche-' + o.m).n }]);
+      else envois.push(['maj', { k: 'ordre', id: o.id }]); });
+    (e.gardes || []).slice().forEach(function (g) { var pos = e.positions.filter(function (x) { return x.m === g.m && x.s === g.s; })[0];
+      if (!pos || !(pos.sh > 0.05)) { e.gardes = e.gardes.filter(function (x) { return x !== g; }); n++; return; }
+      var bid = bestBid(carnet(g.m), g.s), via = g.stop && bid <= g.stop ? 'stop' : g.tp && bid >= g.tp ? 'tp' : null; if (!via) return;
+      var q = quoteSell(carnet(g.m), g.s, pos.sh); if (!(q.sh > 1e-9)) return; var vendu = Math.min(pos.sh, q.sh), v = venteEcrire(e, g.m, g.s, vendu, q, via); n++;
+      envois.push(['notif', { n: notif('shield', 'protection', { k: via, m: g.m, s: g.s, sh: vendu, avg: q.avg, pnl: v.pnl }, '#profil').n }]); });
+    persist(); envois.forEach(function (x) { window.__fakeSB.emit(sujet, x[0], x[1]); }); return n; }
   /* ----- Argent fictif : mêmes barèmes que wm.argent() ----- */
   var ARGENT = { coins: { USDC: { min: 5, fixe: true, nets: ['Base', 'Ethereum', 'Arbitrum', 'Solana', 'Polygon'] }, USDT: { min: 5, fixe: true, nets: ['Ethereum', 'Tron', 'Arbitrum', 'Solana'] }, ETH: { min: 0.002, nets: ['Ethereum', 'Base', 'Arbitrum'] }, BTC: { min: 0.0001, nets: ['Bitcoin', 'Lightning'] }, SOL: { min: 0.03, nets: ['Solana'] } },
     nets: { Base: { conf: 12, fmt: 'evm', wfee: 0.05 }, Ethereum: { conf: 12, fmt: 'evm', wfee: 2 }, Arbitrum: { conf: 12, fmt: 'evm', wfee: 0.1 }, Polygon: { conf: 30, fmt: 'evm', wfee: 0.05 }, Solana: { conf: 1, fmt: 'sol', wfee: 0.01 }, Tron: { conf: 20 }, Bitcoin: { conf: 2 }, Lightning: { conf: 1 } },
@@ -901,6 +974,8 @@
     /** le joueur copié parie / vend, côté serveur (voir copieSuivre, copieSortir) */
     copieSuivre: function (u, mid, s, mise) { return copieSuivre(u, mid, s, mise); },
     copieSortir: function (u, mid, s) { return copieSortir(u, mid, s); },
+    /** la tâche de fond des ordres limite (wm.ordres_tick), pour le joueur connecté */
+    tickOrdres: function () { return ordresTick(); },
     /** un bot réagit à un message (tâche des bots du serveur) : compteur diffusé au salon ; si le message est celui du joueur et que annonce est vrai, 1 XP et une bulle */
     reactionBot: function (idMsg, emoji, nom, annonce) { var e = etat(), m = null, salon = null; for (var r in db.chat) db.chat[r].forEach(function (x) { if (String(x.id) === String(idMsg)) { m = x; salon = r; } }); if (!m) return null;
       m.r = m.r || {}; m.r[emoji] = (m.r[emoji] | 0) + 1; if (annonce && m.u === uid()) e.me.xp += 1; persist();

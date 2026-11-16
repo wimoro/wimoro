@@ -84,6 +84,11 @@ const ERR_TXT={
  clan_nom_invalide:()=>_t("3 à 28 caractères."),
  clan_tag_invalide:()=>_t('3 ou 4 lettres ou chiffres.'),
  clan_tag_pris:()=>_t("Tag déjà pris"),
+ ordre_indisponible:()=>_t("Cet ordre n’est plus en attente."),
+ trop_ordres:()=>_t("Trop d’ordres en attente : annules-en un avant d’en placer un autre."),
+ stop_invalide:()=>_t("Le stop loss doit être sous le prix actuel."),
+ tp_invalide:()=>_t("Le take profit doit être au-dessus du prix actuel."),
+ seuil_absent:()=>_t("Indique au moins un seuil."),
  trop_de_suivis:()=>_t("Tu suis déjà 500 joueurs : c’est le maximum."),
  deja_partage:()=>_t("Tu as déjà partagé cette mise aujourd’hui."),
  mise_indisponible:()=>_t("Cette mise n’est plus disponible."),
@@ -121,7 +126,6 @@ const srvErreur=e=>{if(e&&e.code==='session'){srvSessionPerdue();return;}if(e&&e
    La liste se vide au fil des lots (voir docs/PLAN.md). Le test tests/compte/garde.spec.mjs vérifie qu'aucune action
    qui touche au solde, à l'XP ou à un état partagé n'est exécutée localement quand le serveur fait autorité. */
 const SRV_BLOQUE=new Set((''
- +'limit-place ord-cancel guard guard-save guard-del '
  +'cl-sim '
  +'wallet wallet-modal demo-login demo-rank demo-rank-open demo-rank-reset').split(/\s+/));
 const SRV_FORMS_BLOQUE=new Set([]);
@@ -168,6 +172,12 @@ const NOTIF_T={
  clan_refuse:p=>CK[p.id]?_t("{0} a refusé ta candidature.",[CK[p.id].name]):'',
  clan_cree:p=>_t("Clan {0} [{1}] créé. {2} de frais, non remboursables.",[p.name||'',p.tag||'',F.usd0(CLAN.FEE)]),
  clan_chef:p=>_t("Tu es maintenant le chef du clan {0}.",[CK[p.id]?CK[p.id].name:'']),
+ ordre_place:p=>p.k==='sell'?_t("{0} : {1} parts {2} à {3}, {4}.",[p.done?_t("Vente exécutée"):_t("Ordre de vente placé"),F.d1(+p.n),sideTxt(p.s),F.c(+p.lp),MK[p.m]?MK[p.m].short:p.m])
+  :_t("{0} : {1} sur {2} à {3} maximum, {4}.",[p.done?_t("Ordre exécuté"):_t("Ordre limite placé"),F.usd(+p.n),sideTxt(p.s),F.c(+p.lp),MK[p.m]?MK[p.m].short:p.m]),
+ ordre_execute:p=>_t("{0} {1} : {2} parts {3} à {4}, {5}.",[p.k==='buy'?_t("Ordre limite"):_t("Vente limite"),p.done?_t("exécuté"):_t("exécuté en partie"),F.d1(+p.sh),sideTxt(p.s),F.c1(+p.avg),MK[p.m]?MK[p.m].short:p.m]),
+ ordre_annule:p=>p.why==='closed'?_t("Ordre annulé : le marché {0} est résolu.",[MK[p.m]?MK[p.m].short:p.m])+(+p.rendu>0?' '+_t("Le montant réservé est de retour sur ton solde."):'')
+  :`${_t("Ordre de vente annulé")}. ${_t("Tu n’as plus de parts {0} sur {1}.",[sideTxt(p.s),MK[p.m]?MK[p.m].short:p.m])}`,
+ protection:p=>_t("{0} sur {1} : {2} parts {3} vendues à {4}, {5}.",[p.k==='stop'?_t("Stop loss déclenché"):_t("Take profit atteint"),MK[p.m]?MK[p.m].short:p.m,F.d1(+p.sh),sideTxt(p.s),F.c1(+p.avg),F.signed(+p.pnl)]),
  clan_officier:p=>_t("Tu es maintenant officier du clan {0}.",[CK[p.id]?CK[p.id].name:'']),
  clan_exclu:p=>_t("Tu as été exclu du clan {0}.",[CK[p.id]?CK[p.id].name:'']),
  clan_invite:p=>_t("{0} t’invite à rejoindre son clan. Code d’invitation : {1}.",[userOf(p.u).n,p.code||'']),
@@ -240,6 +250,7 @@ function hydrater(e){
  {const b=e.eclair&&e.eclair.b||{};if(Object.keys(b).length){me.fmy={r:e.eclair.r,b:{}};for(const g in b)me.fmy.b[g]=miseDe(b[g]);}SRV_ECLAIR_DU=e.eclair?(e.eclair.du|0):0;}
  me.serie=serieDe(e.serie);SRV_BZ.aRegler=(e.blitz||[]).slice();
  me.combos=(e.combos||[]).map(comboDe);
+ me.orders=(e.orders||[]).filter(o=>MK[o.m]).map(ordreDe);me.guards=(e.guards||[]).filter(g=>MK[g.m]).map(gardeDe);   /* ordres limite et protections : tenus par le serveur */
  srvClan(e.clan,me,e.uid);                                                    /* clans : son clan, sa contribution, ses candidatures, les clans créés par des joueurs */
  srvCopies(e.copies,me);                                                      /* copy trading : ses copies, et ses copieurs */
  srvProps(e.props,me);                                                        /* propositions de marché : les siennes, et celles à voter */
@@ -894,6 +905,67 @@ async function srvClanTick(){
 }
 planifier('serveur : clans',3000,srvClanTick,'serveur');
 
+/* ----- Ordres limite, stop loss et take profit : le serveur réserve le montant, exécute (tout de suite, puis toutes les
+   3 secondes) et règle. L'écran ne fait qu'afficher : ordersCheck et ordersTick ne tournent pas en mode Compte. ----- */
+const ordreDe=o=>({id:String(o.id),m:o.m,s:o.s,k:o.k,lp:+o.lp,init:+o.init,cash:+o.cash,sh:+o.sh,spent:+o.spent,fee:+o.fee,pro:+o.pro,pnl:+o.pnl,at:+o.at,status:o.status,why:o.why||undefined,last:o.last?+o.last:undefined,end:o.end?+o.end:undefined});
+const gardeDe=g=>({m:g.m,s:g.s,stop:+g.stop||0,tp:+g.tp||0,at:+g.at});
+function srvOrdresMaj(r){
+ if(r.orders)S.me.orders=r.orders.filter(o=>MK[o.m]).map(ordreDe);
+ if(r.guards)S.me.guards=r.guards.filter(g=>MK[g.m]).map(gardeDe);
+ if(r.positions)S.me.positions=r.positions.filter(p=>MK[p.m]).map(p=>({m:p.m,s:p.s,sh:+p.sh,avg:+p.avg}));
+ if(r.marches)srvMarchesMaj(r.marches);
+}
+Object.assign(SRV_TOAST,{
+ ordre_execute:p=>{const m=MK[p.m];if(!m)return;
+  if(p.k==='buy')toast({tone:'blue',icon:'check',title:p.done?_t("Ordre limite exécuté"):_t("Ordre limite exécuté en partie"),text:`${_t("{0} parts {1} à {2} sur {3}",[F.d1(+p.sh),sideTxt(p.s),F.c1(+p.avg),m.short])}`,href:'#marche-'+m.id});
+  else toast({tone:+p.pnl>=0?'green':'red',icon:'check',title:p.done?_t("Vente limite exécutée"):_t("Vente limite exécutée en partie"),text:`${_t("{0} parts à {1} sur {2}, {3}",[F.d1(+p.sh),F.c1(+p.avg),m.short,F.signed(+p.pnl)])}`,href:'#marche-'+m.id});},
+ ordre_annule:p=>{const m=MK[p.m];if(!m)return;
+  if(p.why==='noshares')toast({tone:'amber',icon:'info',title:_t("Ordre de vente annulé"),text:`${_t("Tu n’as plus de parts {0} sur {1}.",[sideTxt(p.s),m.short])}`});
+  else toast({tone:'amber',icon:'info',title:_t("Ordre annulé"),text:NOTIF_T.ordre_annule(p)});},
+ protection:p=>{const m=MK[p.m];if(!m)return;
+  toast({tone:+p.pnl>=0?'green':'red',icon:'shield',title:p.k==='stop'?_t("Stop loss déclenché"):_t("Take profit atteint"),text:`${_t("{0} parts {1} vendues à {2} sur {3} : {4}",[F.d1(+p.sh),sideTxt(p.s),F.c1(+p.avg),m.short,F.signed(+p.pnl)])}`,href:'#profil',dur:6000});}
+});
+let srvOrdreOccupe=false;
+async function srvOrdrePlacer(ctx,ev,st,m,c){
+ if(srvOrdreOccupe)return;srvOrdreOccupe=true;
+ try{
+  const p=c.sell?{m:m.id,s:st.side,k:'sell',lp:c.lp,sh:c.sh,key:cleOp()}:{m:m.id,s:st.side,k:'buy',lp:c.lp,amt:Math.round(c.amt*100)/100,key:cleOp()};
+  const r=await API.call('api_order_place',{p});
+  srvOrdresMaj(r);
+  const o=ordreDe(r.ordre),q=r.fill&&!r.fill.annule?r.fill:null,done=o.status==='filled';
+  if(q&&q.hist)S.me.history.unshift(histDe(q.hist));
+  if(q)addBet(m,{s:(o.k==='buy')===(o.s==='oui')?1:0,a:Math.min(1,(o.k==='buy'?+q.total:+q.pro)/300),me:1});
+  /* mêmes messages qu'en mode Démo, avec ce que le serveur a réellement exécuté */
+  if(o.k==='sell')toast({tone:done?'green':'blue',icon:'check',title:done?_t("Vente exécutée"):q?_t("Vente exécutée en partie"):_t("Ordre de vente placé"),text:q?`${_t("{0} parts à {1}{2}",[F.d1(+q.sh),F.c1(+q.avg),done?'':`${_t(", le reste attend à {0}",[F.c(o.lp)])}`])}`:`${_t("{0} parts {1} à {2} minimum",[F.d1(o.init),sideTxt(o.s),F.c(o.lp)])}`,href:'#marche-'+m.id});
+  else toast({tone:'blue',icon:'check',title:done?_t("Ordre exécuté"):q?_t("Ordre exécuté en partie"):_t("Ordre limite placé"),text:q?`${_t("{0} parts {1} à {2}{3}",[F.d1(+q.sh),sideTxt(o.s),F.c1(+q.avg),done?'':`${_t(", {0} attendent à {1}",[F.usd(o.cash),F.c(o.lp)])}`])}`:`${_t("{0} sur {1} à {2} maximum, {3}",[F.usd(o.init),sideTxt(o.s),F.c(o.lp),m.short])}`,href:'#marche-'+m.id});
+  srvAppliquer(r,ev);
+  st.amt=st.mode==='sell'?'':'50';if(ctx==='sheet')closeModal();else rerenderTicket();ordersRefresh();
+ }catch(e){srvErreur(e);}
+ finally{srvOrdreOccupe=false;}
+}
+async function srvOrdreAnnuler(o){
+ if(srvOrdreOccupe)return;srvOrdreOccupe=true;
+ try{const r=await API.call('api_order_cancel',{p_id:+o.id});srvOrdresMaj(r);srvAppliquer(r);
+  toast({icon:'x',title:_t("Ordre annulé"),text:o.k==='buy'?_t("Le montant réservé est de retour sur ton solde."):_t("Tes parts restent dans ton portefeuille."),dur:2600});ordersRefresh();if(MK[o.m])rerenderTicket();}
+ catch(e){srvErreur(e);if(e&&e.code==='ordre_indisponible'){srvVu=0;srvRafraichir();}}          /* exécuté ou annulé entre-temps : on relit */
+ finally{srvOrdreOccupe=false;}
+}
+async function srvGardePoser(d,c){
+ if(srvOrdreOccupe)return;srvOrdreOccupe=true;
+ try{const r=await API.call('api_guard_set',{p:{m:d.m,s:d.s,stop:c.stop||0,tp:c.tp||0}});
+  srvOrdresMaj(r);srvAppliquer(r);S.ui.guard=null;closeModal();
+  toast({icon:'shield',title:_t("Protection activée"),text:`${_t("{0}{1}{2} sur {3}.",[c.stop?`${_t("Stop loss à {0}",[F.c(c.stop)])}`:'',c.stop&&c.tp?', ':'',c.tp?`${_t("take profit à {0}",[F.c(c.tp)])}`:'',c.m.short])}`,dur:3200});ordersRefresh();if(S.ui.route==='profil')render(false);}
+ catch(e){srvErreur(e);}
+ finally{srvOrdreOccupe=false;}
+}
+async function srvGardeRetirer(d){
+ if(srvOrdreOccupe)return;srvOrdreOccupe=true;
+ try{const r=await API.call('api_guard_del',{p_market:d.m,p_side:d.s});srvOrdresMaj(r);srvAppliquer(r);S.ui.guard=null;closeModal();
+  toast({icon:'shield',title:_t("Protection retirée"),dur:2200});ordersRefresh();if(S.ui.route==='profil')render(false);}
+ catch(e){srvErreur(e);}
+ finally{srvOrdreOccupe=false;}
+}
+
 /* ----- Suivre un joueur : la liste est tenue par le serveur, le compteur d'abonnés de sa fiche aussi ----- */
 let srvSuivreOccupe=false;
 async function srvSuivre(u,oui){
@@ -1157,6 +1229,7 @@ async function srvBzRacheter(){const r=bzR();if(!r||!bzCanRebuy(r)||SRV_BZ.occup
 /* ----- Sujet privé du joueur : ses messages privés et ses notifications arrivent en direct, à lui seul ----- */
 function srvPerso(evt,d){
  if(evt==='dm'){if(d&&d.u)srvChatAjouter('dm:'+d.u,d);return;}
+ if(evt==='maj'){srvVu=0;srvRafraichir();return;}                    /* le serveur a changé quelque chose sans notification (exécution partielle d'un ordre) */
  if(evt==='re'){if(d&&d.u)srvChatReactions('dm:'+d.u,d);return;}
  if(evt==='fc'){if(d&&d.u)srvChatSuivis('dm:'+d.u,d);return;}                       /* mise partagée en privé : son compteur de suivis */                    /* réaction de l'autre participant, dans une conversation privée */
  if(evt==='reac'){if(d)srvReactionRecue(d);return;}
@@ -1164,7 +1237,7 @@ function srvPerso(evt,d){
   if(S.me.notifs.some(x=>x.id===d.n.id))return;
   S.me.notifs.unshift(notifDe(d.n));S.me.notifs=S.me.notifs.slice(0,30);updateBell();
   if(SRV_TOAST[d.n.code]){try{SRV_TOAST[d.n.code](d.n.p||{});}catch(e){}}                             /* ce que le serveur vient de faire pour le joueur, annoncé comme en mode Démo */
-  if(/^fr_|^duel_|^stack_|^guerre_|^combo_|^parrain_|^prop_|^copie_|^clan_|^mise_|^marche_resolu$|^admin_solde$|^kyc_ok$|^blitz_gagne$/.test(d.n.code||'')){srvVu=0;srvRafraichir();}                   /* demande d'ami ou acceptation : les listes viennent du serveur */
+  if(/^fr_|^duel_|^stack_|^guerre_|^combo_|^parrain_|^prop_|^copie_|^clan_|^mise_|^ordre_|^protection$|^marche_resolu$|^admin_solde$|^kyc_ok$|^blitz_gagne$/.test(d.n.code||'')){srvVu=0;srvRafraichir();}                   /* demande d'ami ou acceptation : les listes viennent du serveur */
  }
 }
 

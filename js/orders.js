@@ -77,7 +77,7 @@ function fillSell(o,m){
 }
 let ORD_BUSY=false;
 function ordersCheck(m){
- if(ORD_BUSY||!S.me.logged)return;const L=ordersOpen(m.id),G=guardsAll().filter(g=>g.m===m.id);if(!L.length&&!G.length)return;
+ if(ORD_BUSY||!S.me.logged||SRV())return;const L=ordersOpen(m.id),G=guardsAll().filter(g=>g.m===m.id);if(!L.length&&!G.length)return;
  ORD_BUSY=true;let touched=false;
  try{
   for(const o of L){
@@ -103,12 +103,13 @@ function ordersCheck(m){
  }finally{ORD_BUSY=false;}
  if(touched){updateHeader();checkBadges();save();ordersRefresh();}
 }
-function ordersTick(){if(!S.me.logged)return;const ids=new Set([...ordersOpen().map(o=>o.m),...guardsAll().map(g=>g.m)]);for(const id of ids){const m=MK[id];if(m)ordersCheck(m);}}
+function ordersTick(){if(!S.me.logged||SRV())return;const ids=new Set([...ordersOpen().map(o=>o.m),...guardsAll().map(g=>g.m)]);for(const id of ids){const m=MK[id];if(m)ordersCheck(m);}}
 
 /* ---------- Placement et annulation ---------- */
 function placeLimit(ctx,ev){
  const st=tState(ctx),m=MK[st.m],c=calcLimit(st);if(!c.ok||!m)return;
  if(typeof rgBlocked==='function'&&rgBlocked('bet'))return;
+ if(SRV()){srvOrdrePlacer(ctx,ev,st,m,c);return;}                 /* mode Compte : réserve, exécution et XP tenues par le serveur */
  const before=myRank();let o;
  if(c.sell){o={id:newId('o'),m:m.id,s:st.side,k:'sell',lp:c.lp,sh:c.sh,init:c.sh,pro:0,pnl:0,at:now(),status:'open'};ordersAll().unshift(o);const q=fillSell(o,m);
   const done=o.status!=='open';
@@ -122,7 +123,7 @@ function placeLimit(ctx,ev){
  updateHeader();checkBadges();checkRank(before);save();
  st.amt=st.mode==='sell'?'':'50';if(ctx==='sheet')closeModal();else rerenderTicket();ordersRefresh();
 }
-function cancelOrder(id){const o=ordersAll().find(x=>x.id===id);if(!o||o.status!=='open')return;const m=MK[o.m];
+function cancelOrder(id){const o=ordersAll().find(x=>x.id===id);if(!o||o.status!=='open')return;if(SRV()){srvOrdreAnnuler(o);return;}const m=MK[o.m];
  if(o.k==='buy'){S.me.balance+=o.cash;o.cash=0;}o.status='cancelled';o.why='user';o.end=now();
  updateHeader();save();toast({icon:'x',title:_t("Ordre annulé"),text:o.k==='buy'?_t("Le montant réservé est de retour sur ton solde."):_t("Tes parts restent dans ton portefeuille."),dur:2600});ordersRefresh();if(m)rerenderTicket();}
 
@@ -179,9 +180,9 @@ Object.assign(ACT,{
  'ord-cancel':a=>cancelOrder(a.dataset.id),
  guard:a=>guardOpen(a.dataset.m,a.dataset.s),
  'guard-set':a=>{const d=S.ui.guard;if(!d)return;d[a.dataset.k]=a.dataset.v;const i=$(`[data-gd="${a.dataset.k}"]`);if(i)i.value=d[a.dataset.k];guardSync();},
- 'guard-save':()=>{const d=S.ui.guard;if(!d)return;const c=guardCalc(d);if(!c.ok){if(c.none){d.tried=true;guardSync();const i=$('[data-gd="stop"]');if(i)i.focus();}return;}dropGuard(d.m,d.s);guardsAll().push({m:d.m,s:d.s,stop:c.stop||0,tp:c.tp||0,at:now()});S.ui.guard=null;closeModal();save();
+ 'guard-save':()=>{const d=S.ui.guard;if(!d)return;const c=guardCalc(d);if(!c.ok){if(c.none){d.tried=true;guardSync();const i=$('[data-gd="stop"]');if(i)i.focus();}return;}if(SRV()){srvGardePoser(d,c);return;}dropGuard(d.m,d.s);guardsAll().push({m:d.m,s:d.s,stop:c.stop||0,tp:c.tp||0,at:now()});S.ui.guard=null;closeModal();save();
   toast({icon:'shield',title:_t("Protection activée"),text:`${_t("{0}{1}{2} sur {3}.",[c.stop?`${_t("Stop loss à {0}",[F.c(c.stop)])}`:'',c.stop&&c.tp?', ':'',c.tp?`${_t("take profit à {0}",[F.c(c.tp)])}`:'',c.m.short])}`,dur:3200});ordersRefresh();if(S.ui.route==='profil')render(false);},
- 'guard-del':()=>{const d=S.ui.guard;if(!d)return;dropGuard(d.m,d.s);S.ui.guard=null;closeModal();save();toast({icon:'shield',title:_t("Protection retirée"),dur:2200});ordersRefresh();if(S.ui.route==='profil')render(false);}
+ 'guard-del':()=>{const d=S.ui.guard;if(!d)return;if(SRV()){srvGardeRetirer(d);return;}dropGuard(d.m,d.s);S.ui.guard=null;closeModal();save();toast({icon:'shield',title:_t("Protection retirée"),dur:2200});ordersRefresh();if(S.ui.route==='profil')render(false);}
 });
 {const live=fn=>()=>{if(!document.hidden)fn();};planifier('ordres : exécution locale',2000,live(ordersTick));}
 
