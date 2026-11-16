@@ -367,12 +367,30 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 - [ ] Catalogue de la seule langue active ; Mode Pro chargé à la demande.
 - [ ] Regroupement et minification pour la production, sans build en développement.
 - [ ] Mesure avant/après sur mobile.
+- [ ] Côté serveur : deux déclencheurs de l'ancienne application (`sync_stats_to_blob`, `sync_users_to_blob`) recopient encore
+      chaque changement de statistiques dans une ancienne table (`user_full_state`) que plus rien ne lit. Les retirer
+      allégerait chaque écriture ; c'est une instruction `drop`, qui demande la confirmation manuelle de l'outil Supabase.
 
 ## Phase 9 — Tests et recette
 - [x] Suite Playwright sur chaque pull request. Les comptes de test se suppriment eux-mêmes à la fin de la suite
       (`api_test_end`) ; les 27 accumulés pendant les travaux ont été supprimés.
 - [x] Tests SQL des invariants : solde jamais négatif, paris et retraits simultanés, rejeu d'une même clé, argent ni créé ni perdu.
-- [ ] Recette finale, 10 points, dans les deux modes.
+- [x] Recette finale, 10 points, le 16 nov. 2026, sur le site en ligne (<https://wimoro.com>) : 130 tests d'écran (mode Démo,
+      visiteur et mode Compte avec le faux serveur, trois langues) et 18 scénarios avec de vrais comptes contre le vrai
+      serveur, tous verts ; en local, 264 tests dont 134 sur la base. Point par point :
+
+      | N° | Ce qui est vérifié | Preuve | Réserve |
+      |---|---|---|---|
+      | 1 | Chaque écran s'ouvre sans erreur, en anglais, français, hébreu | `tests/demo/chargement.spec.mjs`, `tests/compte/chargement.spec.mjs`, `tests/i18n.spec.mjs`, e2e « recette 1 » | aucune |
+      | 2 | Pari éclair : accepté, gardé après rechargement, réglé | `tests/compte/eclair.spec.mjs`, e2e « recette 2 » | aucune |
+      | 3 | Inscription → dépôt → achat → vente → reconnexion, deux navigateurs | e2e « recette 3 », « connexion par pseudo » | aucune |
+      | 4 | Mot de passe oublié | `tests/compte/comptes.spec.mjs` (B09), avec le faux serveur | **non joué avec un vrai e-mail** : à vérifier une fois par le propriétaire |
+      | 5 | Deux joueurs : prix, chat, amis, message privé | e2e « marchés en direct », « recette 5 » (chat, amis, sujet privé) | aucune |
+      | 6 | Rien ne s'annule après 20 secondes en mode Compte | `tests/compte/garde.spec.mjs` et les tests de chaque lot (retrait, dépôt carte, mission, clan, duel, combiné, copy trading, parrainage) | **ordre limite** : pas encore pour les comptes (annoncé « Bientôt disponible », jamais simulé puis annulé) |
+      | 7 | KYC fictif : validé, gardé, moyens de paiement débloqués | `tests/compte/argent.spec.mjs`, `tests/sql/argent.spec.mjs` | aucune |
+      | 8 | Démo → Compte → Démo sans mélange | `tests/compte/comptes.spec.mjs` (recette 8) | aucune |
+      | 9 | Les prix bougent seuls, identiques sur deux navigateurs | e2e « marchés en direct », `tests/sql/bots.spec.mjs` | aucune |
+      | 10 | Plafond de dépôt et pause appliqués par le serveur | `tests/sql/argent.spec.mjs`, `tests/compte/argent.spec.mjs` | aucune |
 
 ## Phase 10 — Livraison
 - [x] `README.md`, `docs/ARCHITECTURE.md`, `docs/BACKEND.md`, `docs/EXPLOITATION.md`.
@@ -427,7 +445,10 @@ Rien d'obligatoire. Le détail et les constats sont dans `docs/EXPLOITATION.md`,
 
 1. **Une fois** : demander « mot de passe oublié » avec ta propre adresse, pour vérifier que l'e-mail arrive (un service
    d'envoi est déjà branché ; je ne peux pas voir si son domaine est validé).
-2. Facultatif : accepter la confirmation Supabase pour la migration de rangement `securite_urgence_nettoyage`.
+2. **Pour mettre en ligne les ordres limites** : demander « applique la migration des ordres limites » pendant une session et
+   accepter la confirmation que l'outil Supabase affiche (dans les 2 minutes). Tout le reste est prêt (branche
+   `lot/ordres-limites`).
+2 bis. Facultatif : même chose pour la migration de rangement `securite_urgence_nettoyage`.
 3. Facultatif : ajouter `Ton code : {{ .Token }}` au modèle d'e-mail « Reset Password ».
 4. Facultatif : protéger la branche `main` sur GitHub.
 5. Pour administrer : ouvrir <https://wimoro.com/admin.html> et se connecter avec le compte `WimoroAdmin` (le seul
@@ -462,3 +483,4 @@ Rien d'obligatoire. Le détail et les constats sont dans `docs/EXPLOITATION.md`,
 | 16 nov. 2026 | Propositions de marché en mode Compte. | migrations `propositions` et `propositions_votes` (empreintes identiques) ; 244 tests (120 SQL) ; 16 scénarios de bout en bout contre le vrai back |
 | 16 nov. 2026 | Copy trading en mode Compte. Test de La Série : comparaison de prix rendue proportionnelle (elle échouait par hasard sur un prix élevé). | migration `copies` (empreinte identique) ; 253 tests (127 SQL) ; 17 scénarios de bout en bout contre le vrai back |
 | 16 nov. 2026 | Clans en mode Compte, première partie (appartenance, création, contribution, tag public). | migration `clans` (empreinte identique) ; 264 tests (134 SQL) ; 18 scénarios de bout en bout contre le vrai back |
+| 16 nov. 2026 | Recette finale sur le site en ligne. Lot « ordres limites » remis à niveau dans sa branche (273 tests, dont 141 SQL), toujours en attente de la confirmation Supabase. | 130 tests d'écran et 18 scénarios réels sur <https://wimoro.com> ; base : 20 comptes, 10 000 bots, aucun compte de test, 56 migrations, aucune erreur de tâche planifiée |

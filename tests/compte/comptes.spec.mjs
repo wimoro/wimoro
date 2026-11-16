@@ -22,7 +22,7 @@ test('B08 · inscription : compte créé sur le serveur avec le pseudo choisi, p
   expect(s).toEqual({ srv: true, n: 'nouveau.joueur', solde: 0, onboarded: false, deps: 0, local: null, session: null });   // ni compte local fantôme, ni faux « Crédit démo »
   const inscription = await lire(page, () => __fakeSB.journal().find(c => c.name === 'signUp').args);
   expect(inscription.options.data).toMatchObject({ username: 'nouveau.joueur', lang: 'en' });
-  expect(inscription.options.emailRedirectTo).toContain('127.0.0.1');
+  expect(inscription.options.emailRedirectTo).toBe(await page.evaluate(() => location.origin + location.pathname));   // l'adresse du site lui-même (local ou en ligne)
 
   // onboarding : couleur → centres d'intérêt → sans KYC → rangs → 100 XP de bienvenue (donnés par le serveur) → fin
   const suivant = page.locator('[data-a="ob-next"]');
