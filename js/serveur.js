@@ -70,6 +70,15 @@ const ERR_TXT={
  trop_de_copies:()=>_t("Tu peux copier {0} joueurs en même temps.",[COPY.MAX_ACTIVE]),
  copie_indisponible:()=>_t("Ce joueur ne peut pas être copié pour l’instant."),
  copie_existe:()=>_t("Tu copies déjà ce joueur."),
+ clan_inconnu:()=>_t('Code inconnu. Vérifie auprès de ton ami.'),
+ clan_ferme:()=>_t('Code inconnu. Vérifie auprès de ton ami.'),
+ clan_deja:()=>_t("Tu es déjà dans un clan."),
+ clan_attente:()=>{const j=Math.max(1,Math.ceil(clanLeaveWait()/86400e3));return _t("Tu as quitté un clan il y a moins de {0} jours : encore {1} jour{2}.",[CLAN.LEAVE_WAIT_D,j,j>1?'s':'']);},
+ clan_complet:()=>_t("{0} membres maximum.",[CLAN.MAX]),
+ compte_trop_recent:()=>_t("Ton compte doit avoir plus de {0} jours ({1} aujourd’hui).",[CLAN.MIN_AGE_D,accountAgeD()]),
+ clan_nom_invalide:()=>_t("3 à 28 caractères."),
+ clan_tag_invalide:()=>_t('3 ou 4 lettres ou chiffres.'),
+ clan_tag_pris:()=>_t("Tag déjà pris"),
  duel_indisponible:()=>_t("Ce duel n’est plus disponible."),
  cote_indisponible:()=>_t("La cote du marché ne permet pas ce duel pour l’instant."),
  trop_de_duels:()=>_t("Tu as déjà trop de duels en attente de réponse."),
@@ -99,10 +108,10 @@ const srvErreur=e=>{if(e&&e.code==='session'){srvSessionPerdue();return;}if(e&&e
    qui touche au solde, à l'XP ou à un état partagé n'est exécutée localement quand le serveur fait autorité. */
 const SRV_BLOQUE=new Set(('share-pick '
  +'limit-place ord-cancel guard guard-save guard-del stk-create stack-open '
- +'sr-share cl-war-join cl-sim cl-join cl-apply cl-leave-do cl-share cl-promote cl-kick cl-invite cl-call-do cl-war cl-feedopt cl-create-open cl-leave cl-call-open cl-war-open '
+ +'sr-share cl-war-join cl-sim cl-share cl-promote cl-kick cl-invite cl-call-do cl-war cl-call-open '
  +'pro-sh-send pro-share follow-user follow-bet follow-pbet share react '
  +'wallet wallet-modal demo-login demo-rank demo-rank-open demo-rank-reset').split(/\s+/));
-const SRV_FORMS_BLOQUE=new Set(['clan','clcode']);
+const SRV_FORMS_BLOQUE=new Set([]);
 const srvBientot=()=>toast({tone:'amber',icon:'info',force:true,title:_t("Bientôt disponible avec ton compte"),text:_t("Cette fonction marche déjà en mode démo. Elle arrive pour les comptes.")});
 function srvGarde(type,nom){
  if(!SRV())return true;
@@ -136,6 +145,11 @@ const NOTIF_T={
  copie_stop:p=>_t("Arrêt de perte atteint sur la copie de {0} : positions vendues, {1}.",[userOf(p.u).n,F.signed(+p.pnl)]),
  copie_fin:p=>_t("{0} n’est plus copiable : ta copie est arrêtée, tes positions restent ouvertes.",[userOf(p.u).n]),
  copie_revenu:p=>_t("Revenus de copie : {0} grâce à tes {1} copieurs.",[F.signed(+p.gain),F.int(+p.n)]),
+ clan_rejoint:p=>CK[p.id]?_t("Tu as rejoint le clan {0} [{1}].",[CK[p.id].name,CK[p.id].tag]):'',
+ clan_accepte:p=>CK[p.id]?_t("Tu as rejoint le clan {0} [{1}].",[CK[p.id].name,CK[p.id].tag]):'',
+ clan_refuse:p=>CK[p.id]?_t("{0} a refusé ta candidature.",[CK[p.id].name]):'',
+ clan_cree:p=>_t("Clan {0} [{1}] créé. {2} de frais, non remboursables.",[p.name||'',p.tag||'',F.usd0(CLAN.FEE)]),
+ clan_chef:p=>_t("Tu es maintenant le chef du clan {0}.",[CK[p.id]?CK[p.id].name:'']),
  parrain_bonus:p=>_t("Bonus de parrainage : {0} offerts grâce au code {1}.",[F.usd0(+p.gain),p.code||'']),
  parrain_inscrit:p=>_t("{0} s’est inscrit avec ton code de parrainage.",[p.n||'']),
  parrain_paye:p=>_t("Parrainage : {0} a placé son premier pari, {1} pour toi.",[p.n||'',F.usd0(+p.gain)]),
@@ -176,7 +190,7 @@ const histDe=h=>{if(typeof h.q==='string'&&h.q.startsWith('combo|'))return histC
 const miseDe=m=>({id:m.id,s:m.s,amt:+m.amt,fee:+m.fee,net:+m.net,price:m.price,mult:+m.mult,tk:m.tk|0});
 
 /* ----- Annuaire : les fiches des joueurs viennent du serveur, clé = identifiant du joueur ----- */
-function srvFiches(map){for(const id in map||{}){const f=map[id];USERS[id]=Object.assign(USERS[id]||{},{n:f.n,t:f.t|0,d:f.d|0,tone:f.tone|0,profit:+f.profit||0,acc:f.acc|0,bets:f.bets|0,fol:f.fol|0,bio:f.bio||'',photo:f.photo||'',color:f.color||'',bot:!!f.bot,pub:f.pub===0?0:1});delete FANTOMES[id];}
+function srvFiches(map){for(const id in map||{}){const f=map[id];USERS[id]=Object.assign(USERS[id]||{},{n:f.n,t:f.t|0,d:f.d|0,tone:f.tone|0,profit:+f.profit||0,acc:f.acc|0,bets:f.bets|0,fol:f.fol|0,bio:f.bio||'',photo:f.photo||'',color:f.color||'',bot:!!f.bot,pub:f.pub===0?0:1,clan:f.clan||null,cp:f.cp===0?0:1});delete FANTOMES[id];}
  USER_IDS.length=0;USER_IDS.push(...Object.keys(USERS));}
 
 /* ----- Hydratation : réponse de api_state → S.me ----- */
@@ -197,6 +211,7 @@ function hydrater(e){
  {const b=e.eclair&&e.eclair.b||{};if(Object.keys(b).length){me.fmy={r:e.eclair.r,b:{}};for(const g in b)me.fmy.b[g]=miseDe(b[g]);}SRV_ECLAIR_DU=e.eclair?(e.eclair.du|0):0;}
  me.serie=serieDe(e.serie);SRV_BZ.aRegler=(e.blitz||[]).slice();
  me.combos=(e.combos||[]).map(comboDe);
+ srvClan(e.clan,me,e.uid);                                                    /* clans : son clan, sa contribution, ses candidatures, les clans créés par des joueurs */
  srvCopies(e.copies,me);                                                      /* copy trading : ses copies, et ses copieurs */
  srvProps(e.props,me);                                                        /* propositions de marché : les siennes, et celles à voter */
  if(e.ref){me.refCode=e.ref.code||'';me.refBy=e.ref.by||undefined;                         /* parrainage : code, parrain et filleuls viennent du serveur */
@@ -657,6 +672,74 @@ async function srvCopieRegler(c,action,modale){
  finally{srvCopieOccupe=false;}
 }
 
+/* ----- Clans : l'appartenance, la création (frais), les candidatures et la contribution sont tenues par le serveur.
+   L'annuaire des 100 clans de démonstration reste celui de l'écran (le serveur a le même : tests/fixtures/clans-demo.json) ;
+   les clans créés par des joueurs viennent du serveur et s'y ajoutent. Guerres, appels, chat de clan : indisponibles. ----- */
+function srvClanObjet(x,moi){
+ const m=x.members||[],chefMoi=x.chief===moi;
+ const c=CK[x.id]||{id:x.id,div:'bronze',roi:0,coef:1,war:null,calls:[],feed:[],wars:[],rank:20,srv:true};
+ Object.assign(c,{name:x.name,tag:x.tag,emblem:{ic:x.emblem.ic,col:x.emblem.col},lang:(x.lang||['fr']).slice(),cats:(x.cats||[]).slice(),desc:x.desc||'',access:x.access,minRank:x.minRank|0,
+  chief:chefMoi?'me':x.chief,officers:m.filter(y=>y.role==='officier'&&y.u!==moi).map(y=>y.u),members:m.filter(y=>y.u!==moi).map(y=>({u:y.u,since:+y.since,pts:+y.pts||0})),
+  createdAt:+x.createdAt,mine:chefMoi,code:x.code||undefined});
+ c.n=c.members.length;c.xp=m.reduce((t,y)=>t+(+y.pts||0),0);c.score=Math.round(c.xp);
+ if(!CK[x.id]){CLANS.push(c);CK[x.id]=c;}
+ return c;
+}
+function srvClan(p,me,moi){
+ if(!p)return;me=me||S.me;moi=moi||srvMoi();
+ srvFiches(p.users);for(const x of p.clans||[])srvClanObjet(x,moi);
+ me.clan=p.mine&&CK[p.mine.id]?{id:p.mine.id,role:p.mine.role,since:+p.mine.since}:null;
+ me.clanXP=p.mine?+p.mine.xp||0:0;me.clanVol=p.mine?{[today()]:+p.mine.jour||0}:{};me.clanSkipped=p.mine?p.mine.ecartes|0:0;
+ me.clanApps=Object.assign({},p.apps||{});me.clanLeftAt=p.leftAt?+p.leftAt:0;
+}
+let srvClanOccupe=false;
+const srvClanVue=()=>{updateHeader();if((S.ui.route||'').startsWith('clan'))render(false);};
+async function srvClanRejoindre(c,viaCode,code,err){
+ if(srvClanOccupe)return;srvClanOccupe=true;
+ try{const r=await API.call('api_clan_join',{p_clan:c?c.id:null,p_code:viaCode?(code||clanCode(c)):null});
+  srvClan(r.clan);srvAppliquer(r);const k=myClan();if(!k)return;
+  toast({tone:'green',icon:'shield',force:true,title:`${_t("Bienvenue chez {0} [{1}]",[k.name,k.tag])}`,text:_t("Ton tag apparaît désormais à côté de ton pseudo."),href:'#clan-'+k.id});
+  if(viaCode)location.hash='#clan-'+k.id;srvClanVue();}
+ catch(e){if(err&&e&&(e.code==='clan_inconnu'||e.code==='clan_ferme'))err.textContent=errTxt(e);else srvErreur(e);}
+ finally{srvClanOccupe=false;}
+}
+async function srvClanCandidater(c){
+ if(srvClanOccupe)return;srvClanOccupe=true;
+ try{const r=await API.call('api_clan_apply',{p_clan:c.id});srvClan(r.clan);srvAppliquer(r);
+  toast({tone:'blue',icon:'send',title:_t("Candidature envoyée"),text:`${_t("Un officier de {0} doit la valider.",[c.name])}`});srvClanVue();}
+ catch(e){srvErreur(e);}
+ finally{srvClanOccupe=false;}
+}
+async function srvClanQuitter(c){
+ if(srvClanOccupe)return;srvClanOccupe=true;
+ try{const r=await API.call('api_clan_leave');srvClan(r.clan);srvAppliquer(r);
+  toast({icon:'info',force:true,title:`${_t("Tu as quitté {0}",[c.name])}`,text:`${_t("Tu pourras rejoindre un autre clan dans {0} jours.",[CLAN.LEAVE_WAIT_D])}`});srvClanVue();}
+ catch(e){srvErreur(e);}
+ finally{srvClanOccupe=false;}
+}
+async function srvClanCreer(f,name,tag){
+ if(srvClanOccupe)return;srvClanOccupe=true;
+ try{const r=await API.call('api_clan_create',{p:{name,tag,desc:(f.desc||'').trim(),ic:f.ic||'shield',col:f.col||'#2448FF',lang:f.lang||[],cats:f.cats||[],access:f.access,minRank:+f.minRank||0}});
+  srvClan(r.clan);const c=CK[r.id];closeModal();S.ui.clc=null;
+  if(c)toast({tone:'green',icon:'shield',force:true,title:`${_t("{0} [{1}] est créé",[c.name,c.tag])}`,text:_t("Tu es le chef. Invite des membres et nomme jusqu’à 5 officiers."),href:'#clan-'+c.id});
+  if(typeof confetti==='function')confetti(30);srvAppliquer(r);location.hash='#clan-'+r.id;srvClanVue();}
+ catch(e){srvErreur(e);}
+ finally{srvClanOccupe=false;}
+}
+/* une candidature en attente : l'écran relit toutes les 3 secondes, jusqu'à la réponse de l'officier */
+async function srvClanTick(){
+ if(!SRV()||srvClanOccupe||!Object.keys(S.me.clanApps||{}).length)return;
+ srvClanOccupe=true;
+ try{const avant=Object.keys(S.me.clanApps),r=await API.call('api_clan');srvClan(r.clan);srvAppliquer(r);
+  const k=myClan(),finies=avant.filter(id=>!(id in S.me.clanApps));
+  if(k&&finies.includes(k.id))toast({tone:'green',icon:'shield',force:true,title:`${_t("Bienvenue chez {0} [{1}]",[k.name,k.tag])}`,text:_t("Ta candidature a été acceptée par un officier."),href:'#clan-'+k.id});
+  else for(const id of finies)if(CK[id])toast({tone:'amber',icon:'info',title:_t("Candidature refusée"),text:`${_t("{0} n’a pas retenu ta candidature cette fois.",[CK[id].name])}`});
+  if(finies.length)srvClanVue();}
+ catch(e){if(e&&e.code==='session')srvSessionPerdue();}
+ finally{srvClanOccupe=false;}
+}
+planifier('serveur : clans',3000,srvClanTick,'serveur');
+
 /* ----- Paris combinés : prix bloqués, mise et gain tenus par le serveur ; le « slip » reste une sélection locale ----- */
 const comboDe=x=>({id:String(x.id),at:+x.at,stake:+x.stake,mult:+x.mult,fee:+x.fee,pay:+x.pay,status:x.status,cash:x.cash==null?undefined:+x.cash,endAt:x.endAt||undefined,
  legs:(x.legs||[]).map(l=>({m:l.m,s:l.s,price:+l.price,mult:+l.mult,res:l.res||null}))});
@@ -827,7 +910,7 @@ function srvPerso(evt,d){
   if(S.me.notifs.some(x=>x.id===d.n.id))return;
   S.me.notifs.unshift(notifDe(d.n));S.me.notifs=S.me.notifs.slice(0,30);updateBell();
   if(SRV_TOAST[d.n.code]){try{SRV_TOAST[d.n.code](d.n.p||{});}catch(e){}}                             /* ce que le serveur vient de faire pour le joueur, annoncé comme en mode Démo */
-  if(/^fr_|^duel_|^combo_|^parrain_|^prop_|^copie_|^marche_resolu$|^admin_solde$|^kyc_ok$|^blitz_gagne$/.test(d.n.code||'')){srvVu=0;srvRafraichir();}                   /* demande d'ami ou acceptation : les listes viennent du serveur */
+  if(/^fr_|^duel_|^combo_|^parrain_|^prop_|^copie_|^clan_|^marche_resolu$|^admin_solde$|^kyc_ok$|^blitz_gagne$/.test(d.n.code||'')){srvVu=0;srvRafraichir();}                   /* demande d'ami ou acceptation : les listes viennent du serveur */
  }
 }
 
