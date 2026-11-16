@@ -55,6 +55,30 @@ const ERR_TXT={
  combine_incomplet:()=>_t("Combiné incomplet"),
  selection_en_double:()=>_t("Ce marché est déjà dans ton combiné."),
  combine_indisponible:()=>_t("Ce combiné n’est plus disponible."),
+ texte_refuse:()=>_t("Certains caractères ne sont pas acceptés : chevrons, guillemets droits, accent grave, barre oblique inverse."),
+ question_invalide:()=>_t("Vérifie la liste « Avant d’envoyer »."),
+ categorie_invalide:()=>_t("Vérifie la liste « Avant d’envoyer »."),
+ date_invalide:()=>_t("Vérifie la liste « Avant d’envoyer »."),
+ source_invalide:()=>_t("Vérifie la liste « Avant d’envoyer »."),
+ regles_invalides:()=>_t("Vérifie la liste « Avant d’envoyer »."),
+ proposition_en_double:()=>_t("Tu as déjà proposé ce pari : il est en vote."),
+ trop_de_propositions:()=>_t("Tu as déjà envoyé 5 propositions aujourd’hui. Reviens demain."),
+ proposition_indisponible:()=>_t("Cette proposition n’est plus en vote."),
+ deja_vote:()=>_t("Tu as déjà voté pour cette proposition."),
+ budget_min:()=>_t("Budget minimum : {0}.",[F.usd0(COPY.MIN_BUDGET)]),
+ budget_solde:()=>_t("Ce budget dépasse ton solde."),
+ trop_de_copies:()=>_t("Tu peux copier {0} joueurs en même temps.",[COPY.MAX_ACTIVE]),
+ copie_indisponible:()=>_t("Ce joueur ne peut pas être copié pour l’instant."),
+ copie_existe:()=>_t("Tu copies déjà ce joueur."),
+ clan_inconnu:()=>_t('Code inconnu. Vérifie auprès de ton ami.'),
+ clan_ferme:()=>_t('Code inconnu. Vérifie auprès de ton ami.'),
+ clan_deja:()=>_t("Tu es déjà dans un clan."),
+ clan_attente:()=>{const j=Math.max(1,Math.ceil(clanLeaveWait()/86400e3));return _t("Tu as quitté un clan il y a moins de {0} jours : encore {1} jour{2}.",[CLAN.LEAVE_WAIT_D,j,j>1?'s':'']);},
+ clan_complet:()=>_t("{0} membres maximum.",[CLAN.MAX]),
+ compte_trop_recent:()=>_t("Ton compte doit avoir plus de {0} jours ({1} aujourd’hui).",[CLAN.MIN_AGE_D,accountAgeD()]),
+ clan_nom_invalide:()=>_t("3 à 28 caractères."),
+ clan_tag_invalide:()=>_t('3 ou 4 lettres ou chiffres.'),
+ clan_tag_pris:()=>_t("Tag déjà pris"),
  ordre_indisponible:()=>_t("Cet ordre n’est plus en attente."),
  trop_ordres:()=>_t("Trop d’ordres en attente : annules-en un avant d’en placer un autre."),
  stop_invalide:()=>_t("Le stop loss doit être sous le prix actuel."),
@@ -87,12 +111,12 @@ const srvErreur=e=>{if(e&&e.code==='session'){srvSessionPerdue();return;}if(e&&e
 /* ----- Ce qui n'est pas encore relié au serveur est clairement indisponible en mode serveur -----
    La liste se vide au fil des lots (voir docs/PLAN.md). Le test tests/compte/garde.spec.mjs vérifie qu'aucune action
    qui touche au solde, à l'XP ou à un état partagé n'est exécutée localement quand le serveur fait autorité. */
-const SRV_BLOQUE=new Set(('share-pick vote '
- +'cp-start cp-stop-do cp-edit cp-manage cp-pause cp-stop cp-open stk-create stack-open '
- +'sr-share cl-war-join cl-sim cl-join cl-apply cl-leave-do cl-share cl-promote cl-kick cl-invite cl-call-do cl-war cl-feedopt cl-create-open cl-leave cl-call-open cl-war-open '
- +'pro-sh-send pro-share follow-user follow-bet follow-pbet share propose react '
+const SRV_BLOQUE=new Set(('share-pick '
+ +'stk-create stack-open '
+ +'sr-share cl-war-join cl-sim cl-share cl-promote cl-kick cl-invite cl-call-do cl-war cl-call-open '
+ +'pro-sh-send pro-share follow-user follow-bet follow-pbet share react '
  +'wallet wallet-modal demo-login demo-rank demo-rank-open demo-rank-reset').split(/\s+/));
-const SRV_FORMS_BLOQUE=new Set(['create','clan','clcode']);
+const SRV_FORMS_BLOQUE=new Set([]);
 const srvBientot=()=>toast({tone:'amber',icon:'info',force:true,title:_t("Bientôt disponible avec ton compte"),text:_t("Cette fonction marche déjà en mode démo. Elle arrive pour les comptes.")});
 function srvGarde(type,nom){
  if(!SRV())return true;
@@ -117,6 +141,20 @@ const NOTIF_T={
  duel_expire:p=>_t("Duel expiré sans réponse : {0}. Ta mise t’est rendue.",[MK[p.m]?MK[p.m].short:p.m]),
  duel_gagne:p=>_t("{0} contre {1} : {2}.",[_t("Duel gagné"),userOf(p.u).n,MK[p.m]?MK[p.m].short:p.m]),
  duel_perdu:p=>_t("{0} contre {1} : {2}.",[_t("Duel perdu"),userOf(p.u).n,MK[p.m]?MK[p.m].short:p.m]),
+ prop_vote:p=>_t("Ta proposition « {0} » est en vote.",[p.q||'']),
+ prop_live:p=>_t("Ton pari « {0} » est en ligne.",[p.q||'']),
+ copie_debut:p=>_t("Tu copies maintenant {0} (budget {1}, {2}).",[userOf(p.u).n,F.usd0(+p.budget),cModeTxt({mode:p.mode,pct:+p.pct,cap:+p.cap,per:+p.per})]),
+ copie_ouverte:p=>_t("Copie de {0} : {1} sur {2}, {3}.",[userOf(p.u).n,F.usd(+p.amt),p.s==='oui'?_t("Oui"):_t("Non"),MK[p.m]?MK[p.m].short:p.m]),
+ copie_sortie:p=>_t("{0} a vendu ses parts {1} sur {2} : {3} sur ta copie.",[userOf(p.u).n,p.s==='oui'?_t("Oui"):_t("Non"),MK[p.m]?MK[p.m].short:p.m,F.signed(+p.pnl)]),
+ copie_a_sec:p=>_t("{0} sur la copie de {1} : ses nouveaux paris ne sont plus copiés.",[p.why==='budget'?_t("Budget épuisé"):_t("Solde insuffisant"),userOf(p.u).n]),
+ copie_stop:p=>_t("Arrêt de perte atteint sur la copie de {0} : positions vendues, {1}.",[userOf(p.u).n,F.signed(+p.pnl)]),
+ copie_fin:p=>_t("{0} n’est plus copiable : ta copie est arrêtée, tes positions restent ouvertes.",[userOf(p.u).n]),
+ copie_revenu:p=>_t("Revenus de copie : {0} grâce à tes {1} copieurs.",[F.signed(+p.gain),F.int(+p.n)]),
+ clan_rejoint:p=>CK[p.id]?_t("Tu as rejoint le clan {0} [{1}].",[CK[p.id].name,CK[p.id].tag]):'',
+ clan_accepte:p=>CK[p.id]?_t("Tu as rejoint le clan {0} [{1}].",[CK[p.id].name,CK[p.id].tag]):'',
+ clan_refuse:p=>CK[p.id]?_t("{0} a refusé ta candidature.",[CK[p.id].name]):'',
+ clan_cree:p=>_t("Clan {0} [{1}] créé. {2} de frais, non remboursables.",[p.name||'',p.tag||'',F.usd0(CLAN.FEE)]),
+ clan_chef:p=>_t("Tu es maintenant le chef du clan {0}.",[CK[p.id]?CK[p.id].name:'']),
  ordre_place:p=>p.k==='sell'?_t("{0} : {1} parts {2} à {3}, {4}.",[p.done?_t("Vente exécutée"):_t("Ordre de vente placé"),F.d1(+p.n),sideTxt(p.s),F.c(+p.lp),MK[p.m]?MK[p.m].short:p.m])
   :_t("{0} : {1} sur {2} à {3} maximum, {4}.",[p.done?_t("Ordre exécuté"):_t("Ordre limite placé"),F.usd(+p.n),sideTxt(p.s),F.c(+p.lp),MK[p.m]?MK[p.m].short:p.m]),
  ordre_execute:p=>_t("{0} {1} : {2} parts {3} à {4}, {5}.",[p.k==='buy'?_t("Ordre limite"):_t("Vente limite"),p.done?_t("exécuté"):_t("exécuté en partie"),F.d1(+p.sh),sideTxt(p.s),F.c1(+p.avg),MK[p.m]?MK[p.m].short:p.m]),
@@ -157,13 +195,13 @@ const histCombo=h=>{const [,res,n,x]=h.q.split('|');
  return {k:'combo',q:res==='c'?_t("Combiné {0} sélections, encaissé à {1}",[n,F.usd(+x)]):res==='g'?_t("Combiné {0} sélections gagné à ×{1}",[n,F.d2(+x)]):_t("Combiné {0} sélections : perdu sur {1}",[n,MK[x]?MK[x].short:x]),s:h.s,win:!!h.win,pnl:+h.pnl,at:h.at};};
 const histDe=h=>{if(typeof h.q==='string'&&h.q.startsWith('combo|'))return histCombo(h);if(typeof h.q==='string'&&h.q.startsWith('duel|'))return histDuel(h);if(h.k==='flash'&&typeof h.q==='string'&&h.q.startsWith('serie|'))return histSerie(h);if(h.k==='flash'&&typeof h.q==='string'&&h.q.startsWith('blitz|'))return histBlitz(h);if(h.k==='flash'&&typeof h.q==='string'&&h.q.startsWith('eclair|')){const [,gid,r]=h.q.split('|'),d=GM[gid];
   return {k:'flash',q:d?_t("Éclair {0}, manche {1} : {2}",[d.name,F.int(+r),sideLabel(d,h.s)]):h.q,s:h.s==='non'?'non':'oui',eq:h.s==='be',win:!!h.win,pnl:+h.pnl,at:h.at};}
- /* une vente faite par un ordre limite ou une protection porte son origine : « via|limit », « via|stop », « via|tp » */
-  const via=h.k==='sell'&&typeof h.q==='string'&&h.q.startsWith('via|')?h.q.slice(4):undefined;
- return {k:h.k,m:h.m||undefined,q:h.m&&MK[h.m]?MK[h.m].q:(via?h.m||'':(h.q||h.m||'')),s:h.s,win:!!h.win,pnl:+h.pnl,at:h.at,via};};
+ /* une vente faite pour le joueur par le serveur porte son origine : « via|copy|identifiant du joueur copié » */
+ const via=h.k==='sell'&&typeof h.q==='string'&&h.q.startsWith('via|')?h.q.split('|'):null;
+ return {k:h.k,m:h.m||undefined,q:h.m&&MK[h.m]?MK[h.m].q:(via?h.m||'':(h.q||h.m||'')),s:h.s,win:!!h.win,pnl:+h.pnl,at:h.at,via:via?via[1]:undefined,of:via&&via[2]?userOf(via[2]).n:undefined};};
 const miseDe=m=>({id:m.id,s:m.s,amt:+m.amt,fee:+m.fee,net:+m.net,price:m.price,mult:+m.mult,tk:m.tk|0});
 
 /* ----- Annuaire : les fiches des joueurs viennent du serveur, clé = identifiant du joueur ----- */
-function srvFiches(map){for(const id in map||{}){const f=map[id];USERS[id]=Object.assign(USERS[id]||{},{n:f.n,t:f.t|0,d:f.d|0,tone:f.tone|0,profit:+f.profit||0,acc:f.acc|0,bets:f.bets|0,fol:f.fol|0,bio:f.bio||'',photo:f.photo||'',color:f.color||'',bot:!!f.bot,pub:f.pub===0?0:1});delete FANTOMES[id];}
+function srvFiches(map){for(const id in map||{}){const f=map[id];USERS[id]=Object.assign(USERS[id]||{},{n:f.n,t:f.t|0,d:f.d|0,tone:f.tone|0,profit:+f.profit||0,acc:f.acc|0,bets:f.bets|0,fol:f.fol|0,bio:f.bio||'',photo:f.photo||'',color:f.color||'',bot:!!f.bot,pub:f.pub===0?0:1,clan:f.clan||null,cp:f.cp===0?0:1});delete FANTOMES[id];}
  USER_IDS.length=0;USER_IDS.push(...Object.keys(USERS));}
 
 /* ----- Hydratation : réponse de api_state → S.me ----- */
@@ -185,6 +223,9 @@ function hydrater(e){
  me.serie=serieDe(e.serie);SRV_BZ.aRegler=(e.blitz||[]).slice();
  me.combos=(e.combos||[]).map(comboDe);
  me.orders=(e.orders||[]).filter(o=>MK[o.m]).map(ordreDe);me.guards=(e.guards||[]).filter(g=>MK[g.m]).map(gardeDe);   /* ordres limite et protections : tenus par le serveur */
+ srvClan(e.clan,me,e.uid);                                                    /* clans : son clan, sa contribution, ses candidatures, les clans créés par des joueurs */
+ srvCopies(e.copies,me);                                                      /* copy trading : ses copies, et ses copieurs */
+ srvProps(e.props,me);                                                        /* propositions de marché : les siennes, et celles à voter */
  if(e.ref){me.refCode=e.ref.code||'';me.refBy=e.ref.by||undefined;                         /* parrainage : code, parrain et filleuls viennent du serveur */
   me.referrals=(e.ref.list||[]).map(r=>({n:r.n,at:+r.at,st:r.st==='done'?'done':'pending',paid:+r.paid||0,doneAt:r.doneAt?+r.doneAt:undefined}));}
  if(e.duels){srvFiches(e.duels.users);me.duels=(e.duels.liste||[]).map(x=>duelDe(x,e.uid));}   /* au démarrage, l'identifiant du joueur vient de l'état lui-même */
@@ -205,7 +246,7 @@ function hydrater(e){
 function srvAppliquer(r,ev){if(!r)return;srvEtat(r);srvEvenements(r,ev);}
 /* 1. l'état : ce que dit le serveur remplace ce que l'écran croyait */
 function srvEtat(r){
- if(r.me){const garde={since:S.me.since,createdAt:S.me.createdAt,logged:true,interests:(r.me.interests||S.me.interests||[]).slice()};Object.assign(S.me,r.me,garde);}
+ if(r.me){const garde={since:S.me.since,createdAt:S.me.createdAt,logged:true,copiers:S.me.copiers|0,interests:(r.me.interests||S.me.interests||[]).slice()};Object.assign(S.me,r.me,garde);}
 }
 /* 2. les événements : XP gagnée, notification, badge, mission, passage de rang */
 function srvEvenements(r,ev){
@@ -546,6 +587,171 @@ async function srvSerieRegler(){
 }
 planifier('serveur : série',1000,()=>{if(typeof serieTick==='function')serieTick();},'serveur');
 
+/* ----- Propositions de marché : envoi, votes et mise en ligne tenus par le serveur. Tant qu'une proposition du joueur est
+   en vote, l'écran relit le compte toutes les 3 secondes ; le pari validé arrive comme un marché du serveur. ----- */
+let SRV_COMM=null,srvPropOccupe=false;
+const propDe=x=>{const d=x.code&&SRV_COMM?SRV_COMM[x.code]:null;                 /* contenu de démonstration : titre traduit, comme en mode Démo */
+ return {id:String(x.id),q:d?d.q:x.q,cat:x.cat,date:x.date||'',time:x.time||'21:00',src:x.src||'',rules:x.rules||'',p0:+x.p0,status:x.status,for:+x.for,against:+x.against,need:+x.need,at:+x.at,mid:x.mid||undefined,by:x.by||(d?d.by:undefined)};};
+function srvProps(p,me){
+ if(!p)return;me=me||S.me;
+ if(!SRV_COMM){SRV_COMM={};for(const c of COMM_PROPS)SRV_COMM[c.id]=Object.assign({},c);}
+ srvFiches(p.users);me.props=(p.mine||[]).map(propDe);me.voted={};
+ COMM_PROPS.length=0;for(const x of p.vote||[]){const pr=propDe(x);COMM_PROPS.push(pr);if(x.voted)me.voted[pr.id]=x.voted;}
+}
+/* une réponse du serveur : compteurs mis à jour sur place ; un pari passé en ligne est annoncé une fois son marché chargé */
+function srvPropsAppliquer(r,ev){
+ const avant=new Map((S.me.props||[]).map(p=>[p.id,p.status]));
+ srvProps(r.props);srvAppliquer(r,ev);
+ const neufs=S.me.props.filter(p=>p.status==='live'&&avant.get(p.id)==='vote');
+ for(const pr of S.me.props){
+  $$(`[data-prv="${pr.id}"]`).forEach(e=>e.textContent=`${_t("{0} pour, {1} contre",[pr.for,pr.against])}`);
+  $$(`[data-prb="${pr.id}"]`).forEach(e=>e.style.width=Math.min(100,pr.for/pr.need*100)+'%');
+  $$(`[data-prc="${pr.id}"]`).forEach(e=>e.textContent=`${Math.min(pr.for,pr.need)} / ${pr.need}`);}
+ if(neufs.length)srvMarches().then(()=>{for(const pr of neufs){const m=MK[pr.mid];if(!m)continue;
+   toast({tone:'blue',icon:'check',force:true,title:_t("Ton pari est en ligne"),text:F.kv(m.short,'+'+F.xp(50)),href:'#marche-'+m.id,dur:6000});if(typeof confetti==='function')confetti(40);}
+  refreshMine();}).catch(e=>console.warn('[srv] marchés indisponibles',e&&e.code));
+}
+async function srvPropCreer(dr){
+ if(srvPropOccupe)return;srvPropOccupe=true;
+ try{const r=await API.call('api_proposal_create',{p:{q:dr.q.trim(),cat:dr.cat,date:dr.date,time:dr.time,src:dr.src.trim(),rules:dr.rules.trim(),p0:+dr.p0}});
+  srvProps(r.props);
+  S.ui.draft={q:'',cat:dr.cat,date:'',time:'21:00',src:'',rules:'',p0:50};S.ui.crTab='mine';
+  toast({tone:'blue',icon:'check',title:_t("Proposition envoyée au vote"),text:_t("Tu la retrouves dans Mes paris créés, sur l’accueil et sur ton profil.")});
+  srvAppliquer(r);render(true);}
+ catch(e){srvErreur(e);}
+ finally{srvPropOccupe=false;}
+}
+async function srvPropVoter(p,v,ev){
+ if(srvPropOccupe)return;srvPropOccupe=true;
+ try{const r=await API.call('api_proposal_vote',{p_id:+p.id,p_vote:v});srvProps(r.props);srvAppliquer(r,ev);render(false);}
+ catch(e){srvErreur(e);if(e&&(e.code==='proposition_indisponible'||e.code==='deja_vote')){srvVu=0;srvRafraichir();}}
+ finally{srvPropOccupe=false;}
+}
+async function srvPropsTick(){
+ if(!SRV()||srvPropOccupe||!(S.me.props||[]).some(p=>p.status==='vote'))return;
+ srvPropOccupe=true;
+ try{srvPropsAppliquer(await API.call('api_proposals'));}
+ catch(e){if(e&&e.code==='session')srvSessionPerdue();}
+ finally{srvPropOccupe=false;}
+}
+planifier('serveur : propositions',3000,srvPropsTick,'serveur');
+
+/* ----- Copy trading : le serveur reproduit les paris et les ventes du joueur copié, surveille l'arrêt de perte et reverse
+   la part des frais. L'écran ne simule plus rien en mode Compte (copyFire, traderExit, copyGuard, copierFees éteints). ----- */
+const copieDe=c=>({id:String(c.id),u:c.u,at:+c.at,status:c.status,why:c.why||undefined,budget:+c.budget,mode:c.mode,per:+c.per,pct:+c.pct,cap:+c.cap,cats:c.cats&&c.cats.length?c.cats.slice():null,stop:+c.stop,
+ realized:+c.realized,n:c.n|0,given:+c.given,endPnl:+c.endPnl,kept:c.kept|0,end:c.end||undefined,
+ holds:(c.holds||[]).filter(h=>MK[h.m]).map(h=>({m:h.m,s:h.s,sh:+h.sh,cost:+h.cost})),
+ log:(c.log||[]).map(x=>({k:x.k,m:x.m,s:x.s,amt:x.amt==null?undefined:+x.amt,pnl:x.pnl==null?undefined:+x.pnl,why:x.why,at:+x.at}))});
+function srvCopies(p,me){if(!p)return;me=me||S.me;srvFiches(p.users);me.copies=(p.list||[]).map(copieDe);me.copiers=p.copiers|0;me.copyEarn=+p.earn||0;}
+const SRV_TOAST={
+ copie_ouverte:p=>{const m=MK[p.m];if(m)toast({tone:'blue',icon:'copy',title:`${_t("Copie de {0}",[userOf(p.u).n])}`,text:`${_t("{0} sur {1}, {2}",[F.usd(+p.amt),p.s==='oui'?_t("Oui"):_t("Non"),m.short])}`,href:'#copie'});},
+ copie_sortie:p=>{const m=MK[p.m];if(m)toast({tone:+p.pnl>=0?'green':'red',icon:'copy',title:`${_t("{0} a vendu, ta copie aussi",[userOf(p.u).n])}`,text:F.kv(m.short,F.signed(+p.pnl)),href:'#copie'});},
+ copie_a_sec:p=>toast({tone:'amber',icon:'copy',title:F.kv(p.why==='budget'?_t("Budget épuisé"):_t("Solde insuffisant"),userOf(p.u).n),text:_t("Ses nouveaux paris ne sont plus copiés."),href:'#copie'}),
+ copie_stop:p=>toast({tone:'red',icon:'copy',title:`${_t("Arrêt de perte : {0}",[userOf(p.u).n])}`,text:`${_t("Copie arrêtée et positions vendues, {0}.",[F.signed(+p.pnl)])}`,href:'#copie',dur:6000}),
+ copie_revenu:p=>toast({tone:'green',icon:'copy',title:`${_t("Tes {0} copieurs t’ont rapporté {1}",[F.int(+p.n),F.signed(+p.gain)])}`,text:`${_t("{0} % des frais de leurs paris copiés, crédités sur ton solde.",[sharePct()])}`,href:'#copie',dur:3600})
+};
+let srvCopieOccupe=false;
+async function srvCopieDemarrer(st,cfg,u){
+ if(srvCopieOccupe)return;srvCopieOccupe=true;
+ try{
+  const p={u,budget:cfg.budget,mode:cfg.mode,per:cfg.per,pct:cfg.pct,cap:cfg.cap,cats:cfg.cats||[],stop:cfg.stop};
+  if(st.edit)p.edit=+st.edit;
+  else if(($('[data-cp-existing]')||{}).checked){p.withOpen=true;p.existing=playerBets(u).map(b=>({m:b.m.id,s:b.s,amt:b.amt}));}   /* « copier aussi ses paris en cours » */
+  const r=await API.call('api_copy_start',{p});
+  srvCopies(r.copies);S.ui.cp=null;closeModal();
+  const c=S.me.copies.find(x=>x.id===String(r.copie)),U=userOf(u),n=r.ouvertes|0;
+  if(st.edit)toast({icon:'check',title:`${_t("Réglages enregistrés")}`,text:c?`${cModeTxt(c)} · ${cCatsTxt(c)}`:'',dur:2600});
+  else toast({tone:'blue',icon:'copy',title:`${_t("Tu copies {0}",[U.n])}`,text:n?`${_t("{0} position{1} copiée{1}. Ses prochains paris seront copiés automatiquement.",[n,n>1?'s':''])}`:_t("Ses prochains paris seront copiés automatiquement."),href:'#copie'});
+  srvAppliquer(r);copyRefresh();
+  if(n){srvVu=0;srvRafraichir();}                                    /* des paris ont été copiés tout de suite : positions et solde relus */
+ }catch(e){srvErreur(e);}
+ finally{srvCopieOccupe=false;}
+}
+async function srvCopieRegler(c,action,modale){
+ if(srvCopieOccupe)return;srvCopieOccupe=true;
+ try{
+  const r=await API.call('api_copy_set',{p_id:+c.id,p_action:action}),U=userOf(c.u);
+  srvCopies(r.copies);srvAppliquer(r);
+  const neuf=S.me.copies.find(x=>x.id===c.id);
+  if(action==='pause'||action==='resume'){
+   toast({icon:'copy',title:action==='pause'?`${_t("Copie de {0} en pause",[U.n])}`:`${_t("Copie de {0} reprise",[U.n])}`,text:action==='pause'?_t("Ses nouveaux paris ne sont plus copiés, tes positions restent ouvertes."):_t("Ses prochains paris seront copiés."),force:true,dur:2600});
+   if(modale&&neuf){modale.innerHTML=copyManageH(neuf);fixText(modale);}
+  }else{const vendre=action==='stop_close',kept=r.kept|0;closeModal();
+   toast({icon:'check',force:true,title:`${_t("Copie de {0} arrêtée",[U.n])}`,text:vendre?`${_t("Positions vendues, {0}.",[F.signed(+r.endPnl)])}`:kept?`${_t("{0} position{1} dans ton portefeuille.",[kept,kept>1?'s restent ouvertes':' reste ouverte'])}`:'',dur:3200});
+   if(vendre){srvVu=0;srvRafraichir();}}                             /* positions vendues : portefeuille, solde et historique relus */
+  copyRefresh();
+ }catch(e){srvErreur(e);if(e&&e.code==='copie_indisponible'){srvVu=0;srvRafraichir();}}
+ finally{srvCopieOccupe=false;}
+}
+
+/* ----- Clans : l'appartenance, la création (frais), les candidatures et la contribution sont tenues par le serveur.
+   L'annuaire des 100 clans de démonstration reste celui de l'écran (le serveur a le même : tests/fixtures/clans-demo.json) ;
+   les clans créés par des joueurs viennent du serveur et s'y ajoutent. Guerres, appels, chat de clan : indisponibles. ----- */
+function srvClanObjet(x,moi){
+ const m=x.members||[],chefMoi=x.chief===moi;
+ const c=CK[x.id]||{id:x.id,div:'bronze',roi:0,coef:1,war:null,calls:[],feed:[],wars:[],rank:20,srv:true};
+ Object.assign(c,{name:x.name,tag:x.tag,emblem:{ic:x.emblem.ic,col:x.emblem.col},lang:(x.lang||['fr']).slice(),cats:(x.cats||[]).slice(),desc:x.desc||'',access:x.access,minRank:x.minRank|0,
+  chief:chefMoi?'me':x.chief,officers:m.filter(y=>y.role==='officier'&&y.u!==moi).map(y=>y.u),members:m.filter(y=>y.u!==moi).map(y=>({u:y.u,since:+y.since,pts:+y.pts||0})),
+  createdAt:+x.createdAt,mine:chefMoi,code:x.code||undefined});
+ c.n=c.members.length;c.xp=m.reduce((t,y)=>t+(+y.pts||0),0);c.score=Math.round(c.xp);
+ if(!CK[x.id]){CLANS.push(c);CK[x.id]=c;}
+ return c;
+}
+function srvClan(p,me,moi){
+ if(!p)return;me=me||S.me;moi=moi||srvMoi();
+ srvFiches(p.users);for(const x of p.clans||[])srvClanObjet(x,moi);
+ me.clan=p.mine&&CK[p.mine.id]?{id:p.mine.id,role:p.mine.role,since:+p.mine.since}:null;
+ me.clanXP=p.mine?+p.mine.xp||0:0;me.clanVol=p.mine?{[today()]:+p.mine.jour||0}:{};me.clanSkipped=p.mine?p.mine.ecartes|0:0;
+ me.clanApps=Object.assign({},p.apps||{});me.clanLeftAt=p.leftAt?+p.leftAt:0;
+}
+let srvClanOccupe=false;
+const srvClanVue=()=>{updateHeader();if((S.ui.route||'').startsWith('clan'))render(false);};
+async function srvClanRejoindre(c,viaCode,code,err){
+ if(srvClanOccupe)return;srvClanOccupe=true;
+ try{const r=await API.call('api_clan_join',{p_clan:c?c.id:null,p_code:viaCode?(code||clanCode(c)):null});
+  srvClan(r.clan);srvAppliquer(r);const k=myClan();if(!k)return;
+  toast({tone:'green',icon:'shield',force:true,title:`${_t("Bienvenue chez {0} [{1}]",[k.name,k.tag])}`,text:_t("Ton tag apparaît désormais à côté de ton pseudo."),href:'#clan-'+k.id});
+  if(viaCode)location.hash='#clan-'+k.id;srvClanVue();}
+ catch(e){if(err&&e&&(e.code==='clan_inconnu'||e.code==='clan_ferme'))err.textContent=errTxt(e);else srvErreur(e);}
+ finally{srvClanOccupe=false;}
+}
+async function srvClanCandidater(c){
+ if(srvClanOccupe)return;srvClanOccupe=true;
+ try{const r=await API.call('api_clan_apply',{p_clan:c.id});srvClan(r.clan);srvAppliquer(r);
+  toast({tone:'blue',icon:'send',title:_t("Candidature envoyée"),text:`${_t("Un officier de {0} doit la valider.",[c.name])}`});srvClanVue();}
+ catch(e){srvErreur(e);}
+ finally{srvClanOccupe=false;}
+}
+async function srvClanQuitter(c){
+ if(srvClanOccupe)return;srvClanOccupe=true;
+ try{const r=await API.call('api_clan_leave');srvClan(r.clan);srvAppliquer(r);
+  toast({icon:'info',force:true,title:`${_t("Tu as quitté {0}",[c.name])}`,text:`${_t("Tu pourras rejoindre un autre clan dans {0} jours.",[CLAN.LEAVE_WAIT_D])}`});srvClanVue();}
+ catch(e){srvErreur(e);}
+ finally{srvClanOccupe=false;}
+}
+async function srvClanCreer(f,name,tag){
+ if(srvClanOccupe)return;srvClanOccupe=true;
+ try{const r=await API.call('api_clan_create',{p:{name,tag,desc:(f.desc||'').trim(),ic:f.ic||'shield',col:f.col||'#2448FF',lang:f.lang||[],cats:f.cats||[],access:f.access,minRank:+f.minRank||0}});
+  srvClan(r.clan);const c=CK[r.id];closeModal();S.ui.clc=null;
+  if(c)toast({tone:'green',icon:'shield',force:true,title:`${_t("{0} [{1}] est créé",[c.name,c.tag])}`,text:_t("Tu es le chef. Invite des membres et nomme jusqu’à 5 officiers."),href:'#clan-'+c.id});
+  if(typeof confetti==='function')confetti(30);srvAppliquer(r);location.hash='#clan-'+r.id;srvClanVue();}
+ catch(e){srvErreur(e);}
+ finally{srvClanOccupe=false;}
+}
+/* une candidature en attente : l'écran relit toutes les 3 secondes, jusqu'à la réponse de l'officier */
+async function srvClanTick(){
+ if(!SRV()||srvClanOccupe||!Object.keys(S.me.clanApps||{}).length)return;
+ srvClanOccupe=true;
+ try{const avant=Object.keys(S.me.clanApps),r=await API.call('api_clan');srvClan(r.clan);srvAppliquer(r);
+  const k=myClan(),finies=avant.filter(id=>!(id in S.me.clanApps));
+  if(k&&finies.includes(k.id))toast({tone:'green',icon:'shield',force:true,title:`${_t("Bienvenue chez {0} [{1}]",[k.name,k.tag])}`,text:_t("Ta candidature a été acceptée par un officier."),href:'#clan-'+k.id});
+  else for(const id of finies)if(CK[id])toast({tone:'amber',icon:'info',title:_t("Candidature refusée"),text:`${_t("{0} n’a pas retenu ta candidature cette fois.",[CK[id].name])}`});
+  if(finies.length)srvClanVue();}
+ catch(e){if(e&&e.code==='session')srvSessionPerdue();}
+ finally{srvClanOccupe=false;}
+}
+planifier('serveur : clans',3000,srvClanTick,'serveur');
+
 /* ----- Ordres limite, stop loss et take profit : le serveur réserve le montant, exécute (tout de suite, puis toutes les
    3 secondes) et règle. L'écran ne fait qu'afficher : ordersCheck et ordersTick ne tournent pas en mode Compte. ----- */
 const ordreDe=o=>({id:String(o.id),m:o.m,s:o.s,k:o.k,lp:+o.lp,init:+o.init,cash:+o.cash,sh:+o.sh,spent:+o.spent,fee:+o.fee,pro:+o.pro,pnl:+o.pnl,at:+o.at,status:o.status,why:o.why||undefined,last:o.last?+o.last:undefined,end:o.end?+o.end:undefined});
@@ -556,7 +762,7 @@ function srvOrdresMaj(r){
  if(r.positions)S.me.positions=r.positions.filter(p=>MK[p.m]).map(p=>({m:p.m,s:p.s,sh:+p.sh,avg:+p.avg}));
  if(r.marches)srvMarchesMaj(r.marches);
 }
-const SRV_TOAST={
+Object.assign(SRV_TOAST,{
  ordre_execute:p=>{const m=MK[p.m];if(!m)return;
   if(p.k==='buy')toast({tone:'blue',icon:'check',title:p.done?_t("Ordre limite exécuté"):_t("Ordre limite exécuté en partie"),text:`${_t("{0} parts {1} à {2} sur {3}",[F.d1(+p.sh),sideTxt(p.s),F.c1(+p.avg),m.short])}`,href:'#marche-'+m.id});
   else toast({tone:+p.pnl>=0?'green':'red',icon:'check',title:p.done?_t("Vente limite exécutée"):_t("Vente limite exécutée en partie"),text:`${_t("{0} parts à {1} sur {2}, {3}",[F.d1(+p.sh),F.c1(+p.avg),m.short,F.signed(+p.pnl)])}`,href:'#marche-'+m.id});},
@@ -565,7 +771,7 @@ const SRV_TOAST={
   else toast({tone:'amber',icon:'info',title:_t("Ordre annulé"),text:NOTIF_T.ordre_annule(p)});},
  protection:p=>{const m=MK[p.m];if(!m)return;
   toast({tone:+p.pnl>=0?'green':'red',icon:'shield',title:p.k==='stop'?_t("Stop loss déclenché"):_t("Take profit atteint"),text:`${_t("{0} parts {1} vendues à {2} sur {3} : {4}",[F.d1(+p.sh),sideTxt(p.s),F.c1(+p.avg),m.short,F.signed(+p.pnl)])}`,href:'#profil',dur:6000});}
-};
+});
 let srvOrdreOccupe=false;
 async function srvOrdrePlacer(ctx,ev,st,m,c){
  if(srvOrdreOccupe)return;srvOrdreOccupe=true;
@@ -777,8 +983,8 @@ function srvPerso(evt,d){
  if(evt==='notif'&&d&&d.n){
   if(S.me.notifs.some(x=>x.id===d.n.id))return;
   S.me.notifs.unshift(notifDe(d.n));S.me.notifs=S.me.notifs.slice(0,30);updateBell();
-  if(SRV_TOAST[d.n.code]){try{SRV_TOAST[d.n.code](d.n.p||{});}catch(e){}}                             /* ordre exécuté ou protection déclenchée pendant que le joueur regarde */
-  if(/^fr_|^duel_|^combo_|^parrain_|^ordre_|^protection$|^marche_resolu$|^admin_solde$|^kyc_ok$|^blitz_gagne$/.test(d.n.code||'')){srvVu=0;srvRafraichir();}                   /* demande d'ami ou acceptation : les listes viennent du serveur */
+  if(SRV_TOAST[d.n.code]){try{SRV_TOAST[d.n.code](d.n.p||{});}catch(e){}}                             /* ce que le serveur vient de faire pour le joueur, annoncé comme en mode Démo */
+  if(/^fr_|^duel_|^combo_|^parrain_|^prop_|^copie_|^clan_|^ordre_|^protection$|^marche_resolu$|^admin_solde$|^kyc_ok$|^blitz_gagne$/.test(d.n.code||'')){srvVu=0;srvRafraichir();}                   /* demande d'ami ou acceptation : les listes viennent du serveur */
  }
 }
 

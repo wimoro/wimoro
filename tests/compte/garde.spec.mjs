@@ -17,6 +17,16 @@ const RELIEES = {
   'ACT.ord-cancel': 'api_order_cancel — tests/compte/ordres.spec.mjs',
   'ACT.guard-save': 'api_guard_set — tests/compte/ordres.spec.mjs',
   'ACT.guard-del': 'api_guard_del — tests/compte/ordres.spec.mjs',
+  'ACT.cl-join': 'api_clan_join — tests/compte/clans.spec.mjs',
+  'ACT.cl-apply': 'api_clan_apply (réponse de l’officier donnée par le serveur) — tests/compte/clans.spec.mjs',
+  'ACT.cl-leave-do': 'api_clan_leave — tests/compte/clans.spec.mjs',
+  'FORMS.clan': 'api_clan_create (frais, rang, ancienneté, tag unique) — tests/compte/clans.spec.mjs',
+  'FORMS.clcode': 'api_clan_join par code — tests/compte/clans.spec.mjs',
+  'ACT.cp-start': 'api_copy_start (copie créée ou réglée par le serveur) — tests/compte/copies.spec.mjs',
+  'ACT.cp-pause': 'api_copy_set — tests/compte/copies.spec.mjs',
+  'ACT.cp-stop-do': 'api_copy_set (arrêt, avec ou sans vente des positions) — tests/compte/copies.spec.mjs',
+  'FORMS.create': 'api_proposal_create (rang, texte filtré, votes et mise en ligne par le serveur) — tests/compte/propositions.spec.mjs',
+  'ACT.vote': 'api_proposal_vote — tests/compte/propositions.spec.mjs',
   'ACT.ref-copy': 'le code et le lien viennent du serveur (api_state → ref) — tests/compte/parrainage.spec.mjs',
   'ACT.ref-share': 'le code et le lien viennent du serveur (api_state → ref) — tests/compte/parrainage.spec.mjs',
   'ACT.cb-place': 'api_combo_place (prix bloqués, mise prise par le serveur) — tests/compte/combines.spec.mjs',
@@ -88,10 +98,10 @@ test('une action pas encore reliée est clairement indisponible : message, et ri
   const n0 = await lire(page, () => __fakeSB.calls.length);
   await page.evaluate(() => { location.hash = '#chat'; });
   await page.evaluate(() => { location.hash = '#eclair'; });
-  await page.evaluate(() => { const b = document.createElement('button'); b.dataset.a = 'cp-start'; document.body.appendChild(b); b.click(); b.remove(); });   // copy trading
+  await page.evaluate(() => { const b = document.createElement('button'); b.dataset.a = 'cl-war'; document.body.appendChild(b); b.click(); b.remove(); });   // guerres de clans
   await expect(page.locator('.toast', { hasText: 'Coming soon for accounts' }).first()).toBeVisible();
   await page.evaluate(() => { ACT.withdraw && document.dispatchEvent(new Event('x')); });
-  for (const a of ['stk-create', 'cl-join', 'cp-start', 'sr-share'])
+  for (const a of ['stk-create', 'cl-war', 'cl-war-join', 'sr-share'])
     await page.evaluate(nom => { const b = document.createElement('button'); b.dataset.a = nom; b.dataset.u = 'x'; b.dataset.m = 'btc150k'; document.body.appendChild(b); b.click(); b.remove(); }, a);
   const apres = await lire(page, () => JSON.stringify({ solde: S.me.balance, xp: S.me.xp, pos: S.me.positions, hist: S.me.history, notifs: S.me.notifs.length, prix: MK.btc150k.p, messages: Object.values(S.rooms).reduce((n, r) => n + r.msgs.filter(x => x.k !== 'evt').length, 0) }));
   expect(apres).toBe(avant);

@@ -136,7 +136,7 @@ test('recette 3 · dépôt fictif → achat → rechargement → vente → recon
   expect(apresVente.solde).toBeGreaterThan(195); expect(apresVente.solde).toBeLessThan(200); // acheter puis revendre coûte l'écart et les frais
 
   // une fonction pas encore reliée est annoncée comme telle, et rien ne s'annule après 20 secondes (B05)
-  await page.evaluate(() => { const b = document.createElement('button'); b.dataset.a = 'cp-start'; document.body.appendChild(b); b.click(); b.remove(); });   // copy trading : pas encore relié
+  await page.evaluate(() => { const b = document.createElement('button'); b.dataset.a = 'cl-war'; document.body.appendChild(b); b.click(); b.remove(); });   // guerres de clans : pas encore reliées
   await expect(toast('Coming soon for accounts')).toBeVisible();
   await page.waitForTimeout(20000);
   expect(await lire(page, () => ({ solde: S.me.balance, xp: S.me.xp, pos: S.me.positions.length }))).toEqual({ solde: apresVente.solde, xp: 210, pos: apresVente.pos });
@@ -414,7 +414,8 @@ test('La Série : lancée, jouée et réglée par le vrai serveur ; la manche ga
   expect(await lire(page, () => S.me.balance)).toBeCloseTo(solde0 - 5, 2);
   // Le moteur est déterministe : l'écran peut calculer l'issue de la manche à partir de l'heure de début donnée par le serveur.
   const prevu = await lire(page, () => { const s = S.me.serie, d = MoteurEclair.JEUX[s.gid]; return MoteurEclair.serieIssue(d, s.rStart + FSKEW); });
-  expect(prevu.p0, 'même prix de départ sur l’écran et sur le serveur').toBeCloseTo(await lire(page, () => S.me.serie.p0), 6);
+  const p0Serveur = await lire(page, () => S.me.serie.p0);                                      // écart relatif : un prix de 97 000 $ ne se compare pas au millionième de dollar
+  expect(Math.abs(prevu.p0 - p0Serveur) / Math.max(1, Math.abs(p0Serveur)), 'même prix de départ sur l’écran et sur le serveur').toBeLessThan(1e-9);
   await page.locator('[data-a="sr-play"][data-v="' + prevu.out + '"]').click();
   await expect.poll(() => lire(page, () => S.me.serie.choice), { timeout: 20000 }).toBe(prevu.out);
   const { mult, fee } = await lire(page, () => ({ mult: S.me.serie.mult, fee: S.me.serie.fee }));
@@ -580,4 +581,100 @@ test('parrainage : le code vient du vrai serveur ; un ami inscrit avec le lien r
   expect(await lire(pa, () => S.me.notifs.some(n => /placed their first bet, \$10 for you/.test(n.text)))).toBe(true);
   expect(erreursA).toEqual([]); expect(erreursD).toEqual([]);
   await ca.close(); await cd.close();
+});
+
+test('propositions de marché : un compte sans le rang Or est refusé par le vrai serveur ; voter pour une proposition de la communauté rapporte 2 XP, une seule fois', async ({ page }) => {
+  test.setTimeout(120000);
+  const erreurs = await ouvrirReel(page, '#connexion');
+  await page.locator('#le').fill(EMAIL); await page.locator('#lp').fill(MDP); await page.locator('form[data-form="login"] [type=submit]').click();
+  await expect(page).toHaveURL(/#accueil/, { timeout: 20000 }); await pret(page);
+  await page.evaluate(() => { location.hash = '#creer'; });
+  const demande = { q: 'Ce compte sans le rang Or pourra-t-il proposer ?', cat: 'Sport', date: new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10), time: '21:00', src: 'Source officielle', rules: 'Ce marché se résout par Oui si la proposition est acceptée.', p0: 50 };
+  expect(await page.evaluate(async p => { try { await API.call('api_proposal_create', { p }); return 'accepté'; } catch (e) { return e.code; } }, demande)).toBe('rang_insuffisant');
+  expect(await lire(page, () => (S.me.props || []).length)).toBe(0);
+
+  await page.locator('[data-a="cr-tab"][data-v="vote"]').click();
+  expect(await page.locator('.prop').count()).toBeGreaterThanOrEqual(3);                       // le contenu de démonstration vient du serveur
+  const p = await lire(page, () => { const x = COMM_PROPS.find(y => y.need === 50 && y.q === _t("Le PSG sera-t-il champion de France 2027 ?")); return x && { id: x.id, pour: x.for, contre: x.against, auteur: userOf(x.by).n }; });
+  expect(p).toMatchObject({ pour: 38, contre: 9 });                                            // personne d'autre n'a voté : les comptes de test repartent avec leurs votes
+  expect(p.auteur.length).toBeGreaterThan(2);
+  const xp0 = await lire(page, () => S.me.xp);
+  await page.locator('[data-a="vote"][data-id="' + p.id + '"][data-v="against"]').click();
+  await expect.poll(() => lire(page, id => S.me.voted[id], p.id), { timeout: 20000 }).toBe('against');
+  expect(await lire(page, id => ({ xp: S.me.xp, contre: COMM_PROPS.find(x => x.id === id).against }), p.id)).toEqual({ xp: xp0 + 2, contre: 10 });
+  expect(await page.evaluate(async id => { try { await API.call('api_proposal_vote', { p_id: +id, p_vote: 'for' }); return 'deux votes'; } catch (e) { return e.code; } }, p.id)).toBe('deja_vote');
+  await page.reload(); await pret(page);
+  expect(await lire(page, id => ({ vote: S.me.voted[id], xp: S.me.xp }), p.id)).toEqual({ vote: 'against', xp: xp0 + 2 });
+  expect(erreurs).toEqual([]);
+});
+
+test('copy trading : la page vient du vrai serveur ; sans le rang Or, copier est refusé par le serveur ; un pari ordinaire passe toujours (suivi des copies sans effet)', async ({ page }) => {
+  test.setTimeout(120000);
+  const erreurs = await ouvrirReel(page, '#connexion');
+  await page.locator('#le').fill(EMAIL); await page.locator('#lp').fill(MDP); await page.locator('form[data-form="login"] [type=submit]').click();
+  await expect(page).toHaveURL(/#accueil/, { timeout: 20000 }); await pret(page);
+  await page.evaluate(() => { location.hash = '#copie'; });
+  await pret(page);
+  expect(await lire(page, () => ({ copies: S.me.copies.length, copieurs: S.me.copiers, gains: S.me.copyEarn }))).toEqual({ copies: 0, copieurs: 0, gains: 0 });
+  // un bot du vrai serveur : copiable, mais pas par un compte sans le rang Or
+  const bot = await page.evaluate(async () => { const r = await API.call('api_leaderboard', {}); const l = (r.top || r.list || r.rows || []).find(x => x.bot || x.is_demo) || (r.top || r.list || r.rows || [])[0]; return l && (l.id || l.u || l.user_id); }).catch(() => null);
+  const cible = bot || await lire(page, () => COMM_PROPS.map(p => p.by).find(Boolean));          // à défaut : l'auteur (un bot) d'une proposition de démonstration
+  expect(cible, 'un bot du serveur est connu de l’écran').toBeTruthy();
+  const demande = { u: cible, budget: 100, mode: 'fixed', per: 20, pct: 10, cap: 0, cats: [], stop: 30 };
+  expect(await page.evaluate(async p => { try { await API.call('api_copy_start', { p }); return 'accepté'; } catch (e) { return e.code; } }, demande)).toBe('rang_insuffisant');
+  expect(await page.evaluate(async () => { try { await API.call('api_copy_set', { p_id: 1, p_action: 'stop' }); return 'accepté'; } catch (e) { return e.code; } })).toBe('copie_indisponible');
+  // les paris ordinaires passent par le nouveau suivi des copies (déclencheur de fin d'opération) : ils marchent comme avant
+  const solde = await lire(page, () => S.me.balance);
+  if (solde >= 5) {
+    const r = await page.evaluate(async () => { const x = await API.call('api_buy', { p_market: 'clasico', p_side: 'oui', p_total: 2, p_key: crypto.randomUUID(), p_opts: {} }); return { solde: x.me.balance, sh: x.q.sh }; });
+    expect(r.solde).toBeCloseTo(solde - 2, 2); expect(r.sh).toBeGreaterThan(0);
+  }
+  expect(erreurs).toEqual([]);
+});
+
+test('clans : rejoindre un clan ouvert sur le vrai serveur ; le tag est vu par un autre joueur ; la mise compte pour le clan ; quitter impose 7 jours d’attente', async ({ browser }) => {
+  test.setTimeout(180000);
+  const entrer = async email => {
+    const ctx = await browser.newContext(), page = await ctx.newPage();
+    const erreurs = await ouvrirReel(page, '#connexion');
+    await page.locator('#le').fill(email); await page.locator('#lp').fill(MDP); await page.locator('form[data-form="login"] [type=submit]').click();
+    await expect(page).toHaveURL(/#accueil/, { timeout: 20000 }); await pret(page);
+    return { ctx, page, erreurs };
+  };
+  const a = await entrer(EMAIL);
+  const idA = await lire(a.page, () => srvMoi());
+  expect(await lire(a.page, () => S.me.clan)).toBeNull();
+  // les règles du vrai serveur : rang demandé, clan sur invitation, création réservée au rang Argent
+  const essai = (nom, args) => a.page.evaluate(async ([nom, args]) => { try { await API.call(nom, args); return 'accepté'; } catch (e) { return e.code; } }, [nom, args]);
+  expect(await essai('api_clan_join', { p_clan: 'c82', p_code: null })).toBe('rang_insuffisant');   // c82 : ouvert, mais rang Diamant demandé
+  expect(await essai('api_clan_join', { p_clan: 'c999', p_code: null })).toBe('clan_inconnu');
+  expect(await essai('api_clan_join', { p_clan: 'c3', p_code: 'WMR-0000' })).toBe('clan_ferme');
+  expect(['rang_insuffisant', 'compte_trop_recent']).toContain(await essai('api_clan_create', { p: { name: 'Clan de test e2e', tag: 'E2E', desc: '', access: 'open', minRank: 0 } }));   // rang Argent et compte de 14 jours
+  // rejoindre c1 (ouvert, sans rang minimum), depuis sa page
+  await a.page.evaluate(() => { location.hash = '#clan-c1'; });
+  await a.page.locator('[data-a="cl-join"]').first().click();
+  await expect.poll(() => lire(a.page, () => S.me.clan && S.me.clan.id), { timeout: 20000 }).toBe('c1');
+  const tag = await lire(a.page, () => CK.c1.tag);
+  expect(await lire(a.page, () => tagH('me'))).toContain(tag);
+  // un autre joueur (ami de A depuis un scénario précédent) voit le tag de A, donné par le serveur
+  const b = await entrer(`wimoro-e2e-${stamp}-b@example.com`);
+  expect(await lire(b.page, id => ({ clan: USERS[id] && USERS[id].clan, tag: tagH(id) }), idA)).toMatchObject({ clan: 'c1' });
+  expect(await lire(b.page, id => tagH(id), idA)).toContain(tag);
+  // une mise de A compte pour son clan (comptée par le serveur)
+  const solde = await lire(a.page, () => S.me.balance);
+  if (solde >= 2) {
+    await a.page.evaluate(() => API.call('api_buy', { p_market: 'clasico', p_side: 'non', p_total: 2, p_key: crypto.randomUUID(), p_opts: {} }));
+    await a.page.reload(); await pret(a.page);
+    expect(await lire(a.page, () => S.me.clanXP + (S.me.clanSkipped || 0))).toBeGreaterThanOrEqual(1);   // 2 $ de contribution, ou mise écartée si un autre membre tient déjà ce marché
+  }
+  // quitter : 7 jours d'attente, tenus par le serveur
+  await a.page.evaluate(() => { location.hash = '#clan-c1'; });
+  await a.page.locator('[data-a="cl-leave"]').first().click();
+  await a.page.locator('[data-a="cl-leave-do"]').click();
+  await expect.poll(() => lire(a.page, () => S.me.clan), { timeout: 20000 }).toBeNull();
+  expect(await essai('api_clan_join', { p_clan: 'c4', p_code: null })).toBe('clan_attente');
+  await a.page.reload(); await pret(a.page);
+  expect(await lire(a.page, () => ({ clan: S.me.clan, attente: clanLeaveWait() > 6 * 864e5 }))).toEqual({ clan: null, attente: true });
+  expect(a.erreurs).toEqual([]); expect(b.erreurs).toEqual([]);
+  await a.ctx.close(); await b.ctx.close();
 });

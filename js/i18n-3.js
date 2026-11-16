@@ -170,6 +170,36 @@ I18N_ADD("he",{
 "Ce combiné n’est plus disponible.":"הצירוף הזה כבר לא זמין."
 });
 I18N_ADD("en",{
+"Certains caractères ne sont pas acceptés : chevrons, guillemets droits, accent grave, barre oblique inverse.":"Some characters are not accepted: angle brackets, straight quotes, backtick, backslash.",
+"Tu as déjà proposé ce pari : il est en vote.":"You already proposed this market: it is in the vote.",
+"Tu as déjà envoyé 5 propositions aujourd’hui. Reviens demain.":"You already sent 5 proposals today. Come back tomorrow.",
+"Cette proposition n’est plus en vote.":"This proposal is no longer in the vote.",
+"Tu as déjà voté pour cette proposition.":"You already voted on this proposal."
+});
+I18N_ADD("he",{
+"Certains caractères ne sont pas acceptés : chevrons, guillemets droits, accent grave, barre oblique inverse.":"חלק מהתווים אינם מתקבלים: סוגריים משולשים, מירכאות ישרות, גרש הפוך, לוכסן הפוך.",
+"Tu as déjà proposé ce pari : il est en vote.":"כבר הצעת את ההימור הזה: הוא בהצבעה.",
+"Tu as déjà envoyé 5 propositions aujourd’hui. Reviens demain.":"כבר שלחת 5 הצעות היום. חזור מחר.",
+"Cette proposition n’est plus en vote.":"ההצעה הזו כבר לא בהצבעה.",
+"Tu as déjà voté pour cette proposition.":"כבר הצבעת על ההצעה הזו."
+});
+I18N_ADD("en",{
+"Ce joueur ne peut pas être copié pour l’instant.":"This player cannot be copied right now.",
+"Tu copies déjà ce joueur.":"You are already copying this player.",
+"{0} n’est plus copiable : ta copie est arrêtée, tes positions restent ouvertes.":"{0} can no longer be copied: your copy has stopped, your positions stay open."
+});
+I18N_ADD("he",{
+"Ce joueur ne peut pas être copié pour l’instant.":"לא ניתן להעתיק את השחקן הזה כרגע.",
+"Tu copies déjà ce joueur.":"אתה כבר מעתיק את השחקן הזה.",
+"{0} n’est plus copiable : ta copie est arrêtée, tes positions restent ouvertes.":"כבר לא ניתן להעתיק את {0}: ההעתקה שלך נעצרה, הפוזיציות שלך נשארות פתוחות."
+});
+I18N_ADD("en",{
+"Tu es maintenant le chef du clan {0}.":"You are now the chief of the clan {0}."
+});
+I18N_ADD("he",{
+"Tu es maintenant le chef du clan {0}.":"אתה עכשיו ראש הקלאן {0}."
+});
+I18N_ADD("en",{
 "Cet ordre n’est plus en attente.":"This order is no longer pending.",
 "Trop d’ordres en attente : annules-en un avant d’en placer un autre.":"Too many pending orders: cancel one before placing another.",
 "Ordre annulé : le marché {0} est résolu.":"Order cancelled: the market {0} is resolved."
