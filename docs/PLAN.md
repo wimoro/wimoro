@@ -246,7 +246,18 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 - [ ] Limite : un duel éclair entre deux vrais joueurs n'a pas été joué contre la vraie base (il est prouvé dans la base
       embarquée et avec le faux serveur) ; contre un bot, il l'est de bout en bout. Comme le pari éclair, il repose sur le
       moteur déterministe : voir la limite assumée ci-dessus.
-- [ ] Duels de stack : annoncés comme indisponibles en mode Compte.
+- [x] Duels de stack contre un joueur simulé (`api_stack_create`, `api_stacks`) : même buy-in, 1 000 jetons chacun, sept
+      jours ; le stack du joueur suit ses résultats réels (ce qu'il a gagné ou perdu, plus la valeur de ses positions) ; le
+      plus gros stack remporte la cagnotte (deux buy-in moins 4 %) et 30 XP ; à égalité, le buy-in est rendu. _Choix_ :
+      le stack de l'adversaire simulé suit une trajectoire semée par le duel, calculée par le serveur heure par heure
+      (elle finit le plus souvent entre 800 et 1 300 jetons — dans la démo, il grossissait sans limite tant que la page
+      restait ouverte) ; cinq duels de stack en cours au plus ; le règlement se fait au premier passage du joueur après
+      les sept jours. _Tests_ `tests/sql/stacks.spec.mjs` (4), `tests/compte/stacks.spec.mjs` (2),
+      `tests/e2e/comptes.spec.mjs` (buy-in pris par le vrai serveur, duel retrouvé après rechargement, refus).
+- [ ] Duel de stack contre un vrai joueur : refusé clairement par le serveur (« pas encore disponible : choisis un autre
+      adversaire »). Il faudrait que l'ami donne son accord et sa mise, et l'écran n'a pas cette étape.
+- [ ] Limite : le règlement d'un duel de stack n'a pas été joué contre la vraie base (il faut sept jours) ; il est prouvé
+      dans la base embarquée et avec le faux serveur.
 - [ ] Limite : le paiement d'un duel gagné n'a pas été joué contre la vraie base (il faudrait résoudre un vrai marché) ; il est
       prouvé dans la base embarquée et avec le faux serveur.
 - [x] Clans, première partie : rejoindre un clan ouvert ou entrer avec un code d'invitation, candidater (un officier répond en
@@ -288,9 +299,8 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 - [x] Conséquence pour les scénarios réels : les XP d'un compte peuvent monter d'un point à tout moment (réaction d'un bot à
       son message). Les vérifications d'XP « à l'unité près » de `tests/e2e/comptes.spec.mjs` acceptent ces points en plus
       (`xpVaut`), et rien d'autre.
-- [ ] Encore « Bientôt disponible » en mode Compte, hors clans : partage du Mode Pro dans le chat, duels de stack. La
-      connexion par portefeuille et les outils « démo » (changer de rang à la main) n'existent, par nature, qu'en mode
-      Démo.
+- [ ] Encore « Bientôt disponible » en mode Compte, hors clans : partage du Mode Pro dans le chat. La connexion par
+      portefeuille et les outils « démo » (changer de rang à la main) n'existent, par nature, qu'en mode Démo.
 - [x] Chat de clan : un salon réservé aux membres (`clan:<identifiant>`). Écrire, relire, réagir et partager une mise y
       suivent les règles des autres salons ; un joueur d'un autre clan reçoit « salon indisponible ». Les messages ne passent
       par aucun sujet public : ils sont diffusés sur le sujet **privé** du clan, qu'une règle d'accès n'ouvre qu'à ses
@@ -555,3 +565,4 @@ Rien d'obligatoire. Le détail et les constats sont dans `docs/EXPLOITATION.md`,
 | 16 nov. 2026 | Réactions sous les messages (joueurs, bots, messages privés). | migration `reactions` (empreinte identique) ; 281 tests (144 SQL) ; 21 scénarios de bout en bout contre le vrai back ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
 | 16 nov. 2026 | Chat de clan, réservé aux membres (sujet privé). | migration `clan_chat` (empreinte identique) ; 287 tests (149 SQL) ; 21 scénarios de bout en bout contre le vrai back, dont trois comptes sur le chat du clan ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
 | 16 nov. 2026 | Duels sur une manche éclair. | migration `duels_eclair` (empreinte identique), Edge Function `eclair` version 4 ; 296 tests (154 SQL) ; 22 scénarios de bout en bout contre le vrai back, dont un duel éclair réglé par le vrai serveur ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
+| 16 nov. 2026 | Duels de stack contre un joueur simulé. | migration `stacks` (empreinte identique) ; 302 tests (158 SQL) ; 23 scénarios de bout en bout contre le vrai back ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |

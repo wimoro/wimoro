@@ -910,3 +910,36 @@ test('duel éclair contre un bot ami : mise prise par le vrai serveur, accepté 
   expect(await lire(page, id => S.me.duels.find(x => x.id === id).status, d.id)).toBe(attendu);
   expect(erreurs).toEqual([]);
 });
+
+test('duel de stack contre un joueur simulé : buy-in pris par le vrai serveur, 1 000 jetons chacun pour sept jours, retrouvé après rechargement ; un vrai joueur ne peut pas être défié sans son accord', async ({ page }) => {
+  test.setTimeout(120000);
+  const erreurs = await ouvrirReel(page, '#connexion');
+  await page.locator('#le').fill(EMAIL); await page.locator('#lp').fill(MDP); await page.locator('form[data-form="login"] [type=submit]').click();
+  await expect(page).toHaveURL(/#accueil/, { timeout: 20000 }); await pret(page);
+  const amis = await lire(page, () => ({ bot: S.me.friends.find(u => USERS[u] && USERS[u].bot), reel: S.me.friends.find(u => USERS[u] && !USERS[u].bot) }));
+  expect(amis.bot, 'A a un bot pour ami (scénario des duels)').toBeTruthy();
+  expect(amis.reel, 'A a un vrai joueur pour ami (scénario des amis)').toBeTruthy();
+  const avant = await lire(page, () => ({ solde: S.me.balance, stacks: (S.me.stacks || []).length }));
+  expect(avant.solde, 'A a de quoi payer un buy-in de 5 $').toBeGreaterThanOrEqual(5);
+  const essai = p => page.evaluate(async p => { try { const r = await API.call('api_stack_create', { p }); return { ok: true, stack: r.stack, solde: r.me.balance, rejoue: !!r.rejoue }; } catch (e) { return { ok: false, code: e.code }; } }, p);
+  // ce que le vrai serveur refuse
+  expect(await essai({ buyin: 5, opp: amis.reel, key: crypto.randomUUID() })).toEqual({ ok: false, code: 'stack_joueur_reel' });
+  expect(await essai({ buyin: 1, opp: amis.bot, key: crypto.randomUUID() })).toEqual({ ok: false, code: 'montant_invalide' });
+  expect(await essai({ buyin: 5, opp: 'personne', key: crypto.randomUUID() })).toEqual({ ok: false, code: 'joueur_inconnu' });
+  expect(await lire(page, () => S.me.balance)).toBeCloseTo(avant.solde, 2);
+  // lancé : le buy-in est pris une fois, même si la demande est rejouée
+  const cle = crypto.randomUUID();
+  const cree = await essai({ buyin: 5, opp: amis.bot, key: cle });
+  expect(cree).toMatchObject({ ok: true, rejoue: false });
+  expect(cree.solde).toBeCloseTo(avant.solde - 5, 2);
+  expect(await essai({ buyin: 5, opp: amis.bot, key: cle })).toMatchObject({ ok: true, rejoue: true, stack: cree.stack });
+  // rechargé : l'écran montre le duel du serveur, 1 000 jetons chacun, fin dans sept jours
+  await page.evaluate(() => { location.hash = '#duels'; }); await page.reload(); await pret(page);
+  const s = await lire(page, id => { const x = (S.me.stacks || []).find(y => y.id === String(id)); return x && { opp: x.opp, status: x.status, buyin: x.buyin, my: x.my, theirs: x.theirs, jours: (x.endAt - x.at) / 864e5 }; }, cree.stack);
+  expect(s).toMatchObject({ opp: amis.bot, status: 'active', buyin: 5, theirs: 1000, jours: 7 });
+  expect(Math.abs(s.my - 1000), 'le stack de A part de 1 000 jetons et suit ses résultats (ses positions ont pu bouger de quelques cents)').toBeLessThanOrEqual(3);
+  expect(await lire(page, () => S.me.stacks.length)).toBe(avant.stacks + 1);
+  expect(await lire(page, () => S.me.balance)).toBeCloseTo(avant.solde - 5, 2);
+  await expect(page.locator('.stk.active').first()).toBeVisible();
+  expect(erreurs).toEqual([]);
+});
