@@ -1157,8 +1157,8 @@ async function srvBzRacheter(){const r=bzR();if(!r||!bzCanRebuy(r)||SRV_BZ.occup
 /* ----- Sujet privé du joueur : ses messages privés et ses notifications arrivent en direct, à lui seul ----- */
 function srvPerso(evt,d){
  if(evt==='dm'){if(d&&d.u)srvChatAjouter('dm:'+d.u,d);return;}
- if(evt==='re'){if(d&&d.u)srvChatReactions('dm:'+d.u,d);return;}
- if(evt==='fc'){if(d&&d.u)srvChatSuivis('dm:'+d.u,d);return;}                       /* mise partagée en privé : son compteur de suivis */                    /* réaction de l'autre participant, dans une conversation privée */
+ if(evt==='re'){if(d&&d.u)srvChatReactions('dm:'+d.u,d);return;}                    /* réaction de l'autre participant, dans une conversation privée */
+ if(evt==='fc'){if(d&&d.u)srvChatSuivis('dm:'+d.u,d);return;}                       /* mise partagée en privé : son compteur de suivis */
  if(evt==='reac'){if(d)srvReactionRecue(d);return;}
  if(evt==='notif'&&d&&d.n){
   if(S.me.notifs.some(x=>x.id===d.n.id))return;
