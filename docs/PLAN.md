@@ -214,10 +214,12 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
       par un troisième joueur (K09). _Recette 5 (fin)._ _Tests_ `tests/sql/prive.spec.mjs`, `tests/compte/prive.spec.mjs`,
       `tests/e2e/comptes.spec.mjs` (un tiers abonné au sujet privé d'un autre ne reçoit rien, sur le vrai temps réel).
 - [x] Les notifications destinées à un autre joueur (demande d'ami, acceptation, message reçu) lui arrivent en direct.
-- [ ] Salons de clan et VIP : annoncés comme indisponibles en mode Compte.
+- [ ] Salon VIP (rang Ascendant) : annoncé comme indisponible en mode Compte. Le salon de clan, lui, est relié (voir plus
+      bas).
 - [ ] Limite : écrire en privé demande le rang Bronze (300 XP et 3 paris réglés), comme à l'écran ; le scénario complet
       entre deux vrais comptes neufs n'a donc pas pu être joué de bout en bout (il l'est côté base et avec le faux serveur).
-- [ ] Cartes de mise et d'analyse, réactions, « suivre cette mise ». Mentions et citations de marché : affichées.
+- [x] Cartes de mise et d'analyse, réactions, « suivre cette mise » : reliées au serveur (voir plus bas). Mentions et
+      citations de marché : affichées.
 - [x] Messages des bots dans le chat (K26) : le serveur envoie un gabarit et ses paramètres, l'écran compose la phrase
       dans la langue du lecteur. Les bots ne parlent que dans les salons qu'un joueur regarde ; un salon s'ouvre avec six
       messages récents ; aucune ligne créée (anneau de 30 messages par salon). _Tests_ `tests/sql/chat-bots.spec.mjs`,
@@ -299,8 +301,32 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 - [x] Conséquence pour les scénarios réels : les XP d'un compte peuvent monter d'un point à tout moment (réaction d'un bot à
       son message). Les vérifications d'XP « à l'unité près » de `tests/e2e/comptes.spec.mjs` acceptent ces points en plus
       (`xpVaut`), et rien d'autre.
-- [ ] Encore « Bientôt disponible » en mode Compte, hors clans : partage du Mode Pro dans le chat. La connexion par
-      portefeuille et les outils « démo » (changer de rang à la main) n'existent, par nature, qu'en mode Démo.
+- [x] Mode Pro, partager son analyse (`api_ana_share`, `api_ana`) : dans le chat général, le chat du marché analysé, le
+      chat de son clan ou à un ami en message privé (un à quatre salons) ; elle compte comme un message (2 XP,
+      missions). Une analyse est un instantané du graphique : bougies visibles, indicateurs calculés, tracés,
+      commentaire. Les prix du Mode Pro sont simulés par l'écran : le serveur ne peut pas les vérifier. Il traite donc
+      l'instantané comme un contenu écrit par un joueur et le **remet au propre** avant de le garder
+      (`wm.ana_propre` : seuls les champs connus sont repris, nombres bornés, couleurs et réglages vérifiés,
+      identifiants refaits, textes des tracés débarrassés de tout caractère lisible comme du code) ; l'écran refait la
+      même remise au propre avant de dessiner l'analyse d'un autre joueur (`srvAnaPropre`). Le message de chat ne porte
+      qu'une référence ; l'instantané se lit à part, avec les droits du salon, et plus du tout une fois le message
+      masqué par l'administration. Dans un salon public regardé, un joueur simulé répond quelques secondes plus tard
+      (gabarit « A », phrases de la démo). _Choix_ : 12 analyses par 24 heures et par joueur, 400 Ko au plus chacune ;
+      les bots ne publient pas d'analyses en mode Compte ; la mention « enregistrée sur cet appareil » de la fenêtre de
+      partage n'est plus affichée avec un compte (elle serait fausse). _Tests_ `tests/sql/analyses.spec.mjs` (5, dont 38
+      instantanés hors format refusés), `tests/compte/analyses.spec.mjs` (3, dont une analyse piégée redessinée sans
+      danger : ce test échoue si l'on retire la remise au propre de l'écran), `tests/compte/admin.spec.mjs` (libellés du
+      panel), `tests/e2e/comptes.spec.mjs` (deux vrais comptes : A partage, B reçoit la carte en direct et l'ouvre, un
+      joueur simulé répond, refus du vrai serveur).
+- [ ] Limites du partage d'analyse : (1) les bougies et les valeurs d'indicateurs sont celles que l'écran de l'auteur a
+      envoyées : le serveur les borne mais ne peut pas les authentifier (une analyse peut donc montrer un graphique
+      inventé, comme un message peut dire une chose fausse) ; (2) le partage dans le chat d'un clan et en message privé
+      n'a pas été joué contre la vraie base (il l'est dans la base embarquée et avec le faux serveur) ; (3) seuls les
+      partages réussis sont comptés : des envois refusés à répétition ne sont pas freinés ; (4) la réponse d'un joueur
+      simulé cite le pseudo de l'auteur : si l'analyse disparaît (message masqué, compte supprimé), cette réponse n'est
+      plus servie, mais elle reste dans la mémoire interne du salon jusqu'à ce que 30 messages plus récents la chassent.
+- [ ] La connexion par portefeuille et les outils « démo » (changer de rang à la main, simuler un clan) n'existent, par
+      nature, qu'en mode Démo.
 - [x] Chat de clan : un salon réservé aux membres (`clan:<identifiant>`). Écrire, relire, réagir et partager une mise y
       suivent les règles des autres salons ; un joueur d'un autre clan reçoit « salon indisponible ». Les messages ne passent
       par aucun sujet public : ils sont diffusés sur le sujet **privé** du clan, qu'une règle d'accès n'ouvre qu'à ses
@@ -598,3 +624,4 @@ Rien d'obligatoire. Le détail et les constats sont dans `docs/EXPLOITATION.md`,
 | 16 nov. 2026 | Duels de stack contre un joueur simulé. | migration `stacks` (empreinte identique) ; 302 tests (158 SQL) ; 23 scénarios de bout en bout contre le vrai back ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
 | 16 nov. 2026 | Clans : fil d'activité, outils du chef et des officiers, appels de clan. | migration `clans_chefs` (empreinte identique) ; 310 tests (163 SQL) ; 23 scénarios de bout en bout contre le vrai back ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
 | 16 nov. 2026 | Guerres de clans. | migrations `clans_guerres` et `clans_guerres_participants` (empreintes identiques) ; 316 tests (167 SQL) ; 23 scénarios de bout en bout contre le vrai back ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
+| 16 nov. 2026 | Mode Pro : partager son analyse dans les chats. | migration `analyses` (empreinte identique) ; 325 tests (172 SQL) ; 24 scénarios de bout en bout contre le vrai back, dont deux comptes sur le partage d'analyse ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |

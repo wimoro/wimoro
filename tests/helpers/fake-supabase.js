@@ -42,7 +42,7 @@
   var db;
   try { db = JSON.parse(localStorage.getItem(DBKEY) || 'null'); } catch (e) { db = null; }
   if (!db) {
-    db = { session: clone(CFG.session || null), comptes: clone(CFG.comptes || {}), etats: {}, marches: {}, ops: {}, chat: clone(CFG.chat || {}), fiches: clone(CFG.fiches || {}), seq: 1 };
+    db = { session: clone(CFG.session || null), comptes: clone(CFG.comptes || {}), etats: {}, marches: {}, ops: {}, chat: clone(CFG.chat || {}), fiches: clone(CFG.fiches || {}), analyses: clone(CFG.analyses || {}), seq: 1 };
     (CFG.marches || []).forEach(function (x) { db.marches[x.market_id] = { def: x.def ? clone(x.def) : undefined, p: +x.current_probability, d0: x.d0 == null ? null : +x.d0, vol: +(x.volume_total || 0), people: x.participants_count | 0, liq: x.liquidity_depth == null ? null : +x.liquidity_depth, st: x.status || 'open', hot: 0, ph: clone(x.price_history || []) }; });
     if (db.session) { var u0 = db.session.user; db.etats[u0.id] = fusion(etatNeuf(u0.id, u0.email || '', 'realuser', false), CFG.etat || {}); }
   }
@@ -192,6 +192,26 @@
     api_users_search: function (a) { var q = String(a.p_q || '').trim().toLowerCase(), ids = [], users = {};
       if (q.length >= 2 && /^[a-z0-9._]+$/.test(q)) for (var id in db.fiches) if (id !== uid() && String(db.fiches[id].n).toLowerCase().indexOf(q) >= 0 && ids.length < 10) { ids.push(id); users[id] = ficheDe(id); }
       return { ids: ids, users: users }; },
+    /* Analyses du Mode Pro : mêmes règles que supabase/migrations/…_analyses.sql (remise au propre simplifiée : champs connus, types, couleurs, textes) */
+    api_ana_share: function (a) { var e = etat(), me = e.me, ev = [], t = String(a.p_text || '').trim(), salons = a.p_rooms || [], vus = {}, ami = null;
+      if (t.length > 280) throw { message: 'message_trop_long' }; if (!salons.length || salons.length > 4) throw { message: 'salon_indisponible' };
+      var propre = anaPropre(a.p_snap);
+      salons.forEach(function (r) { if (vus[r]) throw { message: 'salon_indisponible' }; vus[r] = 1;
+        if (/^dm:/.test(r)) { if (ami) throw { message: 'salon_indisponible' }; ami = r.slice(3); dmOk(ami, true); } else if (/^m:/.test(r)) { if (r !== 'm:' + propre.m) throw { message: 'salon_indisponible' }; } else salonOk(r); });
+      db.analyses = db.analyses || {}; if (Object.keys(db.analyses).filter(function (k) { return db.analyses[k].u === uid() && db.analyses[k].at > Date.now() - 864e5; }).length >= 12) throw { message: 'trop_d_analyses' };
+      var id = db.seq++, at = Date.now(), msgs = {}, ref = { ana: id, m: propre.m, iv: propre.iv, ni: propre.inds.length, nd: propre.dr.length }; db.analyses[id] = { u: uid(), at: at, snap: propre };
+      salons.forEach(function (r) { var m = { id: db.seq++, u: uid(), k: 'ana', text: t, at: at, ana: clone(ref) }, salon = /^dm:/.test(r) ? 'dm:' + [uid(), ami].sort().join(':') : r;
+        (db.chat[salon] = db.chat[salon] || []).push(m); msgs[r] = clone(m);
+        if (!/^dm:/.test(r)) { var d = clone(m); d.f = ficheDe(uid()); setTimeout(function () { window.__fakeSB.emit(/^clan:/.test(r) ? r : 'salon:' + r, 'msg', d); }, 5); } });
+      var avant = rangDe(me), jr = jour(); if (me.chatDay !== jr) { me.chatDay = jr; me.chatXP = 0; }
+      var gain = Math.max(0, Math.min(2, 20 - me.chatXP)); me.chatXP += gain; me.msgsTotal = (me.msgsTotal | 0) + 1;
+      if (gain) { me.xp += gain; ev.push({ k: 'xp', n: gain, src: 'chat' }); rangMonte(me, avant, ev); }
+      missionAvance(e, 'chat', ev); if (salons.some(function (r) { return /^m:/.test(r); })) missionAvance(e, 'chatm', ev);
+      persist(); var rep = reponse(ev); rep.msgs = msgs; rep.snap = Object.assign(clone(propre), { id: 'a' + id, at: at }); return rep; },
+    api_ana: function (a) { var ids = (a.p_msgs || []).map(Number), snaps = {}, k = etat().clanM; if (!ids.length || ids.length > 6) throw { message: 'analyse_inconnue' };
+      for (var r in db.chat) { if (!(r === 'general' || /^m:/.test(r) || (k && r === 'clan:' + k.id) || (/^dm:/.test(r) && r.split(':').indexOf(uid()) > 0))) continue;
+        db.chat[r].forEach(function (m) { var x = m.k === 'ana' && m.ana && (db.analyses || {})[m.ana.ana]; if (x && ids.indexOf(m.id) >= 0) snaps[m.id] = Object.assign(clone(x.snap), { id: 'a' + m.ana.ana, at: x.at }); }); }
+      return { snaps: snaps }; },
     api_chat_history: function (a) { salonOk(a.p_room); var L = (db.chat[a.p_room] || []).slice(-60), users = {};
       L.forEach(function (m) { users[m.u] = ficheDe(m.u); }); return { room: a.p_room, msgs: L.map(msgPropre), users: users, mes: mesDe(L) }; },
     /* Réactions : mêmes règles que supabase/migrations/…_reactions.sql (un clic pose, un second retire) */
@@ -733,6 +753,25 @@
     if (regles.length) { rangMonte(me, avant, ev); badges(e, ev); }
     var rep = reponse(ev); rep.regles = regles; rep.hist = hist; rep.eclair = eclairJson(e); return rep; }
 
+  /* remise au propre d'un instantané : seuls les champs connus sont repris ; tout ce qui sort du format est refusé */
+  var anaPropre = function (s) { var mauvais = function () { throw { message: 'analyse_invalide' }; };
+    if (!s || typeof s !== 'object' || Array.isArray(s)) mauvais(); if (JSON.stringify(s).length > 400000) throw { message: 'analyse_trop_lourde' };
+    if (typeof MK === 'undefined' || !MK[s.m]) throw { message: 'marche_inconnu' }; var n = s.n;
+    if (['1m', '5m', '15m', '1h', '4h', '1d', '1w', 'max'].indexOf(s.iv) < 0 || ['courbe', 'bougies'].indexOf(s.type) < 0 || ['oui', 'non'].indexOf(s.side) < 0 || typeof n !== 'number' || n !== Math.floor(n) || n < 1 || n > 4000) mauvais();
+    var nombre = function (v) { if (typeof v !== 'number' || !isFinite(v)) mauvais(); return v; };
+    var serie = function (L) { if (!Array.isArray(L) || L.length !== n) mauvais(); return L.map(function (v) { return v === null ? null : Math.round(nombre(v) * 100) / 100; }); };
+    var couleur = function (c) { if (typeof c !== 'string' || !/^(ink|#[0-9a-fA-F]{6})$/.test(c)) mauvais(); return c; }, ep = function (w) { if ([1, 2, 3].indexOf(w) < 0) mauvais(); return w; };
+    var point = function (p) { if (!Array.isArray(p) || p.length !== 2) mauvais(); return [Math.round(nombre(p[0])), Math.round(nombre(p[1]) * 1e4) / 1e4]; };
+    var texte = function (t) { if (t !== undefined && t !== null && typeof t !== 'string') mauvais(); return String(t || '').replace(/</g, '‹').replace(/>/g, '›').replace(/"/g, '”').replace(/[`']/g, '’').replace(/\\/g, '/').replace(/\s+/g, ' ').trim().slice(0, 60); };
+    if (!Array.isArray(s.inds) || s.inds.length > 24 || !Array.isArray(s.dr) || s.dr.length > 300) mauvais();
+    var inds = s.inds.map(function (d, i) { if (!d || ['sma', 'ema', 'bb', 'vwap', 'rsi', 'macd'].indexOf(d.k) < 0 || !d.p || typeof d.p !== 'object') mauvais();
+      var cles = d.k === 'bb' || d.k === 'macd' ? ['a', 'b', 'c'] : ['a'], vals = {}, p = {}; if (!d.vals || Object.keys(d.vals).length !== cles.length) mauvais(); cles.forEach(function (c) { vals[c] = serie(d.vals[c]); });
+      (d.k === 'bb' ? ['len', 'k'] : d.k === 'macd' ? ['fast', 'slow', 'sig'] : d.k === 'vwap' ? ['anc'] : ['len']).forEach(function (c) { if (d.k === 'vwap') { if (['auto', 'day', 'week', 'all'].indexOf(d.p[c]) < 0) mauvais(); p[c] = d.p[c]; } else p[c] = nombre(d.p[c]); });
+      return { id: 'i' + (i + 1), k: d.k, p: p, c: couleur(d.c), w: ep(d.w), vals: vals }; });
+    var dr = s.dr.map(function (d, i) { if (!d || ['trend', 'hline', 'vline', 'rect', 'arrow', 'text', 'level'].indexOf(d.k) < 0) mauvais();
+      var t = { id: 'd' + (i + 1), k: d.k, a: point(d.a), c: couleur(d.c), w: ep(d.w), txt: texte(d.txt) }; if (['trend', 'arrow', 'rect'].indexOf(d.k) >= 0) t.b = point(d.b); return t; });
+    return { v: 1, m: s.m, iv: s.iv, type: s.type, side: s.side, p: Math.round(MK[s.m].p * 100) / 100, ms: nombre(s.ms), T0: nombre(s.T0), n: n, o: serie(s.o), h: serie(s.h), l: serie(s.l), c: serie(s.c), vol: serie(s.vol),
+      end: nombre(s.end), vn: nombre(s.vn), inds: inds, dr: dr }; };
   var dmOk = function (u, ecrire) { var e = etat(); if (!u || u === uid() || !db.fiches[u]) throw { message: 'joueur_inconnu' }; if (e.friends.indexOf(u) < 0) throw { message: 'pas_amis' }; if (ecrire && rangDe(e.me).t < 1) throw { message: 'rang_insuffisant' }; };
   /* ----- Chat : salons publics ----- */
   /* un message tel que le serveur l'envoie : sans ses données internes (qui a suivi, qui a réagi) */
