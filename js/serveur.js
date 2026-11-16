@@ -499,7 +499,7 @@ const srvSalonClan=r=>{const c=typeof myClan==='function'?myClan():null;return !
 const srvSalonVip=r=>r==='vip'&&can('vip');
 const srvSujetPrive=r=>r.startsWith('clan:')||r==='vip';
 const srvSujet=r=>srvSujetPrive(r)?r:'salon:'+r;
-const srvSalonOuvert=r=>r==='general'||r.startsWith('m:')||r.startsWith('dm:')||srvSalonClan(r)||srvSalonVip(r);
+const srvSalonOuvert=r=>r==='general'||r==='blitz'||r.startsWith('m:')||r.startsWith('dm:')||srvSalonClan(r)||srvSalonVip(r);   /* « blitz » : le chat du Blitz, public */
 const srvPrive=r=>r.startsWith('dm:');
 const srvMoi=()=>String(S.auth.key||'').slice(4);
 function srvChatAjouter(rid,m,mes){
@@ -532,6 +532,7 @@ function srvChatRetirer(rid,id){const R=S.rooms[rid];if(!R)return;const i=R.msgs
    langue du lecteur, avec les mêmes listes de phrases que le mode Démo. */
 function srvBotTexte(t){
  if(t.g==='A'){const L=typeof PRO_REPLY!=='undefined'?PRO_REPLY:[],n=String(t.n||'');return L.length&&n?'@'+n+' '+L[Math.abs(t.i|0)%L.length]():'';}   /* réponse à une analyse partagée */
+ if(t.g==='Z'){const L=typeof BZ_LINES!=='undefined'?BZ_LINES:[];return L.length?L[Math.abs(t.i|0)%L.length]:'';}   /* chat du Blitz : les phrases du Blitz de la démo */
  if(t.g==='C'){const L=typeof CLAN_ACCUEIL!=='undefined'?CLAN_ACCUEIL:[];return L.length?L[Math.abs(t.i|0)%L.length]():'';}   /* accueil d'un salon de clan */
  const m=MK[t.m];if(!m)return '';
  const lignes=t.g==='G'?GLOBAL_LINES:(MLINES[t.m]||[]).concat(GEN_LINES),p=Number(t.p)||0;

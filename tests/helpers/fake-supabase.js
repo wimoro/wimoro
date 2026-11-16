@@ -788,7 +788,7 @@
       else if (moi === lui) { x.st = 'void'; me.balance = Math.round((me.balance + x.buyin) * 100) / 100; } else { x.st = 'lost'; me.realized = (me.realized || 0) - x.buyin; }
       ev.push(notif('swords', x.st === 'won' ? 'stack_gagne' : x.st === 'lost' ? 'stack_perdu' : 'stack_nul', { id: x.id, u: x.opp, gain: pot - x.buyin, moi: moi, lui: lui }, '#duels')); });
     return n; }
-  var salonOk = function (r) { if (r === 'general' || (/^m:/.test(String(r)) && typeof MK !== 'undefined' && MK[String(r).slice(2)])) return;
+  var salonOk = function (r) { if (r === 'general' || r === 'blitz' || (/^m:/.test(String(r)) && typeof MK !== 'undefined' && MK[String(r).slice(2)])) return;
     var k = etat().clanM; if (k && r === 'clan:' + k.id) return;                                  /* le salon de son clan, et lui seul */
     if (r === 'vip') { if (rangDe(etat().me).t >= 6) return; throw { message: 'rang_insuffisant' }; }   /* le salon VIP : rang Ascendant */
     throw { message: 'salon_indisponible' }; };

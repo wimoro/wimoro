@@ -169,9 +169,9 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 - [x] Issues multiples : total à 100 % garanti par le serveur, pas de double rééquilibrage (B16, K21).
 - [x] Prix à 6 décimales : un petit ordre fait bouger le prix, un ordre découpé paie le même impact.
 - [ ] Ordres limites, stop, take-profit exécutés côté serveur.
-- [ ] Combinés.
-- [ ] Propositions de marché, votes, mise en ligne.
-- [ ] Clôture et résolution depuis le panel admin (K05, K48).
+- [x] Combinés : livrés (voir 4.6, « Combinés »).
+- [x] Propositions de marché, votes, mise en ligne : livrés (voir 4.6, « Propositions »).
+- [x] Clôture et résolution depuis le panel admin (K05, K48) : livrées (voir Phase 6).
 
 ### 4.4 Pari éclair, Blitz, Série
 - [x] `js/moteur-eclair.js` : moteur pur (horloge, trajectoires, issues, cagnottes, frais, gains), auquel `js/flash.js`
@@ -195,7 +195,15 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
       (salle et inscription contre le vrai serveur).
 - [ ] Limite : un Blitz entier (dix manches puis le paiement) n'a pas été joué contre le vrai serveur — il faudrait attendre
       un créneau réel de 15 minutes dans un test. Le paiement est prouvé dans la base embarquée et avec le faux serveur.
-- [ ] Limite : le chat du Blitz, les salons VIP et de clan restent fermés à l'écriture en mode Compte.
+- [x] Chat du Blitz (« Joueurs et spectateurs ») : relié. C'est un salon public de plus (`blitz`) : écrire, relire, réagir
+      y suivent les règles du salon général. Les bots y parlent quand quelqu'un regarde, avec les phrases du chat du
+      Blitz de la démo (gabarit « Z ») ; le salon s'ouvre avec six messages récents ; le panel d'administration voit et
+      masque ses messages. Les salons VIP et de clan sont reliés eux aussi (voir 4.5 et 4.6). _Tests_
+      `tests/sql/chat-blitz.spec.mjs` (2), `tests/compte/blitz.spec.mjs` (1 de plus), `tests/e2e/comptes.spec.mjs` (le
+      vrai serveur ouvre le salon avec ses messages de bots, le joueur y écrit et retrouve son message après
+      rechargement).
+- [ ] Limite : les lignes d'événement du Blitz (« Manche 3 : Haut. 41 éliminés… ») que la démo écrit dans ce chat ne sont
+      pas reprises en mode Compte : le déroulé de la manche se lit sur la carte du Blitz, pas dans le chat.
 - [ ] Limite assumée de la maquette : le pari éclair, la Série, le Blitz et les duels éclair sont **déterministes** (tout se
       déduit de l'heure, avec un moteur public). Un joueur qui lit le code peut donc connaître l'issue d'une manche à
       l'avance — y compris pour défier un autre joueur. Sans conséquence avec de l'argent fictif ; à remplacer par un
@@ -243,7 +251,7 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
       `tests/compte/amis.spec.mjs`, `tests/e2e/comptes.spec.mjs` (deux vrais comptes).
 - [x] La demande reçue apparaît à la seconde, par le sujet privé du joueur (voir 4.5).
 - [x] Classement servi par le serveur (`api_leaderboard` : 50 fiches publiques, vrais joueurs et bots) : l'écran n'est plus vide en mode Compte (B17). _Tests_ `tests/sql/classement.spec.mjs`, `tests/compte/amis.spec.mjs`. Vérifié avec le faux serveur et par requête sur la base, pas encore par un test de bout en bout.
-- [ ] Classement par période tenu par le serveur (K46) : aujourd'hui « Semaine » et « Mois » sont déduits du total, comme en mode Démo. Suivre un joueur.
+- [ ] Classement par période tenu par le serveur (K46) : aujourd'hui « Semaine » et « Mois » sont déduits du total, comme en mode Démo. (Suivre un joueur : livré, voir plus bas.)
 - [x] Duels entre amis sur un marché : défier (mise et frais pris tout de suite), accepter au prix du marché, refuser, annuler,
       expirer après 48 heures, lien d'invitation, bot défié qui accepte aussitôt ; réglés avec la résolution du marché (panel
       d'administration). `api_duel_create`, `api_duel_accept`, `api_duel_close`, `api_duel_code`, `api_duels`. _Tests_
@@ -469,8 +477,9 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 - [x] Tenue dans le temps : les ancres sont rappelées vers la valeur de référence de chaque marché. Sans cela, la logique
       du mode Démo, laissée tourner jour et nuit, polarisait les prix vers 5 % ou 95 % en quelques heures (test « sur la
       durée » : 3 échecs sur 3 sans le correctif, 3 succès sur 3 avec). Migration `bots_ancres`.
-- [ ] Purge du journal de pg_cron (30 000 lignes, 6 Mo par jour) : migration `purge_journal_cron` prête, **attend ta
-      confirmation** (voir « À faire par l'humain »).
+- [x] Purge du journal de pg_cron (30 000 lignes, 6 Mo par jour) : migration `purge_journal_cron` appliquée le 15 nov. 2026
+      avec l'accord explicite du propriétaire ; la tâche `wm-purge-cron` tourne chaque heure et ne garde que six heures
+      de journal (vérifié le 16 nov. : 16 500 lignes, la plus ancienne de 6 h 30).
 - [x] Messages des bots dans le chat, en gabarit + paramètres (K26) : voir 4.5.
 - [x] Marche/arrêt, intensité et bavardage des bots depuis le panel d'administration (onglet « Bots »). _Recette 9._
 
@@ -519,7 +528,9 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
       (« fenêtre à plusieurs champs »), qui échouait avant et passe après.
 - [x] Recette finale, 10 points, le 16 nov. 2026, sur le site en ligne (<https://wimoro.com>) : 130 tests d'écran (mode Démo,
       visiteur et mode Compte avec le faux serveur, trois langues) et 18 scénarios avec de vrais comptes contre le vrai
-      serveur, tous verts ; en local, 264 tests dont 134 sur la base. Point par point :
+      serveur, tous verts ; en local, 264 tests dont 134 sur la base. Depuis, chaque lot a rejoué la suite : au dernier
+      lot du 16 nov. 2026, 333 tests en local (dont 177 sur la base) et 24 scénarios avec de vrais comptes, en local
+      puis sur le site en ligne. Point par point :
 
       | N° | Ce qui est vérifié | Preuve | Réserve |
       |---|---|---|---|
@@ -580,6 +591,14 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 | Clans : candidature | La réponse vient du serveur au bout de 6 secondes, favorable 8 fois sur 10, y compris pour un clan créé par un joueur. | Même règle que la démo. Une validation par un vrai officier demanderait un écran de plus ; elle fait partie de la seconde partie. |
 | Clans : bots | 4 bots sur 5 portent le tag d'un clan de démonstration (c61 à c100), choisi d'après leur identifiant. | Comme dans la démo, où la plupart des joueurs simulés ont un clan : le chat et les classements montrent des tags. |
 | Protection de `main` | Non activée. | Elle changerait ta façon de publier ; elle reste proposée, facultative. |
+| Guerres de clans : adversaires | Le clan adverse est un clan de démonstration ; ses dix participants et les membres simulés de notre clan ont des points calculés par le serveur (départ semé, +50 % au plus). | La démo faisait grossir ces points sans limite tant que la page restait ouverte : impossible à tenir à l'identique pour deux joueurs. |
+| Guerres de clans : règlement | Au premier passage d'un membre ou d'un participant après 48 heures ; un participant sorti du clan touche quand même sa part. | Pas de tâche planifiée de plus ; un buy-in payé ne doit jamais rester bloqué. |
+| Partage d'analyse : confiance | L'instantané est traité comme un contenu écrit par un joueur : remis au propre par le serveur avant d'être gardé, puis une seconde fois par l'écran avant d'être dessiné. | Les prix du Mode Pro sont simulés par l'écran : le serveur ne peut pas les vérifier, il peut seulement garantir qu'aucun code n'y passe. |
+| Partage d'analyse : bornes | 12 analyses par 24 heures et par joueur, 400 Ko au plus chacune ; les bots n'en publient pas, ils y répondent. | Borne technique (une analyse pèse lourd) ; publier des analyses de bots demanderait de fabriquer des graphiques côté serveur. |
+| Mention « enregistrée sur cet appareil » | Retirée de la fenêtre de partage quand un compte est connecté. | Seule exception à « ne change pas les textes » : avec un compte, la phrase serait fausse. |
+| Salon VIP | Sujet temps réel privé, ouvert par une règle d'accès au rang Ascendant ; les bots n'y parlent pas. | Un sujet public aurait laissé n'importe qui écouter le salon ; dans la démo, ce salon ne contient que les messages des joueurs. |
+| Suivre une mise partagée | Refusé si l'on n'a pas accès au salon où elle a été publiée. | Sinon un joueur hors d'un clan pouvait suivre, par son numéro, une mise partagée dans le chat de ce clan. |
+| Chat du Blitz | Salon public ; les bots y disent les phrases du Blitz de la démo ; les lignes d'événement de manche ne sont pas reprises. | Le déroulé d'un Blitz est calculé par l'écran (moteur partagé) : le chat ne porte que la conversation. |
 
 ## À faire par l'humain
 
@@ -637,3 +656,4 @@ Rien d'obligatoire. Le détail et les constats sont dans `docs/EXPLOITATION.md`,
 | 16 nov. 2026 | Guerres de clans. | migrations `clans_guerres` et `clans_guerres_participants` (empreintes identiques) ; 316 tests (167 SQL) ; 23 scénarios de bout en bout contre le vrai back ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
 | 16 nov. 2026 | Mode Pro : partager son analyse dans les chats. | migration `analyses` (empreinte identique) ; 325 tests (172 SQL) ; 24 scénarios de bout en bout contre le vrai back, dont deux comptes sur le partage d'analyse ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
 | 16 nov. 2026 | Salon VIP (rang Ascendant) ; suivi d'une mise réservé aux lecteurs de son salon. | migration `salon_vip` (empreinte identique) ; 330 tests (175 SQL) ; 24 scénarios de bout en bout contre le vrai back ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
+| 16 nov. 2026 | Chat du Blitz ; cases du plan remises à jour. | migration `chat_blitz` (empreinte identique) ; 333 tests (177 SQL) ; 24 scénarios de bout en bout contre le vrai back, dont le chat du Blitz ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
