@@ -61,7 +61,7 @@
 
   /* ----- Les fonctions du contrat ----- */
   var RPC = {
-    api_state: function () { var e0 = etat(); regler(e0, []); rgMaj(e0, []); var e = clone(e0); e.deps = e0.deps.map(depJson); e.eclair = eclairJson(e0); delete e.eclairMises; e.serie = serieJson(e0); e.duels = duelsJson(e0); delete e.duelsL; e.combos = clone(e0.combosL || []); delete e.combosL; if (!e.ref) e.ref = { code: 'TESTEUR-7K3', bonus: 10, by: null, list: [] }; e.blitz = Object.keys(e0.blitzJ || {}).filter(function (i) { return !e0.blitzJ[i].regle; }).map(Number); delete e.blitzJ; e.now = Date.now() + (CFG.decalage || 0); return e; },
+    api_state: function () { var e0 = etat(); regler(e0, []); rgMaj(e0, []); var e = clone(e0); e.deps = e0.deps.map(depJson); e.eclair = eclairJson(e0); delete e.eclairMises; e.serie = serieJson(e0); e.duels = duelsJson(e0); delete e.duelsL; e.combos = clone(e0.combosL || []); delete e.combosL; propsAvancer([]); e.props = propsEtat(); if (!e.ref) e.ref = { code: 'TESTEUR-7K3', bonus: 10, by: null, list: [] }; e.blitz = Object.keys(e0.blitzJ || {}).filter(function (i) { return !e0.blitzJ[i].regle; }).map(Number); delete e.blitzJ; e.now = Date.now() + (CFG.decalage || 0); return e; },
     api_pseudo_libre: function (a) { return /^[A-Za-z0-9._]{3,20}$/.test(a.p_pseudo || '') && !pseudoPris(a.p_pseudo); },
     api_profile_update: function (a) { var p = a.p || {}, me = etat().me;
       if ('n' in p) { if (!/^[A-Za-z0-9._]{3,20}$/.test(p.n || '')) throw { message: 'pseudo_invalide' }; if (pseudoPris(p.n, uid())) throw { message: 'pseudo_pris' }; me.n = p.n; }
@@ -269,6 +269,29 @@
       e.rg.pause = 0; e.rg.excl = a.p_months === 0 ? -1 : Math.max(e.rg.excl || 0, Date.now() + a.p_months * 30 * 864e5);
       return { excl: e.rg.excl }; },
     api_markets: function () { return { now: Date.now() + (CFG.decalage || 0), m: clone(db.marches) }; },
+    /* Propositions de marché : mêmes règles que supabase/migrations/…_propositions.sql */
+    api_proposals: function () { var ev = []; propsAvancer(ev); var rep = reponse(ev); rep.props = propsEtat(); return rep; },
+    api_proposal_create: function (a) { var p = a.p || {}, e = etat(), me = e.me, ev = [], propre = function (t) { return String(t || '').replace(/'/g, '’').replace(/\s+/g, ' ').trim(); };
+      if (rangDe(me).t < 3) throw { message: 'rang_insuffisant' };
+      var q = propre(p.q), src = propre(p.src), regles = propre(p.rules);
+      if ([q, src, regles].some(function (t) { return /[<>"`\\]/.test(t); })) throw { message: 'texte_refuse' };
+      if (q.length < 15 || q.length > 120 || !/\?$/.test(q)) throw { message: 'question_invalide' };
+      if (!(String(p.date) >= new Date().toISOString().slice(0, 10))) throw { message: 'date_invalide' };
+      if (src.length < 3) throw { message: 'source_invalide' }; if (regles.length < 30) throw { message: 'regles_invalides' };
+      if (!(+p.p0 >= 5 && +p.p0 <= 95)) throw { message: 'montant_invalide' };
+      var L = propsListe();
+      if (L.some(function (x) { return x.by === uid() && x.status === 'vote' && x.q.toLowerCase() === q.toLowerCase(); })) throw { message: 'proposition_en_double' };
+      if (L.filter(function (x) { return x.by === uid() && x.at > Date.now() - 864e5; }).length >= 5) throw { message: 'trop_de_propositions' };
+      var avant = rangDe(me), x = { id: db.seq++, code: null, q: q, cat: p.cat, date: p.date, time: p.time || '21:00', src: src, rules: regles, p0: +p.p0, status: 'vote', pour: 0, contre: 0, base: 1, baseContre: 0, need: 25, at: Date.now(), mid: null, by: uid(), votes: {} };
+      L.unshift(x); me.xp += 10; ev.push({ k: 'xp', n: 10, src: 'proposition' }); rangMonte(me, avant, ev);
+      ev.push(notif('plus', 'prop_vote', { id: x.id, q: shortOf(q) }, '#creer'));
+      var rep = reponse(ev); rep.prop = propJson(x); rep.props = propsEtat(); return rep; },
+    api_proposal_vote: function (a) { var e = etat(), me = e.me, ev = [], x = propsListe().filter(function (y) { return y.id === +a.p_id && y.status === 'vote'; })[0];
+      if (a.p_vote !== 'for' && a.p_vote !== 'against') throw { message: 'vote_invalide' };
+      if (!x || x.by === uid()) throw { message: 'proposition_indisponible' }; if (x.votes[uid()]) throw { message: 'deja_vote' };
+      x.votes[uid()] = a.p_vote; if (a.p_vote === 'for') x.pour++; else x.contre++;
+      var avant = rangDe(me); me.xp += 2; ev.push({ k: 'xp', n: 2, src: 'vote' }); rangMonte(me, avant, ev); propsAvancer(ev);
+      var rep = reponse(ev); rep.props = propsEtat(); return rep; },
     api_buy: function (a) {
       var e = etat(), me = e.me, total = r2(+a.p_total), cle = uid() + ':' + a.p_key;
       if (a.p_side !== 'oui' && a.p_side !== 'non') throw { message: 'cote_invalide' };
@@ -342,6 +365,25 @@
     var ecart = r6(100 - ids.map(marche).reduce(function (n, x) { return n + x.p; }, 0));
     if (ecart) { var gros = autres.filter(function (x) { return x.p + ecart >= 1 && x.p + ecart <= 98; }).sort(function (x, y) { return y.p - x.p; })[0]; if (gros) gros.p = r6(gros.p + ecart); }
   }
+  /* ----- Propositions de marché : une liste commune à tous les joueurs du faux serveur ----- */
+  function propsListe() { if (!db.props) db.props = [['pp-psg', 'Le PSG sera-t-il champion de France 2027 ?', 'Football', 38, 9], ['pp-jeu', 'Un jeu vidéo dépassera-t-il 50 millions de ventes en 2027 ?', 'Culture', 21, 6], ['pp-sol', 'Le Solana dépassera-t-il 300 $ avant juin 2027 ?', 'Crypto', 44, 12]]
+      .map(function (s) { return { id: db.seq++, code: s[0], q: s[1], cat: s[2], date: null, time: null, src: '', rules: '', p0: 50, status: 'vote', pour: 0, contre: 0, base: s[3], baseContre: s[4], need: 50, at: Date.now(), mid: null, by: null, votes: {} }; });
+    return db.props; }
+  function propVotes(x) { if (x.status === 'live') return { pour: x.need, contre: x.baseContre + x.contre };
+    if (x.code) return { pour: Math.min(x.need - 1, x.base + x.pour), contre: x.baseContre + x.contre };
+    var ticks = Math.min(Math.max(0, Math.floor((Date.now() - x.at) / 1500)), Math.max(0, x.need - x.base - x.pour));
+    return { pour: Math.min(x.need, x.base + x.pour + ticks), contre: x.baseContre + x.contre + Math.floor(ticks * 0.18) }; }
+  function propJson(x) { var v = propVotes(x); return { id: x.id, code: x.code, q: x.q, cat: x.cat, date: x.date, time: x.time, src: x.src, rules: x.rules, p0: x.p0, status: x.status, 'for': v.pour, against: v.contre, need: x.need, at: x.at, mid: x.mid, by: x.by, voted: x.votes[uid()] || null }; }
+  function propsEtat() { var moi = uid(), L = propsListe(), users = {};
+    L.forEach(function (x) { if (x.by && x.by !== moi && db.etats[x.by]) users[x.by] = { n: db.etats[x.by].me.n, t: 0, d: 0, tone: 0, bot: false, pub: 1 }; });
+    return { mine: L.filter(function (x) { return x.by === moi && !x.code; }).slice(0, 20).map(propJson), vote: L.filter(function (x) { return x.status === 'vote' && x.by !== moi; }).map(propJson), users: users }; }
+  function propsAvancer(ev) { propsListe().forEach(function (x) { if (x.status !== 'vote' || x.code || propVotes(x).pour < x.need) return;
+      var v = propVotes(x), mid = 'perso-' + (slugify(x.q).slice(0, 24).replace(/-$/, '') || 'pari') + '-' + x.id, court = shortOf(x.q);
+      db.marches[mid] = { def: { q: x.q, short: court, cat: x.cat, date: x.date, time: x.time, rules: x.rules + ' Source : ' + x.src + '.', heat: 1.6 }, p: x.p0, d0: x.p0, vol: 250, people: 12, liq: 400, st: 'open', hot: 0, ph: [] };
+      x.baseContre = v.contre - x.contre; x.status = 'live'; x.mid = mid;
+      var auteur = db.etats[x.by], n = { id: 'n' + (db.seq++), ic: 'check', code: 'prop_live', p: { id: x.id, q: court, m: mid }, href: '#marche-' + mid, at: Date.now(), read: false };
+      if (auteur) { auteur.me.xp += 50; auteur.notifs.unshift(n); if (x.by === uid()) { ev.push({ k: 'xp', n: 50, src: 'proposition' }); ev.push({ k: 'notif', n: clone(n) }); } }
+      window.__fakeSB.emit('marches', 'etat', { id: mid, st: 'open' }); }); }
   /* ----- Argent fictif : mêmes barèmes que wm.argent() ----- */
   var ARGENT = { coins: { USDC: { min: 5, fixe: true, nets: ['Base', 'Ethereum', 'Arbitrum', 'Solana', 'Polygon'] }, USDT: { min: 5, fixe: true, nets: ['Ethereum', 'Tron', 'Arbitrum', 'Solana'] }, ETH: { min: 0.002, nets: ['Ethereum', 'Base', 'Arbitrum'] }, BTC: { min: 0.0001, nets: ['Bitcoin', 'Lightning'] }, SOL: { min: 0.03, nets: ['Solana'] } },
     nets: { Base: { conf: 12, fmt: 'evm', wfee: 0.05 }, Ethereum: { conf: 12, fmt: 'evm', wfee: 2 }, Arbitrum: { conf: 12, fmt: 'evm', wfee: 0.1 }, Polygon: { conf: 30, fmt: 'evm', wfee: 0.05 }, Solana: { conf: 1, fmt: 'sol', wfee: 0.01 }, Tron: { conf: 20 }, Bitcoin: { conf: 2 }, Lightning: { conf: 1 } },

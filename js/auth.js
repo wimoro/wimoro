@@ -27,9 +27,10 @@ function vCreate(){const dr=S.ui.draft,tab=S.ui.crTab,mine=S.me.props||[];if(!dr
 function crRefresh(){const p=$('[data-crprev]');if(p){p.innerHTML=crPreviewH();fixText(p);}const c=$('[data-crcheck]');if(c){c.innerHTML=crChecksH();fixText(c);}const b=$('[data-crsubmit]');if(b)b.disabled=!(crChecks(S.ui.draft).every(x=>x.ok)&&can('propose'));const n=$('[data-crcount]');if(n)n.textContent=S.ui.draft.q.length+' / 120';const v=$('[data-crp]');if(v)v.textContent=S.ui.draft.p0+' %';}
 document.addEventListener('input',e=>{const k=e.target.dataset&&e.target.dataset.cr;if(!k)return;S.ui.draft[k]=e.target.value;crRefresh();});
 FORMS.create=()=>{const dr=S.ui.draft;if(!can('propose')){lockModal('propose');return;}if(!crChecks(dr).every(c=>c.ok)){toast({tone:'amber',icon:'info',title:_t("Il manque quelque chose"),text:_t("Vérifie la liste « Avant d’envoyer ».")});return;}
+ if(SRV()){srvPropCreer(dr);return;}                              /* mode Compte : la proposition, ses votes et sa mise en ligne sont tenus par le serveur */
  const pr={id:'pr'+Date.now(),q:dr.q.trim(),cat:dr.cat,date:dr.date,time:dr.time,src:dr.src.trim(),rules:dr.rules.trim(),p0:+dr.p0,status:'vote',for:1,against:0,need:25,at:now()};S.me.props.unshift(pr);
  S.ui.draft={q:'',cat:dr.cat,date:'',time:'21:00',src:'',rules:'',p0:50};S.ui.crTab='mine';toast({tone:'blue',icon:'check',title:_t("Proposition envoyée au vote"),text:_t("Tu la retrouves dans Mes paris créés, sur l’accueil et sur ton profil.")});notif('plus',`${_t("Ta proposition « {0} » est en vote.",[shortOf(pr.q)])}`,'#creer');gainXP(10);render(true);save();};
-function createMarketFromProposal(pr,announce){const id='perso-'+slugify(pr.q)+'-'+(hash(pr.id)%1000);pr.mid=id;if(MK[id])return MK[id];const d=new Date(pr.date+'T'+(pr.time||'21:00'));const days=Math.max(0,Math.round((d-new Date())/864e5));
+function createMarketFromProposal(pr,announce){if(SRV())return MK[pr.mid];const id='perso-'+slugify(pr.q)+'-'+(hash(pr.id)%1000);pr.mid=id;if(MK[id])return MK[id];const d=new Date(pr.date+'T'+(pr.time||'21:00'));const days=Math.max(0,Math.round((d-new Date())/864e5));
  const m={id,cat:pr.cat,q:pr.q,short:shortOf(pr.q),p:pr.p0,d0:pr.p0,vol:250,close:days<=0?_t("Aujourd’hui"):_t("Dans ")+days+' j',closeLong:dateFr(pr.date,pr.time),days,people:12,msgs:0,heat:1.6,rules:pr.rules+(pr.src?` ${_t("Source : {0}.",[pr.src])}`:''),creator:'me',anchor:pr.p0,bets:[],online:9,hotUntil:now()+90000};
  for(let i=0;i<30;i++)m.bets.push({s:R()<m.p/100?1:0,a:Math.pow(R(),2.2),me:0});MARKETS.push(m);MK[id]=m;room('m:'+id).msgs.push(mkMsg({k:'evt',text:`${_t("Pari proposé par {0} et validé par la communauté.",[S.me.n])}`}));
  if(announce){toast({tone:'blue',icon:'check',title:_t("Ton pari est en ligne"),text:F.kv(m.short,'+'+F.xp(50)),href:'#marche-'+id,dur:6000});notif('check',`${_t("Ton pari « {0} » est en ligne.",[m.short])}`,'#marche-'+id);gainXP(50);confetti(40);}return m;}
@@ -37,7 +38,7 @@ Object.assign(ACT,{
  'cr-tab':a=>{S.ui.crTab=a.dataset.v;if((S.ui.route||'')!=='creer'){location.hash='#creer';return;}render(false);},
  'cr-cat':a=>{S.ui.draft.cat=a.dataset.v;$$('[data-a="cr-cat"]').forEach(b=>b.classList.toggle('on',b.dataset.v===a.dataset.v));crRefresh();},
  'cr-rules':()=>{const dr=S.ui.draft;const q=dr.q.trim()||'ta question';dr.rules=`${_t("Ce marché se résout par Oui si la réponse à la question « {0} » est oui au {1}, d’après {2}. Sinon, il se résout par Non.",[q.replace(/\s*\?$/,''),dateFr(dr.date,dr.time)||_t("jour de la clôture"),dr.src.trim()||'une source officielle'])}`;const t=$('#crr');if(t)t.value=dr.rules;crRefresh();},
- vote:(a,e)=>{const p=COMM_PROPS.find(x=>x.id===a.dataset.id);if(!p||S.me.voted[p.id])return;S.me.voted[p.id]=a.dataset.v;p[a.dataset.v==='for'?'for':'against']++;gainXP(2,e);render(false);save();}
+ vote:(a,e)=>{const p=COMM_PROPS.find(x=>x.id===a.dataset.id);if(!p||S.me.voted[p.id])return;if(SRV()){srvPropVoter(p,a.dataset.v,e);return;}S.me.voted[p.id]=a.dataset.v;p[a.dataset.v==='for'?'for':'against']++;gainXP(2,e);render(false);save();}
 });
 
 /* ===================== Connexion et inscription ===================== */

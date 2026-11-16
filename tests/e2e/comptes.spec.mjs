@@ -581,3 +581,28 @@ test('parrainage : le code vient du vrai serveur ; un ami inscrit avec le lien r
   expect(erreursA).toEqual([]); expect(erreursD).toEqual([]);
   await ca.close(); await cd.close();
 });
+
+test('propositions de marché : un compte sans le rang Or est refusé par le vrai serveur ; voter pour une proposition de la communauté rapporte 2 XP, une seule fois', async ({ page }) => {
+  test.setTimeout(120000);
+  const erreurs = await ouvrirReel(page, '#connexion');
+  await page.locator('#le').fill(EMAIL); await page.locator('#lp').fill(MDP); await page.locator('form[data-form="login"] [type=submit]').click();
+  await expect(page).toHaveURL(/#accueil/, { timeout: 20000 }); await pret(page);
+  await page.evaluate(() => { location.hash = '#creer'; });
+  const demande = { q: 'Ce compte sans le rang Or pourra-t-il proposer ?', cat: 'Sport', date: new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10), time: '21:00', src: 'Source officielle', rules: 'Ce marché se résout par Oui si la proposition est acceptée.', p0: 50 };
+  expect(await page.evaluate(async p => { try { await API.call('api_proposal_create', { p }); return 'accepté'; } catch (e) { return e.code; } }, demande)).toBe('rang_insuffisant');
+  expect(await lire(page, () => (S.me.props || []).length)).toBe(0);
+
+  await page.locator('[data-a="cr-tab"][data-v="vote"]').click();
+  expect(await page.locator('.prop').count()).toBeGreaterThanOrEqual(3);                       // le contenu de démonstration vient du serveur
+  const p = await lire(page, () => { const x = COMM_PROPS.find(y => y.need === 50 && y.q === _t("Le PSG sera-t-il champion de France 2027 ?")); return x && { id: x.id, pour: x.for, contre: x.against, auteur: userOf(x.by).n }; });
+  expect(p).toMatchObject({ pour: 38, contre: 9 });                                            // personne d'autre n'a voté : les comptes de test repartent avec leurs votes
+  expect(p.auteur.length).toBeGreaterThan(2);
+  const xp0 = await lire(page, () => S.me.xp);
+  await page.locator('[data-a="vote"][data-id="' + p.id + '"][data-v="against"]').click();
+  await expect.poll(() => lire(page, id => S.me.voted[id], p.id), { timeout: 20000 }).toBe('against');
+  expect(await lire(page, id => ({ xp: S.me.xp, contre: COMM_PROPS.find(x => x.id === id).against }), p.id)).toEqual({ xp: xp0 + 2, contre: 10 });
+  expect(await page.evaluate(async id => { try { await API.call('api_proposal_vote', { p_id: +id, p_vote: 'for' }); return 'deux votes'; } catch (e) { return e.code; } }, p.id)).toBe('deja_vote');
+  await page.reload(); await pret(page);
+  expect(await lire(page, id => ({ vote: S.me.voted[id], xp: S.me.xp }), p.id)).toEqual({ vote: 'against', xp: xp0 + 2 });
+  expect(erreurs).toEqual([]);
+});
