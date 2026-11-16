@@ -15,7 +15,7 @@ test.afterAll(async () => { await db.close(); });
 const parler = async n => { for (let i = 0; i < n; i++) await q(db, 'select wm.bots_chat()'); };
 const anneau = async room => ((await q(db, 'select msgs from wm.chat_bots where room = $1', [room]))[0] || { msgs: [] }).msgs;
 const historique = (qui, room) => enTantQue(db, qui, s => s('select public.api_chat_history($1) as r', [room])).then(r => r[0].r);
-const diffusions = () => q(db, `select topic, event, private, payload from realtime.messages where topic like 'salon:%' order by inserted_at`);
+const diffusions = () => q(db, `select topic, event, private, payload from realtime.messages where topic like 'salon:%' and event = 'msg' order by inserted_at`);
 
 test('personne à l’écran : les bots se taisent ; un salon ouvert s’amorce avec six messages datés des dernières minutes', async () => {
   await q(db, 'truncate realtime.messages');

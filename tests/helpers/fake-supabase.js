@@ -116,7 +116,7 @@
     api_chat_seen: function () { return null; },
     api_leaderboard: function () { var ids = Object.keys(db.fiches).filter(function (id) { return id !== uid() && db.fiches[id].pub !== 0; }).sort(function (x, y) { return (db.fiches[y].profit || 0) - (db.fiches[x].profit || 0); }).slice(0, 50), users = {};
       ids.forEach(function (id) { users[id] = ficheDe(id); }); return { ids: ids, users: users }; },
-    api_dm_history: function (a) { dmOk(a.p_user, false); var L = (db.chat['dm:' + [uid(), a.p_user].sort().join(':')] || []).slice(-60), users = {}; users[a.p_user] = ficheDe(a.p_user); return { u: a.p_user, msgs: clone(L), users: users }; },
+    api_dm_history: function (a) { dmOk(a.p_user, false); var L = (db.chat['dm:' + [uid(), a.p_user].sort().join(':')] || []).slice(-60), users = {}; users[a.p_user] = ficheDe(a.p_user); return { u: a.p_user, msgs: L.map(msgPropre), users: users, mes: mesDe(L) }; },
     /* Duels entre amis sur un marché : mêmes règles que supabase/migrations/…_duels.sql (frais simplifiés : 2 %) */
     api_duels: function () { return duelsJson(etat()); },
     api_duel_create: function (a) { var p = a.p || {}, e = etat(), me = e.me, cle = uid() + ':' + p.key, r2 = function (x) { return Math.round(x * 100) / 100; }, rep;
@@ -183,7 +183,14 @@
       if (q.length >= 2 && /^[a-z0-9._]+$/.test(q)) for (var id in db.fiches) if (id !== uid() && String(db.fiches[id].n).toLowerCase().indexOf(q) >= 0 && ids.length < 10) { ids.push(id); users[id] = ficheDe(id); }
       return { ids: ids, users: users }; },
     api_chat_history: function (a) { salonOk(a.p_room); var L = (db.chat[a.p_room] || []).slice(-60), users = {};
-      L.forEach(function (m) { users[m.u] = ficheDe(m.u); }); return { room: a.p_room, msgs: clone(L), users: users }; },
+      L.forEach(function (m) { users[m.u] = ficheDe(m.u); }); return { room: a.p_room, msgs: L.map(msgPropre), users: users, mes: mesDe(L) }; },
+    /* Réactions : mêmes règles que supabase/migrations/…_reactions.sql (un clic pose, un second retire) */
+    api_chat_react: function (a) { if (['🔥', '👀', '💸', '🎯'].indexOf(a.p_emoji) < 0) throw { message: 'reaction_invalide' };
+      var salon = String(a.p_room || ''); if (/^dm:/.test(salon)) { dmOk(salon.slice(3), false); salon = 'dm:' + [uid(), salon.slice(3)].sort().join(':'); } else salonOk(salon);
+      var m = (db.chat[salon] || []).filter(function (x) { return String(x.id) === String(a.p_msg); })[0]; if (!m) throw { message: 'message_indisponible' };
+      m.r = m.r || {}; m.qui = m.qui || {}; var miennes = m.qui[uid()] = m.qui[uid()] || [], i = miennes.indexOf(a.p_emoji);
+      if (i >= 0) { miennes.splice(i, 1); m.r[a.p_emoji] = Math.max(0, (m.r[a.p_emoji] | 0) - 1); if (!m.r[a.p_emoji]) delete m.r[a.p_emoji]; } else { miennes.push(a.p_emoji); m.r[a.p_emoji] = (m.r[a.p_emoji] | 0) + 1; }
+      persist(); return { id: m.id, r: clone(m.r), my: clone(miennes) }; },
     api_chat_send: function (a) { salonOk(a.p_room); var e = etat(), me = e.me, ev = [], t = String(a.p_text || '').trim();
       if (!t) throw { message: 'message_vide' }; if (t.length > 280) throw { message: 'message_trop_long' };
       var miens = []; for (var r in db.chat) db.chat[r].forEach(function (m) { if (m.u === uid()) miens.push(m); });
@@ -632,6 +639,9 @@
 
   var dmOk = function (u, ecrire) { var e = etat(); if (!u || u === uid() || !db.fiches[u]) throw { message: 'joueur_inconnu' }; if (e.friends.indexOf(u) < 0) throw { message: 'pas_amis' }; if (ecrire && rangDe(e.me).t < 1) throw { message: 'rang_insuffisant' }; };
   /* ----- Chat : salons publics ----- */
+  /* un message tel que le serveur l'envoie : sans ses données internes (qui a suivi, qui a réagi) */
+  var msgPropre = function (m) { var c = clone(m); delete c.suivis; delete c.qui; if (c.r && !Object.keys(c.r).length) delete c.r; return c; };
+  var mesDe = function (L) { var o = {}; L.forEach(function (m) { var q = m.qui && m.qui[uid()]; if (q && q.length) o[m.id] = clone(q); }); return o; };
   var salonOk = function (r) { if (r === 'general' || (/^m:/.test(String(r)) && typeof MK !== 'undefined' && MK[String(r).slice(2)])) return; throw { message: 'salon_indisponible' }; };
   var ficheDe = function (id) { if (db.fiches[id]) return clone(db.fiches[id]); var e = db.etats[id]; if (!e) return { n: 'joueur', t: 0, d: 0, tone: 0, color: '#2448FF', photo: '', bio: '', profit: 0, acc: 0, bets: 0, fol: 0, bot: false, pub: 1 };
     var r = rangDe(e.me); return { n: e.me.n, t: r.t, d: r.d, tone: 1, color: e.me.color, photo: e.me.photo || '', bio: e.me.bio || '', profit: 0, acc: 0, bets: e.me.played | 0, fol: 0, bot: false, pub: 1 }; };
@@ -739,6 +749,11 @@
     /** le joueur copié parie / vend, côté serveur (voir copieSuivre, copieSortir) */
     copieSuivre: function (u, mid, s, mise) { return copieSuivre(u, mid, s, mise); },
     copieSortir: function (u, mid, s) { return copieSortir(u, mid, s); },
+    /** un bot réagit à un message (tâche des bots du serveur) : compteur diffusé au salon ; si le message est celui du joueur et que annonce est vrai, 1 XP et une bulle */
+    reactionBot: function (idMsg, emoji, nom, annonce) { var e = etat(), m = null, salon = null; for (var r in db.chat) db.chat[r].forEach(function (x) { if (String(x.id) === String(idMsg)) { m = x; salon = r; } }); if (!m) return null;
+      m.r = m.r || {}; m.r[emoji] = (m.r[emoji] | 0) + 1; if (annonce && m.u === uid()) e.me.xp += 1; persist();
+      window.__fakeSB.emit('salon:' + salon, 're', { id: m.id, r: clone(m.r) });
+      if (annonce && m.u === uid()) window.__fakeSB.emit('joueur:' + uid(), 'reac', { u: 'bot-reaction', n: nom || 'karim', e: emoji, id: m.id, room: salon }); return clone(m.r); },
     /** un bot suit la mise partagée du joueur (tâche wm-suivis du serveur) : compteur, 20 XP, notification en direct */
     suiviBot: function (idMsg, nom) { var e = etat(), m = null, salon = null; for (var r in db.chat) db.chat[r].forEach(function (x) { if (x.id === +idMsg && x.k === 'bet') { m = x; salon = r; } }); if (!m) return 0;
       m.fc = (m.fc | 0) + 1; e.me.xp += 20; e.me.followed = (e.me.followed | 0) + 1;
