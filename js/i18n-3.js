@@ -245,3 +245,13 @@ I18N_ADD("he",{
 "Invitation envoyée à {0}":"ההזמנה נשלחה אל {0}",
 "Il rejoindra le clan s’il le souhaite, avec le code d’invitation.":"הוא יוכל להצטרף לקלאן אם ירצה, עם קוד ההזמנה."
 });
+I18N_ADD("en",{
+"Une guerre est déjà en cours.":"A war is already under way.",
+"Aucune guerre en cours.":"No war under way.",
+"Tu participes déjà à cette guerre.":"You’re already in this war."
+});
+I18N_ADD("he",{
+"Une guerre est déjà en cours.":"כבר מתנהלת מלחמה.",
+"Aucune guerre en cours.":"אין מלחמה כרגע.",
+"Tu participes déjà à cette guerre.":"אתה כבר משתתף במלחמה הזו."
+});

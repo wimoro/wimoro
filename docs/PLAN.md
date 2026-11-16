@@ -326,8 +326,27 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
       refus des pouvoirs de chef à un simple membre).
 - [ ] Limite : les outils de chef n'ont pas été joués contre la vraie base (il faut créer un clan : rang Argent et compte de
       14 jours, que les comptes de test n'ont pas) ; ils sont prouvés dans la base embarquée et avec le faux serveur.
-- [ ] Clans, encore « Bientôt disponible » en mode Compte : guerres de clans (cagnotte). Le classement et les divisions des
-      clans de démonstration restent ceux de l'écran (ils ne bougent pas en mode Compte).
+- [x] Guerres de clans (`api_clan_war`, `api_clan_war_join`), aux règles de la démo : le chef déclare la guerre à un clan de
+      sa division, tiré au sort ; elle dure 48 heures ; chaque membre peut y participer pour un buy-in de 20 $ (pris par le
+      serveur, une seule fois) ; ses points valent sa contribution au clan divisée par dix ; à la fin, on additionne les dix
+      meilleurs de chaque camp : le clan vainqueur se partage la cagnotte moins 4 %, à parts égales, et chaque vrai
+      participant gagne 50 XP ; à égalité, les buy-in sont rendus. La guerre est annoncée dans le fil et dans le chat du
+      clan ; les guerres terminées sont listées dans l'onglet « Guerre ». _Choix_ : le clan adverse est un clan de
+      démonstration, dont les dix participants sont simulés par le serveur (200 à 1 100 points au départ, +50 % au plus sur
+      la durée de la guerre) ; les membres simulés de notre clan (bots invités, sept au plus) participent d'office : leur
+      buy-in entre dans la cagnotte et leur part du gain ne va à personne ; un clan de joueurs se bat en division Bronze ;
+      le règlement se fait au premier passage d'un membre du clan ou d'un participant après les 48 heures (un participant
+      qui a quitté le clan entre-temps touche quand même sa part : ses points valent alors zéro). _Tests_
+      `tests/sql/clans-guerres.spec.mjs` (4), `tests/compte/clans-guerres.spec.mjs` (2), `tests/e2e/comptes.spec.mjs` (refus
+      du vrai serveur : un simple membre ne déclare pas la guerre, aucun buy-in n'est pris sans guerre en cours).
+- [ ] Limites des guerres de clans : (1) elles n'ont pas été jouées contre la vraie base (il faut être chef d'un clan de
+      joueurs : rang Argent et compte de 14 jours) ; elles sont prouvées dans la base embarquée et avec le faux serveur ;
+      (2) les points des participants simulés se calculent à l'avance à partir du code public et, comme dans la démo, on
+      peut rejoindre une guerre jusqu'à sa dernière minute, quand l'issue est presque connue : acceptable pour une maquette
+      en argent fictif, à revoir avant tout argent réel ; (3) il n'y a pas de tâche planifiée : une guerre terminée n'est
+      réglée qu'au passage d'un de ses membres ou participants.
+- [ ] Le classement et les divisions des clans de démonstration restent ceux de l'écran (ils ne bougent pas en mode
+      Compte). L'outil « simuler » des clans (`cl-sim`) n'existe, par nature, qu'en mode Démo.
 - [ ] Limite : la création d'un clan n'a pas été jouée contre la vraie base (rang Argent et compte de 14 jours demandés) ;
       elle est prouvée dans la base embarquée et avec le faux serveur.
 - [x] Copy trading : à partir du rang Or, copier un profil public qui l'autorise (budget, mise fixe ou pourcentage, catégories,
@@ -578,3 +597,4 @@ Rien d'obligatoire. Le détail et les constats sont dans `docs/EXPLOITATION.md`,
 | 16 nov. 2026 | Duels sur une manche éclair. | migration `duels_eclair` (empreinte identique), Edge Function `eclair` version 4 ; 296 tests (154 SQL) ; 22 scénarios de bout en bout contre le vrai back, dont un duel éclair réglé par le vrai serveur ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
 | 16 nov. 2026 | Duels de stack contre un joueur simulé. | migration `stacks` (empreinte identique) ; 302 tests (158 SQL) ; 23 scénarios de bout en bout contre le vrai back ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
 | 16 nov. 2026 | Clans : fil d'activité, outils du chef et des officiers, appels de clan. | migration `clans_chefs` (empreinte identique) ; 310 tests (163 SQL) ; 23 scénarios de bout en bout contre le vrai back ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
+| 16 nov. 2026 | Guerres de clans. | migrations `clans_guerres` et `clans_guerres_participants` (empreintes identiques) ; 316 tests (167 SQL) ; 23 scénarios de bout en bout contre le vrai back ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
