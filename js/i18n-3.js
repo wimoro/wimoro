@@ -221,3 +221,9 @@ I18N_ADD("he",{
 "Ce message n’est plus disponible.":"ההודעה הזו כבר לא זמינה.",
 "Pas si vite : attends un peu avant de réagir encore.":"לא כל כך מהר: חכה רגע לפני שתגיב שוב."
 });
+I18N_ADD("en",{
+"Le duel de stack contre ce joueur n’est pas encore disponible : choisis un autre adversaire.":"Stack duels against this player aren’t available yet: pick another opponent."
+});
+I18N_ADD("he",{
+"Le duel de stack contre ce joueur n’est pas encore disponible : choisis un autre adversaire.":"דו־קרב סטאק מול השחקן הזה עדיין לא זמין: בחר יריב אחר."
+});

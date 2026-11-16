@@ -13,6 +13,7 @@ import { ouvrir, lire } from '../helpers/app.mjs';
 const AUTORITE = new Set(['balance', 'xp', 'played', 'wins', 'settled', 'deposits', 'flashWins', 'followed', 'realized', 'streak', 'bestStreak', 'copiers', 'msgsTotal', 'positions', 'history', 'deps', 'wds', 'missions', 'badges', 'friends', 'freqIn', 'freqOut', 'following', 'notifs', 'kyc', 'maxBet']);
 // Actions libres en mode Compte qui touchent ces champs : chacune passe par le serveur (ou ne fait que lire).
 const RELIEES = {
+  'ACT.stk-create': 'api_stack_create (buy-in, stacks et règlement tenus par le serveur) — tests/compte/stacks.spec.mjs',
   'ACT.react': 'api_chat_react (compteurs tenus par le serveur, vus en direct) — tests/compte/reactions.spec.mjs',
   'ACT.share-pick': 'api_chat_share (carte, XP et suivis tenus par le serveur) — tests/compte/mises.spec.mjs',
   'ACT.follow-user': 'api_follow (liste et compteur d’abonnés tenus par le serveur) — tests/compte/suivre.spec.mjs',
@@ -101,7 +102,7 @@ test('une action pas encore reliée est clairement indisponible : message, et ri
   await page.evaluate(() => { const b = document.createElement('button'); b.dataset.a = 'cl-war'; document.body.appendChild(b); b.click(); b.remove(); });   // guerres de clans
   await expect(page.locator('.toast', { hasText: 'Coming soon for accounts' }).first()).toBeVisible();
   await page.evaluate(() => { ACT.withdraw && document.dispatchEvent(new Event('x')); });
-  for (const a of ['stk-create', 'cl-war', 'cl-war-join', 'limit-place', 'pro-share'])
+  for (const a of ['cl-kick', 'cl-war', 'cl-war-join', 'limit-place', 'pro-share'])
     await page.evaluate(nom => { const b = document.createElement('button'); b.dataset.a = nom; b.dataset.u = 'x'; b.dataset.m = 'btc150k'; document.body.appendChild(b); b.click(); b.remove(); }, a);
   const apres = await lire(page, () => JSON.stringify({ solde: S.me.balance, xp: S.me.xp, pos: S.me.positions, hist: S.me.history, notifs: S.me.notifs.length, prix: MK.btc150k.p, messages: Object.values(S.rooms).reduce((n, r) => n + r.msgs.filter(x => x.k !== 'evt').length, 0) }));
   expect(apres).toBe(avant);

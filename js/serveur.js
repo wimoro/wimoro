@@ -99,6 +99,7 @@ const ERR_TXT={
  pas_amis:()=>_t("Vous devez être amis pour vous écrire."),
  rang_insuffisant:()=>_t("Ton rang ne permet pas encore cette action."),
  joueur_inconnu:()=>_t("Ce joueur est introuvable."),
+ stack_joueur_reel:()=>_t("Le duel de stack contre ce joueur n’est pas encore disponible : choisis un autre adversaire."),
  demande_absente:()=>_t("Cette demande d’ami n’existe plus."),
  trop_de_demandes:()=>_t("Trop de demandes d’ami d’un coup. Réessaie dans une heure."),
  mises_fermees:()=>_t("La prochaine manche arrive dans quelques secondes."),
@@ -112,7 +113,7 @@ const srvErreur=e=>{if(e&&e.code==='session'){srvSessionPerdue();return;}if(e&&e
    La liste se vide au fil des lots (voir docs/PLAN.md). Le test tests/compte/garde.spec.mjs vérifie qu'aucune action
    qui touche au solde, à l'XP ou à un état partagé n'est exécutée localement quand le serveur fait autorité. */
 const SRV_BLOQUE=new Set((''
- +'limit-place ord-cancel guard guard-save guard-del stk-create stack-open '
+ +'limit-place ord-cancel guard guard-save guard-del '
  +'cl-war-join cl-sim cl-promote cl-kick cl-invite cl-call-do cl-war cl-call-open '
  +'pro-sh-send pro-share '
  +'wallet wallet-modal demo-login demo-rank demo-rank-open demo-rank-reset').split(/\s+/));
@@ -140,6 +141,10 @@ const NOTIF_T={
  duel_decline:p=>_t("{0} a décliné ton duel sur {1}. Ta mise t’est rendue.",[userOf(p.u).n,srvDuelNom(p)]),
  duel_expire:p=>_t("Duel expiré sans réponse : {0}. Ta mise t’est rendue.",[srvDuelNom(p)]),
  duel_nul:p=>_t("Duel annulé : break even sur {0}, les deux mises sont rendues.",[srvDuelEstEclair(p.m)&&GM[String(p.m).slice(6)]?GM[String(p.m).slice(6)].name:srvDuelNom(p)]),
+ stack_lance:p=>_t("Duel de stack lancé contre {0} : {1} chacun, {2} jetons, une semaine.",[userOf(p.u).n,F.usd0(+p.k),DUEL.STACK_CHIPS]),
+ stack_gagne:p=>_t("Duel de stack gagné contre {0} : +{1}.",[userOf(p.u).n,F.usd(+p.gain)]),
+ stack_perdu:p=>_t("Duel de stack perdu contre {0}.",[userOf(p.u).n]),
+ stack_nul:()=>_t("Duel de stack : égalité, buy-in rendu."),
  duel_gagne:p=>_t("{0} contre {1} : {2}.",[_t("Duel gagné"),userOf(p.u).n,srvDuelNom(p)]),
  duel_perdu:p=>_t("{0} contre {1} : {2}.",[_t("Duel perdu"),userOf(p.u).n,srvDuelNom(p)]),
  prop_vote:p=>_t("Ta proposition « {0} » est en vote.",[p.q||'']),
@@ -226,7 +231,8 @@ function hydrater(e){
  srvProps(e.props,me);                                                        /* propositions de marché : les siennes, et celles à voter */
  if(e.ref){me.refCode=e.ref.code||'';me.refBy=e.ref.by||undefined;                         /* parrainage : code, parrain et filleuls viennent du serveur */
   me.referrals=(e.ref.list||[]).map(r=>({n:r.n,at:+r.at,st:r.st==='done'?'done':'pending',paid:+r.paid||0,doneAt:r.doneAt?+r.doneAt:undefined}));}
- if(e.duels){srvFiches(e.duels.users);me.duels=(e.duels.liste||[]).map(x=>duelDe(x,e.uid));}   /* au démarrage, l'identifiant du joueur vient de l'état lui-même */
+ if(e.duels){srvFiches(e.duels.users);me.duels=(e.duels.liste||[]).map(x=>duelDe(x,e.uid));}
+ if(e.stacks){srvFiches(e.stacks.users);me.stacks=(e.stacks.liste||[]).map(stackDe);}   /* au démarrage, l'identifiant du joueur vient de l'état lui-même */
  me.notifs=(e.notifs||[]).map(notifDe);me.missions=(e.missions||[]).map(missionDe);me.badges=(e.badges||[]).slice();
  me.friends=(e.friends||[]).slice();me.freqIn=(e.freqIn||[]).slice();me.freqOut=(e.freqOut||[]).slice();me.following=(e.following||[]).slice();
  const pr=e.prefs||{};for(const k of SRV_PREFS)if(pr[k]!==undefined)me[k]=pr[k];
@@ -514,6 +520,7 @@ function srvSalons(){
  for(const r of Array.from(SRV_SALONS))if(!vus.has(r)){SRV_SALONS.delete(r);if(!srvPrive(r))API.unsubscribe(srvSujet(r));}
  if((S.ui.route||'')==='chat'&&!srvDmListeVue){srvDmListeVue=true;srvDmListe();}
  if((S.ui.route||'')==='classement')srvClassement();
+ if((S.ui.route||'')==='duels')srvStacksRelire();
 }
 /* classement : les 50 meilleures fiches viennent du serveur et remplissent l'annuaire (relues au plus une fois par minute) */
 let srvClassementVu=0;
@@ -893,6 +900,26 @@ async function srvDuelAccepter(id){const connu=duelOf(id),lien=!connu&&S.ui.duel
  toast({tone:'blue',icon:'swords',force:true,title:_t("Duel accepté"),text:`${_t("Tu dis {0} pour {1}. Cagnotte {2} sous séquestre.",[duelSideTxt(d,duelMySide(d)),F.usd(d.oppStake),F.usd(d.pot)])}`,href:'#duel-'+d.id});
  location.hash='#duel-'+d.id;render(false);
 }
+/* ----- Duels de stack : buy-in, stacks et règlement tenus par le serveur (adversaire simulé) ----- */
+const stackDe=x=>({id:String(x.id),kind:'stack',buyin:+x.buyin,opp:x.opp,status:x.st,at:+x.at,endAt:+x.endAt,settleAt:x.settleAt||undefined,my:+x.my,theirs:+x.theirs,path:[+x.my],opath:[+x.theirs]});
+function srvStacksEtat(x){if(!x)return;srvFiches(x.users);S.me.stacks=(x.liste||[]).map(stackDe);}
+async function srvStackCreer(st){const buyin=F.parse(st.buyin);
+ if(typeof rgBlocked==='function'&&rgBlocked('bet'))return;
+ if(srvDuelOccupe)return;srvDuelOccupe=true;
+ try{const r=await API.call('api_stack_create',{p:{buyin,opp:st.opp||null,key:cleOp()}});srvStacksEtat(r.stacks);srvAppliquer(r);updateHeader();closeModal();
+  const d=(S.me.stacks||[]).find(x=>x.id===String(r.stack));
+  if(d)toast({tone:'blue',icon:'layers',force:true,title:_t("Duel de stack lancé"),text:`${_t("{0} chacun contre {1}, {2} jetons, une semaine.",[F.usd0(d.buyin),duelUserN(d.opp),F.int(DUEL.STACK_CHIPS)])}`,href:'#duels'});
+  render(false);}
+ catch(e){srvErreur(e);}
+ finally{srvDuelOccupe=false;}
+}
+/* sur la page des duels : les stacks en cours bougent avec les marchés, on les relit (toutes les 20 secondes au plus) */
+let srvStacksVus=0;
+async function srvStacksRelire(){
+ if(!(S.me.stacks||[]).some(x=>x.status==='active')||Date.now()-srvStacksVus<20000)return;srvStacksVus=Date.now();
+ try{const r=await API.call('api_stacks');const avant=JSON.stringify(S.me.stacks);srvStacksEtat(r.stacks);if(r.me)srvAppliquer(r);if(JSON.stringify(S.me.stacks)!==avant&&(S.ui.route||'')==='duels')render(false);}
+ catch(e){if(e&&e.code==='session')srvSessionPerdue();}
+}
 async function srvDuelFermer(d,action){
  const r=await srvDuelAppel('api_duel_close',{p_id:+d.id,p_action:action});if(!r)return;
  if(action==='cancel'){toast({icon:'check',title:_t("Duel annulé"),text:_t("Ta mise est de retour sur ton solde.")});render(false);}
@@ -1013,7 +1040,7 @@ function srvPerso(evt,d){
   if(S.me.notifs.some(x=>x.id===d.n.id))return;
   S.me.notifs.unshift(notifDe(d.n));S.me.notifs=S.me.notifs.slice(0,30);updateBell();
   if(SRV_TOAST[d.n.code]){try{SRV_TOAST[d.n.code](d.n.p||{});}catch(e){}}                             /* ce que le serveur vient de faire pour le joueur, annoncé comme en mode Démo */
-  if(/^fr_|^duel_|^combo_|^parrain_|^prop_|^copie_|^clan_|^mise_|^marche_resolu$|^admin_solde$|^kyc_ok$|^blitz_gagne$/.test(d.n.code||'')){srvVu=0;srvRafraichir();}                   /* demande d'ami ou acceptation : les listes viennent du serveur */
+  if(/^fr_|^duel_|^stack_|^combo_|^parrain_|^prop_|^copie_|^clan_|^mise_|^marche_resolu$|^admin_solde$|^kyc_ok$|^blitz_gagne$/.test(d.n.code||'')){srvVu=0;srvRafraichir();}                   /* demande d'ami ou acceptation : les listes viennent du serveur */
  }
 }
 

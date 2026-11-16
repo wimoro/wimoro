@@ -61,7 +61,7 @@
 
   /* ----- Les fonctions du contrat ----- */
   var RPC = {
-    api_state: function () { var e0 = etat(); regler(e0, []); rgMaj(e0, []); var e = clone(e0); e.deps = e0.deps.map(depJson); e.eclair = eclairJson(e0); delete e.eclairMises; e.serie = serieJson(e0); e.duels = duelsJson(e0); delete e.duelsL; e.combos = clone(e0.combosL || []); delete e.combosL; clanAvancer(e0, []); e.clan = clanEtat(e0); delete e.clanM; delete e.clanApps; delete e.clanParti; e.copies = copiesEtat(e0); delete e.copiesL; propsAvancer([]); e.props = propsEtat(); if (!e.ref) e.ref = { code: 'TESTEUR-7K3', bonus: 10, by: null, list: [] }; e.blitz = Object.keys(e0.blitzJ || {}).filter(function (i) { return !e0.blitzJ[i].regle; }).map(Number); delete e.blitzJ; e.now = Date.now() + (CFG.decalage || 0); return e; },
+    api_state: function () { var e0 = etat(); regler(e0, []); rgMaj(e0, []); stacksAvancer(e0, []); var e = clone(e0); e.stacks = stacksJson(e0); delete e.stacksL; e.deps = e0.deps.map(depJson); e.eclair = eclairJson(e0); delete e.eclairMises; e.serie = serieJson(e0); e.duels = duelsJson(e0); delete e.duelsL; e.combos = clone(e0.combosL || []); delete e.combosL; clanAvancer(e0, []); e.clan = clanEtat(e0); delete e.clanM; delete e.clanApps; delete e.clanParti; e.copies = copiesEtat(e0); delete e.copiesL; propsAvancer([]); e.props = propsEtat(); if (!e.ref) e.ref = { code: 'TESTEUR-7K3', bonus: 10, by: null, list: [] }; e.blitz = Object.keys(e0.blitzJ || {}).filter(function (i) { return !e0.blitzJ[i].regle; }).map(Number); delete e.blitzJ; e.now = Date.now() + (CFG.decalage || 0); return e; },
     api_pseudo_libre: function (a) { return /^[A-Za-z0-9._]{3,20}$/.test(a.p_pseudo || '') && !pseudoPris(a.p_pseudo); },
     api_profile_update: function (a) { var p = a.p || {}, me = etat().me;
       if ('n' in p) { if (!/^[A-Za-z0-9._]{3,20}$/.test(p.n || '')) throw { message: 'pseudo_invalide' }; if (pseudoPris(p.n, uid())) throw { message: 'pseudo_pris' }; me.n = p.n; }
@@ -117,6 +117,16 @@
     api_leaderboard: function () { var ids = Object.keys(db.fiches).filter(function (id) { return id !== uid() && db.fiches[id].pub !== 0; }).sort(function (x, y) { return (db.fiches[y].profit || 0) - (db.fiches[x].profit || 0); }).slice(0, 50), users = {};
       ids.forEach(function (id) { users[id] = ficheDe(id); }); return { ids: ids, users: users }; },
     api_dm_history: function (a) { dmOk(a.p_user, false); var L = (db.chat['dm:' + [uid(), a.p_user].sort().join(':')] || []).slice(-60), users = {}; users[a.p_user] = ficheDe(a.p_user); return { u: a.p_user, msgs: L.map(msgPropre), users: users, mes: mesDe(L) }; },
+    /* Duels de stack : mêmes règles que supabase/migrations/…_stacks.sql (adversaire simulé : un bot ; trajectoire simplifiée) */
+    api_stacks: function () { var e = etat(), ev = [], n = stacksAvancer(e, ev); if (n) { var rep = reponse(ev); rep.stacks = stacksJson(e); return rep; } return { stacks: stacksJson(e) }; },
+    api_stack_create: function (a) { var p = a.p || {}, e = etat(), me = e.me, cle = uid() + ':' + p.key, buyin = Math.round(Number(p.buyin) * 100) / 100, rep;
+      if (!(buyin >= 5 && buyin <= 1000)) throw { message: 'montant_invalide' }; if (!p.key) throw { message: 'cle_absente' };
+      if (db.ops[cle]) { rep = clone(db.ops[cle]); rep.rejoue = true; return rep; }
+      if (e.rg && e.rg.pause > Date.now()) throw { message: 'pause' }; var f = db.fiches[p.opp]; if (!f || p.opp === uid()) throw { message: 'joueur_inconnu' }; if (!f.bot) throw { message: 'stack_joueur_reel' };
+      var L = e.stacksL = e.stacksL || []; if (L.filter(function (x) { return x.st === 'active'; }).length >= 5) throw { message: 'trop_de_duels' }; if (me.balance < buyin) throw { message: 'solde_insuffisant' };
+      me.balance = Math.round((me.balance - buyin) * 100) / 100;
+      var x = { id: db.seq++, opp: p.opp, buyin: buyin, st: 'active', at: Date.now(), endAt: Date.now() + 7 * 86400e3, settleAt: null, ref: resultatDe(e), fin: 1000 + ((db.seq * 37) % 300) - 100 };
+      L.unshift(x); rep = reponse([notif('swords', 'stack_lance', { id: x.id, u: p.opp, k: buyin }, '#duels')]); rep.stack = x.id; rep.stacks = stacksJson(e); db.ops[cle] = clone(rep); return rep; },
     /* Duels entre amis sur un marché : mêmes règles que supabase/migrations/…_duels.sql (frais simplifiés : 2 %) */
     api_duels: function () { return duelsJson(etat()); },
     api_duel_create: function (a) { var p = a.p || {}, e = etat(), me = e.me, cle = uid() + ':' + p.key, r2 = function (x) { return Math.round(x * 100) / 100; }, rep;
@@ -675,6 +685,17 @@
   /* un message tel que le serveur l'envoie : sans ses données internes (qui a suivi, qui a réagi) */
   var msgPropre = function (m) { var c = clone(m); delete c.suivis; delete c.qui; if (c.r && !Object.keys(c.r).length) delete c.r; return c; };
   var mesDe = function (L) { var o = {}; L.forEach(function (m) { var q = m.qui && m.qui[uid()]; if (q && q.length) o[m.id] = clone(q); }); return o; };
+  /* duels de stack : résultat du joueur (réalisé + positions), stacks lus à l'instant, règlement à l'échéance */
+  function resultatDe(e) { var v = e.me.realized || 0; (e.positions || []).forEach(function (p) { var m = marche(p.m); if (m) v += p.sh * ((p.s === 'oui' ? m.p : 100 - m.p) - p.avg) / 100; }); return v; }
+  function stackVu(e, x) { var actif = x.st === 'active', t = Math.min(1, (Date.now() - x.at) / (x.endAt - x.at));
+    return { id: x.id, opp: x.opp, buyin: x.buyin, st: x.st, at: x.at, endAt: x.endAt, settleAt: x.settleAt, my: actif ? Math.max(0, Math.round(1000 + resultatDe(e) - x.ref)) : x.my, theirs: actif ? Math.round(1000 + (x.fin - 1000) * t) : x.theirs }; }
+  function stacksJson(e) { var users = {}, L = (e.stacksL || []).slice(0, 20); L.forEach(function (x) { users[x.opp] = ficheDe(x.opp); }); return { liste: L.map(function (x) { return stackVu(e, x); }), users: users }; }
+  function stacksAvancer(e, ev) { var n = 0, me = e.me; (e.stacksL || []).forEach(function (x) { if (x.st !== 'active' || x.endAt > Date.now()) return;
+      var moi = Math.max(0, Math.round(1000 + resultatDe(e) - x.ref)), lui = x.fin, pot = Math.round(x.buyin * 2 * .96 * 100) / 100; x.my = moi; x.theirs = lui; x.settleAt = Date.now(); n++;
+      if (moi > lui) { x.st = 'won'; me.balance = Math.round((me.balance + pot) * 100) / 100; me.realized = (me.realized || 0) + pot - x.buyin; me.xp += 30; ev.push({ k: 'xp', n: 30, src: 'stack' }); }
+      else if (moi === lui) { x.st = 'void'; me.balance = Math.round((me.balance + x.buyin) * 100) / 100; } else { x.st = 'lost'; me.realized = (me.realized || 0) - x.buyin; }
+      ev.push(notif('swords', x.st === 'won' ? 'stack_gagne' : x.st === 'lost' ? 'stack_perdu' : 'stack_nul', { id: x.id, u: x.opp, gain: pot - x.buyin, moi: moi, lui: lui }, '#duels')); });
+    return n; }
   var salonOk = function (r) { if (r === 'general' || (/^m:/.test(String(r)) && typeof MK !== 'undefined' && MK[String(r).slice(2)])) return;
     var k = etat().clanM; if (k && r === 'clan:' + k.id) return;                                  /* le salon de son clan, et lui seul */
     throw { message: 'salon_indisponible' }; };
