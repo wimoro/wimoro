@@ -637,8 +637,8 @@ test('copy trading : la page vient du vrai serveur ; sans le rang Or, copier est
   expect(erreurs).toEqual([]);
 });
 
-test('clans : rejoindre un clan ouvert sur le vrai serveur ; le tag est vu par un autre joueur ; la mise compte pour le clan ; quitter impose 7 jours d’attente', async ({ browser }) => {
-  test.setTimeout(180000);
+test('clans : rejoindre un clan ouvert sur le vrai serveur ; le tag est vu par un autre joueur ; le chat du clan n’est reçu que par ses membres ; la mise compte pour le clan ; quitter impose 7 jours d’attente', async ({ browser }) => {
+  test.setTimeout(240000);
   const entrer = async email => {
     const ctx = await browser.newContext(), page = await ctx.newPage();
     const erreurs = await ouvrirReel(page, '#connexion');
@@ -665,6 +665,34 @@ test('clans : rejoindre un clan ouvert sur le vrai serveur ; le tag est vu par u
   const b = await entrer(`wimoro-e2e-${stamp}-b@example.com`);
   expect(await lire(b.page, id => ({ clan: USERS[id] && USERS[id].clan, tag: tagH(id) }), idA)).toMatchObject({ clan: 'c1' });
   expect(await lire(b.page, id => tagH(id), idA)).toContain(tag);
+  // ── chat du clan : réservé aux membres, diffusé sur le sujet privé du clan ──
+  const SALON = 'clan:c1', essai2 = (page, nom, args) => page.evaluate(async ([nom, args]) => { try { await API.call(nom, args); return 'accepté'; } catch (e) { return e.code; } }, [nom, args]);
+  // C (troisième compte, hors du clan) n'a accès à rien, et tente quand même d'écouter le sujet privé du clan
+  const ctxC = await browser.newContext(), c = await ctxC.newPage();
+  await ouvrirReel(c, '#connexion');
+  await c.locator('#le').fill(`wimoro-e2e-${stamp}-c@example.com`); await c.locator('#lp').fill(MDP); await c.locator('form[data-form="login"] [type=submit]').click();
+  await expect(c).toHaveURL(/#(accueil|bienvenue)/, { timeout: 20000 }); await pret(c);
+  expect(await essai2(c, 'api_chat_history', { p_room: SALON })).toBe('salon_indisponible');
+  expect(await essai2(c, 'api_chat_send', { p_room: SALON, p_text: 'je passe' })).toBe('salon_indisponible');
+  await c.evaluate(s => { window.__vole = []; return API.subscribe(s, (evt, d) => window.__vole.push([evt, d]), true); }, SALON);
+  // B rejoint le clan à son tour et ouvre son chat ; A aussi
+  await b.page.evaluate(() => API.call('api_clan_join', { p_clan: 'c1', p_code: null }));
+  for (const p of [a.page, b.page]) { await p.evaluate(() => { location.hash = '#clan-c1'; }); await p.reload(); await pret(p); await p.locator('[data-a="cl-ctab"][data-v="chat"]').click(); await expect(p.locator('.feed[data-room="clan:c1"]')).toBeAttached(); }
+  const accueil = page => lire(page, s => (S.rooms[s] ? S.rooms[s].msgs : []).filter(x => typeof x.sid === 'string' && x.sid[0] === 'b').map(x => x.text), SALON);   // messages de bots : identifiant « b… »
+  await expect.poll(async () => (await accueil(a.page)).length, { timeout: 20000 }).toBe(3);         // les trois messages d'accueil, posés une fois par le serveur
+  const chezA = await accueil(a.page);
+  await expect.poll(() => accueil(b.page), { timeout: 20000 }).toEqual(chezA);                       // les mêmes pour tous les membres
+  for (const t of await accueil(a.page)) { expect(t.length).toBeGreaterThan(5); expect(t).not.toMatch(/[{}]/); }
+  const texteClan = 'Test automatique ' + stamp + ' : chat du clan';
+  const champClan = a.page.locator('.composer input[data-in="clan:c1"]'); await champClan.fill(texteClan); await champClan.press('Enter');
+  await expect(a.page.locator('.feed[data-room="clan:c1"] .msg.mine', { hasText: texteClan })).toHaveCount(1, { timeout: 15000 });
+  // B, membre, le reçoit en direct par le sujet privé ; C, qui écoutait sans être membre, ne reçoit rien
+  await expect(b.page.locator('.feed[data-room="clan:c1"] .msg', { hasText: texteClan })).toHaveCount(1, { timeout: 20000 });
+  await expect(b.page.locator('.feed[data-room="clan:c1"] .msg', { hasText: texteClan }).locator('.un')).toHaveText(PSEUDO);
+  await c.waitForTimeout(3000);
+  expect(await lire(c, () => window.__vole), 'un joueur hors du clan ne reçoit rien de son sujet privé').toEqual([]);
+  expect(await lire(a.page, () => API.topics().filter(t => /clan/.test(t))), 'le salon du clan n’a qu’un sujet, privé').toEqual(['clan:c1']);
+  await ctxC.close();
   // une mise de A compte pour son clan (comptée par le serveur)
   const solde = await lire(a.page, () => S.me.balance);
   if (solde >= 2) {
@@ -678,6 +706,7 @@ test('clans : rejoindre un clan ouvert sur le vrai serveur ; le tag est vu par u
   await a.page.locator('[data-a="cl-leave-do"]').click();
   await expect.poll(() => lire(a.page, () => S.me.clan), { timeout: 20000 }).toBeNull();
   expect(await essai('api_clan_join', { p_clan: 'c4', p_code: null })).toBe('clan_attente');
+  expect(await essai('api_chat_history', { p_room: 'clan:c1' }), 'sorti du clan, plus d’accès à son chat').toBe('salon_indisponible');
   await a.page.reload(); await pret(a.page);
   expect(await lire(a.page, () => ({ clan: S.me.clan, attente: clanLeaveWait() > 6 * 864e5 }))).toEqual({ clan: null, attente: true });
   expect(a.erreurs).toEqual([]); expect(b.erreurs).toEqual([]);

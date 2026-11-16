@@ -642,7 +642,9 @@
   /* un message tel que le serveur l'envoie : sans ses données internes (qui a suivi, qui a réagi) */
   var msgPropre = function (m) { var c = clone(m); delete c.suivis; delete c.qui; if (c.r && !Object.keys(c.r).length) delete c.r; return c; };
   var mesDe = function (L) { var o = {}; L.forEach(function (m) { var q = m.qui && m.qui[uid()]; if (q && q.length) o[m.id] = clone(q); }); return o; };
-  var salonOk = function (r) { if (r === 'general' || (/^m:/.test(String(r)) && typeof MK !== 'undefined' && MK[String(r).slice(2)])) return; throw { message: 'salon_indisponible' }; };
+  var salonOk = function (r) { if (r === 'general' || (/^m:/.test(String(r)) && typeof MK !== 'undefined' && MK[String(r).slice(2)])) return;
+    var k = etat().clanM; if (k && r === 'clan:' + k.id) return;                                  /* le salon de son clan, et lui seul */
+    throw { message: 'salon_indisponible' }; };
   var ficheDe = function (id) { if (db.fiches[id]) return clone(db.fiches[id]); var e = db.etats[id]; if (!e) return { n: 'joueur', t: 0, d: 0, tone: 0, color: '#2448FF', photo: '', bio: '', profit: 0, acc: 0, bets: 0, fol: 0, bot: false, pub: 1 };
     var r = rangDe(e.me); return { n: e.me.n, t: r.t, d: r.d, tone: 1, color: e.me.color, photo: e.me.photo || '', bio: e.me.bio || '', profit: 0, acc: 0, bets: e.me.played | 0, fol: 0, bot: false, pub: 1 }; };
   var rangDe = function (me) { return rankFrom({ xp: me.xp, settled: me.settled, acc: Math.round(me.wins / Math.max(1, me.settled) * 100), deposits: me.deposits, flashWins: me.flashWins, followed: me.followed, pos: me.pos }); };
