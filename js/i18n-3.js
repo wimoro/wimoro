@@ -169,3 +169,13 @@ I18N_ADD("en",{
 I18N_ADD("he",{
 "Ce combiné n’est plus disponible.":"הצירוף הזה כבר לא זמין."
 });
+I18N_ADD("en",{
+"Cet ordre n’est plus en attente.":"This order is no longer pending.",
+"Trop d’ordres en attente : annules-en un avant d’en placer un autre.":"Too many pending orders: cancel one before placing another.",
+"Ordre annulé : le marché {0} est résolu.":"Order cancelled: the market {0} is resolved."
+});
+I18N_ADD("he",{
+"Cet ordre n’est plus en attente.":"ההוראה הזו כבר לא ממתינה.",
+"Trop d’ordres en attente : annules-en un avant d’en placer un autre.":"יותר מדי הוראות ממתינות: בטל אחת לפני שתציב אחרת.",
+"Ordre annulé : le marché {0} est résolu.":"ההוראה בוטלה: השוק {0} הוכרע."
+});
