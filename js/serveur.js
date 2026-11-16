@@ -52,6 +52,9 @@ const ERR_TXT={
  elimine:()=>_t("Tu as été éliminé cette fois."),
  rachat_indisponible:()=>_t("Le rachat n’est plus possible."),
  rachat_fait:()=>_t("Le rachat n’est plus possible."),
+ duel_indisponible:()=>_t("Ce duel n’est plus disponible."),
+ cote_indisponible:()=>_t("La cote du marché ne permet pas ce duel pour l’instant."),
+ trop_de_duels:()=>_t("Tu as déjà trop de duels en attente de réponse."),
  serie_en_cours:()=>_t("Tu as déjà une série en cours."),
  serie_absente:()=>_t("Cette série est terminée."),
  deja_choisi:()=>_t("Ton choix est déjà fait pour cette manche."),
@@ -77,7 +80,7 @@ const srvErreur=e=>{if(e&&e.code==='session'){srvSessionPerdue();return;}if(e&&e
    La liste se vide au fil des lots (voir docs/PLAN.md). Le test tests/compte/garde.spec.mjs vérifie qu'aucune action
    qui touche au solde, à l'XP ou à un état partagé n'est exécutée localement quand le serveur fait autorité. */
 const SRV_BLOQUE=new Set(('share-pick vote '
- +'cp-start cp-stop-do cp-edit cp-manage cp-pause cp-stop cp-open limit-place ord-cancel guard guard-save guard-del dl-create dl-cancel dl-accept dl-share dl-decline duel-open stk-create stack-open '
+ +'cp-start cp-stop-do cp-edit cp-manage cp-pause cp-stop cp-open limit-place ord-cancel guard guard-save guard-del stk-create stack-open '
  +'sr-share cl-war-join cl-sim cl-join cl-apply cl-leave-do cl-share cl-promote cl-kick cl-invite cl-call-do cl-war cl-feedopt cl-create-open cl-leave cl-call-open cl-war-open '
  +'cb-place cb-cash cb-add cb-clear cb-rm cb-stake pro-sh-send pro-share follow-user follow-bet follow-pbet share ref-copy ref-share propose react '
  +'wallet wallet-modal demo-login demo-rank demo-rank-open demo-rank-reset').split(/\s+/));
@@ -100,6 +103,12 @@ const NOTIF_T={
  badge:p=>_t("Badge débloqué : {0}.",[badgeNom(p.id)]),
  bet_placed:p=>_t("Pari placé : {0} sur {1}, {2}.",[F.usd(+p.amt),p.s==='oui'?_t("Oui"):_t("Non"),MK[p.m]?MK[p.m].short:p.m]),
  marche_resolu:p=>+p.pay>0?_t("Marché résolu : {0}. Tu gagnes {1}.",[MK[p.m]?MK[p.m].short:p.m,F.usd(+p.pay)]):_t("Marché résolu : {0}. Ta position {1} est perdue.",[MK[p.m]?MK[p.m].short:p.m,p.s==='oui'?_t("Oui"):_t("Non")]),
+ duel_recu:p=>_t("{0} te défie : {1}, {0} dit {2} pour {3}.",[userOf(p.u).n,MK[p.m]?MK[p.m].short:p.m,p.s==='oui'?_t("Oui"):_t("Non"),F.usd0(+p.k)]),
+ duel_accepte:p=>_t("{0} a accepté ton duel : {1}, cagnotte {2}.",[userOf(p.u).n,MK[p.m]?MK[p.m].short:p.m,F.usd(+p.pot)]),
+ duel_decline:p=>_t("{0} a décliné ton duel sur {1}. Ta mise t’est rendue.",[userOf(p.u).n,MK[p.m]?MK[p.m].short:p.m]),
+ duel_expire:p=>_t("Duel expiré sans réponse : {0}. Ta mise t’est rendue.",[MK[p.m]?MK[p.m].short:p.m]),
+ duel_gagne:p=>_t("{0} contre {1} : {2}.",[_t("Duel gagné"),userOf(p.u).n,MK[p.m]?MK[p.m].short:p.m]),
+ duel_perdu:p=>_t("{0} contre {1} : {2}.",[_t("Duel perdu"),userOf(p.u).n,MK[p.m]?MK[p.m].short:p.m]),
  blitz_gagne:p=>_t("Blitz gagné : +{0}",[F.usd(+p.gain-+p.paye)]),
  admin_solde:p=>+p.delta>=0?_t("Ton solde a été crédité de {0} par l’équipe Wimoro.",[F.usd(+p.delta)]):_t("Ton solde a été débité de {0} par l’équipe Wimoro.",[F.usd(-p.delta)]),
  dep_credited:p=>depNotifTxt({method:p.method,usd:+p.usd,amt:+p.amt,coin:p.coin,net:p.method&&FIAT[p.method]?FIAT[p.method].n:p.net}),
@@ -124,7 +133,8 @@ const rgDe=r=>({lim:{day:+(r.lim||{}).day||0,week:+(r.lim||{}).week||0,month:+(r
 const histSerie=h=>{const [,gid,won,step,mult]=h.q.split('|'),nom=GM[gid]?GM[gid].name:gid;
  return {k:'serie',q:h.win?_t("La Série {0} : {1} sur {1}, encaissé à ×{2}",[nom,won,F.d1(+mult)]):_t("La Série {0} : {1} sur {2}",[nom,won,step]),s:h.s,win:!!h.win,pnl:+h.pnl,at:h.at};};
 const histBlitz=h=>{const [,res,n]=h.q.split('|');return {k:'blitz',q:res==='g'?_t("Blitz Royale : survivant sur {0}",[F.int(+n)]):_t("Blitz Royale : éliminé"),s:h.s,win:!!h.win,pnl:+h.pnl,at:h.at};};
-const histDe=h=>{if(h.k==='flash'&&typeof h.q==='string'&&h.q.startsWith('serie|'))return histSerie(h);if(h.k==='flash'&&typeof h.q==='string'&&h.q.startsWith('blitz|'))return histBlitz(h);if(h.k==='flash'&&typeof h.q==='string'&&h.q.startsWith('eclair|')){const [,gid,r]=h.q.split('|'),d=GM[gid];
+const histDuel=h=>{const [,u,m]=h.q.split('|');return {k:'duel',q:_t("Duel contre {0} : {1}",[userOf(u).n,MK[m]?MK[m].short:m]),s:h.s,win:!!h.win,pnl:+h.pnl,at:h.at};};
+const histDe=h=>{if(typeof h.q==='string'&&h.q.startsWith('duel|'))return histDuel(h);if(h.k==='flash'&&typeof h.q==='string'&&h.q.startsWith('serie|'))return histSerie(h);if(h.k==='flash'&&typeof h.q==='string'&&h.q.startsWith('blitz|'))return histBlitz(h);if(h.k==='flash'&&typeof h.q==='string'&&h.q.startsWith('eclair|')){const [,gid,r]=h.q.split('|'),d=GM[gid];
   return {k:'flash',q:d?_t("Éclair {0}, manche {1} : {2}",[d.name,F.int(+r),sideLabel(d,h.s)]):h.q,s:h.s==='non'?'non':'oui',eq:h.s==='be',win:!!h.win,pnl:+h.pnl,at:h.at};}
  return {k:h.k,m:h.m||undefined,q:h.m&&MK[h.m]?MK[h.m].q:(h.q||h.m||''),s:h.s,win:!!h.win,pnl:+h.pnl,at:h.at};};
 const miseDe=m=>({id:m.id,s:m.s,amt:+m.amt,fee:+m.fee,net:+m.net,price:m.price,mult:+m.mult,tk:m.tk|0});
@@ -150,6 +160,7 @@ function hydrater(e){
  /* pari éclair : les mises de la manche en cours sont rendues par le serveur (flashBoot les replace sur leurs paris) */
  {const b=e.eclair&&e.eclair.b||{};if(Object.keys(b).length){me.fmy={r:e.eclair.r,b:{}};for(const g in b)me.fmy.b[g]=miseDe(b[g]);}SRV_ECLAIR_DU=e.eclair?(e.eclair.du|0):0;}
  me.serie=serieDe(e.serie);SRV_BZ.aRegler=(e.blitz||[]).slice();
+ if(e.duels){srvFiches(e.duels.users);me.duels=(e.duels.liste||[]).map(x=>duelDe(x,e.uid));}   /* au démarrage, l'identifiant du joueur vient de l'état lui-même */
  me.notifs=(e.notifs||[]).map(notifDe);me.missions=(e.missions||[]).map(missionDe);me.badges=(e.badges||[]).slice();
  me.friends=(e.friends||[]).slice();me.freqIn=(e.freqIn||[]).slice();me.freqOut=(e.freqOut||[]).slice();me.following=(e.following||[]).slice();
  const pr=e.prefs||{};for(const k of SRV_PREFS)if(pr[k]!==undefined)me[k]=pr[k];
@@ -508,6 +519,42 @@ async function srvSerieRegler(){
 }
 planifier('serveur : série',1000,()=>{if(typeof serieTick==='function')serieTick();},'serveur');
 
+/* ----- Duels entre amis sur un marché : mises sous séquestre et règlement tenus par le serveur -----
+   Le serveur rend les duels du joueur (créés ou reçus) ; l'écran les met à sa forme et garde son affichage. Les duels
+   sur une manche éclair et les duels de stack ne sont pas encore reliés. */
+const duelDe=(x,qui)=>{const moi=qui||srvMoi(),par=x.by===moi?'me':x.by,adv=x.opp?(x.opp===moi?'me':x.opp):null,mien=par==='me'?x.side:(x.side==='oui'?'non':'oui');
+ const st=x.st==='regle'?(x.winSide===mien?'won':'lost'):x.st;
+ return {id:String(x.id),code:x.code,kind:'market',m:x.m,round:0,side:x.side,by:par,opp:adv,stake:+x.stake,fee:+x.fee||0,status:st,at:+x.at,expiresAt:+x.expiresAt,price0:x.price0||0,
+  price:x.price||undefined,oppStake:x.oppStake==null?undefined:+x.oppStake,oppFee:+x.oppFee||0,pot:x.pot==null?undefined:+x.pot,acceptAt:x.acceptAt||undefined,settleAt:x.settleAt||undefined,winSide:x.winSide||undefined,
+  proof:x.winSide?{txt:_t("Résultat officiel du marché : {0}.",[x.winSide==='oui'?_t("Oui"):_t("Non")]),at:x.settleAt}:undefined};};
+function srvDuelsEtat(x){if(!x)return;srvFiches(x.users);S.me.duels=(x.liste||[]).map(d=>duelDe(d));}
+let srvDuelOccupe=false;
+async function srvDuelAppel(nom,args){if(srvDuelOccupe)return null;srvDuelOccupe=true;
+ try{const r=await API.call(nom,args);srvAppliquer(r);srvDuelsEtat(r.duels);updateHeader();return r;}
+ catch(e){srvErreur(e);return null;}
+ finally{srvDuelOccupe=false;}
+}
+async function srvDuelCreer(st){const stake=F.parse(st.stake);
+ if(String(st.m).startsWith('flash:')){srvBientot();return;}                              /* duel sur une manche éclair : pas encore relié */
+ if(typeof rgBlocked==='function'&&rgBlocked('bet'))return;
+ const r=await srvDuelAppel('api_duel_create',{p:{m:st.m,side:st.side,stake,opp:st.opp||null,key:cleOp()}});if(!r)return;
+ const d=duelOf(String(r.duel.id));closeModal();if(!d)return;
+ if(st.opp){toast({tone:'blue',icon:'swords',force:true,title:`${_t("Défi envoyé à {0}",[duelUserN(st.opp)])}`,text:`${_t("{0} : tu dis {1} pour {2}. Ta mise est bloquée sous séquestre.",[duelShort(d),duelSideTxt(d,d.side),F.usd0(stake)])}`,href:'#duel-'+d.id});if((S.ui.route||'').startsWith('duel'))render(false);}
+ else duelShareOpen(d);
+}
+async function srvDuelAccepter(id){const connu=duelOf(id),lien=!connu&&S.ui.duelLink?S.ui.duelLink:null;if(!connu&&!lien)return;
+ if(typeof rgBlocked==='function'&&rgBlocked('bet'))return;
+ const r=await srvDuelAppel('api_duel_accept',{p:lien?{code:lien.c}:{id:+id}});if(!r)return;
+ S.ui.duelLink=null;const d=duelOf(String(r.duel.id));if(!d)return;
+ toast({tone:'blue',icon:'swords',force:true,title:_t("Duel accepté"),text:`${_t("Tu dis {0} pour {1}. Cagnotte {2} sous séquestre.",[duelSideTxt(d,duelMySide(d)),F.usd(d.oppStake),F.usd(d.pot)])}`,href:'#duel-'+d.id});
+ location.hash='#duel-'+d.id;render(false);
+}
+async function srvDuelFermer(d,action){
+ const r=await srvDuelAppel('api_duel_close',{p_id:+d.id,p_action:action});if(!r)return;
+ if(action==='cancel'){toast({icon:'check',title:_t("Duel annulé"),text:_t("Ta mise est de retour sur ton solde.")});render(false);}
+ else{toast({icon:'check',title:_t("Duel refusé")});location.hash='#duels';}
+}
+
 /* ----- Blitz Royale -----
    La salle se déduit de l'heure avec le moteur partagé (joueurs simulés, choix, issues, jackpot reporté) : l'écran la
    reconstruit chaque seconde et la donne au même affichage qu'en mode Démo. Le serveur tient les vrais joueurs : il est
@@ -619,7 +666,7 @@ function srvPerso(evt,d){
  if(evt==='notif'&&d&&d.n){
   if(S.me.notifs.some(x=>x.id===d.n.id))return;
   S.me.notifs.unshift(notifDe(d.n));S.me.notifs=S.me.notifs.slice(0,30);updateBell();
-  if(/^fr_|^marche_resolu$|^admin_solde$|^kyc_ok$|^blitz_gagne$/.test(d.n.code||'')){srvVu=0;srvRafraichir();}                   /* demande d'ami ou acceptation : les listes viennent du serveur */
+  if(/^fr_|^duel_|^marche_resolu$|^admin_solde$|^kyc_ok$|^blitz_gagne$/.test(d.n.code||'')){srvVu=0;srvRafraichir();}                   /* demande d'ami ou acceptation : les listes viennent du serveur */
  }
 }
 

@@ -230,7 +230,15 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 - [x] La demande reçue apparaît à la seconde, par le sujet privé du joueur (voir 4.5).
 - [x] Classement servi par le serveur (`api_leaderboard` : 50 fiches publiques, vrais joueurs et bots) : l'écran n'est plus vide en mode Compte (B17). _Tests_ `tests/sql/classement.spec.mjs`, `tests/compte/amis.spec.mjs`. Vérifié avec le faux serveur et par requête sur la base, pas encore par un test de bout en bout.
 - [ ] Classement par période tenu par le serveur (K46) : aujourd'hui « Semaine » et « Mois » sont déduits du total, comme en mode Démo. Suivre un joueur.
-- [ ] Duels, clans, copy trading, parrainage.
+- [x] Duels entre amis sur un marché : défier (mise et frais pris tout de suite), accepter au prix du marché, refuser, annuler,
+      expirer après 48 heures, lien d'invitation, bot défié qui accepte aussitôt ; réglés avec la résolution du marché (panel
+      d'administration). `api_duel_create`, `api_duel_accept`, `api_duel_close`, `api_duel_code`, `api_duels`. _Tests_
+      `tests/sql/duels.spec.mjs` (5), `tests/compte/duels.spec.mjs` (3), `tests/e2e/comptes.spec.mjs` (deux vrais comptes : défi,
+      refus faute de solde, remboursement ; duel contre un bot).
+- [ ] Duels sur une manche éclair et duels de stack : annoncés comme indisponibles en mode Compte.
+- [ ] Limite : le paiement d'un duel gagné n'a pas été joué contre la vraie base (il faudrait résoudre un vrai marché) ; il est
+      prouvé dans la base embarquée et avec le faux serveur.
+- [ ] Clans, copy trading, parrainage.
 
 ### 4.7 Argent fictif et KYC
 - [x] `api_demo_deposit` (crypto, carte, virement, PayPal), `api_demo_withdraw`, `api_demo_kyc`, `api_demo_settle`
@@ -338,6 +346,7 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 | Blitz : prime time | 21 h, heure de Paris en hiver (20 h UTC), pour tout le monde. | En mode Démo c'était 21 h à l'heure de chaque appareil ; un serveur doit choisir une seule heure. |
 | Blitz : joueurs simulés | Leurs choix sont tirés une fois par manche (1 % ne choisit pas) ; le jackpot reporté ne compte que leurs entrées. | Même allure qu'en mode Démo, mais calculable à l'identique par l'écran et le serveur. |
 | Blitz : paiement | Réglé à la demande : le premier inscrit qui revient après la fin déclenche le paiement de tous les inscrits. | Pas de tâche planifiée capable d'exécuter le moteur (JavaScript) ; aucun gain ne se perd, il attend au plus le retour d'un inscrit (un mois). |
+| Duels | Seuls les duels sur un marché sont reliés. Les frais d'ouverture ne sont pas rendus si le duel est refusé ou expire (règle du mode Démo). Un duel accepté ajoute son montant au volume du marché, sans déplacer le prix. | Les duels éclair demandent le moteur côté serveur (lot à part) ; le duel de stack dure une semaine et repose sur un adversaire simulé. |
 | Protection de `main` | Non activée. | Elle changerait ta façon de publier ; elle reste proposée, facultative. |
 
 ## À faire par l'humain
@@ -374,3 +383,4 @@ Rien d'obligatoire. Le détail et les constats sont dans `docs/EXPLOITATION.md`,
 | 16 nov. 2026 | Phase 6 : panel d'administration (joueurs, marchés avec résolution, chat, bots, chiffres, journal). Bots du chat : un rythme par salon regardé. Démarrage du direct : relecture de rattrapage. | migrations `admin`, `chat_bots_rythme` (empreintes identiques) ; 196 tests (88 SQL) ; 10 scénarios de bout en bout contre le vrai back |
 | 16 nov. 2026 | 4.4 (suite) : La Série en mode Compte. | migration `serie` (empreinte identique), Edge Function `eclair` version 2 ; 206 tests (95 SQL) ; 11 scénarios de bout en bout contre le vrai back |
 | 16 nov. 2026 | 4.4 (fin) : Blitz Royale en mode Compte. | migration `blitz` (empreinte identique), Edge Function `eclair` version 3 ; 214 tests (100 SQL) ; 12 scénarios de bout en bout contre le vrai back |
+| 16 nov. 2026 | 4.6 (suite) : duels entre amis sur un marché. Stabilité : page d'administration et tests du Blitz. | migration `duels` (empreinte identique) ; 222 tests (105 SQL) ; 13 scénarios de bout en bout contre le vrai back |
