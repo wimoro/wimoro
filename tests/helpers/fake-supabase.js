@@ -342,7 +342,28 @@
       e.clanApps = e.clanApps || {}; if (!e.clanApps[a.p_clan]) e.clanApps[a.p_clan] = Date.now(); var rep = reponse([]); rep.clan = clanEtat(e); return rep; },
     api_clan_leave: function () { var e = etat(); if (!e.clanM) throw { message: 'clan_absent' }; var id = e.clanM.id, j = (db.clans || []).filter(function (x) { return x.id === id; })[0];
       if (j) { j.members = j.members.filter(function (m) { return m.u !== uid(); }); if (j.chief === uid()) { j.chief = j.members.length ? j.members[0].u : null; if (j.members.length) j.members[0].role = 'chef'; } }
-      e.clanM = null; e.clanParti = Date.now(); var rep = reponse([]); rep.clan = clanEtat(e); return rep; },
+      filPoser(id, uid(), 'quitte', {}); e.clanM = null; e.clanParti = Date.now(); var rep = reponse([]); rep.clan = clanEtat(e); return rep; },
+    /* Chef et officiers : mêmes règles que supabase/migrations/…_clans_chefs.sql */
+    api_clan_promote: function (a) { var e = etat(), x = clanMoi(e), c = clanMembre(x.j, a.p_user); if (x.role !== 'chef') throw { message: 'role_insuffisant' }; if (!c) throw { message: 'membre_inconnu' };
+      if (c.role !== 'membre') throw { message: 'deja_officier' }; if (x.j.members.filter(function (m) { return m.role === 'officier'; }).length >= 5) throw { message: 'trop_d_officiers' };
+      c.role = 'officier'; filPoser(x.j.id, uid(), 'officier', { u: a.p_user }); var rep = reponse([]); rep.clan = clanEtat(e); return rep; },
+    api_clan_kick: function (a) { var e = etat(), x = clanMoi(e), c = clanMembre(x.j, a.p_user); if (x.role !== 'chef' && x.role !== 'officier') throw { message: 'role_insuffisant' }; if (!c) throw { message: 'membre_inconnu' };
+      if (c.role === 'chef' || (x.role === 'officier' && c.role !== 'membre')) throw { message: 'role_insuffisant' };
+      x.j.members = x.j.members.filter(function (m) { return m.u !== a.p_user; }); if (db.fiches[a.p_user]) db.fiches[a.p_user].clan = null; filPoser(x.j.id, uid(), 'exclu', { u: a.p_user });
+      var rep = reponse([]); rep.clan = clanEtat(e); return rep; },
+    api_clan_invite: function (a) { var e = etat(), x = clanMoi(e), f = db.fiches[a.p_user]; if (x.role !== 'chef' && x.role !== 'officier') throw { message: 'role_insuffisant' };
+      if (!f || a.p_user === uid()) throw { message: 'joueur_inconnu' }; if (e.friends.indexOf(a.p_user) < 0) throw { message: 'pas_amis' }; if (f.clan) throw { message: 'clan_deja' };
+      if (x.j.members.length >= 50) throw { message: 'clan_complet' }; var fait = 'invite';
+      if (f.bot) { x.j.members.push({ u: a.p_user, role: 'membre', since: Date.now(), pts: 0 }); f.clan = x.j.id; filPoser(x.j.id, a.p_user, 'invite', { par: uid() }); fait = 'rejoint'; }
+      else { db.invites = db.invites || {}; if (db.invites[x.j.id + ':' + a.p_user]) throw { message: 'deja_invite' }; db.invites[x.j.id + ':' + a.p_user] = Date.now(); }
+      var rep = reponse([]); rep.clan = clanEtat(e); rep.r = fait; return rep; },
+    api_clan_call: function (a) { var e = etat(), x = clanMoi(e); if (x.role !== 'chef' && x.role !== 'officier') throw { message: 'role_insuffisant' };
+      if (a.p_side !== 'oui' && a.p_side !== 'non') throw { message: 'cote_invalide' }; var m = marche(a.p_market); if (!m || m.st !== 'open') throw { message: 'marche_inconnu' };
+      db.appels = db.appels || {}; var L = db.appels[x.j.id] = db.appels[x.j.id] || []; if (L.filter(function (k) { return k.at > Date.now() - 3600e3; }).length >= 6) throw { message: 'trop_d_appels' };
+      L.unshift({ id: db.seq++, m: a.p_market, s: a.p_side, by: uid(), at: Date.now(), du: Date.now() + (CFG.appelDelai === undefined ? 6000 : CFG.appelDelai), n: null });
+      filPoser(x.j.id, uid(), 'appel', { m: a.p_market, s: a.p_side });
+      var r = 'clan:' + x.j.id; (db.chat[r] = db.chat[r] || []).push({ id: db.seq++, u: uid(), k: 'evt', text: '', at: Date.now(), ev: { code: 'appel', m: a.p_market, s: a.p_side } });
+      var rep = reponse([]); rep.clan = clanEtat(e); return rep; },
     api_clan_create: function (a) { var p = a.p || {}, e = etat(), me = e.me, ev = [], propre = function (t) { return String(t || '').replace(/'/g, '’').replace(/\s+/g, ' ').trim(); };
       if (e.clanM) throw { message: 'clan_deja' }; if (e.clanParti && e.clanParti > Date.now() - 7 * 864e5) throw { message: 'clan_attente' };
       if (rangDe(me).t < 2) throw { message: 'rang_insuffisant' }; if (me.since > Date.now() - 14 * 864e5) throw { message: 'compte_trop_recent' };
@@ -389,6 +410,7 @@
       if (!q.full || !(q.sh > 0)) throw { message: 'liquidite' };
       var avant = rangDe(me), fee = r2(q.fee), cout = r2(total - fee), ev = [];
       me.balance = r2(me.balance - total); me.played = (me.played | 0) + 1; me.maxBet = Math.max(me.maxBet || 0, total); me.realized = r2((me.realized || 0) - fee);
+      if (e.clanM && ((e.prefs || {}).prefs || {}).clanFeed !== false) filPoser(e.clanM.id, uid(), 'mise', { amt: Math.round(total), m: a.p_market });
       var pos = e.positions.filter(function (p) { return p.m === a.p_market && p.s === a.p_side; })[0];
       if (pos) { pos.avg = r6((pos.avg * pos.sh + q.avg * q.sh) / (pos.sh + q.sh)); pos.sh = r8(pos.sh + q.sh); }
       else { pos = { m: a.p_market, s: a.p_side, sh: r8(q.sh), avg: r6(q.avg) }; e.positions.push(pos); }
@@ -512,13 +534,22 @@
     return demo.concat((db.clans || []).map(function (j) { return { id: j.id, tag: j.tag, access: j.access, minRank: j.minRank, code: j.code, n: j.members.length }; })); }
   function clanVerifier(e, id) { var c = clansTous().filter(function (x) { return x.id === id; })[0]; if (!c) throw { message: 'clan_inconnu' }; if (e.clanM) throw { message: 'clan_deja' };
     if (e.clanParti && e.clanParti > Date.now() - 7 * 864e5) throw { message: 'clan_attente' }; if (c.n >= 50) throw { message: 'clan_complet' }; if (rangDe(e.me).t < c.minRank) throw { message: 'rang_insuffisant' }; return c; }
-  function clanEntrer(e, id, role) { e.clanM = { id: id, role: role, since: Date.now(), xp: 0, jour: 0, ecartes: 0 }; e.clanApps = {};
+  /* fil d'activité d'un clan, rôle de l'appelant dans un clan de joueurs, membre d'un clan */
+  function filPoser(clan, u, code, p) { db.fils = db.fils || {}; (db.fils[clan] = db.fils[clan] || []).unshift({ u: u, code: code, p: p || {}, at: Date.now() }); }
+  function clanMoi(e) { if (!e.clanM) throw { message: 'clan_absent' }; var j = (db.clans || []).filter(function (x) { return x.id === e.clanM.id; })[0]; return { j: j || { id: e.clanM.id, members: [] }, role: e.clanM.role }; }
+  function clanMembre(j, u) { return u === uid() ? null : j.members.filter(function (m) { return m.u === u; })[0]; }
+  function clanEntrer(e, id, role) { e.clanM = { id: id, role: role, since: Date.now(), xp: 0, jour: 0, ecartes: 0 }; e.clanApps = {}; filPoser(id, uid(), role === 'chef' ? 'fonde' : 'rejoint', {});
     var j = (db.clans || []).filter(function (x) { return x.id === id; })[0]; if (j) j.members.push({ u: uid(), role: role, since: Date.now(), pts: 0 }); }
-  function clanAvancer(e, ev) { var apps = e.clanApps || {}; Object.keys(apps).forEach(function (id) { if (apps[id] > Date.now() - 6000) return; delete apps[id];
+  function clanAvancer(e, ev) { if (e.clanM) ((db.appels || {})[e.clanM.id] || []).forEach(function (k) { if (k.n !== null || k.by !== uid() || k.du > Date.now()) return;
+      var j = (db.clans || []).filter(function (x) { return x.id === e.clanM.id; })[0], autres = j ? j.members.length - 1 : 0; k.n = Math.min(2 + (k.id % 4), Math.max(0, autres));
+      if (k.n > 0) { var n = notif('users', 'clan_appel_suivi', { n: k.n, m: k.m, id: e.clanM.id }, '#clan-' + e.clanM.id); if (ev) ev.push(n); } });
+    var apps = e.clanApps || {}; Object.keys(apps).forEach(function (id) { if (apps[id] > Date.now() - 6000) return; delete apps[id];
       var ok = (CFG.clanRefus || []).indexOf(id) < 0; if (ok) { try { clanVerifier(e, id); clanEntrer(e, id, 'membre'); } catch (x) { ok = false; } }
       var n = notif('shield', ok ? 'clan_accepte' : 'clan_refuse', { id: id }, '#clan-' + id); if (ev) ev.push(n); }); }
-  function clanEtat(e) { var moi = uid(), users = {}; (db.clans || []).forEach(function (j) { j.members.forEach(function (m) { if (m.u !== moi && db.etats[m.u]) users[m.u] = { n: db.etats[m.u].me.n, t: 0, d: 0, tone: 0, bot: false, pub: 1, clan: j.id }; }); });
-    return { mine: e.clanM ? clone(e.clanM) : null, leftAt: e.clanParti || null, apps: clone(e.clanApps || {}),
+  function clanEtat(e) { var moi = uid(), users = {}; (db.clans || []).forEach(function (j) { j.members.forEach(function (m) { if (m.u !== moi && db.etats[m.u]) users[m.u] = { n: db.etats[m.u].me.n, t: 0, d: 0, tone: 0, bot: false, pub: 1, clan: j.id }; else if (m.u !== moi && db.fiches[m.u]) users[m.u] = ficheDe(m.u); }); });
+    var feed = e.clanM ? ((db.fils || {})[e.clanM.id] || []).slice(0, 30) : [], calls = e.clanM ? ((db.appels || {})[e.clanM.id] || []).slice(0, 6) : [];
+    feed.forEach(function (f) { [f.u, f.p.u, f.p.par].forEach(function (u) { if (u && u !== moi && !users[u] && db.fiches[u]) users[u] = ficheDe(u); }); });
+    return { mine: e.clanM ? clone(e.clanM) : null, leftAt: e.clanParti || null, apps: clone(e.clanApps || {}), feed: clone(feed), calls: calls.map(function (k) { return { id: k.id, m: k.m, s: k.s, by: k.by, at: k.at, n: k.n || 0 }; }),
       clans: (db.clans || []).map(function (j) { var x = clone(j); if (!j.members.some(function (m) { return m.u === moi; })) x.code = null; return x; }), users: users }; }
   /* ----- Argent fictif : mêmes barèmes que wm.argent() ----- */
   var ARGENT = { coins: { USDC: { min: 5, fixe: true, nets: ['Base', 'Ethereum', 'Arbitrum', 'Solana', 'Polygon'] }, USDT: { min: 5, fixe: true, nets: ['Ethereum', 'Tron', 'Arbitrum', 'Solana'] }, ETH: { min: 0.002, nets: ['Ethereum', 'Base', 'Arbitrum'] }, BTC: { min: 0.0001, nets: ['Bitcoin', 'Lightning'] }, SOL: { min: 0.03, nets: ['Solana'] } },

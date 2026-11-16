@@ -92,7 +92,7 @@ function vMarches() {
    <div class="actions" style="margin-top:10px"><button class="pr">${neuf ? 'Créer le marché' : 'Enregistrer'}</button>${neuf ? '' : '<button type="button" data-a="annuler-edition">Annuler</button>'}</div></form></div>`;
 }
 /* une mise partagée n'a pas de texte : on dit ce que montre sa carte */
-const texteMsg = m => m.k === 'bet' && m.bet ? `Mise partagée : ${Number(m.bet.amt) || 0} $ sur ${m.bet.s === 'oui' ? 'Oui' : 'Non'} (marché ${m.bet.m})` : m.text;
+const texteMsg = m => m.k === 'evt' && m.bet ? `Appel de clan : marché ${m.bet.m}, côté ${m.bet.s === 'oui' ? 'Oui' : 'Non'}` : m.k === 'bet' && m.bet ? `Mise partagée : ${Number(m.bet.amt) || 0} $ sur ${m.bet.s === 'oui' ? 'Oui' : 'Non'} (marché ${m.bet.m})` : m.text;
 function vChat() {
   return `<h2>Chat : derniers messages des joueurs</h2><div class="carte" id="adm-chat">${E.msgs.length ? E.msgs.map(m => `<div class="rang"><span><b>${esc(m.n)}</b> <span class="puce">${esc(m.room)}</span><br>${esc(texteMsg(m))}<small>${quand(m.at)}</small></span>
    <button class="danger" data-a="masquer" data-id="${esc(m.id)}" data-confirme="Confirmer : masquer">Masquer</button></div>`).join('') : '<p class="vide">Aucun message de joueur.</p>'}</div>`;

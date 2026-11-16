@@ -227,3 +227,21 @@ I18N_ADD("en",{
 I18N_ADD("he",{
 "Le duel de stack contre ce joueur n’est pas encore disponible : choisis un autre adversaire.":"דו־קרב סטאק מול השחקן הזה עדיין לא זמין: בחר יריב אחר."
 });
+I18N_ADD("en",{
+"Tu as déjà invité ce joueur aujourd’hui.":"You already invited this player today.",
+"Ton rôle dans le clan ne permet pas cette action.":"Your role in the clan doesn’t allow this.",
+"Tu es maintenant officier du clan {0}.":"You are now an officer of clan {0}.",
+"Tu as été exclu du clan {0}.":"You were kicked from clan {0}.",
+"{0} t’invite à rejoindre son clan. Code d’invitation : {1}.":"{0} invites you to join their clan. Invite code: {1}.",
+"Invitation envoyée à {0}":"Invitation sent to {0}",
+"Il rejoindra le clan s’il le souhaite, avec le code d’invitation.":"They can join the clan if they wish, with the invite code."
+});
+I18N_ADD("he",{
+"Tu as déjà invité ce joueur aujourd’hui.":"כבר הזמנת את השחקן הזה היום.",
+"Ton rôle dans le clan ne permet pas cette action.":"התפקיד שלך בקלאן לא מאפשר את הפעולה הזו.",
+"Tu es maintenant officier du clan {0}.":"אתה עכשיו קצין בקלאן {0}.",
+"Tu as été exclu du clan {0}.":"הורחקת מהקלאן {0}.",
+"{0} t’invite à rejoindre son clan. Code d’invitation : {1}.":"{0} מזמין אותך להצטרף לקלאן שלו. קוד הזמנה: {1}.",
+"Invitation envoyée à {0}":"ההזמנה נשלחה אל {0}",
+"Il rejoindra le clan s’il le souhaite, avec le code d’invitation.":"הוא יוכל להצטרף לקלאן אם ירצה, עם קוד ההזמנה."
+});
