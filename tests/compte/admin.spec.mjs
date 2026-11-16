@@ -13,12 +13,12 @@ const DONNEES = {
   msgs: [{ id: 41, room: 'general', u: LEA, n: 'lea_reelle', text: 'message déplacé', at: Date.UTC(2026, 10, 15, 10) }, { id: 40, room: 'm:btc150k', u: LEA, n: 'lea_reelle', text: 'message correct', at: Date.UTC(2026, 10, 15, 9) }]
 };
 
-async function ouvrirAdmin(page, { session = true, admin = true } = {}) {
+async function ouvrirAdmin(page, { session = true, admin = true, donnees = DONNEES } = {}) {
   const erreurs = [];
   page.on('pageerror', e => erreurs.push(`${e.name}: ${e.message}`));
   page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) erreurs.push('console.error: ' + m.text()); });
   await page.route(/js\/vendor\/supabase[^/]*\.js/, r => r.fulfill({ contentType: 'text/javascript', body: FAUX }));
-  const cfg = { session: session ? { user: { id: UID, email: 'chef@test.dev' } } : null, admin, adminData: DONNEES, comptes: { 'chef@test.dev': { id: UID, mdp: 'Motdepasse-9!' } } };
+  const cfg = { session: session ? { user: { id: UID, email: 'chef@test.dev' } } : null, admin, adminData: donnees, comptes: { 'chef@test.dev': { id: UID, mdp: 'Motdepasse-9!' } } };
   await page.addInitScript(({ cfg, session }) => {
     if (!sessionStorage.getItem('__init__')) { sessionStorage.setItem('__init__', '1'); if (session) localStorage.setItem('wimoro-auth', JSON.stringify({ faux: true })); }
     window.__FAKE_SB__ = cfg;
@@ -142,5 +142,21 @@ test('chat, bots, journal : masquer un message (second clic), couper et régler 
   await expect(page.locator('#adm-journal .rang').first()).toContainText('Réglage des bots'); await expect(page.locator('#adm-journal .rang').first()).toContainText('coupés');
   const faits = (await appels(page)).filter(a => ['masquer', 'bots'].includes(a[0]));
   expect(faits).toEqual([['masquer', { id: '41' }], ['bots', { intensite: '9', chat: '1' }], ['bots', { intensite: '2', chat: '0.5' }], ['bots', { actif: false }]]);
+  expect(erreurs).toEqual([]);
+});
+
+test('chat : une analyse partagée, une guerre de clans et un appel de clan sont nommés clairement', async ({ page }) => {
+  const at = Date.UTC(2026, 10, 16, 10);
+  const msgs = [
+    { id: 52, room: 'general', u: LEA, n: 'lea_reelle', text: 'Cassure en vue', k: 'ana', bet: { ana: 7, m: 'btc150k', iv: '1h', ni: 2, nd: 3 }, at: at + 2000 },
+    { id: 51, room: 'clan:u1', u: LEA, n: 'lea_reelle', text: '', k: 'evt', bet: { code: 'guerre', foe: 'c7', k: 20 }, at: at + 1000 },
+    { id: 50, room: 'clan:u1', u: LEA, n: 'lea_reelle', text: '', k: 'evt', bet: { code: 'appel', m: 'btc150k', s: 'oui' }, at }];
+  const erreurs = await ouvrirAdmin(page, { donnees: { ...DONNEES, msgs } });
+  await onglet(page, 'chat');
+  const lignes = page.locator('#adm-chat .rang');
+  await expect(lignes).toHaveCount(3);
+  await expect(lignes.nth(0)).toContainText('Analyse partagée (marché btc150k, 2 indicateur(s), 3 tracé(s)) : Cassure en vue');
+  await expect(lignes.nth(1)).toContainText('Guerre de clans déclarée contre le clan c7 (buy-in 20 $)');
+  await expect(lignes.nth(2)).toContainText('Appel de clan : marché btc150k, côté Oui');
   expect(erreurs).toEqual([]);
 });

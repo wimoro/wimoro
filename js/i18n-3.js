@@ -255,3 +255,13 @@ I18N_ADD("he",{
 "Aucune guerre en cours.":"אין מלחמה כרגע.",
 "Tu participes déjà à cette guerre.":"אתה כבר משתתף במלחמה הזו."
 });
+I18N_ADD("en",{
+"Cette analyse ne peut pas être partagée telle quelle.":"This analysis can’t be shared as it is.",
+"Analyse trop lourde pour être partagée : réduis la période affichée ou le nombre d’indicateurs.":"This analysis is too heavy to share: show a shorter period or fewer indicators.",
+"Tu as déjà partagé 12 analyses en 24 heures. Reviens un peu plus tard.":"You’ve already shared 12 analyses in 24 hours. Come back a little later."
+});
+I18N_ADD("he",{
+"Cette analyse ne peut pas être partagée telle quelle.":"אי אפשר לשתף את הניתוח הזה כמו שהוא.",
+"Analyse trop lourde pour être partagée : réduis la période affichée ou le nombre d’indicateurs.":"הניתוח כבד מדי לשיתוף: הצג תקופה קצרה יותר או פחות אינדיקטורים.",
+"Tu as déjà partagé 12 analyses en 24 heures. Reviens un peu plus tard.":"כבר שיתפת 12 ניתוחים ב-24 שעות. חזור קצת מאוחר יותר."
+});

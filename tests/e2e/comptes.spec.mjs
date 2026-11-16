@@ -139,7 +139,7 @@ test('recette 3 · dépôt fictif → achat → rechargement → vente → recon
   expect(apresVente.solde).toBeGreaterThan(195); expect(apresVente.solde).toBeLessThan(200); // acheter puis revendre coûte l'écart et les frais
 
   // une fonction pas encore reliée est annoncée comme telle, et rien ne s'annule après 20 secondes (B05)
-  await page.evaluate(() => { const b = document.createElement('button'); b.dataset.a = 'pro-share'; document.body.appendChild(b); b.click(); b.remove(); });   // partage du Mode Pro dans le chat : pas encore relié
+  await page.evaluate(() => { const b = document.createElement('button'); b.dataset.a = 'cl-sim'; document.body.appendChild(b); b.click(); b.remove(); });   // outil de simulation des clans : réservé au mode Démo
   await expect(toast('Coming soon for accounts')).toBeVisible();
   await page.waitForTimeout(20000);
   expect(await lire(page, () => ({ solde: S.me.balance, xp: S.me.xp, pos: S.me.positions.length }))).toEqual({ solde: apresVente.solde, xp: 210, pos: apresVente.pos });
@@ -875,6 +875,66 @@ test('réactions : A réagit au message de B et à celui d’un bot, B voit les 
   await expect.poll(async () => { const x = await vu(a.page, sid); return x && x.my; }, { timeout: 20000 }).toEqual([]);
   expect(((await vu(a.page, sid)).r['🔥'] || 0)).toBeGreaterThanOrEqual(avantRetrait - 1);
   await expect.poll(async () => { const x = await vu(a.page, bot.sid); return x ? x.my : 'sorti du fil'; }, { timeout: 20000 }).toEqual(['👀']);
+  expect(a.erreurs).toEqual([]); expect(b.erreurs).toEqual([]);
+  await a.ctx.close(); await b.ctx.close();
+});
+
+test('Mode Pro : A partage son analyse dans le chat du marché, B reçoit la carte en direct et l’ouvre, un joueur simulé répond ; le vrai serveur refuse un instantané hors format ; rechargé, tout revient du serveur', async ({ browser }) => {
+  test.setTimeout(240000);
+  const SALON = 'm:clasico';
+  const entrer = async email => {
+    const ctx = await browser.newContext(), page = await ctx.newPage();
+    const erreurs = await ouvrirReel(page, '#connexion');
+    await page.locator('#le').fill(email); await page.locator('#lp').fill(MDP); await page.locator('form[data-form="login"] [type=submit]').click();
+    await expect(page).toHaveURL(/#accueil/, { timeout: 20000 }); await pret(page);
+    await page.evaluate(() => { location.hash = '#marche-clasico'; });
+    await expect(page.locator('.feed[data-room="m:clasico"]')).toBeAttached();
+    return { ctx, page, erreurs };
+  };
+  const essai = (page, nom, args) => page.evaluate(async ([nom, args]) => { try { await API.call(nom, args); return 'accepté'; } catch (e) { return e.code; } }, [nom, args]);
+  const a = await entrer(EMAIL), b = await entrer(`wimoro-e2e-${stamp}-b@example.com`);
+
+  // A ouvre le Mode Pro du marché et partage son analyse dans le chat du marché (déjà coché)
+  await a.page.locator('[data-a="pro-open"][data-m="clasico"]').first().click();
+  await expect(a.page.locator('#pro [data-a="pro-share"]')).toBeVisible({ timeout: 20000 });
+  await a.page.locator('#pro [data-a="pro-share"]').click();
+  await expect(a.page.locator('.pro-sh')).toBeVisible();
+  await expect(a.page.locator('.pro-sh .demo-h')).toHaveCount(0);
+  const texte = 'Test automatique ' + stamp + ' : analyse';
+  await a.page.locator('[data-psh-txt]').fill(texte);
+  await a.page.locator('[data-a="pro-sh-send"]').click();
+  await expect(a.page.locator('.pro-sh')).toHaveCount(0, { timeout: 20000 });
+  await a.page.locator('#pro [data-a="pro-close"]').first().click();
+
+  // A voit sa carte ; B la reçoit en direct, sous le pseudo de A, avec l'instantané lu à part sur le vrai serveur
+  await expect(a.page.locator('.feed[data-room="' + SALON + '"] .msg.mine', { hasText: texte }).locator('.anac svg.pro-svg')).toHaveCount(1, { timeout: 20000 });
+  const chezB = b.page.locator('.feed[data-room="' + SALON + '"] .msg', { hasText: texte });
+  await expect(chezB.locator('.anac svg.pro-svg')).toHaveCount(1, { timeout: 30000 });
+  await expect(chezB.locator('.un')).toHaveText(PSEUDO);
+  const recu = await lire(b.page, ([s, t]) => { const x = S.rooms[s].msgs.find(y => y.text === t), z = x.ana;
+    return { sid: x.sid, id: z.id, m: z.m, n: z.n, bougies: z.o.length, base: { m: z.m, iv: z.iv, type: z.type, side: z.side, ms: z.ms, T0: z.T0, n: z.n, o: z.o, h: z.h, l: z.l, c: z.c, vol: z.vol, end: z.end, vn: z.vn, inds: [], dr: [] } }; }, [SALON, texte]);
+  expect(recu.m).toBe('clasico'); expect(recu.bougies).toBe(recu.n); expect(recu.id).toMatch(/^a\d+$/);
+
+  // B l'ouvre : c'est l'analyse de A, avec son commentaire
+  await chezB.locator('[data-a="pro-view"]').last().click();
+  await expect(b.page.locator('#pro')).toContainText('Analysis by ' + PSEUDO, { timeout: 20000 });
+  await expect(b.page.locator('#pro .pro-cmt')).toHaveText(texte);
+  await b.page.locator('#pro [data-a="pro-close"]').first().click();
+
+  // dans ce salon regardé, un joueur simulé répond à A quelques secondes plus tard
+  await expect(a.page.locator('.feed[data-room="' + SALON + '"] .msg', { hasText: '@' + PSEUDO + ' ' }).first()).toBeVisible({ timeout: 60000 });
+
+  // ce que le vrai serveur refuse (rien n'est alors gardé)
+  expect(await essai(b.page, 'api_ana_share', { p_snap: { ...recu.base, inds: [{ k: 'sma', p: { len: 20 }, c: 'red" onload="x', w: 2, vals: { a: recu.base.c } }] }, p_rooms: [SALON], p_text: '' })).toBe('analyse_invalide');
+  expect(await essai(b.page, 'api_ana_share', { p_snap: { ...recu.base, dr: [{ k: 'text', a: [recu.base.T0, 50], c: 'ink', w: '2"/><script>', txt: 'x' }] }, p_rooms: [SALON], p_text: '' })).toBe('analyse_invalide');
+  expect(await essai(b.page, 'api_ana_share', { p_snap: recu.base, p_rooms: ['m:btc150k'], p_text: '' })).toBe('salon_indisponible');   // pas le marché analysé
+  expect(await essai(b.page, 'api_ana_share', { p_snap: { ...recu.base, m: 'nexistepas' }, p_rooms: ['general'], p_text: '' })).toBe('marche_inconnu');
+  expect(await essai(b.page, 'api_ana', { p_msgs: [] })).toBe('analyse_inconnue');
+  expect(await lire(b.page, async id => Object.keys((await API.call('api_ana', { p_msgs: [id, 999999999] })).snaps), recu.sid)).toEqual([String(recu.sid)]);
+
+  // rechargé chez B : le message revient de l'historique du salon, son instantané est relu
+  await b.page.reload(); await pret(b.page);
+  await expect(b.page.locator('.feed[data-room="' + SALON + '"] .msg', { hasText: texte }).locator('.anac svg.pro-svg')).toHaveCount(1, { timeout: 30000 });
   expect(a.erreurs).toEqual([]); expect(b.erreurs).toEqual([]);
   await a.ctx.close(); await b.ctx.close();
 });

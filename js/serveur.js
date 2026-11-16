@@ -102,6 +102,9 @@ const ERR_TXT={
  message_trop_long:()=>_t("Message trop long (280 caractères au plus)."),
  salon_indisponible:()=>_t("Ce salon n’est pas encore disponible avec ton compte."),
  pas_amis:()=>_t("Vous devez être amis pour vous écrire."),
+ analyse_invalide:()=>_t("Cette analyse ne peut pas être partagée telle quelle."),
+ analyse_trop_lourde:()=>_t("Analyse trop lourde pour être partagée : réduis la période affichée ou le nombre d’indicateurs."),
+ trop_d_analyses:()=>_t("Tu as déjà partagé 12 analyses en 24 heures. Reviens un peu plus tard."),
  rang_insuffisant:()=>_t("Ton rang ne permet pas encore cette action."),
  joueur_inconnu:()=>_t("Ce joueur est introuvable."),
  stack_joueur_reel:()=>_t("Le duel de stack contre ce joueur n’est pas encore disponible : choisis un autre adversaire."),
@@ -120,7 +123,6 @@ const srvErreur=e=>{if(e&&e.code==='session'){srvSessionPerdue();return;}if(e&&e
 const SRV_BLOQUE=new Set((''
  +'limit-place ord-cancel guard guard-save guard-del '
  +'cl-sim '
- +'pro-sh-send pro-share '
  +'wallet wallet-modal demo-login demo-rank demo-rank-open demo-rank-reset').split(/\s+/));
 const SRV_FORMS_BLOQUE=new Set([]);
 const srvBientot=()=>toast({tone:'amber',icon:'info',force:true,title:_t("Bientôt disponible avec ton compte"),text:_t("Cette fonction marche déjà en mode démo. Elle arrive pour les comptes.")});
@@ -507,6 +509,9 @@ function srvChatAjouter(rid,m,mes){
   const t=e.code==='appel'&&k?_t("Appel de clan : {0}, côté {1}. Chacun suit avec sa mise, dans ses limites.",[k.short,e.s==='oui'?_t("Oui"):_t("Non")])
    :e.code==='guerre'&&f?_t("Guerre de clans contre {0} [{1}] ! 48 h pour marquer des points. Buy-in {2}.",[f.name,f.tag,F.usd0(+e.k)]):'';
   if(t)addMsg(rid,mkMsg({k:'evt',text:t,at:m.at,sid:m.id}));return;}
+ if(m.k==='ana'){const a=m.ana||{},id=+a.ana;if(!id||!MK[a.m])return;                    /* analyse partagée : le message porte une référence, l'instantané se lit à part */
+  addMsg(rid,mkMsg({u:moi,k:'ana',text:m.text||'',ana:SRV_ANA.get(id)||null,anaId:id,r:srvReactions(m.r),my:srvMiennes(mes,m.id),at:m.at,sid:m.id}));
+  if(!SRV_ANA.has(id))srvAnaDemander(id,m.id);return;}
  if(m.k==='bet'){if(!m.bet||!MK[m.bet.m])return;                                /* mise partagée : une carte, avec son nombre de suivis */
   addMsg(rid,mkMsg({u:moi,k:'bet',text:'',bet:{m:m.bet.m,s:m.bet.s,amt:+m.bet.amt,price:+m.bet.price},followers:m.fc|0,r:srvReactions(m.r),my:srvMiennes(mes,m.id),at:m.at,sid:m.id}));return;}
  addMsg(rid,mkMsg({u:moi,k:'msg',text,r:srvReactions(m.r),my:srvMiennes(mes,m.id),at:m.at,sid:m.id}));
@@ -523,6 +528,7 @@ function srvChatRetirer(rid,id){const R=S.rooms[rid];if(!R)return;const i=R.msgs
 /* Message d'un bot : le serveur envoie un gabarit et ses paramètres ({g,i,m,p,s}) ; la phrase est composée ici, dans la
    langue du lecteur, avec les mêmes listes de phrases que le mode Démo. */
 function srvBotTexte(t){
+ if(t.g==='A'){const L=typeof PRO_REPLY!=='undefined'?PRO_REPLY:[],n=String(t.n||'');return L.length&&n?'@'+n+' '+L[Math.abs(t.i|0)%L.length]():'';}   /* réponse à une analyse partagée */
  if(t.g==='C'){const L=typeof CLAN_ACCUEIL!=='undefined'?CLAN_ACCUEIL:[];return L.length?L[Math.abs(t.i|0)%L.length]():'';}   /* accueil d'un salon de clan */
  const m=MK[t.m];if(!m)return '';
  const lignes=t.g==='G'?GLOBAL_LINES:(MLINES[t.m]||[]).concat(GEN_LINES),p=Number(t.p)||0;
@@ -555,6 +561,56 @@ async function srvSalonOuvrir(r){
   const h=await API.call('api_chat_history',{p_room:r});
   srvFiches(h.users);(h.msgs||[]).forEach(m=>srvChatAjouter(r,m,h.mes||{}));
  }catch(e){SRV_SALONS.delete(r);console.warn('[srv] salon indisponible',r,e.code);}
+}
+/* ----- Mode Pro : analyses partagées dans les chats -----
+   Le message de chat ne porte qu'une référence ; l'instantané (bougies, indicateurs, tracés) se lit à part, par lots de six.
+   C'est un contenu écrit par un autre joueur : le serveur l'a déjà remis au propre, et l'écran le refait ici avant de le
+   dessiner (srvAnaPropre) : seuls les champs connus sont repris, avec les mêmes garde-fous que les réglages du joueur. */
+const SRV_ANA=new Map(),SRV_ANA_FILE=[],SRV_ANA_ATTENTE=new Set();let srvAnaT=0;
+function srvAnaPropre(s){
+ if(!s||typeof s!=='object')return null;const n=s.n|0,mk=MK[s.m];if(!(n>=1&&n<=4000)||!mk||!PIVK[s.iv])return null;
+ const num=v=>typeof v==='number'&&isFinite(v)?v:null,serie=a=>Array.isArray(a)&&a.length===n?a.map(num):null,nom=v=>String(v||'').replace(/[^\w-]/g,'').slice(0,24);
+ const o=serie(s.o),h=serie(s.h),l=serie(s.l),c=serie(s.c),vol=serie(s.vol);if(!o||!h||!l||!c||!vol)return null;
+ const inds=[];for(const d of Array.isArray(s.inds)?s.inds.slice(0,24):[]){if(!d||typeof d!=='object'||!PIND.hasOwnProperty(d.k))continue;
+  const f=pindFix({id:nom(d.id),k:d.k,p:Object.assign({},d.p&&typeof d.p==='object'?d.p:{}),c:d.c,w:d.w});if(!f)continue;
+  const vals={};let ok=true;for(const k of d.k==='bb'||d.k==='macd'?['a','b','c']:['a']){const v=serie(d.vals&&d.vals[k]);if(!v){ok=false;break;}vals[k]=v;}
+  if(ok)inds.push({id:f.id,k:f.k,p:f.p,c:f.c,w:f.w,vals});}
+ const dr=[];for(const d of Array.isArray(s.dr)?s.dr.slice(0,300):[]){if(!d||typeof d!=='object')continue;
+  const t={id:nom(d.id),k:String(d.k),a:Array.isArray(d.a)?d.a.slice(0,2).map(Number):null,b:Array.isArray(d.b)?d.b.slice(0,2).map(Number):undefined,c:d.c,w:d.w,txt:typeof d.txt==='string'?d.txt:''};
+  if(proDrOk(t))dr.push({id:t.id,k:t.k,a:t.a,b:t.b,c:t.c,w:t.w,txt:t.txt});}
+ return {v:1,id:nom(s.id),m:mk.id,short:mk.short,q:mk.q,iv:s.iv,type:s.type==='courbe'?'courbe':'bougies',side:s.side==='non'?'non':'oui',at:+s.at||Date.now(),p:num(s.p),
+  ms:+s.ms>0?+s.ms:PIVK[s.iv].ms,T0:+s.T0||0,n,o,h,l,c,vol,end:isFinite(+s.end)?+s.end:n,vn:clamp(+s.vn||n,1,8000),inds,dr,txt:''};
+}
+/* l'instantané est arrivé : chaque message qui s'y réfère reçoit sa carte, redessinée sur place */
+function srvAnaPoser(id,s){SRV_ANA.set(id,s);
+ for(const rid in S.rooms)for(const x of S.rooms[rid].msgs)if(x.k==='ana'&&x.anaId===id&&!x.ana){x.ana=s;if(!s.txt)s.txt=x.text||'';
+  document.querySelectorAll('.msg[data-id="'+x.id+'"]').forEach(el=>{el.outerHTML=msgH(x);});}}
+function srvAnaDemander(id,msg){if(SRV_ANA.has(id)||SRV_ANA_ATTENTE.has(id))return;SRV_ANA_ATTENTE.add(id);SRV_ANA_FILE.push([id,msg]);clearTimeout(srvAnaT);srvAnaT=setTimeout(srvAnaCharger,60);}
+async function srvAnaCharger(){
+ const lot=SRV_ANA_FILE.splice(0,6);if(!lot.length)return;
+ try{const r=await API.call('api_ana',{p_msgs:lot.map(e=>e[1])});
+  for(const [id,msg] of lot){const s=srvAnaPropre(r.snaps&&r.snaps[msg]);if(s)srvAnaPoser(id,s);}}
+ catch(e){console.warn('[srv] analyses indisponibles',e.code);}
+ finally{lot.forEach(e=>SRV_ANA_ATTENTE.delete(e[0]));}
+ if(SRV_ANA_FILE.length)srvAnaT=setTimeout(srvAnaCharger,60);
+}
+/* partager son analyse : le serveur remet l'instantané au propre, le garde, et publie un message dans chaque salon choisi */
+let srvAnaOccupe=false;
+async function srvAnaPartager(sh,rooms){
+ if(srvAnaOccupe)return;const s=sh.snap,txt=s.txt||'';
+ const envoi={m:s.m,iv:s.iv,type:s.type,side:s.side,ms:s.ms,T0:s.T0,n:s.n,o:s.o,h:s.h,l:s.l,c:s.c,vol:s.vol,end:s.end,vn:s.vn,
+  inds:s.inds.map(d=>({k:d.k,p:d.p,c:d.c,w:d.w,vals:d.vals})),dr:s.dr.map(d=>({k:d.k,a:d.a,b:d.b,c:d.c,w:d.w,txt:d.txt||''}))};
+ if(JSON.stringify(envoi).length>390000){srvErreur({code:'analyse_trop_lourde'});return;}
+ srvAnaOccupe=true;const b=$('#ov [data-a="pro-sh-send"]');if(b)b.disabled=true;
+ try{
+  const r=await API.call('api_ana_share',{p_snap:envoi,p_rooms:rooms,p_text:txt});
+  const propre=srvAnaPropre(r.snap);
+  for(const rid of rooms){const m=r.msgs&&r.msgs[rid];if(!m)continue;if(propre&&m.ana){propre.txt=m.text||'';SRV_ANA.set(+m.ana.ana,propre);}srvChatAjouter(rid,m);}
+  if(PV.share===sh){PV.share=null;closeModal();}S.ui.room=rooms.find(x=>!x.startsWith('m:'))||rooms[0];
+  toast({tone:'blue',icon:'share',title:_t('Analyse partagée'),text:rooms.map(x=>x==='general'?_t('Chat général'):x.startsWith('m:')?_t('Chat du marché'):x.startsWith('clan:')?_t('Mon clan'):userOf(x.slice(3)).n).join(', '),href:'#chat',dur:5200});
+  srvAppliquer(r);
+ }catch(e){srvErreur(e);const b2=$('#ov [data-a="pro-sh-send"]');if(b2)b2.disabled=!proShareRooms().length;}
+ finally{srvAnaOccupe=false;}
 }
 let srvChatOccupe=false;
 async function srvChatEnvoyer(rid,inp,text){
