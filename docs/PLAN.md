@@ -8,6 +8,14 @@ Chaque tâche a une case à cocher et un test d'acceptation. Une tâche n'est co
 - Constat de départ : `docs/AUDIT.md`
 - Projet Supabase : `brmwvxncyeypefsgiepf`
 
+## Où en est le chantier (16 nov. 2026)
+
+Tout ce que l'écran propose avec un compte est relié au serveur, à une exception près : les **ordres limites** (avec le
+stop loss et le take profit), dont la migration attend une confirmation manuelle (voir « À faire par l'humain »). Restent
+réservés au mode Démo, par nature : la connexion par portefeuille, le changement de rang à la main, l'outil de
+simulation des clans. Les cases encore décochées plus bas sont des limites connues, des rangements facultatifs ou des
+optimisations ; aucune ne bloque l'usage du site.
+
 ## Comment reprendre
 
 1. Lire le **journal** en bas de ce fichier, puis la première case non cochée.
@@ -618,8 +626,9 @@ Rien d'obligatoire. Le détail et les constats sont dans `docs/EXPLOITATION.md`,
 1. **Une fois** : demander « mot de passe oublié » avec ta propre adresse, pour vérifier que l'e-mail arrive (un service
    d'envoi est déjà branché ; je ne peux pas voir si son domaine est validé).
 2. **Pour mettre en ligne les ordres limites** : demander « applique la migration des ordres limites » pendant une session et
-   accepter la confirmation que l'outil Supabase affiche (dans les 2 minutes). Tout le reste est prêt (branche
-   `lot/ordres-limites`).
+   accepter la confirmation que l'outil Supabase affiche (dans les 2 minutes). Tout le reste est prêt : la branche
+   `lot/ordres-limites` (pull request n° 11, en brouillon) a été remise à niveau avec `main` le 16 nov. 2026, 345 tests
+   verts en local. Il restera à jouer les scénarios réels puis à fusionner, ce que la session fera d'elle-même.
 2 bis. Facultatif : même chose pour la migration de rangement `securite_urgence_nettoyage`.
 3. Facultatif : ajouter `Ton code : {{ .Token }}` au modèle d'e-mail « Reset Password ».
 4. Facultatif : protéger la branche `main` sur GitHub.
@@ -669,3 +678,4 @@ Rien d'obligatoire. Le détail et les constats sont dans `docs/EXPLOITATION.md`,
 | 16 nov. 2026 | Salon VIP (rang Ascendant) ; suivi d'une mise réservé aux lecteurs de son salon. | migration `salon_vip` (empreinte identique) ; 330 tests (175 SQL) ; 24 scénarios de bout en bout contre le vrai back ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
 | 16 nov. 2026 | Chat du Blitz ; cases du plan remises à jour. | migration `chat_blitz` (empreinte identique) ; 333 tests (177 SQL) ; 24 scénarios de bout en bout contre le vrai back, dont le chat du Blitz ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
 | 16 nov. 2026 | Mise partagée dans une conversation privée. | migration `mise_privee` (empreinte identique) ; 336 tests (179 SQL) ; 25 scénarios de bout en bout contre le vrai back ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
+| 16 nov. 2026 | Vérification finale sur le site en ligne ; branche des ordres limites remise à niveau. | sur <https://wimoro.com> : 157 tests d'écran (mode Démo, visiteur, mode Compte avec le faux serveur, trois langues, ordinateur et téléphone) et 25 scénarios avec de vrais comptes, tous verts ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test, aucune tâche planifiée en échec ; branche `lot/ordres-limites` : 345 tests verts en local, migration toujours en attente |
