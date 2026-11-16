@@ -40,7 +40,7 @@ test('droits d’appel : toute fonction api_ est réservée aux joueurs connect�
   // dans wm : seules les fonctions qui portent le nom d'une fonction api_ sont appelables, et par les mêmes personnes.
   // Seule exception, à tenir courte : une fonction appelée par une règle d'accès (RLS) au nom du joueur connecté. Elle ne
   // prend aucun paramètre et ne renvoie que ce qui le concerne (wm.clan_sujet : le sujet temps réel de son propre clan).
-  const REGLES = ['clan_sujet'];
+  const REGLES = ['clan_sujet', 'vip_ok'];
   const noms = new Set(api_.map(l => l.f.slice(4)));
   for (const l of lignes.filter(l => l.s === 'wm')) {
     expect(l.joueur, 'wm.' + l.f).toBe(noms.has(l.f) || REGLES.includes(l.f));

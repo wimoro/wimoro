@@ -122,7 +122,7 @@ test('tout ce qui sort du format est refusé, et rien n’est gardé : champs, b
   expect(await refuse(lea, snap(), [])).toMatch(/salon_indisponible/);
   expect(await refuse(lea, snap(), ['m:clasico'])).toMatch(/salon_indisponible/);
   expect(await refuse(lea, snap(), ['general', 'general'])).toMatch(/salon_indisponible/);
-  expect(await refuse(lea, snap(), ['vip'])).toMatch(/salon_indisponible/);
+  expect(await refuse(lea, snap(), ['vip'])).toMatch(/rang_insuffisant/);                          // le salon VIP demande le rang Ascendant
   expect(await refuse(lea, snap(), ['clan:c1'])).toMatch(/salon_indisponible/);
   expect(await refuse(lea, snap(), ['dm:' + zoe])).toMatch(/pas_amis/);
   expect(await refuse(lea, snap(), ['dm:pas-un-identifiant'])).toMatch(/salon_indisponible/);

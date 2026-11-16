@@ -674,6 +674,10 @@ test('clans : rejoindre un clan ouvert sur le vrai serveur ; le tag est vu par u
   await expect(c).toHaveURL(/#(accueil|bienvenue)/, { timeout: 20000 }); await pret(c);
   expect(await essai2(c, 'api_chat_history', { p_room: SALON })).toBe('salon_indisponible');
   expect(await essai2(c, 'api_chat_send', { p_room: SALON, p_text: 'je passe' })).toBe('salon_indisponible');
+  // salon VIP : sans le rang Ascendant, le vrai serveur refuse tout (son sujet privé est prouvé dans tests/sql/salon-vip.spec.mjs)
+  expect(await essai2(c, 'api_chat_history', { p_room: 'vip' })).toBe('rang_insuffisant');
+  expect(await essai2(c, 'api_chat_send', { p_room: 'vip', p_text: 'je passe' })).toBe('rang_insuffisant');
+  expect(await lire(c, () => can('vip'))).toBe(false);
   await c.evaluate(s => { window.__vole = []; return API.subscribe(s, (evt, d) => window.__vole.push([evt, d]), true); }, SALON);
   // B rejoint le clan à son tour et ouvre son chat ; A aussi
   await b.page.evaluate(() => API.call('api_clan_join', { p_clan: 'c1', p_code: null }));
