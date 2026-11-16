@@ -239,6 +239,20 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 - [ ] Limite : le paiement d'un duel gagné n'a pas été joué contre la vraie base (il faudrait résoudre un vrai marché) ; il est
       prouvé dans la base embarquée et avec le faux serveur.
 - [ ] Clans, copy trading.
+- [ ] **Ordres limites, stop loss, take profit : lot prêt et testé, en attente de ta confirmation.** L'outil Supabase a demandé
+      une confirmation manuelle pour cette migration (elle contient des suppressions de lignes dans ses fonctions) ; personne
+      n'était là, la demande a expiré, et je n'ai pas contourné ce garde-fou. Le lot est rangé dans la branche
+      `lot/ordres-limites` (pull request ouverte, à ne fusionner qu'après application de la migration). En attendant, ces
+      fonctions restent « Bientôt disponible » pour les comptes : rien n'est cassé. Ce qui est prouvé dans la branche :
+      devis identiques à ceux de l'écran sur 600 cas, montant réservé, exécutions partielles, annulation, stop loss, take
+      profit, marché résolu (7 tests de base, 2 tests d'écran).
+- [x] Organisation : l'état du joueur (`api_state`) et les suites d'une résolution de marché s'assemblent à partir de blocs
+      enregistrés (`wm.etat_blocs`, `wm.suites_blocs`). Un lot ajoute sa ligne sans réécrire les fonctions communes, donc
+      un lot appliqué en retard n'efface plus rien. _Tests_ `tests/sql/etat-blocs.spec.mjs` (3).
+- [x] Parrainage, correctif : le bonus du parrain n'attend jamais un parrain occupé (deux paris simultanés sur le même
+      marché pouvaient se bloquer l'un l'autre) ; il est alors versé au chargement suivant. _Limite_ : ce cas demande deux
+      connexions en même temps, la base embarquée des tests n'en a qu'une ; le chemin normal reste couvert par
+      `tests/sql/parrainage.spec.mjs`.
 - [x] Parrainage : un code par joueur (PSEUDO-XXX) donné par le serveur, 10 $ pour l'ami à la création de son compte, 10 $ pour
       le parrain au premier pari de son filleul (quel que soit le jeu), filleuls et gains affichés depuis le serveur, en direct.
       Le code est lu une seule fois, à la création du compte. Une panne du parrainage n'empêche ni de créer un compte ni de
@@ -365,6 +379,8 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 | Duels | Seuls les duels sur un marché sont reliés. Les frais d'ouverture ne sont pas rendus si le duel est refusé ou expire (règle du mode Démo). Un duel accepté ajoute son montant au volume du marché, sans déplacer le prix. | Les duels éclair demandent le moteur côté serveur (lot à part) ; le duel de stack dure une semaine et repose sur un adversaire simulé. |
 | Ordre des lots restants | Combinés avant clans. | Les clans sont le plus gros module, presque entièrement simulé (annuaire de 100 clans, divisions, guerres) : je traite d'abord les fonctions à règles nettes (combinés, ordres limites, parrainage, copy trading, propositions). |
 | Parrainage | Sans limite de filleuls, comme en mode Démo ; code accepté seulement à la création du compte. | Règle du jeu inchangée. Limite connue : une même personne peut créer plusieurs comptes pour se parrainer elle-même (argent fictif ; chaque compte demande une adresse e-mail distincte). |
+| Garde-fou de l'outil Supabase | Jamais contourné. | Quand l'outil demande une confirmation manuelle et que personne ne répond, la migration n'est pas appliquée et le lot attend, sans être fusionné. Je ne réécris pas le SQL pour échapper au contrôle et je ne passe pas par un autre chemin. |
+| Ordres limites : XP | 10 XP à la première exécution d'un achat limite, et non au dépôt de l'ordre (15 XP du premier ordre limite : inchangé). | Plus strict que la démo : sinon placer puis annuler un ordre rapporterait de l'XP sans jamais parier. |
 | Protection de `main` | Non activée. | Elle changerait ta façon de publier ; elle reste proposée, facultative. |
 
 ## À faire par l'humain
@@ -404,3 +420,4 @@ Rien d'obligatoire. Le détail et les constats sont dans `docs/EXPLOITATION.md`,
 | 16 nov. 2026 | 4.6 (suite) : duels entre amis sur un marché. Stabilité : page d'administration et tests du Blitz. | migration `duels` (empreinte identique) ; 222 tests (105 SQL) ; 13 scénarios de bout en bout contre le vrai back |
 | 16 nov. 2026 | Paris combinés en mode Compte. | migration `combines` (empreinte identique) ; 227 tests (108 SQL) ; 14 scénarios de bout en bout contre le vrai back |
 | 16 nov. 2026 | Parrainage en mode Compte. Correctif : solde à jour dès la réponse du chargement après un duel expiré. | migration `parrainage` (empreinte identique) ; 235 tests (113 SQL) ; 15 scénarios de bout en bout contre le vrai back |
+| 16 nov. 2026 | État du joueur assemblé par blocs enregistrés ; parrainage sans attente ; ordres limites prêts mais en attente de confirmation (branche `lot/ordres-limites`). | migrations `parrainage_sans_attente` et `etat_blocs` (empreintes identiques) ; 238 tests (116 SQL) ; 15 scénarios de bout en bout contre le vrai back |
