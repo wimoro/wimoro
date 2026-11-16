@@ -24,12 +24,13 @@ const ticks = async n => { for (let i = 0; i < n; i++) await q(db, 'select wm.bo
 
 test('planification : un tick toutes les 3 secondes ; les anciennes tâches (bots, pari éclair) sont arrêtées', async () => {
   const jobs = await q(db, 'select jobname, schedule, command from cron.job order by jobname');
-  expect(jobs.map(j => j.jobname)).toEqual(['wm-bots', 'wm-bots-chat', 'wm-copies', 'wm-ordres', 'wm-purge-cron']);
+  expect(jobs.map(j => j.jobname)).toEqual(['wm-bots', 'wm-bots-chat', 'wm-copies', 'wm-ordres', 'wm-purge-cron', 'wm-suivis']);
   expect(jobs[0]).toMatchObject({ schedule: '3 seconds', command: 'select wm.bots_tick()' });
   expect(jobs[1]).toMatchObject({ schedule: '5 seconds', command: 'select wm.bots_chat()' });
   expect(jobs[2]).toMatchObject({ schedule: '20 seconds', command: 'select wm.copies_tick()' });   // copy trading : arrêts de perte, paris des bots copiés
   expect(jobs[3]).toMatchObject({ schedule: '3 seconds', command: 'select wm.ordres_tick()' });   // ordres limite, stop loss, take profit
   expect(jobs[4].command, 'le journal de pg_cron est purgé').toMatch(/cron.job_run_details/);
+  expect(jobs[5]).toMatchObject({ schedule: '5 seconds', command: 'select wm.chat_suivis_tick()' });   // suivis des mises partagées dans le chat
 });
 
 test('K20 · les prix restent autour de l’ancre au lieu de filer vers 2 % ou 98 %', async () => {

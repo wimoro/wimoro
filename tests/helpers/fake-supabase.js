@@ -42,7 +42,7 @@
   var db;
   try { db = JSON.parse(localStorage.getItem(DBKEY) || 'null'); } catch (e) { db = null; }
   if (!db) {
-    db = { session: clone(CFG.session || null), comptes: clone(CFG.comptes || {}), etats: {}, marches: {}, ops: {}, chat: clone(CFG.chat || {}), fiches: clone(CFG.fiches || {}), seq: 1 };
+    db = { session: clone(CFG.session || null), comptes: clone(CFG.comptes || {}), etats: {}, marches: {}, ops: {}, chat: clone(CFG.chat || {}), fiches: clone(CFG.fiches || {}), analyses: clone(CFG.analyses || {}), seq: 1 };
     (CFG.marches || []).forEach(function (x) { db.marches[x.market_id] = { def: x.def ? clone(x.def) : undefined, p: +x.current_probability, d0: x.d0 == null ? null : +x.d0, vol: +(x.volume_total || 0), people: x.participants_count | 0, liq: x.liquidity_depth == null ? null : +x.liquidity_depth, st: x.status || 'open', hot: 0, ph: clone(x.price_history || []) }; });
     if (db.session) { var u0 = db.session.user; db.etats[u0.id] = fusion(etatNeuf(u0.id, u0.email || '', 'realuser', false), CFG.etat || {}); }
   }
@@ -61,7 +61,7 @@
 
   /* ----- Les fonctions du contrat ----- */
   var RPC = {
-    api_state: function () { var e0 = etat(); regler(e0, []); rgMaj(e0, []); var e = clone(e0); e.deps = e0.deps.map(depJson); e.eclair = eclairJson(e0); delete e.eclairMises; e.serie = serieJson(e0); e.duels = duelsJson(e0); delete e.duelsL; e.combos = clone(e0.combosL || []); delete e.combosL; e.orders = clone(e0.ordres || []); delete e.ordres; e.guards = clone(e0.gardes || []); delete e.gardes; clanAvancer(e0, []); e.clan = clanEtat(e0); delete e.clanM; delete e.clanApps; delete e.clanParti; e.copies = copiesEtat(e0); delete e.copiesL; propsAvancer([]); e.props = propsEtat(); if (!e.ref) e.ref = { code: 'TESTEUR-7K3', bonus: 10, by: null, list: [] }; e.blitz = Object.keys(e0.blitzJ || {}).filter(function (i) { return !e0.blitzJ[i].regle; }).map(Number); delete e.blitzJ; e.now = Date.now() + (CFG.decalage || 0); return e; },
+    api_state: function () { var e0 = etat(); regler(e0, []); rgMaj(e0, []); stacksAvancer(e0, []); guerresAvancer(e0, []); var e = clone(e0); e.stacks = stacksJson(e0); delete e.stacksL; e.deps = e0.deps.map(depJson); e.eclair = eclairJson(e0); delete e.eclairMises; e.serie = serieJson(e0); e.duels = duelsJson(e0); delete e.duelsL; e.combos = clone(e0.combosL || []); delete e.combosL; e.orders = clone(e0.ordres || []); delete e.ordres; e.guards = clone(e0.gardes || []); delete e.gardes; clanAvancer(e0, []); e.clan = clanEtat(e0); delete e.clanM; delete e.clanApps; delete e.clanParti; e.copies = copiesEtat(e0); delete e.copiesL; propsAvancer([]); e.props = propsEtat(); if (!e.ref) e.ref = { code: 'TESTEUR-7K3', bonus: 10, by: null, list: [] }; e.blitz = Object.keys(e0.blitzJ || {}).filter(function (i) { return !e0.blitzJ[i].regle; }).map(Number); delete e.blitzJ; e.now = Date.now() + (CFG.decalage || 0); return e; },
     api_pseudo_libre: function (a) { return /^[A-Za-z0-9._]{3,20}$/.test(a.p_pseudo || '') && !pseudoPris(a.p_pseudo); },
     api_profile_update: function (a) { var p = a.p || {}, me = etat().me;
       if ('n' in p) { if (!/^[A-Za-z0-9._]{3,20}$/.test(p.n || '')) throw { message: 'pseudo_invalide' }; if (pseudoPris(p.n, uid())) throw { message: 'pseudo_pris' }; me.n = p.n; }
@@ -116,7 +116,17 @@
     api_chat_seen: function () { return null; },
     api_leaderboard: function () { var ids = Object.keys(db.fiches).filter(function (id) { return id !== uid() && db.fiches[id].pub !== 0; }).sort(function (x, y) { return (db.fiches[y].profit || 0) - (db.fiches[x].profit || 0); }).slice(0, 50), users = {};
       ids.forEach(function (id) { users[id] = ficheDe(id); }); return { ids: ids, users: users }; },
-    api_dm_history: function (a) { dmOk(a.p_user, false); var L = (db.chat['dm:' + [uid(), a.p_user].sort().join(':')] || []).slice(-60), users = {}; users[a.p_user] = ficheDe(a.p_user); return { u: a.p_user, msgs: clone(L), users: users }; },
+    api_dm_history: function (a) { dmOk(a.p_user, false); var L = (db.chat['dm:' + [uid(), a.p_user].sort().join(':')] || []).slice(-60), users = {}; users[a.p_user] = ficheDe(a.p_user); return { u: a.p_user, msgs: L.map(msgPropre), users: users, mes: mesDe(L) }; },
+    /* Duels de stack : mêmes règles que supabase/migrations/…_stacks.sql (adversaire simulé : un bot ; trajectoire simplifiée) */
+    api_stacks: function () { var e = etat(), ev = [], n = stacksAvancer(e, ev); if (n) { var rep = reponse(ev); rep.stacks = stacksJson(e); return rep; } return { stacks: stacksJson(e) }; },
+    api_stack_create: function (a) { var p = a.p || {}, e = etat(), me = e.me, cle = uid() + ':' + p.key, buyin = Math.round(Number(p.buyin) * 100) / 100, rep;
+      if (!(buyin >= 5 && buyin <= 1000)) throw { message: 'montant_invalide' }; if (!p.key) throw { message: 'cle_absente' };
+      if (db.ops[cle]) { rep = clone(db.ops[cle]); rep.rejoue = true; return rep; }
+      if (e.rg && e.rg.pause > Date.now()) throw { message: 'pause' }; var f = db.fiches[p.opp]; if (!f || p.opp === uid()) throw { message: 'joueur_inconnu' }; if (!f.bot) throw { message: 'stack_joueur_reel' };
+      var L = e.stacksL = e.stacksL || []; if (L.filter(function (x) { return x.st === 'active'; }).length >= 5) throw { message: 'trop_de_duels' }; if (me.balance < buyin) throw { message: 'solde_insuffisant' };
+      me.balance = Math.round((me.balance - buyin) * 100) / 100;
+      var x = { id: db.seq++, opp: p.opp, buyin: buyin, st: 'active', at: Date.now(), endAt: Date.now() + 7 * 86400e3, settleAt: null, ref: resultatDe(e), fin: 1000 + ((db.seq * 37) % 300) - 100 };
+      L.unshift(x); rep = reponse([notif('swords', 'stack_lance', { id: x.id, u: p.opp, k: buyin }, '#duels')]); rep.stack = x.id; rep.stacks = stacksJson(e); db.ops[cle] = clone(rep); return rep; },
     /* Duels entre amis sur un marché : mêmes règles que supabase/migrations/…_duels.sql (frais simplifiés : 2 %) */
     api_duels: function () { return duelsJson(etat()); },
     api_duel_create: function (a) { var p = a.p || {}, e = etat(), me = e.me, cle = uid() + ':' + p.key, r2 = function (x) { return Math.round(x * 100) / 100; }, rep;
@@ -182,8 +192,35 @@
     api_users_search: function (a) { var q = String(a.p_q || '').trim().toLowerCase(), ids = [], users = {};
       if (q.length >= 2 && /^[a-z0-9._]+$/.test(q)) for (var id in db.fiches) if (id !== uid() && String(db.fiches[id].n).toLowerCase().indexOf(q) >= 0 && ids.length < 10) { ids.push(id); users[id] = ficheDe(id); }
       return { ids: ids, users: users }; },
+    /* Analyses du Mode Pro : mêmes règles que supabase/migrations/…_analyses.sql (remise au propre simplifiée : champs connus, types, couleurs, textes) */
+    api_ana_share: function (a) { var e = etat(), me = e.me, ev = [], t = String(a.p_text || '').trim(), salons = a.p_rooms || [], vus = {}, ami = null;
+      if (t.length > 280) throw { message: 'message_trop_long' }; if (!salons.length || salons.length > 4) throw { message: 'salon_indisponible' };
+      var propre = anaPropre(a.p_snap);
+      salons.forEach(function (r) { if (vus[r]) throw { message: 'salon_indisponible' }; vus[r] = 1;
+        if (/^dm:/.test(r)) { if (ami) throw { message: 'salon_indisponible' }; ami = r.slice(3); dmOk(ami, true); } else if (/^m:/.test(r)) { if (r !== 'm:' + propre.m) throw { message: 'salon_indisponible' }; } else salonOk(r); });
+      db.analyses = db.analyses || {}; if (Object.keys(db.analyses).filter(function (k) { return db.analyses[k].u === uid() && db.analyses[k].at > Date.now() - 864e5; }).length >= 12) throw { message: 'trop_d_analyses' };
+      var id = db.seq++, at = Date.now(), msgs = {}, ref = { ana: id, m: propre.m, iv: propre.iv, ni: propre.inds.length, nd: propre.dr.length }; db.analyses[id] = { u: uid(), at: at, snap: propre };
+      salons.forEach(function (r) { var m = { id: db.seq++, u: uid(), k: 'ana', text: t, at: at, ana: clone(ref) }, salon = /^dm:/.test(r) ? 'dm:' + [uid(), ami].sort().join(':') : r;
+        (db.chat[salon] = db.chat[salon] || []).push(m); msgs[r] = clone(m);
+        if (!/^dm:/.test(r)) { var d = clone(m); d.f = ficheDe(uid()); setTimeout(function () { window.__fakeSB.emit(/^clan:/.test(r) ? r : 'salon:' + r, 'msg', d); }, 5); } });
+      var avant = rangDe(me), jr = jour(); if (me.chatDay !== jr) { me.chatDay = jr; me.chatXP = 0; }
+      var gain = Math.max(0, Math.min(2, 20 - me.chatXP)); me.chatXP += gain; me.msgsTotal = (me.msgsTotal | 0) + 1;
+      if (gain) { me.xp += gain; ev.push({ k: 'xp', n: gain, src: 'chat' }); rangMonte(me, avant, ev); }
+      missionAvance(e, 'chat', ev); if (salons.some(function (r) { return /^m:/.test(r); })) missionAvance(e, 'chatm', ev);
+      persist(); var rep = reponse(ev); rep.msgs = msgs; rep.snap = Object.assign(clone(propre), { id: 'a' + id, at: at }); return rep; },
+    api_ana: function (a) { var ids = (a.p_msgs || []).map(Number), snaps = {}, k = etat().clanM; if (!ids.length || ids.length > 6) throw { message: 'analyse_inconnue' };
+      for (var r in db.chat) { if (!(r === 'general' || /^m:/.test(r) || (k && r === 'clan:' + k.id) || (/^dm:/.test(r) && r.split(':').indexOf(uid()) > 0))) continue;
+        db.chat[r].forEach(function (m) { var x = m.k === 'ana' && m.ana && (db.analyses || {})[m.ana.ana]; if (x && ids.indexOf(m.id) >= 0) snaps[m.id] = Object.assign(clone(x.snap), { id: 'a' + m.ana.ana, at: x.at }); }); }
+      return { snaps: snaps }; },
     api_chat_history: function (a) { salonOk(a.p_room); var L = (db.chat[a.p_room] || []).slice(-60), users = {};
-      L.forEach(function (m) { users[m.u] = ficheDe(m.u); }); return { room: a.p_room, msgs: clone(L), users: users }; },
+      L.forEach(function (m) { users[m.u] = ficheDe(m.u); }); return { room: a.p_room, msgs: L.map(msgPropre), users: users, mes: mesDe(L) }; },
+    /* Réactions : mêmes règles que supabase/migrations/…_reactions.sql (un clic pose, un second retire) */
+    api_chat_react: function (a) { if (['🔥', '👀', '💸', '🎯'].indexOf(a.p_emoji) < 0) throw { message: 'reaction_invalide' };
+      var salon = String(a.p_room || ''); if (/^dm:/.test(salon)) { dmOk(salon.slice(3), false); salon = 'dm:' + [uid(), salon.slice(3)].sort().join(':'); } else salonOk(salon);
+      var m = (db.chat[salon] || []).filter(function (x) { return String(x.id) === String(a.p_msg); })[0]; if (!m) throw { message: 'message_indisponible' };
+      m.r = m.r || {}; m.qui = m.qui || {}; var miennes = m.qui[uid()] = m.qui[uid()] || [], i = miennes.indexOf(a.p_emoji);
+      if (i >= 0) { miennes.splice(i, 1); m.r[a.p_emoji] = Math.max(0, (m.r[a.p_emoji] | 0) - 1); if (!m.r[a.p_emoji]) delete m.r[a.p_emoji]; } else { miennes.push(a.p_emoji); m.r[a.p_emoji] = (m.r[a.p_emoji] | 0) + 1; }
+      persist(); return { id: m.id, r: clone(m.r), my: clone(miennes) }; },
     api_chat_send: function (a) { salonOk(a.p_room); var e = etat(), me = e.me, ev = [], t = String(a.p_text || '').trim();
       if (!t) throw { message: 'message_vide' }; if (t.length > 280) throw { message: 'message_trop_long' };
       var miens = []; for (var r in db.chat) db.chat[r].forEach(function (m) { if (m.u === uid()) miens.push(m); });
@@ -197,7 +234,7 @@
       if (gain) { me.xp += gain; ev.push({ k: 'xp', n: gain, src: 'chat' }); rangMonte(me, avant, ev); }
       missionAvance(e, 'chat', ev);
       var diffuse = clone(m); diffuse.f = ficheDe(uid()); persist();
-      setTimeout(function () { window.__fakeSB.emit('salon:' + a.p_room, 'msg', diffuse); }, 5);
+      setTimeout(function () { window.__fakeSB.emit(/^clan:/.test(a.p_room) || a.p_room === 'vip' ? a.p_room : 'salon:' + a.p_room, 'msg', diffuse); }, 5);
       var rep = reponse(ev); rep.msg = clone(m); return rep; },
     api_mission_claim: function (a) { var e = etat(), me = e.me, m = e.missions.filter(function (x) { return x.id === a.p_id; })[0], ev = [];
       if (!m || m.claimed || m.have < m.goal) throw { message: 'mission_indisponible' };
@@ -325,7 +362,38 @@
       e.clanApps = e.clanApps || {}; if (!e.clanApps[a.p_clan]) e.clanApps[a.p_clan] = Date.now(); var rep = reponse([]); rep.clan = clanEtat(e); return rep; },
     api_clan_leave: function () { var e = etat(); if (!e.clanM) throw { message: 'clan_absent' }; var id = e.clanM.id, j = (db.clans || []).filter(function (x) { return x.id === id; })[0];
       if (j) { j.members = j.members.filter(function (m) { return m.u !== uid(); }); if (j.chief === uid()) { j.chief = j.members.length ? j.members[0].u : null; if (j.members.length) j.members[0].role = 'chef'; } }
-      e.clanM = null; e.clanParti = Date.now(); var rep = reponse([]); rep.clan = clanEtat(e); return rep; },
+      filPoser(id, uid(), 'quitte', {}); e.clanM = null; e.clanParti = Date.now(); var rep = reponse([]); rep.clan = clanEtat(e); return rep; },
+    /* Chef et officiers : mêmes règles que supabase/migrations/…_clans_chefs.sql */
+    api_clan_promote: function (a) { var e = etat(), x = clanMoi(e), c = clanMembre(x.j, a.p_user); if (x.role !== 'chef') throw { message: 'role_insuffisant' }; if (!c) throw { message: 'membre_inconnu' };
+      if (c.role !== 'membre') throw { message: 'deja_officier' }; if (x.j.members.filter(function (m) { return m.role === 'officier'; }).length >= 5) throw { message: 'trop_d_officiers' };
+      c.role = 'officier'; filPoser(x.j.id, uid(), 'officier', { u: a.p_user }); var rep = reponse([]); rep.clan = clanEtat(e); return rep; },
+    api_clan_kick: function (a) { var e = etat(), x = clanMoi(e), c = clanMembre(x.j, a.p_user); if (x.role !== 'chef' && x.role !== 'officier') throw { message: 'role_insuffisant' }; if (!c) throw { message: 'membre_inconnu' };
+      if (c.role === 'chef' || (x.role === 'officier' && c.role !== 'membre')) throw { message: 'role_insuffisant' };
+      x.j.members = x.j.members.filter(function (m) { return m.u !== a.p_user; }); if (db.fiches[a.p_user]) db.fiches[a.p_user].clan = null; filPoser(x.j.id, uid(), 'exclu', { u: a.p_user });
+      var rep = reponse([]); rep.clan = clanEtat(e); return rep; },
+    api_clan_invite: function (a) { var e = etat(), x = clanMoi(e), f = db.fiches[a.p_user]; if (x.role !== 'chef' && x.role !== 'officier') throw { message: 'role_insuffisant' };
+      if (!f || a.p_user === uid()) throw { message: 'joueur_inconnu' }; if (e.friends.indexOf(a.p_user) < 0) throw { message: 'pas_amis' }; if (f.clan) throw { message: 'clan_deja' };
+      if (x.j.members.length >= 50) throw { message: 'clan_complet' }; var fait = 'invite';
+      if (f.bot) { x.j.members.push({ u: a.p_user, role: 'membre', since: Date.now(), pts: 0 }); f.clan = x.j.id; filPoser(x.j.id, a.p_user, 'invite', { par: uid() }); fait = 'rejoint'; }
+      else { db.invites = db.invites || {}; if (db.invites[x.j.id + ':' + a.p_user]) throw { message: 'deja_invite' }; db.invites[x.j.id + ':' + a.p_user] = Date.now(); }
+      var rep = reponse([]); rep.clan = clanEtat(e); rep.r = fait; return rep; },
+    /* Guerres de clans : mêmes règles que supabase/migrations/…_clans_guerres.sql (points simulés simplifiés) */
+    api_clan_war: function () { var e = etat(), x = clanMoi(e); if (x.role !== 'chef' || !x.j.name) throw { message: 'role_insuffisant' }; guerresAvancer(e, []);
+      db.guerres = db.guerres || {}; var L = db.guerres[x.j.id] = db.guerres[x.j.id] || []; if (L.some(function (g) { return g.status === 'live'; })) throw { message: 'guerre_en_cours' };
+      var bots = x.j.members.filter(function (m) { return (db.fiches[m.u] || {}).bot; }).map(function (m) { return m.u; }).slice(0, 7), id = db.seq++;
+      L.unshift({ id: id, foe: CFG.ennemi || 'c7', at: Date.now(), endAt: Date.now() + 48 * 3600e3, status: 'live', buyin: 20, bots: bots, eux: CFG.pointsEux === undefined ? 650 : CFG.pointsEux, joueurs: {} });
+      filPoser(x.j.id, uid(), 'guerre', { foe: L[0].foe, k: 20 }); var r = 'clan:' + x.j.id; (db.chat[r] = db.chat[r] || []).push({ id: db.seq++, u: uid(), k: 'evt', text: '', at: Date.now(), ev: { code: 'guerre', foe: L[0].foe, k: 20 } });
+      var rep = reponse([]); rep.clan = clanEtat(e); return rep; },
+    api_clan_war_join: function () { var e = etat(), me = e.me, x = clanMoi(e), g = ((db.guerres || {})[x.j.id] || []).filter(function (y) { return y.status === 'live' && y.endAt > Date.now(); })[0];
+      if (!g) throw { message: 'guerre_absente' }; if (g.joueurs[uid()]) throw { message: 'guerre_deja' }; if (e.rg && e.rg.pause > Date.now()) throw { message: 'pause' }; if (me.balance < g.buyin) throw { message: 'solde_insuffisant' };
+      me.balance = r2(me.balance - g.buyin); g.joueurs[uid()] = { paye: g.buyin }; var rep = reponse([]); rep.clan = clanEtat(e); return rep; },
+    api_clan_call: function (a) { var e = etat(), x = clanMoi(e); if (x.role !== 'chef' && x.role !== 'officier') throw { message: 'role_insuffisant' };
+      if (a.p_side !== 'oui' && a.p_side !== 'non') throw { message: 'cote_invalide' }; var m = marche(a.p_market); if (!m || m.st !== 'open') throw { message: 'marche_inconnu' };
+      db.appels = db.appels || {}; var L = db.appels[x.j.id] = db.appels[x.j.id] || []; if (L.filter(function (k) { return k.at > Date.now() - 3600e3; }).length >= 6) throw { message: 'trop_d_appels' };
+      L.unshift({ id: db.seq++, m: a.p_market, s: a.p_side, by: uid(), at: Date.now(), du: Date.now() + (CFG.appelDelai === undefined ? 6000 : CFG.appelDelai), n: null });
+      filPoser(x.j.id, uid(), 'appel', { m: a.p_market, s: a.p_side });
+      var r = 'clan:' + x.j.id; (db.chat[r] = db.chat[r] || []).push({ id: db.seq++, u: uid(), k: 'evt', text: '', at: Date.now(), ev: { code: 'appel', m: a.p_market, s: a.p_side } });
+      var rep = reponse([]); rep.clan = clanEtat(e); return rep; },
     api_clan_create: function (a) { var p = a.p || {}, e = etat(), me = e.me, ev = [], propre = function (t) { return String(t || '').replace(/'/g, '’').replace(/\s+/g, ' ').trim(); };
       if (e.clanM) throw { message: 'clan_deja' }; if (e.clanParti && e.clanParti > Date.now() - 7 * 864e5) throw { message: 'clan_attente' };
       if (rangDe(me).t < 2) throw { message: 'rang_insuffisant' }; if (me.since > Date.now() - 14 * 864e5) throw { message: 'compte_trop_recent' };
@@ -369,6 +437,30 @@
       e.gardes = (e.gardes || []).filter(function (g) { return !(g.m === p.m && g.s === p.s); }); e.gardes.push({ m: p.m, s: p.s, stop: stop, tp: tp, at: Date.now() });
       var rep = reponse([]); rep.guards = clone(e.gardes); return rep; },
     api_guard_del: function (a) { var e = etat(); e.gardes = (e.gardes || []).filter(function (g) { return !(g.m === a.p_market && g.s === a.p_side); }); var rep = reponse([]); rep.guards = clone(e.gardes); return rep; },
+    /* Suivre un joueur : mêmes règles que supabase/migrations/…_suivre.sql */
+    api_follow: function (a) { var e = etat(), L = (e.following = e.following || []), i = L.indexOf(a.p_user), f = (e.users || {})[a.p_user];
+      if (!a.p_user || a.p_user === uid() || !f) throw { message: 'joueur_inconnu' };
+      if (a.p_on && i < 0) { if (L.length >= 500) throw { message: 'trop_de_suivis' }; L.push(a.p_user); f.fol = (f.fol | 0) + 1; } else if (!a.p_on && i >= 0) { L.splice(i, 1); f.fol = Math.max(0, (f.fol | 0) - 1); }
+      var rep = reponse([]), users = {}; users[a.p_user] = clone(f); rep.following = clone(L); rep.users = users; return rep; },
+    /* Mises partagées : mêmes règles que supabase/migrations/…_chat_mises.sql */
+    api_chat_share: function (a) { var prive = /^dm:/.test(String(a.p_room)), salon = a.p_room;                 /* en privé : à un ami, comme un message (…_mise_privee.sql) */
+      if (prive) { dmOk(a.p_room.slice(3), true); salon = 'dm:' + [uid(), a.p_room.slice(3)].sort().join(':'); } else salonOk(a.p_room);
+      var e = etat(), me = e.me, ev = [];
+      if (a.p_side !== 'oui' && a.p_side !== 'non') throw { message: 'cote_invalide' }; if (rangDe(me).t < 1) throw { message: 'rang_insuffisant' };
+      var pos = e.positions.filter(function (p) { return p.m === a.p_market && p.s === a.p_side && p.sh > 0.05; })[0]; if (!pos) throw { message: 'position_absente' };
+      var deja = false; for (var r in db.chat) db.chat[r].forEach(function (x) { if (x.u === uid() && x.k === 'bet' && x.bet.m === a.p_market && x.bet.s === a.p_side && x.at > Date.now() - 864e5) deja = true; });
+      if (deja) throw { message: 'deja_partage' };
+      var m = { id: db.seq++, u: uid(), k: 'bet', text: '', at: Date.now(), bet: { m: a.p_market, s: a.p_side, amt: Math.round(pos.sh * pos.avg / 100), price: Math.round(pos.avg) }, fc: 0, suivis: {} };
+      (db.chat[salon] = db.chat[salon] || []).push(m); var avant = rangDe(me); me.xp += 5; ev.push({ k: 'xp', n: 5, src: 'partage' }); rangMonte(me, avant, ev);
+      var rep = reponse(ev); rep.msg = clone(m); delete rep.msg.suivis; return rep; },
+    api_chat_follow: function (a) { var e = etat(), me = e.me, ev = [], m = null, salon = null; for (var r in db.chat) db.chat[r].forEach(function (x) { if (x.id === +a.p_msg && x.k === 'bet') { m = x; salon = r; } });
+      if (rangDe(me).t < 2) throw { message: 'rang_insuffisant' }; if (!m || m.u === uid()) throw { message: 'mise_indisponible' };
+      if (/^dm:/.test(salon) && (salon.split(':').indexOf(uid()) < 1 || e.friends.indexOf(m.u) < 0)) throw { message: 'mise_indisponible' };   /* en privé : l'autre participant, s'il est toujours ami */
+      if (!e.positions.some(function (p) { return p.m === m.bet.m && p.s === m.bet.s && p.sh > 0.05; })) throw { message: 'position_absente' };
+      m.suivis = m.suivis || {}; if (m.suivis[uid()]) throw { message: 'deja_suivi' }; m.suivis[uid()] = 1; m.fc = (m.fc | 0) + 1;
+      var auteur = db.etats[m.u]; if (auteur) { auteur.me.xp += 20; auteur.me.followed = (auteur.me.followed | 0) + 1; }
+      var avant = rangDe(me); me.xp += 5; ev.push({ k: 'xp', n: 5, src: 'suivre' }); rangMonte(me, avant, ev);
+      var rep = reponse(ev); rep.id = m.id; rep.fc = m.fc; return rep; },
     api_buy: function (a) {
       var e = etat(), me = e.me, total = r2(+a.p_total), cle = uid() + ':' + a.p_key;
       if (a.p_side !== 'oui' && a.p_side !== 'non') throw { message: 'cote_invalide' };
@@ -383,6 +475,7 @@
       if (!q.full || !(q.sh > 0)) throw { message: 'liquidite' };
       var avant = rangDe(me), fee = r2(q.fee), cout = r2(total - fee), ev = [];
       me.balance = r2(me.balance - total); me.played = (me.played | 0) + 1; me.maxBet = Math.max(me.maxBet || 0, total); me.realized = r2((me.realized || 0) - fee);
+      if (e.clanM && ((e.prefs || {}).prefs || {}).clanFeed !== false) filPoser(e.clanM.id, uid(), 'mise', { amt: Math.round(total), m: a.p_market });
       var pos = e.positions.filter(function (p) { return p.m === a.p_market && p.s === a.p_side; })[0];
       if (pos) { pos.avg = r6((pos.avg * pos.sh + q.avg * q.sh) / (pos.sh + q.sh)); pos.sh = r8(pos.sh + q.sh); }
       else { pos = { m: a.p_market, s: a.p_side, sh: r8(q.sh), avg: r6(q.avg) }; e.positions.push(pos); }
@@ -506,13 +599,34 @@
     return demo.concat((db.clans || []).map(function (j) { return { id: j.id, tag: j.tag, access: j.access, minRank: j.minRank, code: j.code, n: j.members.length }; })); }
   function clanVerifier(e, id) { var c = clansTous().filter(function (x) { return x.id === id; })[0]; if (!c) throw { message: 'clan_inconnu' }; if (e.clanM) throw { message: 'clan_deja' };
     if (e.clanParti && e.clanParti > Date.now() - 7 * 864e5) throw { message: 'clan_attente' }; if (c.n >= 50) throw { message: 'clan_complet' }; if (rangDe(e.me).t < c.minRank) throw { message: 'rang_insuffisant' }; return c; }
-  function clanEntrer(e, id, role) { e.clanM = { id: id, role: role, since: Date.now(), xp: 0, jour: 0, ecartes: 0 }; e.clanApps = {};
+  /* fil d'activité d'un clan, rôle de l'appelant dans un clan de joueurs, membre d'un clan */
+  function filPoser(clan, u, code, p) { db.fils = db.fils || {}; (db.fils[clan] = db.fils[clan] || []).unshift({ u: u, code: code, p: p || {}, at: Date.now() }); }
+  function clanMoi(e) { if (!e.clanM) throw { message: 'clan_absent' }; var j = (db.clans || []).filter(function (x) { return x.id === e.clanM.id; })[0]; return { j: j || { id: e.clanM.id, members: [] }, role: e.clanM.role }; }
+  function clanMembre(j, u) { return u === uid() ? null : j.members.filter(function (m) { return m.u === u; })[0]; }
+  function clanEntrer(e, id, role) { e.clanM = { id: id, role: role, since: Date.now(), xp: 0, jour: 0, ecartes: 0 }; e.clanApps = {}; filPoser(id, uid(), role === 'chef' ? 'fonde' : 'rejoint', {});
     var j = (db.clans || []).filter(function (x) { return x.id === id; })[0]; if (j) j.members.push({ u: uid(), role: role, since: Date.now(), pts: 0 }); }
-  function clanAvancer(e, ev) { var apps = e.clanApps || {}; Object.keys(apps).forEach(function (id) { if (apps[id] > Date.now() - 6000) return; delete apps[id];
+  /* guerre d'un clan : points (les nôtres : bots à 500, joueurs = contribution / 10 ; les leurs : CFG.pointsEux chacun), règlement après 48 heures */
+  function guerreVue(e, g) { var mine = g.bots.map(function (u) { return { u: u, pts: 500 }; }); Object.keys(g.joueurs).forEach(function (u) { mine.push({ u: u, pts: g.joueurs[u].pts !== undefined ? g.joueurs[u].pts : Math.round(((db.etats[u] || e).clanM || { xp: 0 }).xp / 10) }); });
+    var theirs = []; for (var i = 1; i <= 10; i++) theirs.push({ i: i, pts: g.eux }); return { id: g.id, foe: g.foe, at: g.at, endAt: g.endAt, status: g.status, buyin: g.buyin, pot: g.buyin * (10 + mine.length), mine: mine, theirs: theirs, a: g.a, b: g.b }; }
+  function guerresAvancer(e, ev) { var n = 0; Object.keys(db.guerres || {}).forEach(function (cid) { db.guerres[cid].forEach(function (g) { if (g.status !== 'live' || g.endAt > Date.now()) return;
+      if (!(e.clanM && e.clanM.id === cid) && !g.joueurs[uid()]) return;                         // un membre du clan, ou un participant qui l'a quitté
+      var v = guerreVue(e, g), top = function (L) { return L.map(function (x) { return x.pts; }).sort(function (p, q) { return q - p; }).slice(0, 10).reduce(function (t, x) { return t + x; }, 0); }, a = top(v.mine), b = top(v.theirs);
+      g.status = a > b ? 'won' : a < b ? 'lost' : 'draw'; g.a = a; g.b = b; g.pot = v.pot; g.regle = Date.now(); n++; var part = g.status === 'won' && v.mine.length ? r2(v.pot * .96 / v.mine.length) : 0, moi = g.joueurs[uid()];
+      if (moi) { var me = e.me; if (g.status === 'won') { me.balance = r2(me.balance + part); me.xp += 50; ev.push({ k: 'xp', n: 50, src: 'guerre' }); } else if (g.status === 'draw') me.balance = r2(me.balance + moi.paye);
+        ev.push(notif('shield', 'guerre_' + g.status, { id: cid, foe: g.foe, gain: r2(part - moi.paye), pot: v.pot, a: a, b: b }, '#clan-' + cid)); } }); });
+    return n; }
+  function clanAvancer(e, ev) { guerresAvancer(e, ev || []); if (e.clanM) ((db.appels || {})[e.clanM.id] || []).forEach(function (k) { if (k.n !== null || k.by !== uid() || k.du > Date.now()) return;
+      var j = (db.clans || []).filter(function (x) { return x.id === e.clanM.id; })[0], autres = j ? j.members.length - 1 : 0; k.n = Math.min(2 + (k.id % 4), Math.max(0, autres));
+      if (k.n > 0) { var n = notif('users', 'clan_appel_suivi', { n: k.n, m: k.m, id: e.clanM.id }, '#clan-' + e.clanM.id); if (ev) ev.push(n); } });
+    var apps = e.clanApps || {}; Object.keys(apps).forEach(function (id) { if (apps[id] > Date.now() - 6000) return; delete apps[id];
       var ok = (CFG.clanRefus || []).indexOf(id) < 0; if (ok) { try { clanVerifier(e, id); clanEntrer(e, id, 'membre'); } catch (x) { ok = false; } }
       var n = notif('shield', ok ? 'clan_accepte' : 'clan_refuse', { id: id }, '#clan-' + id); if (ev) ev.push(n); }); }
-  function clanEtat(e) { var moi = uid(), users = {}; (db.clans || []).forEach(function (j) { j.members.forEach(function (m) { if (m.u !== moi && db.etats[m.u]) users[m.u] = { n: db.etats[m.u].me.n, t: 0, d: 0, tone: 0, bot: false, pub: 1, clan: j.id }; }); });
-    return { mine: e.clanM ? clone(e.clanM) : null, leftAt: e.clanParti || null, apps: clone(e.clanApps || {}),
+  function clanEtat(e) { var moi = uid(), users = {}; (db.clans || []).forEach(function (j) { j.members.forEach(function (m) { if (m.u !== moi && db.etats[m.u]) users[m.u] = { n: db.etats[m.u].me.n, t: 0, d: 0, tone: 0, bot: false, pub: 1, clan: j.id }; else if (m.u !== moi && db.fiches[m.u]) users[m.u] = ficheDe(m.u); }); });
+    var feed = e.clanM ? ((db.fils || {})[e.clanM.id] || []).slice(0, 30) : [], calls = e.clanM ? ((db.appels || {})[e.clanM.id] || []).slice(0, 6) : [];
+    feed.forEach(function (f) { [f.u, f.p.u, f.p.par].forEach(function (u) { if (u && u !== moi && !users[u] && db.fiches[u]) users[u] = ficheDe(u); }); });
+    return { mine: e.clanM ? clone(e.clanM) : null, leftAt: e.clanParti || null, apps: clone(e.clanApps || {}), feed: clone(feed), calls: calls.map(function (k) { return { id: k.id, m: k.m, s: k.s, by: k.by, at: k.at, n: k.n || 0 }; }),
+      war: e.clanM ? (((db.guerres || {})[e.clanM.id] || []).filter(function (g) { return g.status === 'live'; }).map(function (g) { return guerreVue(e, g); })[0] || null) : null,
+      wars: e.clanM ? ((db.guerres || {})[e.clanM.id] || []).filter(function (g) { return g.status !== 'live'; }).slice(0, 10).map(function (g) { return { foe: g.foe, at: g.regle, status: g.status, a: g.a, b: g.b, pot: g.pot }; }) : [],
       clans: (db.clans || []).map(function (j) { var x = clone(j); if (!j.members.some(function (m) { return m.u === moi; })) x.code = null; return x; }), users: users }; }
   /* ----- Ordres limite : exécution (wm.ordre_remplir) et écritures d'une vente (wm.vente_ecrire) ----- */
   function ordresRep(e, mid) { return { orders: clone(e.ordres || []), guards: clone(e.gardes || []), positions: clone(e.positions), marches: marchesDe(fratrie(mid)) }; }
@@ -670,6 +784,39 @@
     L.push(m); me.balance = r2(me.balance - amt); me.played = (me.played | 0) + 1;
     me.xp += 10; ev.push({ k: 'xp', n: 10, src: 'eclair' }); rangMonte(me, avant, ev); missionAvance(e, 'flashbet', ev); badges(e, ev);
     var rep = reponse(ev); rep.mise = clone(m); delete rep.mise.etat; db.ops[cle] = clone(rep); return rep; }
+  /* Duels sur une manche éclair : mêmes règles que supabase/migrations/…_duels_eclair.sql (prix, frais et issue : moteur partagé) */
+  function duelEclairAction(b) { var ME = MoteurEclair, e = etat(), me = e.me, t = Date.now() + (CFG.decalage || 0), L = e.duelsL = e.duelsL || [], ev = [], rep;
+    var cote = function (d) { var g = ME.etat(d, ME.round(t), ME.tick(t)); return { g: g, px: ME.prix(d, g) }; }, flash = function (z) { return String(z.m).indexOf('flash:') === 0; };
+    if (b.action === 'duel_create') { var d = ME.JEUX[b.gid], cle = uid() + ':' + b.key, mise = r2(Number(b.stake));
+      if (!d) throw { message: 'jeu_inconnu' }; if (['oui', 'non'].indexOf(b.side) < 0) throw { message: 'cote_invalide' }; if (!(mise >= 5 && mise <= 5000)) throw { message: 'montant_invalide' }; if (!b.key) throw { message: 'cle_absente' };
+      if (db.ops[cle]) { rep = clone(db.ops[cle]); rep.rejoue = true; return rep; }
+      if (e.rg && e.rg.pause > Date.now()) throw { message: 'pause' }; if (b.opp && e.friends.indexOf(b.opp) < 0) throw { message: 'pas_amis' };
+      var q = cote(d), prix = b.side === 'oui' ? q.px.o : q.px.n, fee = r2(ME.frais(d, q.g, b.side, mise, rangDe(me).t >= 5)); if (me.balance < mise + fee) throw { message: 'solde_insuffisant' };
+      var manche = ME.round(t) + (t - ME.t0(ME.round(t)) >= 20000 ? 1 : 0), ferme = ME.t0(manche) + ME.FOPEN - (CFG.decalage || 0);       /* la suivante s'il reste moins de dix secondes de mises */
+      me.balance = r2(me.balance - mise - fee); me.played++;
+      var x = { id: db.seq++, code: 'D' + ('000000' + db.seq.toString(16).toUpperCase()).slice(-7), m: 'flash:' + d.id, round: manche, side: b.side, by: uid(), opp: b.opp || null, stake: mise, fee: fee, st: 'open', at: Date.now(),
+        expiresAt: Math.min(Date.now() + 120000, ferme), price0: prix, price: null, oppStake: null, oppFee: null, pot: null, winSide: null, acceptAt: null, settleAt: null };
+      if (b.opp && (db.fiches[b.opp] || {}).bot) { x.st = 'active'; x.price = prix; x.pot = r2(mise * 100 / prix); x.oppStake = r2(x.pot * (100 - prix) / 100); x.oppFee = 0; x.acceptAt = Date.now(); }
+      L.unshift(x); rep = reponse([]); rep.duel = clone(x); rep.duels = duelsJson(e); db.ops[cle] = clone(rep); return rep; }
+    if (b.action === 'duel_accept') { var code = String(b.code || '').toUpperCase(), y = L.filter(function (z) { return (b.id && z.id === +b.id) || (code && z.code === code); })[0];
+      if (!y && code && (CFG.liens || {})[code]) { y = clone(CFG.liens[code]); L.unshift(y); }
+      if (!y || y.st !== 'open' || !flash(y) || y.by === uid() || (y.opp && y.opp !== uid())) throw { message: 'duel_indisponible' };
+      if (t - ME.t0(y.round) >= ME.FOPEN) throw { message: 'mises_fermees' };
+      var dj = ME.JEUX[y.m.slice(6)], qa = cote(dj), pa = y.side === 'oui' ? qa.px.o : qa.px.n, pot = r2(y.stake * 100 / pa), autre = r2(pot * (100 - pa) / 100), fa = r2(ME.frais(dj, qa.g, y.side === 'oui' ? 'non' : 'oui', autre, rangDe(me).t >= 5));
+      if (me.balance < autre + fa) throw { message: 'solde_insuffisant' };
+      me.balance = r2(me.balance - autre - fa); me.played++; y.opp = uid(); y.st = 'active'; y.price = pa; y.pot = pot; y.oppStake = autre; y.oppFee = fa; y.acceptAt = Date.now();
+      rep = reponse([]); rep.duel = clone(y); rep.duels = duelsJson(e); return rep; }
+    if (b.action === 'duel_settle') { var n = 0, avant = rangDe(me);
+      L.forEach(function (z) { if (!flash(z) || ['open', 'active'].indexOf(z.st) < 0 || t < ME.t0(z.round) + ME.FDUR) return;
+        var defieur = z.by === uid(), mien = defieur ? z.side : (z.side === 'oui' ? 'non' : 'oui'), maMise = defieur ? z.stake : z.oppStake, autre = defieur ? z.opp : z.by, out = ME.issue(ME.JEUX[z.m.slice(6)], z.round); n++; z.settleAt = Date.now();
+        if (z.st === 'open') { z.st = 'expired'; if (defieur) { me.balance = r2(me.balance + z.stake); ev.push(notif('swords', 'duel_expire', { m: z.m, r: z.round, id: z.id }, '#duels')); } return; }
+        if (out === 2) { z.st = 'void'; me.balance = r2(me.balance + maMise); ev.push(notif('swords', 'duel_nul', { m: z.m, r: z.round, id: z.id }, '#duel-' + z.id)); return; }
+        z.st = 'regle'; z.winSide = out === 1 ? 'oui' : 'non'; var gagne = z.winSide === mien, pnl = gagne ? r2(z.pot - maMise) : -maMise; me.settled = (me.settled | 0) + 1; me.realized = r2((me.realized || 0) + pnl);
+        if (gagne) { me.balance = r2(me.balance + z.pot); me.wins = (me.wins | 0) + 1; me.xp += 20; ev.push({ k: 'xp', n: 20, src: 'duel' }); }
+        e.history.unshift({ k: 'res', q: 'duel|' + autre + '|' + z.m + '|' + z.round, s: mien, win: gagne, pnl: pnl, at: Date.now() });
+        ev.push(notif('swords', gagne ? 'duel_gagne' : 'duel_perdu', { id: z.id, m: z.m, r: z.round, u: autre, pnl: pnl }, '#duel-' + z.id)); });
+      if (n) rangMonte(me, avant, ev); rep = reponse(ev); rep.duels = duelsJson(e); rep.regles = n; return rep; }
+    return null; }
   function eclairRegler() { var ME = MoteurEclair, e = etat(), me = e.me, r = ME.round(Date.now()), ev = [], regles = [], hist = [], avant = rangDe(me);
     (e.eclairMises || []).forEach(function (m) { if (m.etat !== 'ouverte' || m.r >= r) return;
       var x = ME.regler(ME.JEUX[m.g], m.r, m), pay = x.win ? r2(x.pay) : 0, pnl = r2(pay - m.amt), at = ME.t0(m.r + 1), tard = m.r < r - 1;
@@ -682,9 +829,45 @@
     if (regles.length) { rangMonte(me, avant, ev); badges(e, ev); }
     var rep = reponse(ev); rep.regles = regles; rep.hist = hist; rep.eclair = eclairJson(e); return rep; }
 
+  /* remise au propre d'un instantané : seuls les champs connus sont repris ; tout ce qui sort du format est refusé */
+  var anaPropre = function (s) { var mauvais = function () { throw { message: 'analyse_invalide' }; };
+    if (!s || typeof s !== 'object' || Array.isArray(s)) mauvais(); if (JSON.stringify(s).length > 400000) throw { message: 'analyse_trop_lourde' };
+    if (typeof MK === 'undefined' || !MK[s.m]) throw { message: 'marche_inconnu' }; var n = s.n;
+    if (['1m', '5m', '15m', '1h', '4h', '1d', '1w', 'max'].indexOf(s.iv) < 0 || ['courbe', 'bougies'].indexOf(s.type) < 0 || ['oui', 'non'].indexOf(s.side) < 0 || typeof n !== 'number' || n !== Math.floor(n) || n < 1 || n > 4000) mauvais();
+    var nombre = function (v) { if (typeof v !== 'number' || !isFinite(v)) mauvais(); return v; };
+    var serie = function (L) { if (!Array.isArray(L) || L.length !== n) mauvais(); return L.map(function (v) { return v === null ? null : Math.round(nombre(v) * 100) / 100; }); };
+    var couleur = function (c) { if (typeof c !== 'string' || !/^(ink|#[0-9a-fA-F]{6})$/.test(c)) mauvais(); return c; }, ep = function (w) { if ([1, 2, 3].indexOf(w) < 0) mauvais(); return w; };
+    var point = function (p) { if (!Array.isArray(p) || p.length !== 2) mauvais(); return [Math.round(nombre(p[0])), Math.round(nombre(p[1]) * 1e4) / 1e4]; };
+    var texte = function (t) { if (t !== undefined && t !== null && typeof t !== 'string') mauvais(); return String(t || '').replace(/</g, '‹').replace(/>/g, '›').replace(/"/g, '”').replace(/[`']/g, '’').replace(/\\/g, '/').replace(/\s+/g, ' ').trim().slice(0, 60); };
+    if (!Array.isArray(s.inds) || s.inds.length > 24 || !Array.isArray(s.dr) || s.dr.length > 300) mauvais();
+    var inds = s.inds.map(function (d, i) { if (!d || ['sma', 'ema', 'bb', 'vwap', 'rsi', 'macd'].indexOf(d.k) < 0 || !d.p || typeof d.p !== 'object') mauvais();
+      var cles = d.k === 'bb' || d.k === 'macd' ? ['a', 'b', 'c'] : ['a'], vals = {}, p = {}; if (!d.vals || Object.keys(d.vals).length !== cles.length) mauvais(); cles.forEach(function (c) { vals[c] = serie(d.vals[c]); });
+      (d.k === 'bb' ? ['len', 'k'] : d.k === 'macd' ? ['fast', 'slow', 'sig'] : d.k === 'vwap' ? ['anc'] : ['len']).forEach(function (c) { if (d.k === 'vwap') { if (['auto', 'day', 'week', 'all'].indexOf(d.p[c]) < 0) mauvais(); p[c] = d.p[c]; } else p[c] = nombre(d.p[c]); });
+      return { id: 'i' + (i + 1), k: d.k, p: p, c: couleur(d.c), w: ep(d.w), vals: vals }; });
+    var dr = s.dr.map(function (d, i) { if (!d || ['trend', 'hline', 'vline', 'rect', 'arrow', 'text', 'level'].indexOf(d.k) < 0) mauvais();
+      var t = { id: 'd' + (i + 1), k: d.k, a: point(d.a), c: couleur(d.c), w: ep(d.w), txt: texte(d.txt) }; if (['trend', 'arrow', 'rect'].indexOf(d.k) >= 0) t.b = point(d.b); return t; });
+    return { v: 1, m: s.m, iv: s.iv, type: s.type, side: s.side, p: Math.round(MK[s.m].p * 100) / 100, ms: nombre(s.ms), T0: nombre(s.T0), n: n, o: serie(s.o), h: serie(s.h), l: serie(s.l), c: serie(s.c), vol: serie(s.vol),
+      end: nombre(s.end), vn: nombre(s.vn), inds: inds, dr: dr }; };
   var dmOk = function (u, ecrire) { var e = etat(); if (!u || u === uid() || !db.fiches[u]) throw { message: 'joueur_inconnu' }; if (e.friends.indexOf(u) < 0) throw { message: 'pas_amis' }; if (ecrire && rangDe(e.me).t < 1) throw { message: 'rang_insuffisant' }; };
   /* ----- Chat : salons publics ----- */
-  var salonOk = function (r) { if (r === 'general' || (/^m:/.test(String(r)) && typeof MK !== 'undefined' && MK[String(r).slice(2)])) return; throw { message: 'salon_indisponible' }; };
+  /* un message tel que le serveur l'envoie : sans ses données internes (qui a suivi, qui a réagi) */
+  var msgPropre = function (m) { var c = clone(m); delete c.suivis; delete c.qui; if (c.r && !Object.keys(c.r).length) delete c.r; return c; };
+  var mesDe = function (L) { var o = {}; L.forEach(function (m) { var q = m.qui && m.qui[uid()]; if (q && q.length) o[m.id] = clone(q); }); return o; };
+  /* duels de stack : résultat du joueur (réalisé + positions), stacks lus à l'instant, règlement à l'échéance */
+  function resultatDe(e) { var v = e.me.realized || 0; (e.positions || []).forEach(function (p) { var m = marche(p.m); if (m) v += p.sh * ((p.s === 'oui' ? m.p : 100 - m.p) - p.avg) / 100; }); return v; }
+  function stackVu(e, x) { var actif = x.st === 'active', t = Math.min(1, (Date.now() - x.at) / (x.endAt - x.at));
+    return { id: x.id, opp: x.opp, buyin: x.buyin, st: x.st, at: x.at, endAt: x.endAt, settleAt: x.settleAt, my: actif ? Math.max(0, Math.round(1000 + resultatDe(e) - x.ref)) : x.my, theirs: actif ? Math.round(1000 + (x.fin - 1000) * t) : x.theirs }; }
+  function stacksJson(e) { var users = {}, L = (e.stacksL || []).slice(0, 20); L.forEach(function (x) { users[x.opp] = ficheDe(x.opp); }); return { liste: L.map(function (x) { return stackVu(e, x); }), users: users }; }
+  function stacksAvancer(e, ev) { var n = 0, me = e.me; (e.stacksL || []).forEach(function (x) { if (x.st !== 'active' || x.endAt > Date.now()) return;
+      var moi = Math.max(0, Math.round(1000 + resultatDe(e) - x.ref)), lui = x.fin, pot = Math.round(x.buyin * 2 * .96 * 100) / 100; x.my = moi; x.theirs = lui; x.settleAt = Date.now(); n++;
+      if (moi > lui) { x.st = 'won'; me.balance = Math.round((me.balance + pot) * 100) / 100; me.realized = (me.realized || 0) + pot - x.buyin; me.xp += 30; ev.push({ k: 'xp', n: 30, src: 'stack' }); }
+      else if (moi === lui) { x.st = 'void'; me.balance = Math.round((me.balance + x.buyin) * 100) / 100; } else { x.st = 'lost'; me.realized = (me.realized || 0) - x.buyin; }
+      ev.push(notif('swords', x.st === 'won' ? 'stack_gagne' : x.st === 'lost' ? 'stack_perdu' : 'stack_nul', { id: x.id, u: x.opp, gain: pot - x.buyin, moi: moi, lui: lui }, '#duels')); });
+    return n; }
+  var salonOk = function (r) { if (r === 'general' || r === 'blitz' || (/^m:/.test(String(r)) && typeof MK !== 'undefined' && MK[String(r).slice(2)])) return;
+    var k = etat().clanM; if (k && r === 'clan:' + k.id) return;                                  /* le salon de son clan, et lui seul */
+    if (r === 'vip') { if (rangDe(etat().me).t >= 6) return; throw { message: 'rang_insuffisant' }; }   /* le salon VIP : rang Ascendant */
+    throw { message: 'salon_indisponible' }; };
   var ficheDe = function (id) { if (db.fiches[id]) return clone(db.fiches[id]); var e = db.etats[id]; if (!e) return { n: 'joueur', t: 0, d: 0, tone: 0, color: '#2448FF', photo: '', bio: '', profit: 0, acc: 0, bets: 0, fol: 0, bot: false, pub: 1 };
     var r = rangDe(e.me); return { n: e.me.n, t: r.t, d: r.d, tone: 1, color: e.me.color, photo: e.me.photo || '', bio: e.me.bio || '', profit: 0, acc: 0, bets: e.me.played | 0, fol: 0, bot: false, pub: 1 }; };
   var rangDe = function (me) { return rankFrom({ xp: me.xp, settled: me.settled, acc: Math.round(me.wins / Math.max(1, me.settled) * 100), deposits: me.deposits, flashWins: me.flashWins, followed: me.followed, pos: me.pos }); };
@@ -712,11 +895,11 @@
     var b = (opt && opt.body) || {}; rec('fn', name, { pseudo: b.pseudo });
     var ko = function (code) { return Promise.resolve({ data: null, error: { message: 'Edge Function returned a non-2xx status code', context: { json: function () { return Promise.resolve({ ok: false, code: code }); } } } }); };
     if (name === 'eclair') {
-      calls[calls.length - 1].args = { action: b.action, gid: b.gid, side: b.side, amt: b.amt, stake: b.stake, choice: b.choice, id: b.id };
+      calls[calls.length - 1].args = { action: b.action, gid: b.gid, side: b.side, amt: b.amt, stake: b.stake, choice: b.choice, id: b.id, opp: b.opp, code: b.code };
       if (CFG.horsLigne) return Promise.reject(new TypeError('Failed to fetch'));
       var forcee = (CFG.fn || {}).eclair; if (forcee) return ko(forcee);
       if (!uid()) return ko('session');
-      try { var rep = b.action === 'bet' ? eclairMiser(b) : b.action === 'settle' ? eclairRegler() : /^serie_/.test(b.action || '') ? serieAction(b) : /^blitz_/.test(b.action || '') ? blitzAction(b) : null; if (!rep) return ko('requete'); persist(); rep.ok = true; rep.now = Date.now() + (CFG.decalage || 0);
+      try { var rep = b.action === 'bet' ? eclairMiser(b) : b.action === 'settle' ? eclairRegler() : /^serie_/.test(b.action || '') ? serieAction(b) : /^blitz_/.test(b.action || '') ? blitzAction(b) : /^duel_/.test(b.action || '') ? duelEclairAction(b) : null; if (!rep) return ko('requete'); persist(); rep.ok = true; rep.now = Date.now() + (CFG.decalage || 0);
         return new Promise(function (ok) { setTimeout(function () { ok({ data: clone(rep), error: null }); }, CFG.latence || 3); }); }
       catch (e) { return ko(e.message || 'serveur'); }
     }
@@ -793,6 +976,16 @@
     copieSortir: function (u, mid, s) { return copieSortir(u, mid, s); },
     /** la tâche de fond des ordres limite (wm.ordres_tick), pour le joueur connecté */
     tickOrdres: function () { return ordresTick(); },
+    /** un bot réagit à un message (tâche des bots du serveur) : compteur diffusé au salon ; si le message est celui du joueur et que annonce est vrai, 1 XP et une bulle */
+    reactionBot: function (idMsg, emoji, nom, annonce) { var e = etat(), m = null, salon = null; for (var r in db.chat) db.chat[r].forEach(function (x) { if (String(x.id) === String(idMsg)) { m = x; salon = r; } }); if (!m) return null;
+      m.r = m.r || {}; m.r[emoji] = (m.r[emoji] | 0) + 1; if (annonce && m.u === uid()) e.me.xp += 1; persist();
+      window.__fakeSB.emit('salon:' + salon, 're', { id: m.id, r: clone(m.r) });
+      if (annonce && m.u === uid()) window.__fakeSB.emit('joueur:' + uid(), 'reac', { u: 'bot-reaction', n: nom || 'karim', e: emoji, id: m.id, room: salon }); return clone(m.r); },
+    /** un bot suit la mise partagée du joueur (tâche wm-suivis du serveur) : compteur, 20 XP, notification en direct */
+    suiviBot: function (idMsg, nom) { var e = etat(), m = null, salon = null; for (var r in db.chat) db.chat[r].forEach(function (x) { if (x.id === +idMsg && x.k === 'bet') { m = x; salon = r; } }); if (!m) return 0;
+      m.fc = (m.fc | 0) + 1; e.me.xp += 20; e.me.followed = (e.me.followed | 0) + 1;
+      var n = notif('users', 'mise_suivie', { u: 'bot-suiveur', n: nom || 'karim', m: m.bet.m, id: m.id, room: salon }, salon.indexOf('m:') === 0 ? '#marche-' + salon.slice(2) : '#chat').n; persist();
+      window.__fakeSB.emit('salon:' + salon, 'fc', { id: m.id, fc: m.fc }); window.__fakeSB.emit('joueur:' + uid(), 'notif', { n: n }); return m.fc; },
     /** diffuse l'état actuel de marchés, comme un tick du serveur */
     tick: function (ids, extra) { var d = { t: Date.now(), m: marchesDe(ids || Object.keys(db.marches)) }; for (var k in extra || {}) d[k] = extra[k]; return window.__fakeSB.emit('marches', 'tick', d); }
   };

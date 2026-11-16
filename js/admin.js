@@ -91,8 +91,11 @@ function vMarches() {
    <label for="am-r">Règles de résolution</label><textarea id="am-r" name="rules" maxlength="600">${esc(m0.rules || '')}</textarea>
    <div class="actions" style="margin-top:10px"><button class="pr">${neuf ? 'Créer le marché' : 'Enregistrer'}</button>${neuf ? '' : '<button type="button" data-a="annuler-edition">Annuler</button>'}</div></form></div>`;
 }
+/* une mise partagée n'a pas de texte : on dit ce que montre sa carte */
+const texteMsg = m => m.k === 'evt' && m.bet ? (m.bet.code === 'guerre' ? `Guerre de clans déclarée contre le clan ${m.bet.foe} (buy-in ${Number(m.bet.k) || 0} $)` : `Appel de clan : marché ${m.bet.m}, côté ${m.bet.s === 'oui' ? 'Oui' : 'Non'}`)
+  : m.k === 'ana' && m.bet ? `Analyse partagée (marché ${m.bet.m}, ${Number(m.bet.ni) || 0} indicateur(s), ${Number(m.bet.nd) || 0} tracé(s))${m.text ? ' : ' + m.text : ''}` : m.k === 'bet' && m.bet ? `Mise partagée : ${Number(m.bet.amt) || 0} $ sur ${m.bet.s === 'oui' ? 'Oui' : 'Non'} (marché ${m.bet.m})` : m.text;
 function vChat() {
-  return `<h2>Chat : derniers messages des joueurs</h2><div class="carte" id="adm-chat">${E.msgs.length ? E.msgs.map(m => `<div class="rang"><span><b>${esc(m.n)}</b> <span class="puce">${esc(m.room)}</span><br>${esc(m.text)}<small>${quand(m.at)}</small></span>
+  return `<h2>Chat : derniers messages des joueurs</h2><div class="carte" id="adm-chat">${E.msgs.length ? E.msgs.map(m => `<div class="rang"><span><b>${esc(m.n)}</b> <span class="puce">${esc(m.room)}</span><br>${esc(texteMsg(m))}<small>${quand(m.at)}</small></span>
    <button class="danger" data-a="masquer" data-id="${esc(m.id)}" data-confirme="Confirmer : masquer">Masquer</button></div>`).join('') : '<p class="vide">Aucun message de joueur.</p>'}</div>`;
 }
 function vBots() {

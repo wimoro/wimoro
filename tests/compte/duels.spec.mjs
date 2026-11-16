@@ -58,7 +58,7 @@ test('défi reçu : accepter prend le camp inverse à la cote du marché ; refus
   expect(erreurs).toEqual([]);
 });
 
-test('résolution du marché : le duel gagné arrive par la notification du serveur ; contre un bot, accepté aussitôt ; duel éclair pas encore relié', async ({ page }) => {
+test('résolution du marché : le duel gagné arrive par la notification du serveur ; contre un bot, accepté aussitôt', async ({ page }) => {
   const { erreurs } = await ouvrirDuels(page, { duelsL: [duel(81, { by: UID, opp: AMI, st: 'active', price: 63, pot: 100, oppStake: 37, oppFee: .7, acceptAt: Date.now() - 30000 })] });
   expect((await duels(page))[0]).toMatchObject({ id: '81', by: 'me', status: 'active' });
   await page.evaluate(([uid, ami]) => {
@@ -77,11 +77,5 @@ test('résolution du marché : le duel gagné arrive par la notification du serv
   await page.locator('[data-a="dl-create"]').click();
   await expect.poll(async () => (await duels(page))[0].status).toBe('active');
   expect((await duels(page))[0]).toMatchObject({ by: 'me', opp: BOT });
-  // un duel sur une manche éclair n'est pas encore relié : annoncé, rien n'est écrit
-  const n0 = (await appels(page)).length, solde = await lire(page, () => S.me.balance);
-  await clic(page, 'duel-open', { m: 'flash:btc', u: AMI });
-  await page.locator('[data-a="dl-create"]').click();
-  await expect(toast(page, 'Coming soon for accounts')).toBeVisible();
-  expect((await appels(page)).length).toBe(n0); expect(await lire(page, () => S.me.balance)).toBe(solde);
   expect(erreurs).toEqual([]);
 });

@@ -169,9 +169,9 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 - [x] Issues multiples : total à 100 % garanti par le serveur, pas de double rééquilibrage (B16, K21).
 - [x] Prix à 6 décimales : un petit ordre fait bouger le prix, un ordre découpé paie le même impact.
 - [ ] Ordres limites, stop, take-profit exécutés côté serveur.
-- [ ] Combinés.
-- [ ] Propositions de marché, votes, mise en ligne.
-- [ ] Clôture et résolution depuis le panel admin (K05, K48).
+- [x] Combinés : livrés (voir 4.6, « Combinés »).
+- [x] Propositions de marché, votes, mise en ligne : livrés (voir 4.6, « Propositions »).
+- [x] Clôture et résolution depuis le panel admin (K05, K48) : livrées (voir Phase 6).
 
 ### 4.4 Pari éclair, Blitz, Série
 - [x] `js/moteur-eclair.js` : moteur pur (horloge, trajectoires, issues, cagnottes, frais, gains), auquel `js/flash.js`
@@ -195,10 +195,19 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
       (salle et inscription contre le vrai serveur).
 - [ ] Limite : un Blitz entier (dix manches puis le paiement) n'a pas été joué contre le vrai serveur — il faudrait attendre
       un créneau réel de 15 minutes dans un test. Le paiement est prouvé dans la base embarquée et avec le faux serveur.
-- [ ] Limite : le chat du Blitz, les salons VIP et de clan restent fermés à l'écriture en mode Compte.
-- [ ] Limite assumée de la maquette : le pari éclair, la Série et le Blitz sont **déterministes** (tout se déduit de l'heure,
-      avec un moteur public). Un joueur qui lit le code peut donc connaître l'issue d'une manche à l'avance. Sans
-      conséquence avec de l'argent fictif ; à remplacer par un tirage secret côté serveur avant tout argent réel.
+- [x] Chat du Blitz (« Joueurs et spectateurs ») : relié. C'est un salon public de plus (`blitz`) : écrire, relire, réagir
+      y suivent les règles du salon général. Les bots y parlent quand quelqu'un regarde, avec les phrases du chat du
+      Blitz de la démo (gabarit « Z ») ; le salon s'ouvre avec six messages récents ; le panel d'administration voit et
+      masque ses messages. Les salons VIP et de clan sont reliés eux aussi (voir 4.5 et 4.6). _Tests_
+      `tests/sql/chat-blitz.spec.mjs` (2), `tests/compte/blitz.spec.mjs` (1 de plus), `tests/e2e/comptes.spec.mjs` (le
+      vrai serveur ouvre le salon avec ses messages de bots, le joueur y écrit et retrouve son message après
+      rechargement).
+- [ ] Limite : les lignes d'événement du Blitz (« Manche 3 : Haut. 41 éliminés… ») que la démo écrit dans ce chat ne sont
+      pas reprises en mode Compte : le déroulé de la manche se lit sur la carte du Blitz, pas dans le chat.
+- [ ] Limite assumée de la maquette : le pari éclair, la Série, le Blitz et les duels éclair sont **déterministes** (tout se
+      déduit de l'heure, avec un moteur public). Un joueur qui lit le code peut donc connaître l'issue d'une manche à
+      l'avance — y compris pour défier un autre joueur. Sans conséquence avec de l'argent fictif ; à remplacer par un
+      tirage secret côté serveur avant tout argent réel.
 
 ### 4.5 Chat
 - [x] Salons publics (général et salon de chaque marché) : historique, envoi, réception en direct ; on ne s'abonne qu'au
@@ -213,10 +222,23 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
       par un troisième joueur (K09). _Recette 5 (fin)._ _Tests_ `tests/sql/prive.spec.mjs`, `tests/compte/prive.spec.mjs`,
       `tests/e2e/comptes.spec.mjs` (un tiers abonné au sujet privé d'un autre ne reçoit rien, sur le vrai temps réel).
 - [x] Les notifications destinées à un autre joueur (demande d'ami, acceptation, message reçu) lui arrivent en direct.
-- [ ] Salons de clan et VIP : annoncés comme indisponibles en mode Compte.
+- [x] Salon VIP : relié pour les joueurs du rang Ascendant et au-dessus (les autres gardent l'aperçu verrouillé de
+      l'écran). Écrire, relire, réagir, partager une mise ou une analyse y suivent les règles des autres salons ; sans le
+      rang, le serveur répond « rang insuffisant ». Ses messages passent par le sujet **privé** « vip », qu'une règle
+      d'accès n'ouvre qu'à ce rang (`wm.vip_ok`, règle `wm_vip_lit_son_salon`). Les bots n'y parlent pas (comme dans la
+      démo) ; ils y réagissent. Le panel d'administration voit et peut masquer ses messages. _Tests_
+      `tests/sql/salon-vip.spec.mjs` (3), `tests/compte/salon-vip.spec.mjs` (2), `tests/e2e/comptes.spec.mjs` (refus du
+      vrai serveur sans le rang).
+- [x] Corrigé au passage : suivre une mise partagée demande d'avoir accès au salon où elle a été publiée. Avant, un joueur
+      extérieur à un clan pouvait suivre, par son numéro, une mise partagée dans le chat de ce clan (test ajouté : il
+      échouait avant la correction).
+- [ ] Limites du salon VIP : (1) aucun compte de test n'a le rang Ascendant : le salon n'a pas été joué de bout en bout
+      contre la vraie base (il l'est dans la base embarquée et avec le faux serveur) ; (2) comme pour les clans, le droit
+      d'écouter le sujet privé est vérifié à l'abonnement puis gardé jusqu'à l'expiration du jeton (une heure au plus).
 - [ ] Limite : écrire en privé demande le rang Bronze (300 XP et 3 paris réglés), comme à l'écran ; le scénario complet
       entre deux vrais comptes neufs n'a donc pas pu être joué de bout en bout (il l'est côté base et avec le faux serveur).
-- [ ] Cartes de mise et d'analyse, réactions, « suivre cette mise ». Mentions et citations de marché : affichées.
+- [x] Cartes de mise et d'analyse, réactions, « suivre cette mise » : reliées au serveur (voir plus bas). Mentions et
+      citations de marché : affichées.
 - [x] Messages des bots dans le chat (K26) : le serveur envoie un gabarit et ses paramètres, l'écran compose la phrase
       dans la langue du lecteur. Les bots ne parlent que dans les salons qu'un joueur regarde ; un salon s'ouvre avec six
       messages récents ; aucune ligne créée (anneau de 30 messages par salon). _Tests_ `tests/sql/chat-bots.spec.mjs`,
@@ -229,13 +251,34 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
       `tests/compte/amis.spec.mjs`, `tests/e2e/comptes.spec.mjs` (deux vrais comptes).
 - [x] La demande reçue apparaît à la seconde, par le sujet privé du joueur (voir 4.5).
 - [x] Classement servi par le serveur (`api_leaderboard` : 50 fiches publiques, vrais joueurs et bots) : l'écran n'est plus vide en mode Compte (B17). _Tests_ `tests/sql/classement.spec.mjs`, `tests/compte/amis.spec.mjs`. Vérifié avec le faux serveur et par requête sur la base, pas encore par un test de bout en bout.
-- [ ] Classement par période tenu par le serveur (K46) : aujourd'hui « Semaine » et « Mois » sont déduits du total, comme en mode Démo. Suivre un joueur.
+- [ ] Classement par période tenu par le serveur (K46) : aujourd'hui « Semaine » et « Mois » sont déduits du total, comme en mode Démo. (Suivre un joueur : livré, voir plus bas.)
 - [x] Duels entre amis sur un marché : défier (mise et frais pris tout de suite), accepter au prix du marché, refuser, annuler,
       expirer après 48 heures, lien d'invitation, bot défié qui accepte aussitôt ; réglés avec la résolution du marché (panel
       d'administration). `api_duel_create`, `api_duel_accept`, `api_duel_close`, `api_duel_code`, `api_duels`. _Tests_
       `tests/sql/duels.spec.mjs` (5), `tests/compte/duels.spec.mjs` (3), `tests/e2e/comptes.spec.mjs` (deux vrais comptes : défi,
       refus faute de solde, remboursement ; duel contre un bot).
-- [ ] Duels sur une manche éclair et duels de stack : annoncés comme indisponibles en mode Compte.
+- [x] Duels sur une manche éclair : défier un ami sur la manche en cours (ou la suivante s'il reste moins de dix secondes
+      de mises), mise et frais pris tout de suite ; l'ami prend l'autre camp au prix du moment, avant la fermeture des
+      mises ; le gagnant prend la cagnotte à la fin de la manche ; un « break even » annule le duel et rend les deux mises ;
+      sans réponse, la mise du défieur lui est rendue ; un bot défié accepte aussitôt. Prix, frais et issue viennent du
+      moteur éclair exécuté par le serveur (Edge Function `eclair`, actions `duel_create`, `duel_accept`, `duel_settle`),
+      la manche de l'horloge de la base. _Tests_ `tests/sql/duels-eclair.spec.mjs` (5), `tests/compte/duels-eclair.spec.mjs`
+      (4), `tests/e2e/comptes.spec.mjs` (duel contre un bot joué jusqu'au règlement par le vrai serveur).
+- [ ] Limite : un duel éclair entre deux vrais joueurs n'a pas été joué contre la vraie base (il est prouvé dans la base
+      embarquée et avec le faux serveur) ; contre un bot, il l'est de bout en bout. Comme le pari éclair, il repose sur le
+      moteur déterministe : voir la limite assumée ci-dessus.
+- [x] Duels de stack contre un joueur simulé (`api_stack_create`, `api_stacks`) : même buy-in, 1 000 jetons chacun, sept
+      jours ; le stack du joueur suit ses résultats réels (ce qu'il a gagné ou perdu, plus la valeur de ses positions) ; le
+      plus gros stack remporte la cagnotte (deux buy-in moins 4 %) et 30 XP ; à égalité, le buy-in est rendu. _Choix_ :
+      le stack de l'adversaire simulé suit une trajectoire semée par le duel, calculée par le serveur heure par heure
+      (elle finit le plus souvent entre 800 et 1 300 jetons — dans la démo, il grossissait sans limite tant que la page
+      restait ouverte) ; cinq duels de stack en cours au plus ; le règlement se fait au premier passage du joueur après
+      les sept jours. _Tests_ `tests/sql/stacks.spec.mjs` (4), `tests/compte/stacks.spec.mjs` (2),
+      `tests/e2e/comptes.spec.mjs` (buy-in pris par le vrai serveur, duel retrouvé après rechargement, refus).
+- [ ] Duel de stack contre un vrai joueur : refusé clairement par le serveur (« pas encore disponible : choisis un autre
+      adversaire »). Il faudrait que l'ami donne son accord et sa mise, et l'écran n'a pas cette étape.
+- [ ] Limite : le règlement d'un duel de stack n'a pas été joué contre la vraie base (il faut sept jours) ; il est prouvé
+      dans la base embarquée et avec le faux serveur.
 - [ ] Limite : le paiement d'un duel gagné n'a pas été joué contre la vraie base (il faudrait résoudre un vrai marché) ; il est
       prouvé dans la base embarquée et avec le faux serveur.
 - [x] Clans, première partie : rejoindre un clan ouvert ou entrer avec un code d'invitation, candidater (un officier répond en
@@ -245,9 +288,120 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
       (`tests/fixtures/clans-demo.json`, vérifié des deux côtés) ; les clans créés par des joueurs s'y ajoutent. _Tests_
       `tests/sql/clans.spec.mjs` (7), `tests/compte/clans.spec.mjs` (4), `tests/e2e/comptes.spec.mjs` (rejoindre pour de vrai,
       tag vu par un autre joueur, mise comptée, attente après départ).
-- [ ] Clans, seconde partie, annoncée « Bientôt disponible » en mode Compte : guerres de clans (cagnotte), appels de clan,
-      chat de clan, promotions, exclusions et invitations nominatives, récap en image. Le classement et les divisions des
-      clans de démonstration restent ceux de l'écran (ils ne bougent pas en mode Compte).
+- [x] Suivre un joueur (`api_follow`) : liste et compteur d'abonnés tenus par le serveur. Partages en image de la Série et du
+      clan : disponibles (ils ne font que dessiner une image, avec le vrai code de parrainage). _Tests_
+      `tests/sql/suivre.spec.mjs`, `tests/compte/suivre.spec.mjs`, `tests/e2e/comptes.spec.mjs` (suivre pour de vrai).
+- [x] Partager une mise dans le chat et la suivre (`api_chat_share`, `api_chat_follow`), mêmes règles que la démo : rang
+      Bronze pour partager une de ses positions (+5 XP), la carte est vue en direct par les lecteurs du salon ; un à trois
+      joueurs la suivent dans les vingt secondes, chaque suivi rapporte 20 XP à l'auteur et compte pour ses rangs (« mises
+      suivies ») ; rang Argent pour suivre la mise d'un autre joueur après avoir parié comme lui (+5 XP). La case « Annoncer
+      ma mise dans le chat du marché » du ticket passe par la même fonction. _Choix_ : une même position (marché et côté) ne
+      se partage qu'une fois par 24 heures et une mise ne se suit qu'une fois — bornes ajoutées côté serveur pour que les XP
+      ne se fabriquent pas en boucle ; quand la borne refuse l'annonce automatique d'un pari, l'écran ne dit rien (le pari,
+      lui, est passé). Les suivis des bots sont programmés au moment du partage et crédités par la tâche `wm-suivis` (toutes
+      les 5 secondes, sans effet tant que personne ne partage). _Tests_ `tests/sql/chat-mises.spec.mjs` (3),
+      `tests/compte/mises.spec.mjs` (2), `tests/e2e/comptes.spec.mjs` (partage pour de vrai, carte reçue en direct par un
+      autre joueur, suivis crédités par le vrai serveur, refus sans le rang Argent).
+- [x] Partager une mise dans une conversation privée (bouton « Partager une mise » d'une conversation : il répondait
+      « Bientôt disponible ») : mêmes conditions qu'un message privé (amis, rang Bronze) ; la carte n'est poussée qu'à
+      l'ami, sur son sujet privé ; lui seul peut la suivre, et le compteur de suivis n'est alors envoyé qu'aux deux
+      participants. _Choix_ : aucun joueur simulé ne suit une mise partagée en privé ; la règle « une fois par 24 heures
+      et par position » vaut tous salons confondus. _Tests_ `tests/sql/mise-privee.spec.mjs` (2),
+      `tests/compte/prive.spec.mjs` (1 de plus), `tests/e2e/comptes.spec.mjs` (refus du vrai serveur : pas à soi-même,
+      pas à un inconnu, pas à un joueur qui n'est pas un ami).
+- [ ] Limite : une mise partagée en privé puis suivie par l'ami n'a pas été jouée contre la vraie base (les messages
+      privés demandent le rang Bronze, que les comptes de test n'ont pas) ; elle est prouvée dans la base embarquée et
+      avec le faux serveur.
+- [ ] Limite : un vrai joueur qui suit la mise d'un autre n'a pas été joué contre la vraie base (les comptes de test n'ont
+      pas le rang Argent) ; c'est prouvé dans la base embarquée et avec le faux serveur. Le refus, lui, est joué pour de vrai.
+- [x] Réactions sous les messages (`api_chat_react`), mêmes règles que la démo : quatre réactions, un clic pose la sienne,
+      un second la retire ; le compteur est tenu par le serveur et vu en direct par les lecteurs du salon, ou par l'autre
+      participant d'une conversation privée. Les bots réagissent aussi aux derniers messages des salons regardés (environ
+      une réaction toutes les 20 secondes par salon) ; quand c'est au message d'un joueur, une fois sur deux il reçoit une
+      bulle et 1 XP, comme dans la démo. _Choix_ : le serveur n'envoie que des compteurs, jamais qui a réagi ; retirer sa
+      réaction marque la ligne inactive (rien n'est supprimé) ; 40 réactions par minute et par joueur au plus (nouveau
+      compteur `wm.debit`, réutilisable pour d'autres actions) ; la réaction d'un vrai joueur ne donne pas d'XP à l'auteur
+      (deux comptes pourraient s'en fabriquer) ; un message de bot reste ouvert aux réactions tant qu'il est parmi les 30
+      derniers de son salon. Le panel d'administration nomme désormais les mises partagées (leur texte est vide).
+      _Tests_ `tests/sql/reactions.spec.mjs` (6), `tests/compte/reactions.spec.mjs` (2), `tests/e2e/comptes.spec.mjs`
+      (deux vrais comptes : compteur vu en direct par l'autre, message de bot, retrait, refus du vrai serveur).
+- [ ] Limite : une réaction dans une conversation privée n'a pas été jouée contre la vraie base ; elle est prouvée dans la
+      base embarquée (y compris : un tiers ne peut ni réagir ni rien recevoir) et avec le faux serveur.
+- [x] Conséquence pour les scénarios réels : les XP d'un compte peuvent monter d'un point à tout moment (réaction d'un bot à
+      son message). Les vérifications d'XP « à l'unité près » de `tests/e2e/comptes.spec.mjs` acceptent ces points en plus
+      (`xpVaut`), et rien d'autre.
+- [x] Mode Pro, partager son analyse (`api_ana_share`, `api_ana`) : dans le chat général, le chat du marché analysé, le
+      chat de son clan ou à un ami en message privé (un à quatre salons) ; elle compte comme un message (2 XP,
+      missions). Une analyse est un instantané du graphique : bougies visibles, indicateurs calculés, tracés,
+      commentaire. Les prix du Mode Pro sont simulés par l'écran : le serveur ne peut pas les vérifier. Il traite donc
+      l'instantané comme un contenu écrit par un joueur et le **remet au propre** avant de le garder
+      (`wm.ana_propre` : seuls les champs connus sont repris, nombres bornés, couleurs et réglages vérifiés,
+      identifiants refaits, textes des tracés débarrassés de tout caractère lisible comme du code) ; l'écran refait la
+      même remise au propre avant de dessiner l'analyse d'un autre joueur (`srvAnaPropre`). Le message de chat ne porte
+      qu'une référence ; l'instantané se lit à part, avec les droits du salon, et plus du tout une fois le message
+      masqué par l'administration. Dans un salon public regardé, un joueur simulé répond quelques secondes plus tard
+      (gabarit « A », phrases de la démo). _Choix_ : 12 analyses par 24 heures et par joueur, 400 Ko au plus chacune ;
+      les bots ne publient pas d'analyses en mode Compte ; la mention « enregistrée sur cet appareil » de la fenêtre de
+      partage n'est plus affichée avec un compte (elle serait fausse). _Tests_ `tests/sql/analyses.spec.mjs` (5, dont 38
+      instantanés hors format refusés), `tests/compte/analyses.spec.mjs` (3, dont une analyse piégée redessinée sans
+      danger : ce test échoue si l'on retire la remise au propre de l'écran), `tests/compte/admin.spec.mjs` (libellés du
+      panel), `tests/e2e/comptes.spec.mjs` (deux vrais comptes : A partage, B reçoit la carte en direct et l'ouvre, un
+      joueur simulé répond, refus du vrai serveur).
+- [ ] Limites du partage d'analyse : (1) les bougies et les valeurs d'indicateurs sont celles que l'écran de l'auteur a
+      envoyées : le serveur les borne mais ne peut pas les authentifier (une analyse peut donc montrer un graphique
+      inventé, comme un message peut dire une chose fausse) ; (2) le partage dans le chat d'un clan et en message privé
+      n'a pas été joué contre la vraie base (il l'est dans la base embarquée et avec le faux serveur) ; (3) seuls les
+      partages réussis sont comptés : des envois refusés à répétition ne sont pas freinés ; (4) la réponse d'un joueur
+      simulé cite le pseudo de l'auteur : si l'analyse disparaît (message masqué, compte supprimé), cette réponse n'est
+      plus servie, mais elle reste dans la mémoire interne du salon jusqu'à ce que 30 messages plus récents la chassent.
+- [ ] La connexion par portefeuille et les outils « démo » (changer de rang à la main, simuler un clan) n'existent, par
+      nature, qu'en mode Démo.
+- [x] Chat de clan : un salon réservé aux membres (`clan:<identifiant>`). Écrire, relire, réagir et partager une mise y
+      suivent les règles des autres salons ; un joueur d'un autre clan reçoit « salon indisponible ». Les messages ne passent
+      par aucun sujet public : ils sont diffusés sur le sujet **privé** du clan, qu'une règle d'accès n'ouvre qu'à ses
+      membres (`wm.clan_sujet`, règle `wm_membre_lit_son_clan`). À sa première ouverture, le salon reçoit du serveur les
+      trois messages d'accueil de la démo ; les bots n'y parlent pas ensuite, mais ils y réagissent. Le panel
+      d'administration voit et peut masquer les messages des salons de clan (pas les messages privés). _Tests_
+      `tests/sql/clan-chat.spec.mjs` (5), `tests/compte/clan-chat.spec.mjs` (1), `tests/e2e/comptes.spec.mjs` (trois vrais
+      comptes : un membre écrit, l'autre membre le reçoit en direct, le joueur hors du clan qui écoutait ne reçoit rien).
+- [ ] Limite connue (Supabase Realtime) : le droit d'écouter un sujet privé est vérifié à l'abonnement, puis gardé jusqu'à
+      l'expiration du jeton du joueur (une heure au plus). Un membre qui vient de quitter son clan peut donc encore recevoir
+      les nouveaux messages pendant ce délai s'il garde sa connexion ouverte ; il ne peut plus ni relire l'historique, ni
+      écrire, ni réagir, et un nouvel abonnement lui est refusé. L'écran, lui, se désabonne dès le départ.
+- [x] Fil d'activité du clan, tenu par le serveur : arrivées, départs, fondation, mises des membres qui l'acceptent (réglage
+      « Partager mes mises… », coché par défaut), promotions, exclusions, appels. Il ne se lit que de l'intérieur du clan.
+- [x] Outils du chef et des officiers (`api_clan_promote`, `api_clan_kick`, `api_clan_invite`, `api_clan_call`) : le chef
+      nomme jusqu'à 5 officiers ; chef et officiers excluent (un officier n'exclut qu'un simple membre), invitent un ami,
+      lancent un appel de clan (épinglé en tête du fil, annoncé dans le chat du clan, suivi quelques secondes plus tard
+      par 2 à 5 membres : son auteur en est prévenu). _Choix_ : un ami simulé (bot) invité rejoint aussitôt, comme dans la
+      démo ; un vrai joueur n'est **jamais** ajouté d'office : il reçoit une notification avec le code d'invitation et
+      décide ; un membre exclu attend 7 jours comme après un départ ; quand le chef s'en va, un vrai membre lui succède
+      plutôt qu'un bot ; six appels par heure au plus. _Tests_ `tests/sql/clans-chefs.spec.mjs` (5),
+      `tests/compte/clans-chefs.spec.mjs` (3), `tests/e2e/comptes.spec.mjs` (fil d'activité lu sur le vrai serveur,
+      refus des pouvoirs de chef à un simple membre).
+- [ ] Limite : les outils de chef n'ont pas été joués contre la vraie base (il faut créer un clan : rang Argent et compte de
+      14 jours, que les comptes de test n'ont pas) ; ils sont prouvés dans la base embarquée et avec le faux serveur.
+- [x] Guerres de clans (`api_clan_war`, `api_clan_war_join`), aux règles de la démo : le chef déclare la guerre à un clan de
+      sa division, tiré au sort ; elle dure 48 heures ; chaque membre peut y participer pour un buy-in de 20 $ (pris par le
+      serveur, une seule fois) ; ses points valent sa contribution au clan divisée par dix ; à la fin, on additionne les dix
+      meilleurs de chaque camp : le clan vainqueur se partage la cagnotte moins 4 %, à parts égales, et chaque vrai
+      participant gagne 50 XP ; à égalité, les buy-in sont rendus. La guerre est annoncée dans le fil et dans le chat du
+      clan ; les guerres terminées sont listées dans l'onglet « Guerre ». _Choix_ : le clan adverse est un clan de
+      démonstration, dont les dix participants sont simulés par le serveur (200 à 1 100 points au départ, +50 % au plus sur
+      la durée de la guerre) ; les membres simulés de notre clan (bots invités, sept au plus) participent d'office : leur
+      buy-in entre dans la cagnotte et leur part du gain ne va à personne ; un clan de joueurs se bat en division Bronze ;
+      le règlement se fait au premier passage d'un membre du clan ou d'un participant après les 48 heures (un participant
+      qui a quitté le clan entre-temps touche quand même sa part : ses points valent alors zéro). _Tests_
+      `tests/sql/clans-guerres.spec.mjs` (4), `tests/compte/clans-guerres.spec.mjs` (2), `tests/e2e/comptes.spec.mjs` (refus
+      du vrai serveur : un simple membre ne déclare pas la guerre, aucun buy-in n'est pris sans guerre en cours).
+- [ ] Limites des guerres de clans : (1) elles n'ont pas été jouées contre la vraie base (il faut être chef d'un clan de
+      joueurs : rang Argent et compte de 14 jours) ; elles sont prouvées dans la base embarquée et avec le faux serveur ;
+      (2) les points des participants simulés se calculent à l'avance à partir du code public et, comme dans la démo, on
+      peut rejoindre une guerre jusqu'à sa dernière minute, quand l'issue est presque connue : acceptable pour une maquette
+      en argent fictif, à revoir avant tout argent réel ; (3) il n'y a pas de tâche planifiée : une guerre terminée n'est
+      réglée qu'au passage d'un de ses membres ou participants.
+- [ ] Le classement et les divisions des clans de démonstration restent ceux de l'écran (ils ne bougent pas en mode
+      Compte). L'outil « simuler » des clans (`cl-sim`) n'existe, par nature, qu'en mode Démo.
 - [ ] Limite : la création d'un clan n'a pas été jouée contre la vraie base (rang Argent et compte de 14 jours demandés) ;
       elle est prouvée dans la base embarquée et avec le faux serveur.
 - [x] Copy trading : à partir du rang Or, copier un profil public qui l'autorise (budget, mise fixe ou pourcentage, catégories,
@@ -333,8 +487,9 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 - [x] Tenue dans le temps : les ancres sont rappelées vers la valeur de référence de chaque marché. Sans cela, la logique
       du mode Démo, laissée tourner jour et nuit, polarisait les prix vers 5 % ou 95 % en quelques heures (test « sur la
       durée » : 3 échecs sur 3 sans le correctif, 3 succès sur 3 avec). Migration `bots_ancres`.
-- [ ] Purge du journal de pg_cron (30 000 lignes, 6 Mo par jour) : migration `purge_journal_cron` prête, **attend ta
-      confirmation** (voir « À faire par l'humain »).
+- [x] Purge du journal de pg_cron (30 000 lignes, 6 Mo par jour) : migration `purge_journal_cron` appliquée le 15 nov. 2026
+      avec l'accord explicite du propriétaire ; la tâche `wm-purge-cron` tourne chaque heure et ne garde que six heures
+      de journal (vérifié le 16 nov. : 16 500 lignes, la plus ancienne de 6 h 30).
 - [x] Messages des bots dans le chat, en gabarit + paramètres (K26) : voir 4.5.
 - [x] Marche/arrêt, intensité et bavardage des bots depuis le panel d'administration (onglet « Bots »). _Recette 9._
 
@@ -356,7 +511,9 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
       tables, plus aucune fonction appelable hors `api_…`. Test avant/après et retour arrière : `tests/sql/fermeture.spec.mjs`.
       Le rangement des policies devenues inutiles (`securite_urgence_nettoyage`) attend une confirmation manuelle ; il n'est
       pas nécessaire à la sécurité.
-- [ ] Limites de fréquence sur le chat et les actions d'argent.
+- [ ] Limites de fréquence sur le chat et les actions d'argent. _Fait_ : chat (1 message par seconde, 12 par minute),
+      réactions (40 par minute, compteur générique `wm.debit`), propositions (5 par jour), partage de mise (une fois par
+      jour et par position). _Reste_ : brancher `wm.debit` sur les actions d'argent (paris, dépôts et retraits fictifs).
 - [x] Advisors : les 50 alertes « fonction SECURITY DEFINER appelable » portaient sur les anciennes fonctions, fermées
       par `fermeture_ancienne_api`. Restent des notes volontaires (« RLS sans règle » : aucun accès client) et l'alerte
       « mots de passe compromis » (réglage du tableau de bord, offre payante).
@@ -367,12 +524,36 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 - [ ] Catalogue de la seule langue active ; Mode Pro chargé à la demande.
 - [ ] Regroupement et minification pour la production, sans build en développement.
 - [ ] Mesure avant/après sur mobile.
+- [ ] Côté serveur : deux déclencheurs de l'ancienne application (`sync_stats_to_blob`, `sync_users_to_blob`) recopient encore
+      chaque changement de statistiques dans une ancienne table (`user_full_state`) que plus rien ne lit. Les retirer
+      allégerait chaque écriture ; c'est une instruction `drop`, qui demande la confirmation manuelle de l'outil Supabase.
 
 ## Phase 9 — Tests et recette
 - [x] Suite Playwright sur chaque pull request. Les comptes de test se suppriment eux-mêmes à la fin de la suite
       (`api_test_end`) ; les 27 accumulés pendant les travaux ont été supprimés.
 - [x] Tests SQL des invariants : solde jamais négatif, paris et retraits simultanés, rejeu d'une même clé, argent ni créé ni perdu.
-- [ ] Recette finale, 10 points, dans les deux modes.
+- [x] Fenêtres à plusieurs champs : 60 ms après l'ouverture, le curseur revenait de force au premier champ, même si le joueur
+      avait déjà choisi le suivant (sur un appareil lent, le mot de passe tapé partait dans le champ « code » et se perdait).
+      Trouvé par un échec de l'intégration continue sur « mot de passe oublié ». _Test_ `tests/compte/comptes.spec.mjs`
+      (« fenêtre à plusieurs champs »), qui échouait avant et passe après.
+- [x] Recette finale, 10 points, le 16 nov. 2026, sur le site en ligne (<https://wimoro.com>) : 130 tests d'écran (mode Démo,
+      visiteur et mode Compte avec le faux serveur, trois langues) et 18 scénarios avec de vrais comptes contre le vrai
+      serveur, tous verts ; en local, 264 tests dont 134 sur la base. Depuis, chaque lot a rejoué la suite : au dernier
+      lot du 16 nov. 2026, 336 tests en local (dont 179 sur la base) et 25 scénarios avec de vrais comptes, en local
+      puis sur le site en ligne. Point par point :
+
+      | N° | Ce qui est vérifié | Preuve | Réserve |
+      |---|---|---|---|
+      | 1 | Chaque écran s'ouvre sans erreur, en anglais, français, hébreu | `tests/demo/chargement.spec.mjs`, `tests/compte/chargement.spec.mjs`, `tests/i18n.spec.mjs`, e2e « recette 1 » | aucune |
+      | 2 | Pari éclair : accepté, gardé après rechargement, réglé | `tests/compte/eclair.spec.mjs`, e2e « recette 2 » | aucune |
+      | 3 | Inscription → dépôt → achat → vente → reconnexion, deux navigateurs | e2e « recette 3 », « connexion par pseudo » | aucune |
+      | 4 | Mot de passe oublié | `tests/compte/comptes.spec.mjs` (B09), avec le faux serveur | **non joué avec un vrai e-mail** : à vérifier une fois par le propriétaire |
+      | 5 | Deux joueurs : prix, chat, amis, message privé | e2e « marchés en direct », « recette 5 » (chat, amis, sujet privé) | aucune |
+      | 6 | Rien ne s'annule après 20 secondes en mode Compte | `tests/compte/garde.spec.mjs` et les tests de chaque lot (retrait, dépôt carte, mission, clan, duel, combiné, copy trading, parrainage) | **ordre limite** : pas encore pour les comptes (annoncé « Bientôt disponible », jamais simulé puis annulé) |
+      | 7 | KYC fictif : validé, gardé, moyens de paiement débloqués | `tests/compte/argent.spec.mjs`, `tests/sql/argent.spec.mjs` | aucune |
+      | 8 | Démo → Compte → Démo sans mélange | `tests/compte/comptes.spec.mjs` (recette 8) | aucune |
+      | 9 | Les prix bougent seuls, identiques sur deux navigateurs | e2e « marchés en direct », `tests/sql/bots.spec.mjs` | aucune |
+      | 10 | Plafond de dépôt et pause appliqués par le serveur | `tests/sql/argent.spec.mjs`, `tests/compte/argent.spec.mjs` | aucune |
 
 ## Phase 10 — Livraison
 - [x] `README.md`, `docs/ARCHITECTURE.md`, `docs/BACKEND.md`, `docs/EXPLOITATION.md`.
@@ -420,6 +601,15 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 | Clans : candidature | La réponse vient du serveur au bout de 6 secondes, favorable 8 fois sur 10, y compris pour un clan créé par un joueur. | Même règle que la démo. Une validation par un vrai officier demanderait un écran de plus ; elle fait partie de la seconde partie. |
 | Clans : bots | 4 bots sur 5 portent le tag d'un clan de démonstration (c61 à c100), choisi d'après leur identifiant. | Comme dans la démo, où la plupart des joueurs simulés ont un clan : le chat et les classements montrent des tags. |
 | Protection de `main` | Non activée. | Elle changerait ta façon de publier ; elle reste proposée, facultative. |
+| Guerres de clans : adversaires | Le clan adverse est un clan de démonstration ; ses dix participants et les membres simulés de notre clan ont des points calculés par le serveur (départ semé, +50 % au plus). | La démo faisait grossir ces points sans limite tant que la page restait ouverte : impossible à tenir à l'identique pour deux joueurs. |
+| Guerres de clans : règlement | Au premier passage d'un membre ou d'un participant après 48 heures ; un participant sorti du clan touche quand même sa part. | Pas de tâche planifiée de plus ; un buy-in payé ne doit jamais rester bloqué. |
+| Partage d'analyse : confiance | L'instantané est traité comme un contenu écrit par un joueur : remis au propre par le serveur avant d'être gardé, puis une seconde fois par l'écran avant d'être dessiné. | Les prix du Mode Pro sont simulés par l'écran : le serveur ne peut pas les vérifier, il peut seulement garantir qu'aucun code n'y passe. |
+| Partage d'analyse : bornes | 12 analyses par 24 heures et par joueur, 400 Ko au plus chacune ; les bots n'en publient pas, ils y répondent. | Borne technique (une analyse pèse lourd) ; publier des analyses de bots demanderait de fabriquer des graphiques côté serveur. |
+| Mention « enregistrée sur cet appareil » | Retirée de la fenêtre de partage quand un compte est connecté. | Seule exception à « ne change pas les textes » : avec un compte, la phrase serait fausse. |
+| Salon VIP | Sujet temps réel privé, ouvert par une règle d'accès au rang Ascendant ; les bots n'y parlent pas. | Un sujet public aurait laissé n'importe qui écouter le salon ; dans la démo, ce salon ne contient que les messages des joueurs. |
+| Suivre une mise partagée | Refusé si l'on n'a pas accès au salon où elle a été publiée. | Sinon un joueur hors d'un clan pouvait suivre, par son numéro, une mise partagée dans le chat de ce clan. |
+| Mise partagée en privé | Poussée au seul ami ; pas de suivi par des joueurs simulés ; compteur envoyé aux deux participants seulement. | Une conversation privée ne doit rien laisser passer par un sujet public. |
+| Chat du Blitz | Salon public ; les bots y disent les phrases du Blitz de la démo ; les lignes d'événement de manche ne sont pas reprises. | Le déroulé d'un Blitz est calculé par l'écran (moteur partagé) : le chat ne porte que la conversation. |
 
 ## À faire par l'humain
 
@@ -427,7 +617,10 @@ Rien d'obligatoire. Le détail et les constats sont dans `docs/EXPLOITATION.md`,
 
 1. **Une fois** : demander « mot de passe oublié » avec ta propre adresse, pour vérifier que l'e-mail arrive (un service
    d'envoi est déjà branché ; je ne peux pas voir si son domaine est validé).
-2. Facultatif : accepter la confirmation Supabase pour la migration de rangement `securite_urgence_nettoyage`.
+2. **Pour mettre en ligne les ordres limites** : demander « applique la migration des ordres limites » pendant une session et
+   accepter la confirmation que l'outil Supabase affiche (dans les 2 minutes). Tout le reste est prêt (branche
+   `lot/ordres-limites`).
+2 bis. Facultatif : même chose pour la migration de rangement `securite_urgence_nettoyage`.
 3. Facultatif : ajouter `Ton code : {{ .Token }}` au modèle d'e-mail « Reset Password ».
 4. Facultatif : protéger la branche `main` sur GitHub.
 5. Pour administrer : ouvrir <https://wimoro.com/admin.html> et se connecter avec le compte `WimoroAdmin` (le seul
@@ -462,3 +655,17 @@ Rien d'obligatoire. Le détail et les constats sont dans `docs/EXPLOITATION.md`,
 | 16 nov. 2026 | Propositions de marché en mode Compte. | migrations `propositions` et `propositions_votes` (empreintes identiques) ; 244 tests (120 SQL) ; 16 scénarios de bout en bout contre le vrai back |
 | 16 nov. 2026 | Copy trading en mode Compte. Test de La Série : comparaison de prix rendue proportionnelle (elle échouait par hasard sur un prix élevé). | migration `copies` (empreinte identique) ; 253 tests (127 SQL) ; 17 scénarios de bout en bout contre le vrai back |
 | 16 nov. 2026 | Clans en mode Compte, première partie (appartenance, création, contribution, tag public). | migration `clans` (empreinte identique) ; 264 tests (134 SQL) ; 18 scénarios de bout en bout contre le vrai back |
+| 16 nov. 2026 | Recette finale sur le site en ligne. Lot « ordres limites » remis à niveau dans sa branche (273 tests, dont 141 SQL), toujours en attente de la confirmation Supabase. | 130 tests d'écran et 18 scénarios réels sur <https://wimoro.com> ; base : 20 comptes, 10 000 bots, aucun compte de test, 56 migrations, aucune erreur de tâche planifiée |
+| 16 nov. 2026 | Suivre un joueur ; partages en image de la Série et du clan. | migration `suivre` (empreinte identique) ; 267 tests (135 SQL) ; 19 scénarios de bout en bout contre le vrai back |
+| 16 nov. 2026 | Partager une mise dans le chat et la suivre. | migration `chat_mises` (empreinte identique) ; 272 tests (138 SQL) ; 20 scénarios de bout en bout contre le vrai back ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
+| 16 nov. 2026 | Correctif : le curseur d'une fenêtre n'est plus repris au champ que le joueur a choisi (échec intermittent de l'intégration continue sur « mot de passe oublié »). | test ajouté (échoue avant, passe après) ; 273 tests (138 SQL) |
+| 16 nov. 2026 | Réactions sous les messages (joueurs, bots, messages privés). | migration `reactions` (empreinte identique) ; 281 tests (144 SQL) ; 21 scénarios de bout en bout contre le vrai back ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
+| 16 nov. 2026 | Chat de clan, réservé aux membres (sujet privé). | migration `clan_chat` (empreinte identique) ; 287 tests (149 SQL) ; 21 scénarios de bout en bout contre le vrai back, dont trois comptes sur le chat du clan ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
+| 16 nov. 2026 | Duels sur une manche éclair. | migration `duels_eclair` (empreinte identique), Edge Function `eclair` version 4 ; 296 tests (154 SQL) ; 22 scénarios de bout en bout contre le vrai back, dont un duel éclair réglé par le vrai serveur ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
+| 16 nov. 2026 | Duels de stack contre un joueur simulé. | migration `stacks` (empreinte identique) ; 302 tests (158 SQL) ; 23 scénarios de bout en bout contre le vrai back ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
+| 16 nov. 2026 | Clans : fil d'activité, outils du chef et des officiers, appels de clan. | migration `clans_chefs` (empreinte identique) ; 310 tests (163 SQL) ; 23 scénarios de bout en bout contre le vrai back ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
+| 16 nov. 2026 | Guerres de clans. | migrations `clans_guerres` et `clans_guerres_participants` (empreintes identiques) ; 316 tests (167 SQL) ; 23 scénarios de bout en bout contre le vrai back ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
+| 16 nov. 2026 | Mode Pro : partager son analyse dans les chats. | migration `analyses` (empreinte identique) ; 325 tests (172 SQL) ; 24 scénarios de bout en bout contre le vrai back, dont deux comptes sur le partage d'analyse ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
+| 16 nov. 2026 | Salon VIP (rang Ascendant) ; suivi d'une mise réservé aux lecteurs de son salon. | migration `salon_vip` (empreinte identique) ; 330 tests (175 SQL) ; 24 scénarios de bout en bout contre le vrai back ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
+| 16 nov. 2026 | Chat du Blitz ; cases du plan remises à jour. | migration `chat_blitz` (empreinte identique) ; 333 tests (177 SQL) ; 24 scénarios de bout en bout contre le vrai back, dont le chat du Blitz ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
+| 16 nov. 2026 | Mise partagée dans une conversation privée. | migration `mise_privee` (empreinte identique) ; 336 tests (179 SQL) ; 25 scénarios de bout en bout contre le vrai back ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |

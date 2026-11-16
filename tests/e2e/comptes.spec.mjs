@@ -12,6 +12,9 @@ const stamp = Date.now().toString(36);
 const PSEUDO = 'e2e_' + stamp, EMAIL = `wimoro-e2e-${stamp}@example.com`, MDP = 'E2e-' + stamp + '-Xy9!';
 const pret = page => expect(page.locator('#view > *').first()).toBeAttached({ timeout: 20000 });
 const lire = (page, fn, arg) => page.evaluate(fn, arg);
+// Les XP d'une action, à l'unité près… plus, parfois, 1 XP par réaction d'un bot à un message récent du joueur (lot « réactions ») :
+// elles arrivent toutes seules, en dehors de l'action testée.
+const xpVaut = (recu, attendu, quoi = 'XP') => { expect(recu, quoi + ' : au moins ce que l’action donne').toBeGreaterThanOrEqual(attendu); expect(recu - attendu, quoi + ' : rien d’autre que quelques réactions de bots').toBeLessThanOrEqual(5); };
 
 async function ouvrirReel(page, hash) {
   const erreurs = [];
@@ -136,7 +139,7 @@ test('recette 3 · dépôt fictif → achat → rechargement → vente → recon
   expect(apresVente.solde).toBeGreaterThan(195); expect(apresVente.solde).toBeLessThan(200); // acheter puis revendre coûte l'écart et les frais
 
   // une fonction pas encore reliée est annoncée comme telle, et rien ne s'annule après 20 secondes (B05)
-  await page.evaluate(() => { const b = document.createElement('button'); b.dataset.a = 'cl-war'; document.body.appendChild(b); b.click(); b.remove(); });   // guerres de clans : pas encore reliées
+  await page.evaluate(() => { const b = document.createElement('button'); b.dataset.a = 'cl-sim'; document.body.appendChild(b); b.click(); b.remove(); });   // outil de simulation des clans : réservé au mode Démo
   await expect(toast('Coming soon for accounts')).toBeVisible();
   await page.waitForTimeout(20000);
   expect(await lire(page, () => ({ solde: S.me.balance, xp: S.me.xp, pos: S.me.positions.length }))).toEqual({ solde: apresVente.solde, xp: 210, pos: apresVente.pos });
@@ -264,7 +267,7 @@ test('recette 2 · pari éclair : mise acceptée par le serveur, toujours là ap
   await expect.poll(() => lire(page, () => !!G(S.ui.fgame).my), { timeout: 15000 }).toBe(true);
   const pendant = await lire(page, () => ({ solde: S.me.balance, xp: S.me.xp, my: G(S.ui.fgame).my, manche: S.flash.round, jeu: S.ui.fgame }));
   expect(pendant.manche).toBe(avant.manche);
-  expect(pendant.solde).toBeCloseTo(avant.solde - 10, 2); expect(pendant.xp).toBe(avant.xp + 10);
+  expect(pendant.solde).toBeCloseTo(avant.solde - 10, 2); xpVaut(pendant.xp, avant.xp + 10, 'XP de la mise');
   expect(pendant.my.amt).toBe(10); expect(pendant.my.net).toBeLessThan(10); expect(pendant.my.net).toBeGreaterThan(9.4);
   await expect(page.locator('#view')).toContainText('Your stake: $10.00');
 
@@ -282,7 +285,7 @@ test('recette 2 · pari éclair : mise acceptée par le serveur, toujours là ap
   const gain = Math.round((prevu.win ? prevu.pay : 0) * 100) / 100;
   const apres = await lire(page, () => ({ solde: S.me.balance, xp: S.me.xp, hist: S.me.history[0], n: S.me.history.length }));
   expect(apres.solde, 'le gain payé par le serveur est celui que l’écran avait calculé').toBeCloseTo(pendant.solde + gain, 2);
-  expect(apres.xp).toBe(pendant.xp + (prevu.win ? (pendant.my.s === 'be' ? 120 : 40) : 0));
+  xpVaut(apres.xp, pendant.xp + (prevu.win ? (pendant.my.s === 'be' ? 120 : 40) : 0), 'XP du règlement');
   expect(apres.n).toBe(avant.hist + 1);
   expect(apres.hist).toMatchObject({ k: 'flash', win: prevu.win });
   expect(apres.hist.pnl).toBeCloseTo(gain - 10, 2);
@@ -465,6 +468,15 @@ test('Blitz Royale : la salle affichée est celle du moteur ; l’inscription au
   await page.reload(); await pret(page);
   expect(await lire(page, () => S.me.balance)).toBeCloseTo(solde0 - buyin, 2);                // l'entrée est bien en base
   expect(await lire(page, () => SRV_BZ.aRegler)).toContain(prochain);
+  // chat du Blitz : ouvert par le vrai serveur avec des messages de bots (phrases du Blitz) ; le joueur y écrit, et son message revient après rechargement
+  const filBlitz = page.locator('.feed[data-room="blitz"]');
+  await expect.poll(() => lire(page, () => (S.rooms.blitz ? S.rooms.blitz.msgs : []).filter(x => x.sid != null && (USERS[x.u] || {}).bot && BZ_LINES.includes(x.text)).length), { timeout: 20000 }).toBeGreaterThanOrEqual(6);
+  const texteBlitz = 'Test automatique ' + stamp + ' : chat du Blitz';
+  const champBlitz = page.locator('.composer input[data-in="blitz"]'); await champBlitz.fill(texteBlitz); await champBlitz.press('Enter');
+  await expect(filBlitz.locator('.msg.mine', { hasText: texteBlitz })).toHaveCount(1, { timeout: 15000 });
+  expect(await lire(page, () => API.topics().filter(t => /blitz/.test(t)))).toEqual(['salon:blitz']);
+  await page.reload(); await pret(page);
+  await expect(page.locator('.feed[data-room="blitz"] .msg.mine', { hasText: texteBlitz })).toHaveCount(1, { timeout: 20000 });
   expect(erreurs).toEqual([]);
 });
 
@@ -601,10 +613,12 @@ test('propositions de marché : un compte sans le rang Or est refusé par le vra
   const xp0 = await lire(page, () => S.me.xp);
   await page.locator('[data-a="vote"][data-id="' + p.id + '"][data-v="against"]').click();
   await expect.poll(() => lire(page, id => S.me.voted[id], p.id), { timeout: 20000 }).toBe('against');
-  expect(await lire(page, id => ({ xp: S.me.xp, contre: COMM_PROPS.find(x => x.id === id).against }), p.id)).toEqual({ xp: xp0 + 2, contre: 10 });
+  const voteFait = await lire(page, id => ({ xp: S.me.xp, contre: COMM_PROPS.find(x => x.id === id).against }), p.id);
+  expect(voteFait.contre).toBe(10); xpVaut(voteFait.xp, xp0 + 2, 'XP du vote');
   expect(await page.evaluate(async id => { try { await API.call('api_proposal_vote', { p_id: +id, p_vote: 'for' }); return 'deux votes'; } catch (e) { return e.code; } }, p.id)).toBe('deja_vote');
   await page.reload(); await pret(page);
-  expect(await lire(page, id => ({ vote: S.me.voted[id], xp: S.me.xp }), p.id)).toEqual({ vote: 'against', xp: xp0 + 2 });
+  const voteRelu = await lire(page, id => ({ vote: S.me.voted[id], xp: S.me.xp }), p.id);
+  expect(voteRelu.vote).toBe('against'); xpVaut(voteRelu.xp, xp0 + 2, 'XP du vote, une seule fois');
   expect(erreurs).toEqual([]);
 });
 
@@ -632,8 +646,8 @@ test('copy trading : la page vient du vrai serveur ; sans le rang Or, copier est
   expect(erreurs).toEqual([]);
 });
 
-test('clans : rejoindre un clan ouvert sur le vrai serveur ; le tag est vu par un autre joueur ; la mise compte pour le clan ; quitter impose 7 jours d’attente', async ({ browser }) => {
-  test.setTimeout(180000);
+test('clans : rejoindre un clan ouvert sur le vrai serveur ; le tag est vu par un autre joueur ; le chat du clan n’est reçu que par ses membres ; la mise compte pour le clan ; quitter impose 7 jours d’attente', async ({ browser }) => {
+  test.setTimeout(240000);
   const entrer = async email => {
     const ctx = await browser.newContext(), page = await ctx.newPage();
     const erreurs = await ouvrirReel(page, '#connexion');
@@ -660,6 +674,38 @@ test('clans : rejoindre un clan ouvert sur le vrai serveur ; le tag est vu par u
   const b = await entrer(`wimoro-e2e-${stamp}-b@example.com`);
   expect(await lire(b.page, id => ({ clan: USERS[id] && USERS[id].clan, tag: tagH(id) }), idA)).toMatchObject({ clan: 'c1' });
   expect(await lire(b.page, id => tagH(id), idA)).toContain(tag);
+  // ── chat du clan : réservé aux membres, diffusé sur le sujet privé du clan ──
+  const SALON = 'clan:c1', essai2 = (page, nom, args) => page.evaluate(async ([nom, args]) => { try { await API.call(nom, args); return 'accepté'; } catch (e) { return e.code; } }, [nom, args]);
+  // C (troisième compte, hors du clan) n'a accès à rien, et tente quand même d'écouter le sujet privé du clan
+  const ctxC = await browser.newContext(), c = await ctxC.newPage();
+  await ouvrirReel(c, '#connexion');
+  await c.locator('#le').fill(`wimoro-e2e-${stamp}-c@example.com`); await c.locator('#lp').fill(MDP); await c.locator('form[data-form="login"] [type=submit]').click();
+  await expect(c).toHaveURL(/#(accueil|bienvenue)/, { timeout: 20000 }); await pret(c);
+  expect(await essai2(c, 'api_chat_history', { p_room: SALON })).toBe('salon_indisponible');
+  expect(await essai2(c, 'api_chat_send', { p_room: SALON, p_text: 'je passe' })).toBe('salon_indisponible');
+  // salon VIP : sans le rang Ascendant, le vrai serveur refuse tout (son sujet privé est prouvé dans tests/sql/salon-vip.spec.mjs)
+  expect(await essai2(c, 'api_chat_history', { p_room: 'vip' })).toBe('rang_insuffisant');
+  expect(await essai2(c, 'api_chat_send', { p_room: 'vip', p_text: 'je passe' })).toBe('rang_insuffisant');
+  expect(await lire(c, () => can('vip'))).toBe(false);
+  await c.evaluate(s => { window.__vole = []; return API.subscribe(s, (evt, d) => window.__vole.push([evt, d]), true); }, SALON);
+  // B rejoint le clan à son tour et ouvre son chat ; A aussi
+  await b.page.evaluate(() => API.call('api_clan_join', { p_clan: 'c1', p_code: null }));
+  for (const p of [a.page, b.page]) { await p.evaluate(() => { location.hash = '#clan-c1'; }); await p.reload(); await pret(p); await p.locator('[data-a="cl-ctab"][data-v="chat"]').click(); await expect(p.locator('.feed[data-room="clan:c1"]')).toBeAttached(); }
+  const accueil = page => lire(page, s => (S.rooms[s] ? S.rooms[s].msgs : []).filter(x => typeof x.sid === 'string' && x.sid[0] === 'b').map(x => x.text), SALON);   // messages de bots : identifiant « b… »
+  await expect.poll(async () => (await accueil(a.page)).length, { timeout: 20000 }).toBe(3);         // les trois messages d'accueil, posés une fois par le serveur
+  const chezA = await accueil(a.page);
+  await expect.poll(() => accueil(b.page), { timeout: 20000 }).toEqual(chezA);                       // les mêmes pour tous les membres
+  for (const t of await accueil(a.page)) { expect(t.length).toBeGreaterThan(5); expect(t).not.toMatch(/[{}]/); }
+  const texteClan = 'Test automatique ' + stamp + ' : chat du clan';
+  const champClan = a.page.locator('.composer input[data-in="clan:c1"]'); await champClan.fill(texteClan); await champClan.press('Enter');
+  await expect(a.page.locator('.feed[data-room="clan:c1"] .msg.mine', { hasText: texteClan })).toHaveCount(1, { timeout: 15000 });
+  // B, membre, le reçoit en direct par le sujet privé ; C, qui écoutait sans être membre, ne reçoit rien
+  await expect(b.page.locator('.feed[data-room="clan:c1"] .msg', { hasText: texteClan })).toHaveCount(1, { timeout: 20000 });
+  await expect(b.page.locator('.feed[data-room="clan:c1"] .msg', { hasText: texteClan }).locator('.un')).toHaveText(PSEUDO);
+  await c.waitForTimeout(3000);
+  expect(await lire(c, () => window.__vole), 'un joueur hors du clan ne reçoit rien de son sujet privé').toEqual([]);
+  expect(await lire(a.page, () => API.topics().filter(t => /clan/.test(t))), 'le salon du clan n’a qu’un sujet, privé').toEqual(['clan:c1']);
+  await ctxC.close();
   // une mise de A compte pour son clan (comptée par le serveur)
   const solde = await lire(a.page, () => S.me.balance);
   if (solde >= 2) {
@@ -667,14 +713,339 @@ test('clans : rejoindre un clan ouvert sur le vrai serveur ; le tag est vu par u
     await a.page.reload(); await pret(a.page);
     expect(await lire(a.page, () => S.me.clanXP + (S.me.clanSkipped || 0))).toBeGreaterThanOrEqual(1);   // 2 $ de contribution, ou mise écartée si un autre membre tient déjà ce marché
   }
+  // le fil d'activité du clan vient du serveur : l'arrivée de A, puis sa mise ; un simple membre n'a aucun pouvoir de chef
+  await a.page.evaluate(() => srvClanRelire());
+  const filA = () => lire(a.page, () => (myClan() ? myClan().feed : []).map(f => f.txt));
+  await expect.poll(async () => (await filA()).includes(PSEUDO + ' joined the clan.'), { timeout: 20000 }).toBe(true);
+  if (solde >= 2 && (await lire(a.page, () => S.me.clanXP)) >= 1) expect((await filA()).some(t => t.startsWith(PSEUDO + ' just bet $2 on ')), 'la mise comptée pour le clan est dans son fil').toBe(true);
+  expect(await essai('api_clan_call', { p_market: 'clasico', p_side: 'oui' })).toBe('role_insuffisant');
+  expect(await essai('api_clan_promote', { p_user: idA })).toBe('role_insuffisant');
+  expect(await essai('api_clan_kick', { p_user: idA })).toBe('role_insuffisant');
+  // guerres de clans : seul le chef d'un clan de joueurs en déclare une ; sans guerre en cours, aucun buy-in n'est pris
+  const soldeAvantGuerre = await lire(a.page, () => S.me.balance);
+  expect(await essai('api_clan_war', {})).toBe('role_insuffisant');
+  expect(await essai('api_clan_war_join', {})).toBe('guerre_absente');
+  await a.page.evaluate(() => srvClanRelire());
+  expect(await lire(a.page, () => ({ guerre: myClan() ? myClan().war || null : 'hors clan', solde: S.me.balance }))).toEqual({ guerre: null, solde: soldeAvantGuerre });
   // quitter : 7 jours d'attente, tenus par le serveur
   await a.page.evaluate(() => { location.hash = '#clan-c1'; });
   await a.page.locator('[data-a="cl-leave"]').first().click();
   await a.page.locator('[data-a="cl-leave-do"]').click();
   await expect.poll(() => lire(a.page, () => S.me.clan), { timeout: 20000 }).toBeNull();
   expect(await essai('api_clan_join', { p_clan: 'c4', p_code: null })).toBe('clan_attente');
+  expect(await essai('api_chat_history', { p_room: 'clan:c1' }), 'sorti du clan, plus d’accès à son chat').toBe('salon_indisponible');
   await a.page.reload(); await pret(a.page);
   expect(await lire(a.page, () => ({ clan: S.me.clan, attente: clanLeaveWait() > 6 * 864e5 }))).toEqual({ clan: null, attente: true });
   expect(a.erreurs).toEqual([]); expect(b.erreurs).toEqual([]);
   await a.ctx.close(); await b.ctx.close();
+});
+
+test('suivre un joueur : tenu par le vrai serveur, compteur d’abonnés à jour, gardé après rechargement, puis ne plus suivre', async ({ page }) => {
+  test.setTimeout(120000);
+  const erreurs = await ouvrirReel(page, '#connexion');
+  await page.locator('#le').fill(EMAIL); await page.locator('#lp').fill(MDP); await page.locator('form[data-form="login"] [type=submit]').click();
+  await expect(page).toHaveURL(/#accueil/, { timeout: 20000 }); await pret(page);
+  const ami = await lire(page, () => S.me.friends[0]);                                          // B, ami depuis un scénario précédent
+  expect(ami, 'A a un ami').toBeTruthy();
+  const avant = await lire(page, id => ({ suivis: S.me.following.includes(id), abonnes: USERS[id].fol }), ami);
+  expect(avant.suivis).toBe(false);
+  await page.evaluate(id => { location.hash = '#joueur-' + id; }, ami);
+  await page.locator('[data-a="follow-user"][data-u="' + ami + '"]').first().click();
+  await expect.poll(() => lire(page, id => S.me.following.includes(id), ami), { timeout: 20000 }).toBe(true);
+  expect(await lire(page, id => USERS[id].fol, ami)).toBe(avant.abonnes + 1);
+  await page.reload(); await pret(page);
+  expect(await lire(page, id => ({ suivis: S.me.following.includes(id), abonnes: USERS[id].fol }), ami)).toEqual({ suivis: true, abonnes: avant.abonnes + 1 });
+  await page.evaluate(id => { location.hash = '#joueur-' + id; }, ami);
+  await page.locator('[data-a="follow-user"][data-u="' + ami + '"]').first().click();
+  await expect.poll(() => lire(page, id => S.me.following.includes(id), ami), { timeout: 20000 }).toBe(false);
+  expect(await lire(page, id => USERS[id].fol, ami)).toBe(avant.abonnes);
+  expect(erreurs).toEqual([]);
+});
+
+test('partager une mise : la carte est posée par le vrai serveur et vue en direct par un autre joueur ; un à trois joueurs la suivent (compteur et XP en direct) ; suivre sans le rang Argent est refusé', async ({ browser }) => {
+  test.setTimeout(240000);
+  const MARCHE = 'clasico', SALON = 'm:' + MARCHE;
+  const entrer = async email => {
+    const ctx = await browser.newContext(), page = await ctx.newPage();
+    const erreurs = await ouvrirReel(page, '#connexion');
+    await page.locator('#le').fill(email); await page.locator('#lp').fill(MDP); await page.locator('form[data-form="login"] [type=submit]').click();
+    await expect(page).toHaveURL(/#accueil/, { timeout: 20000 }); await pret(page);
+    return { ctx, page, erreurs };
+  };
+  const essai = (page, nom, args) => page.evaluate(async ([nom, args]) => { try { await API.call(nom, args); return 'accepté'; } catch (e) { return e.code; } }, [nom, args]);
+  const cartes = (page, auteur) => lire(page, ([s, u]) => (S.rooms[s] ? S.rooms[s].msgs : []).filter(x => x.k === 'bet' && x.u === u).map(x => ({ m: x.bet.m, s: x.bet.s, amt: x.bet.amt, suivis: x.followers | 0, sid: x.sid })), [SALON, auteur]);
+  const a = await entrer(EMAIL), b = await entrer(`wimoro-e2e-${stamp}-b@example.com`);
+  const idA = await lire(a.page, () => srvMoi());
+  const rang = await lire(a.page, () => ({ t: myRank().t, xp: S.me.xp, regles: S.me.settled }));
+  expect(rang.t, 'partager demande le rang Bronze ; compte A : ' + JSON.stringify(rang)).toBeGreaterThanOrEqual(1);
+
+  // on ne partage que ce qu'on tient : une position que A n'a pas est refusée par le vrai serveur
+  const sans = await lire(a.page, () => { for (const id of Object.keys(MK)) for (const s of ['oui', 'non']) if (!S.me.positions.some(p => p.m === id && p.s === s)) return { m: id, s }; return null; });
+  expect(sans).toBeTruthy();
+  expect(await essai(a.page, 'api_chat_share', { p_room: 'general', p_market: sans.m, p_side: sans.s })).toBe('position_absente');
+  // A tient une position Oui sur le marché (prise dans un scénario précédent ; sinon 2 $ maintenant), puis les deux joueurs ouvrent la page du marché
+  if (!(await lire(a.page, m => S.me.positions.some(p => p.m === m && p.s === 'oui' && p.sh > 0.05), MARCHE))) {
+    expect(await lire(a.page, () => S.me.balance), 'A a de quoi miser 2 $').toBeGreaterThanOrEqual(2);
+    await a.page.evaluate(m => API.call('api_buy', { p_market: m, p_side: 'oui', p_total: 2, p_key: crypto.randomUUID(), p_opts: {} }), MARCHE);
+  }
+  for (const p of [a.page, b.page]) { await p.evaluate(m => { location.hash = '#marche-' + m; }, MARCHE); await p.reload(); await pret(p); await expect(p.locator('.feed[data-room="' + SALON + '"]')).toBeAttached(); }
+  const avant = await lire(a.page, () => ({ xp: S.me.xp, suivies: S.me.followed }));
+  const pos = await lire(a.page, m => { const i = S.me.positions.findIndex(p => p.m === m && p.s === 'oui'), p = S.me.positions[i]; return { i, valeur: p ? p.sh * p.avg / 100 : 0 }; }, MARCHE);
+  expect(pos.i).toBeGreaterThanOrEqual(0);
+  const i = pos.i;
+
+  // A partage sa position depuis le salon du marché : la carte vient du serveur (+5 XP)
+  await a.page.locator('[data-a="share"][data-room="' + SALON + '"]').first().click();
+  await a.page.locator('[data-a="share-pick"][data-i="' + i + '"]').click();
+  await expect.poll(async () => (await cartes(a.page, 'me')).length, { timeout: 20000 }).toBe(1);
+  const partageA = Date.now();
+  const [carte] = await cartes(a.page, 'me');
+  expect(carte).toMatchObject({ m: MARCHE, s: 'oui' });
+  expect(Math.abs(carte.amt - pos.valeur), 'la carte porte la valeur d’achat de la position, arrondie au dollar').toBeLessThanOrEqual(0.51);
+  expect(typeof carte.sid).toBe('number');
+  await expect(a.page.locator('.feed[data-room="' + SALON + '"] .betc')).toHaveCount(1);
+  expect(await lire(a.page, () => S.me.xp)).toBeGreaterThanOrEqual(avant.xp + 5);
+
+  // B la reçoit en direct, au nom de A ; sans le rang Argent, le vrai serveur refuse qu'il la suive, et l'écran montre le cadenas
+  await expect.poll(async () => (await cartes(b.page, idA)).map(c => c.sid), { timeout: 20000 }).toEqual([carte.sid]);
+  expect(await lire(b.page, id => USERS[id] && USERS[id].n, idA)).toBe(PSEUDO);
+  await expect(b.page.locator('.feed[data-room="' + SALON + '"] .betc [data-a="lock"][data-g="follow"]')).toHaveCount(1);
+  expect(await essai(b.page, 'api_chat_follow', { p_msg: carte.sid })).toBe('rang_insuffisant');
+  expect(await essai(a.page, 'api_chat_follow', { p_msg: carte.sid })).not.toBe('accepté');           // on ne suit pas sa propre mise
+
+  // un à trois joueurs la suivent dans les 25 secondes (tâche du serveur) : compteur en direct chez A et chez B, 20 XP par suivi
+  await expect.poll(async () => (await cartes(a.page, 'me'))[0].suivis, { timeout: 60000 }).toBeGreaterThanOrEqual(1);
+  await a.page.waitForTimeout(Math.max(0, 32000 - (Date.now() - partageA)));                           // le dernier suivi est dû 18 s après le partage, crédité dans les 5 s
+  const n = (await cartes(a.page, 'me'))[0].suivis;
+  expect(n).toBeGreaterThanOrEqual(1); expect(n).toBeLessThanOrEqual(3);
+  await expect.poll(async () => (await cartes(b.page, idA))[0].suivis, { timeout: 20000 }).toBe(n);
+  await expect.poll(() => lire(a.page, () => S.me.followed), { timeout: 20000 }).toBe(avant.suivies + n);
+  expect(await lire(a.page, () => S.me.xp)).toBeGreaterThanOrEqual(avant.xp + 5 + 20 * n);
+  expect(await lire(a.page, () => S.me.notifs.filter(x => /followed your bet/.test(x.text)).length)).toBeGreaterThanOrEqual(n);
+  await expect(a.page.locator('.feed[data-room="' + SALON + '"] .betc .fc[data-fc]')).toHaveText(n === 1 ? /1 / : new RegExp(String(n)));
+
+  // la même position ne se partage qu'une fois par jour ; rechargée, la carte et son compteur reviennent du serveur
+  expect(await essai(a.page, 'api_chat_share', { p_room: 'general', p_market: MARCHE, p_side: 'oui' })).toBe('deja_partage');
+  await a.page.reload(); await pret(a.page);
+  await expect.poll(async () => (await cartes(a.page, 'me')).map(c => [c.sid, c.suivis]), { timeout: 20000 }).toEqual([[carte.sid, n]]);
+  expect(await lire(a.page, () => S.me.followed)).toBe(avant.suivies + n);
+  expect(a.erreurs).toEqual([]); expect(b.erreurs).toEqual([]);
+  await a.ctx.close(); await b.ctx.close();
+});
+
+test('mise partagée en privé : le vrai serveur ne l’accepte que pour un ami (et avec le rang Bronze), sinon rien n’est écrit', async ({ page }) => {
+  const erreurs = await ouvrirReel(page, '#connexion');
+  await page.locator('#le').fill(EMAIL); await page.locator('#lp').fill(MDP); await page.locator('form[data-form="login"] [type=submit]').click();
+  await expect(page).toHaveURL(/#accueil/, { timeout: 20000 }); await pret(page);
+  const essai = args => page.evaluate(async args => { try { await API.call('api_chat_share', args); return 'accepté'; } catch (e) { return e.code; } }, args);
+  const moi = await lire(page, () => srvMoi());
+  const conversations = () => lire(page, async () => ((await API.call('api_dm_list')).ids || []).length);
+  const avant = await conversations();
+  expect(await essai({ p_room: 'dm:pas-un-identifiant', p_market: 'clasico', p_side: 'oui' })).toBe('salon_indisponible');
+  expect(await essai({ p_room: 'dm:' + moi, p_market: 'clasico', p_side: 'oui' })).toBe('joueur_inconnu');                 // pas à soi-même
+  expect(await essai({ p_room: 'dm:00000000-0000-4000-8000-000000000000', p_market: 'clasico', p_side: 'oui' })).toBe('joueur_inconnu');
+  // un joueur du classement (lu sur le vrai serveur) qui n'est pas un ami
+  const autre = await lire(page, async moi => { const r = await API.call('api_leaderboard'); return Object.keys(r.users || {}).find(k => k !== moi && !friendsOf().includes(k)) || null; }, moi);
+  expect(autre, 'un joueur du classement qui n’est pas un ami').toMatch(/^[0-9a-f-]{36}$/);
+  expect(await essai({ p_room: 'dm:' + autre, p_market: 'clasico', p_side: 'oui' })).toBe('pas_amis');
+  expect(await conversations(), 'aucune conversation n’est née de ces refus').toBe(avant);
+  expect(erreurs).toEqual([]);
+});
+
+test('réactions : A réagit au message de B et à celui d’un bot, B voit les compteurs en direct ; second clic, la réaction est retirée ; rechargé, tout revient du vrai serveur', async ({ browser }) => {
+  test.setTimeout(180000);
+  const SALON = 'm:clasico';
+  const entrer = async email => {
+    const ctx = await browser.newContext(), page = await ctx.newPage();
+    const erreurs = await ouvrirReel(page, '#connexion');
+    await page.locator('#le').fill(email); await page.locator('#lp').fill(MDP); await page.locator('form[data-form="login"] [type=submit]').click();
+    await expect(page).toHaveURL(/#accueil/, { timeout: 20000 }); await pret(page);
+    await page.evaluate(() => { location.hash = '#marche-clasico'; });
+    await expect(page.locator('.feed[data-room="m:clasico"]')).toBeAttached();
+    return { ctx, page, erreurs };
+  };
+  const essai = (page, args) => page.evaluate(async args => { try { await API.call('api_chat_react', args); return 'accepté'; } catch (e) { return e.code; } }, args);
+  const vu = (page, sid) => lire(page, ([s, id]) => { const x = (S.rooms[s] ? S.rooms[s].msgs : []).find(y => y.sid === id); return x ? { id: x.id, r: x.r, my: x.my } : null; }, [SALON, sid]);
+  const reagir = async (page, idLocal, e) => {
+    const msg = page.locator('.feed[data-room="' + SALON + '"] .msg', { has: page.locator('[data-re="' + idLocal + '"]') });
+    const deja = msg.locator('[data-re] > [data-a="react"][data-e="' + e + '"]');
+    if (await deja.count()) await deja.click(); else { await msg.locator('[data-a="react-pal"]').click(); await msg.locator('.pal [data-a="react"][data-e="' + e + '"]').click(); }
+  };
+  const a = await entrer(EMAIL), b = await entrer(`wimoro-e2e-${stamp}-b@example.com`);
+
+  // B écrit dans le salon du marché ; A reçoit le message et y réagit
+  const texte = 'Test automatique ' + stamp + ' : réactions';
+  const champ = b.page.locator('.composer input[data-in="' + SALON + '"]'); await champ.fill(texte); await champ.press('Enter');
+  await expect(a.page.locator('.feed[data-room="' + SALON + '"] .msg', { hasText: texte })).toHaveCount(1, { timeout: 20000 });
+  const sid = await lire(a.page, ([s, t]) => S.rooms[s].msgs.find(x => x.text === t).sid, [SALON, texte]);
+  await reagir(a.page, (await vu(a.page, sid)).id, '🔥');
+  await expect.poll(async () => (await vu(a.page, sid)).my, { timeout: 20000 }).toEqual(['🔥']);
+  const apresA = (await vu(a.page, sid)).r['🔥'];
+  expect(apresA).toBeGreaterThanOrEqual(1);
+  await expect.poll(async () => ((await vu(b.page, sid)).r['🔥'] || 0), { timeout: 20000 }).toBeGreaterThanOrEqual(apresA);   // B le voit sans recharger (les bots peuvent en ajouter)
+  expect((await vu(b.page, sid)).my, 'la réaction de A n’est pas celle de B').toEqual([]);
+
+  // A réagit au dernier message d'un bot : le compteur est gardé par le serveur dans le fil du salon
+  const bot = await lire(a.page, s => { const L = S.rooms[s].msgs.filter(x => x.u !== 'me' && x.sid != null && (USERS[x.u] || {}).bot); const x = L[L.length - 1]; return x ? { id: x.id, sid: x.sid } : null; }, SALON);
+  expect(bot, 'un message de bot dans le salon').toBeTruthy();
+  expect(String(bot.sid)).toMatch(/^b\d+$/);
+  await reagir(a.page, bot.id, '👀');
+  await expect.poll(async () => (await vu(a.page, bot.sid)).my, { timeout: 20000 }).toEqual(['👀']);
+  await expect.poll(async () => ((await vu(b.page, bot.sid)) || { r: {} }).r['👀'] || 0, { timeout: 20000 }).toBeGreaterThanOrEqual(1);
+
+  // ce que le vrai serveur refuse
+  expect(await essai(a.page, { p_room: SALON, p_msg: String(sid), p_emoji: '❤️' })).toBe('reaction_invalide');
+  expect(await essai(a.page, { p_room: SALON, p_msg: '999999999', p_emoji: '🔥' })).toBe('message_indisponible');
+  expect(await essai(a.page, { p_room: 'general', p_msg: String(sid), p_emoji: '🔥' })).toBe('message_indisponible');      // pas dans ce salon
+
+  // second clic : A retire sa réaction au message de B
+  const avantRetrait = (await vu(a.page, sid)).r['🔥'];
+  await reagir(a.page, (await vu(a.page, sid)).id, '🔥');
+  await expect.poll(async () => (await vu(a.page, sid)).my, { timeout: 20000 }).toEqual([]);
+  // rechargé : compteurs et « mes réactions » reviennent du serveur
+  await a.page.reload(); await pret(a.page);
+  await expect.poll(async () => { const x = await vu(a.page, sid); return x && x.my; }, { timeout: 20000 }).toEqual([]);
+  expect(((await vu(a.page, sid)).r['🔥'] || 0)).toBeGreaterThanOrEqual(avantRetrait - 1);
+  await expect.poll(async () => { const x = await vu(a.page, bot.sid); return x ? x.my : 'sorti du fil'; }, { timeout: 20000 }).toEqual(['👀']);
+  expect(a.erreurs).toEqual([]); expect(b.erreurs).toEqual([]);
+  await a.ctx.close(); await b.ctx.close();
+});
+
+test('Mode Pro : A partage son analyse dans le chat du marché, B reçoit la carte en direct et l’ouvre, un joueur simulé répond ; le vrai serveur refuse un instantané hors format ; rechargé, tout revient du serveur', async ({ browser }) => {
+  test.setTimeout(240000);
+  const SALON = 'm:clasico';
+  const entrer = async email => {
+    const ctx = await browser.newContext(), page = await ctx.newPage();
+    const erreurs = await ouvrirReel(page, '#connexion');
+    await page.locator('#le').fill(email); await page.locator('#lp').fill(MDP); await page.locator('form[data-form="login"] [type=submit]').click();
+    await expect(page).toHaveURL(/#accueil/, { timeout: 20000 }); await pret(page);
+    await page.evaluate(() => { location.hash = '#marche-clasico'; });
+    await expect(page.locator('.feed[data-room="m:clasico"]')).toBeAttached();
+    return { ctx, page, erreurs };
+  };
+  const essai = (page, nom, args) => page.evaluate(async ([nom, args]) => { try { await API.call(nom, args); return 'accepté'; } catch (e) { return e.code; } }, [nom, args]);
+  const a = await entrer(EMAIL), b = await entrer(`wimoro-e2e-${stamp}-b@example.com`);
+
+  // A ouvre le Mode Pro du marché et partage son analyse dans le chat du marché (déjà coché)
+  await a.page.locator('[data-a="pro-open"][data-m="clasico"]').first().click();
+  await expect(a.page.locator('#pro [data-a="pro-share"]')).toBeVisible({ timeout: 20000 });
+  await a.page.locator('#pro [data-a="pro-share"]').click();
+  await expect(a.page.locator('.pro-sh')).toBeVisible();
+  await expect(a.page.locator('.pro-sh .demo-h')).toHaveCount(0);
+  const texte = 'Test automatique ' + stamp + ' : analyse';
+  await a.page.locator('[data-psh-txt]').fill(texte);
+  await a.page.locator('[data-a="pro-sh-send"]').click();
+  await expect(a.page.locator('.pro-sh')).toHaveCount(0, { timeout: 20000 });
+  await a.page.locator('#pro [data-a="pro-close"]').first().click();
+
+  // A voit sa carte ; B la reçoit en direct, sous le pseudo de A, avec l'instantané lu à part sur le vrai serveur
+  await expect(a.page.locator('.feed[data-room="' + SALON + '"] .msg.mine', { hasText: texte }).locator('.anac svg.pro-svg')).toHaveCount(1, { timeout: 20000 });
+  const chezB = b.page.locator('.feed[data-room="' + SALON + '"] .msg', { hasText: texte });
+  await expect(chezB.locator('.anac svg.pro-svg')).toHaveCount(1, { timeout: 30000 });
+  await expect(chezB.locator('.un')).toHaveText(PSEUDO);
+  const recu = await lire(b.page, ([s, t]) => { const x = S.rooms[s].msgs.find(y => y.text === t), z = x.ana;
+    return { sid: x.sid, id: z.id, m: z.m, n: z.n, bougies: z.o.length, base: { m: z.m, iv: z.iv, type: z.type, side: z.side, ms: z.ms, T0: z.T0, n: z.n, o: z.o, h: z.h, l: z.l, c: z.c, vol: z.vol, end: z.end, vn: z.vn, inds: [], dr: [] } }; }, [SALON, texte]);
+  expect(recu.m).toBe('clasico'); expect(recu.bougies).toBe(recu.n); expect(recu.id).toMatch(/^a\d+$/);
+
+  // B l'ouvre : c'est l'analyse de A, avec son commentaire
+  await chezB.locator('[data-a="pro-view"]').last().click();
+  await expect(b.page.locator('#pro')).toContainText('Analysis by ' + PSEUDO, { timeout: 20000 });
+  await expect(b.page.locator('#pro .pro-cmt')).toHaveText(texte);
+  await b.page.locator('#pro [data-a="pro-close"]').first().click();
+
+  // dans ce salon regardé, un joueur simulé répond à A quelques secondes plus tard
+  await expect(a.page.locator('.feed[data-room="' + SALON + '"] .msg', { hasText: '@' + PSEUDO + ' ' }).first()).toBeVisible({ timeout: 60000 });
+
+  // ce que le vrai serveur refuse (rien n'est alors gardé)
+  expect(await essai(b.page, 'api_ana_share', { p_snap: { ...recu.base, inds: [{ k: 'sma', p: { len: 20 }, c: 'red" onload="x', w: 2, vals: { a: recu.base.c } }] }, p_rooms: [SALON], p_text: '' })).toBe('analyse_invalide');
+  expect(await essai(b.page, 'api_ana_share', { p_snap: { ...recu.base, dr: [{ k: 'text', a: [recu.base.T0, 50], c: 'ink', w: '2"/><script>', txt: 'x' }] }, p_rooms: [SALON], p_text: '' })).toBe('analyse_invalide');
+  expect(await essai(b.page, 'api_ana_share', { p_snap: recu.base, p_rooms: ['m:btc150k'], p_text: '' })).toBe('salon_indisponible');   // pas le marché analysé
+  expect(await essai(b.page, 'api_ana_share', { p_snap: { ...recu.base, m: 'nexistepas' }, p_rooms: ['general'], p_text: '' })).toBe('marche_inconnu');
+  expect(await essai(b.page, 'api_ana', { p_msgs: [] })).toBe('analyse_inconnue');
+  expect(await lire(b.page, async id => Object.keys((await API.call('api_ana', { p_msgs: [id, 999999999] })).snaps), recu.sid)).toEqual([String(recu.sid)]);
+
+  // rechargé chez B : le message revient de l'historique du salon, son instantané est relu
+  await b.page.reload(); await pret(b.page);
+  await expect(b.page.locator('.feed[data-room="' + SALON + '"] .msg', { hasText: texte }).locator('.anac svg.pro-svg')).toHaveCount(1, { timeout: 30000 });
+  expect(a.erreurs).toEqual([]); expect(b.erreurs).toEqual([]);
+  await a.ctx.close(); await b.ctx.close();
+});
+
+test('duel éclair contre un bot ami : mise prise par le vrai serveur, accepté aussitôt au prix du serveur ; à la fin de la manche, réglé comme le moteur de l’écran le calcule', async ({ page }) => {
+  test.setTimeout(240000);
+  const erreurs = await ouvrirReel(page, '#connexion');
+  await page.locator('#le').fill(EMAIL); await page.locator('#lp').fill(MDP); await page.locator('form[data-form="login"] [type=submit]').click();
+  await expect(page).toHaveURL(/#accueil/, { timeout: 20000 }); await pret(page);
+  const bot = await lire(page, () => S.me.friends.find(u => USERS[u] && USERS[u].bot));
+  expect(bot, 'A a un bot pour ami (scénario des duels)').toBeTruthy();
+  await page.evaluate(() => { location.hash = '#duels'; });
+  const avant = await lire(page, () => ({ solde: S.me.balance, xp: S.me.xp, duels: S.me.duels.length }));
+  expect(avant.solde, 'A a de quoi miser 5 $ et ses frais').toBeGreaterThanOrEqual(6);
+  // la fenêtre « Défier », sur une manche éclair du Bitcoin, contre le bot
+  await page.evaluate(u => { const b = document.createElement('button'); b.dataset.a = 'duel-open'; b.dataset.m = 'flash:btc'; b.dataset.u = u; document.body.appendChild(b); b.click(); b.remove(); }, bot);
+  await page.locator('[data-dl="stake"]').fill('5');
+  await page.locator('[data-a="dl-create"]').click();
+  await expect.poll(() => lire(page, n => S.me.duels.length > n && S.me.duels[0].status, avant.duels), { timeout: 20000 }).toBe('active');
+  const d = await lire(page, () => { const x = S.me.duels[0]; return { id: x.id, m: x.m, round: x.round, side: x.side, stake: x.stake, fee: x.fee, price: x.price, pot: x.pot, opp: x.opp, by: x.by }; });
+  expect(d).toMatchObject({ m: 'flash:btc', stake: 5, opp: bot, by: 'me', side: 'oui' });
+  expect(d.pot).toBeCloseTo(5 * 100 / d.price, 1);                                              // la cagnotte : la mise divisée par le prix du serveur
+  expect(d.fee).toBeGreaterThan(0); expect(d.fee).toBeLessThan(0.3);
+  const manche = await lire(page, () => S.flash.round);
+  expect([manche, manche + 1], 'la manche en cours, ou la suivante s’il restait moins de dix secondes de mises').toContain(d.round);
+  expect(await lire(page, () => S.me.balance)).toBeCloseTo(avant.solde - 5 - d.fee, 2);
+  // le moteur est déterministe : l'écran sait ce que cette manche donnera
+  const out = await lire(page, r => MoteurEclair.issue(MoteurEclair.JEUX.btc, r), d.round);
+  const attendu = out === 2 ? 'void' : out === 1 ? 'won' : 'lost';
+  await page.reload(); await pret(page);                                                        // en cours de route : le duel vient du serveur
+  expect(['active', attendu]).toContain(await lire(page, id => S.me.duels.find(x => x.id === id).status, d.id));
+  // fin de la manche (une minute et demie au plus) : réglé par le vrai serveur, comme prévu
+  await expect.poll(() => lire(page, id => S.me.duels.find(x => x.id === id).status, d.id), { timeout: 150000, intervals: [2000] }).toBe(attendu);
+  await expect.poll(() => lire(page, () => S.me.balance), { timeout: 20000 }).toBeCloseTo(avant.solde - 5 - d.fee + (out === 1 ? d.pot : out === 2 ? 5 : 0), 2);
+  if (out !== 2) {
+    await expect.poll(() => lire(page, () => S.me.history[0] && S.me.history[0].k), { timeout: 20000 }).toBe('duel');
+    expect(await lire(page, () => ({ win: S.me.history[0].win, q: S.me.history[0].q }))).toMatchObject({ win: out === 1 });
+    expect(await lire(page, () => S.me.history[0].q)).toContain('Flash Bitcoin');
+  }
+  xpVaut(await lire(page, () => S.me.xp), avant.xp + (out === 1 ? 20 : 0), 'XP du duel');
+  // le vrai serveur refuse : régler n'a plus rien à faire ; une mise trop petite ; un jeu inconnu
+  const essai = corps => page.evaluate(async corps => { try { const r = await API.fn('eclair', corps); return r.regles === undefined ? 'accepté' : 'réglés : ' + r.regles; } catch (e) { return e.code; } }, corps);
+  expect(await essai({ action: 'duel_settle' })).toBe('réglés : 0');
+  expect(await essai({ action: 'duel_create', gid: 'btc', side: 'oui', stake: 1, opp: bot, key: crypto.randomUUID() })).toBe('montant_invalide');
+  expect(await essai({ action: 'duel_create', gid: 'pas-un-jeu', side: 'oui', stake: 5, opp: bot, key: crypto.randomUUID() })).toBe('jeu_inconnu');
+  await page.reload(); await pret(page);
+  expect(await lire(page, id => S.me.duels.find(x => x.id === id).status, d.id)).toBe(attendu);
+  expect(erreurs).toEqual([]);
+});
+
+test('duel de stack contre un joueur simulé : buy-in pris par le vrai serveur, 1 000 jetons chacun pour sept jours, retrouvé après rechargement ; un vrai joueur ne peut pas être défié sans son accord', async ({ page }) => {
+  test.setTimeout(120000);
+  const erreurs = await ouvrirReel(page, '#connexion');
+  await page.locator('#le').fill(EMAIL); await page.locator('#lp').fill(MDP); await page.locator('form[data-form="login"] [type=submit]').click();
+  await expect(page).toHaveURL(/#accueil/, { timeout: 20000 }); await pret(page);
+  const amis = await lire(page, () => ({ bot: S.me.friends.find(u => USERS[u] && USERS[u].bot), reel: S.me.friends.find(u => USERS[u] && !USERS[u].bot) }));
+  expect(amis.bot, 'A a un bot pour ami (scénario des duels)').toBeTruthy();
+  expect(amis.reel, 'A a un vrai joueur pour ami (scénario des amis)').toBeTruthy();
+  const avant = await lire(page, () => ({ solde: S.me.balance, stacks: (S.me.stacks || []).length }));
+  expect(avant.solde, 'A a de quoi payer un buy-in de 5 $').toBeGreaterThanOrEqual(5);
+  const essai = p => page.evaluate(async p => { try { const r = await API.call('api_stack_create', { p }); return { ok: true, stack: r.stack, solde: r.me.balance, rejoue: !!r.rejoue }; } catch (e) { return { ok: false, code: e.code }; } }, p);
+  // ce que le vrai serveur refuse
+  expect(await essai({ buyin: 5, opp: amis.reel, key: crypto.randomUUID() })).toEqual({ ok: false, code: 'stack_joueur_reel' });
+  expect(await essai({ buyin: 1, opp: amis.bot, key: crypto.randomUUID() })).toEqual({ ok: false, code: 'montant_invalide' });
+  expect(await essai({ buyin: 5, opp: 'personne', key: crypto.randomUUID() })).toEqual({ ok: false, code: 'joueur_inconnu' });
+  expect(await lire(page, () => S.me.balance)).toBeCloseTo(avant.solde, 2);
+  // lancé : le buy-in est pris une fois, même si la demande est rejouée
+  const cle = crypto.randomUUID();
+  const cree = await essai({ buyin: 5, opp: amis.bot, key: cle });
+  expect(cree).toMatchObject({ ok: true, rejoue: false });
+  expect(cree.solde).toBeCloseTo(avant.solde - 5, 2);
+  expect(await essai({ buyin: 5, opp: amis.bot, key: cle })).toMatchObject({ ok: true, rejoue: true, stack: cree.stack });
+  // rechargé : l'écran montre le duel du serveur, 1 000 jetons chacun, fin dans sept jours
+  await page.evaluate(() => { location.hash = '#duels'; }); await page.reload(); await pret(page);
+  const s = await lire(page, id => { const x = (S.me.stacks || []).find(y => y.id === String(id)); return x && { opp: x.opp, status: x.status, buyin: x.buyin, my: x.my, theirs: x.theirs, jours: (x.endAt - x.at) / 864e5 }; }, cree.stack);
+  expect(s).toMatchObject({ opp: amis.bot, status: 'active', buyin: 5, theirs: 1000, jours: 7 });
+  expect(Math.abs(s.my - 1000), 'le stack de A part de 1 000 jetons et suit ses résultats (ses positions ont pu bouger de quelques cents)').toBeLessThanOrEqual(3);
+  expect(await lire(page, () => S.me.stacks.length)).toBe(avant.stacks + 1);
+  expect(await lire(page, () => S.me.balance)).toBeCloseTo(avant.solde - 5, 2);
+  await expect(page.locator('.stk.active').first()).toBeVisible();
+  expect(erreurs).toEqual([]);
 });

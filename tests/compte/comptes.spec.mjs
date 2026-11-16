@@ -22,7 +22,7 @@ test('B08 · inscription : compte créé sur le serveur avec le pseudo choisi, p
   expect(s).toEqual({ srv: true, n: 'nouveau.joueur', solde: 0, onboarded: false, deps: 0, local: null, session: null });   // ni compte local fantôme, ni faux « Crédit démo »
   const inscription = await lire(page, () => __fakeSB.journal().find(c => c.name === 'signUp').args);
   expect(inscription.options.data).toMatchObject({ username: 'nouveau.joueur', lang: 'en' });
-  expect(inscription.options.emailRedirectTo).toContain('127.0.0.1');
+  expect(inscription.options.emailRedirectTo).toBe(await page.evaluate(() => location.origin + location.pathname));   // l'adresse du site lui-même (local ou en ligne)
 
   // onboarding : couleur → centres d'intérêt → sans KYC → rangs → 100 XP de bienvenue (donnés par le serveur) → fin
   const suivant = page.locator('[data-a="ob-next"]');
@@ -116,6 +116,21 @@ test('B09 · mot de passe oublié : code à 6 chiffres, nouveau mot de passe, co
   await expect(page.locator('[data-autherr]')).toHaveText('Identifiant ou mot de passe incorrect.');
   await page.locator('#lp').fill('nouveau-mdp-9'); await page.locator('form[data-form="login"] [type=submit]').click();
   await expect(page).toHaveURL(/#accueil/);
+});
+
+test('fenêtre à plusieurs champs : le curseur va au premier, mais n’est pas repris au champ que le joueur a déjà choisi', async ({ page }) => {
+  // Avant : 60 ms après l'ouverture, le curseur revenait de force au premier champ. Sur un appareil lent, ce qu'on tapait dans
+  // « nouveau mot de passe » partait dans « code » (plein, donc perdu) : le mot de passe restait vide.
+  const { erreurs } = await ouvrir(page, { mode: 'visiteur', hash: '#connexion', lang: 'fr', faux: { comptes: COMPTES } });
+  const actif = () => lire(page, () => document.activeElement && document.activeElement.id);
+  await page.evaluate(() => { forgotModal(2, 'alice@test.dev'); });
+  await expect.poll(actif).toBe('fc');                                                           // sans rien faire : le premier champ, comme avant
+  await page.evaluate(() => { forgotModal(2, 'alice@test.dev'); document.getElementById('fp').focus(); });   // le joueur passe tout de suite au second
+  await page.waitForTimeout(250);
+  expect(await actif()).toBe('fp');
+  await page.keyboard.insertText('nouveau-mdp-9');
+  expect(await lire(page, () => [document.getElementById('fc').value, document.getElementById('fp').value])).toEqual(['', 'nouveau-mdp-9']);
+  expect(erreurs).toEqual([]);
 });
 
 test('B09 · arrivée par le lien de l’e-mail : la fenêtre « nouveau mot de passe » s’ouvre', async ({ page }) => {

@@ -113,7 +113,7 @@ new MutationObserver(ovSync).observe(document.body,{childList:true});
 document.addEventListener('keydown',e=>{if(e.key!=='Tab')return;const o=topOverlay();if(!o)return;const box=ovBox(o);if(!box)return;const L=[...box.querySelectorAll(FOCUSABLE)].filter(x=>x.getClientRects().length&&!x.closest('[inert]'));
  if(!L.length){e.preventDefault();return;}const a=document.activeElement,first=L[0],last=L[L.length-1];
  if(!box.contains(a)||a===box){e.preventDefault();(e.shiftKey?last:first).focus();}else if(e.shiftKey&&a===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&a===last){e.preventDefault();first.focus();}});
-function openModal(html,cls=''){ovRemember();const o=$('#ov');if(o)o.remove();const ov=document.createElement('div');ov.className='ov';ov.id='ov';ov.innerHTML=`<div class="modal ${cls}" role="dialog" aria-modal="true" tabindex="-1">${html}</div>`;ov.addEventListener('mousedown',e=>{if(e.target===ov)closeModal();});document.body.appendChild(ov);fixText(ov);mountTrails(ov);try{ov.firstElementChild.focus({preventScroll:true});}catch(e){}setTimeout(()=>{const i=ov.querySelector('[autofocus]');if(i)i.focus();},60);}
+function openModal(html,cls=''){ovRemember();const o=$('#ov');if(o)o.remove();const ov=document.createElement('div');ov.className='ov';ov.id='ov';ov.innerHTML=`<div class="modal ${cls}" role="dialog" aria-modal="true" tabindex="-1">${html}</div>`;ov.addEventListener('mousedown',e=>{if(e.target===ov)closeModal();});document.body.appendChild(ov);fixText(ov);mountTrails(ov);try{ov.firstElementChild.focus({preventScroll:true});}catch(e){}setTimeout(()=>{const i=ov.querySelector('[autofocus]'),a=document.activeElement;if(i&&!(a&&a!==i&&ov.contains(a)&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)))i.focus();},60);}   /* le curseur va au champ prévu, sauf si le joueur en a déjà choisi un autre dans la fenêtre */
 function closeModal(){const o=$('#ov');if(o)o.remove();S.ui.sheet=null;}
 /* C18 : une condition remplie s'écrit « 60 / 60 ✓ » (et non « 186 sur 60 ») ; noBtn retire le bouton de la ligne quand il ferait doublon */
 function condH(c,noBtn){const val=c.ok?(c.k==='acc'?_t('{0} % · {1} % requis',[c.have,c.need]):c.k==='xp'?_t('{0} / {1}',[F.int(c.need),F.xp(c.need)]):c.k==='top'?_t('{0}, dans le top {1}',[F.ord(c.have),c.need]):_t('{0} / {1}',[F.int(c.need),F.int(c.need)]))
@@ -182,7 +182,8 @@ function placeBet(ctx,ev){const st=tState(ctx),m=MK[st.m],c=calcT(st);if(!c.ok)r
  betEffets(ctx,ev,st,m,c,before);}
 function betEffets(ctx,ev,st,m,c,before){
  updateHeader();gainXP(10,ev);mission('bet');
- if(!SRV()){/* suivre une mise et l'annoncer dans le chat : en mode serveur, ces effets arrivent avec le lot « chat » */
+ if(SRV()){if(st.followOf)srvSuivreMise(st.followOf);if(st.announce&&can('share'))srvPartagerMise('m:'+m.id,m.id,st.side,true);}   /* mode Compte : suivi et annonce tenus par le serveur */
+ if(!SRV()){
  if(st.followOf){const x=MSG[st.followOf];if(x){x.followers++;setFc(x);setTimeout(()=>gainXP(5),550);}}
  if(st.announce&&can('share')){const x=mkMsg({u:'me',k:'bet',text:'',bet:{m:m.id,s:st.side,amt:Math.round(c.amt),price:Math.round(c.price)}});addMsg('m:'+m.id,x);setTimeout(()=>gainXP(5),800);scheduleFollowers(x,'m:'+m.id);}
  }
@@ -448,12 +449,12 @@ const ACT={
  hroom:a=>{S.ui.homeRoom=a.dataset.room;const box=$('[data-chatbox]');if(box){box.outerHTML=homeChatH();const nb=$('[data-chatbox]');fixText(nb);mountTrails(nb);const f=nb.querySelector('.feed');f.scrollTop=f.scrollHeight;}},
  troom:a=>{const r=a.dataset.room;S.ui.room=r;if((S.ui.route||'')!=='chat'){location.hash='#chat';return;}render(false);const f=$('.feed');if(f)f.scrollTop=f.scrollHeight;},
  mtab:a=>{S.ui.mtab=a.dataset.v;render(false);},
- react:a=>{const x=MSG[a.dataset.id];if(!x)return;const e=a.dataset.e;const i=x.my.indexOf(e);if(i>=0){x.my.splice(i,1);x.r[e]=Math.max(0,(x.r[e]||1)-1);if(!x.r[e])delete x.r[e];}else{x.my.push(e);x.r[e]=(x.r[e]||0)+1;}refreshReacts(x);},
+ react:a=>{const x=MSG[a.dataset.id];if(!x)return;const e=a.dataset.e;if(SRV()){srvReagir(x,e);return;}const i=x.my.indexOf(e);if(i>=0){x.my.splice(i,1);x.r[e]=Math.max(0,(x.r[e]||1)-1);if(!x.r[e])delete x.r[e];}else{x.my.push(e);x.r[e]=(x.r[e]||0)+1;}refreshReacts(x);},
  'react-pal':a=>{const m=a.closest('.msg');if(m)m.classList.toggle('palopen');},
  'follow-bet':a=>{const x=MSG[a.dataset.id];if(!x)return;gate('follow',()=>openBet(x.bet.m,x.bet.s,Math.min(x.bet.amt,50),{followOf:x.id,followUser:x.u}));},
  'follow-pbet':a=>gate('follow',()=>openBet(a.dataset.m,a.dataset.s,50,{followUser:a.dataset.u})),
  share:a=>gate('share',()=>shareModal(a.dataset.room)),
- 'share-pick':a=>{const p=S.me.positions[+a.dataset.i],rid=a.dataset.room;if(!p)return;const x=mkMsg({u:'me',k:'bet',text:'',bet:{m:p.m,s:p.s,amt:Math.round(p.sh*p.avg/100),price:Math.round(p.avg)}});closeModal();addMsg(rid,x);gainXP(5);scheduleFollowers(x,rid);save();},
+ 'share-pick':a=>{const p=S.me.positions[+a.dataset.i],rid=a.dataset.room;if(!p)return;if(SRV()){closeModal();srvPartagerMise(rid,p.m,p.s);return;}const x=mkMsg({u:'me',k:'bet',text:'',bet:{m:p.m,s:p.s,amt:Math.round(p.sh*p.avg/100),price:Math.round(p.avg)}});closeModal();addMsg(rid,x);gainXP(5);scheduleFollowers(x,rid);save();},
  cite:a=>citeModal(a.dataset.room),
  'cite-pick':a=>{const rid=a.dataset.room;closeModal();const i=$(`[data-in="${CSS.escape(rid)}"]`);if(i){i.value=(i.value.trim()?i.value.trim()+' ':'')+'#'+a.dataset.m+' ';i.focus();}},
  lock:a=>lockModal(a.dataset.g),tier:a=>tierModal(+a.dataset.t),
@@ -462,7 +463,7 @@ const ACT={
  propose:()=>{location.hash='#creer';},stats:()=>statsModal(),
  dm:a=>{const u=a.dataset.u;const rid='dm:'+u;const r=room(rid);if(SRV()){S.ui.room=rid;if((S.ui.route||'')==='chat')render(false);else location.hash='#chat';return;}   /* mode serveur : la conversation est chargée par srvSalons */
   if(!r.msgs.length){r.msgs.push(mkMsg({k:'evt',text:`${_t("Début de ta conversation avec {0}",[userOf(u).n])}`}));setTimeout(()=>addMsg(rid,mkMsg({u,k:'msg',text:pick(DM_REPLIES)})),1400);}S.ui.room=rid;if((S.ui.route||'')==='chat')render(false);else location.hash='#chat';},
- 'follow-user':a=>{const u=a.dataset.u,L=S.me.following,i=L.indexOf(u);if(i>=0)L.splice(i,1);else{L.push(u);toast({icon:'users',title:`${_t("Tu suis {0}",[userOf(u).n])}`,text:_t("Ses mises apparaîtront dans tes notifications.")});}$$(`[data-a="follow-user"][data-u="${u}"]`).forEach(b=>{const on=L.includes(u);b.textContent=on?_t("Suivi"):_t("Suivre");b.classList.toggle('b-soft',on);b.classList.toggle('b-ghost',!on);});save();},
+ 'follow-user':a=>{const u=a.dataset.u,L=S.me.following,i=L.indexOf(u);if(SRV()){srvSuivre(u,i<0);return;}if(i>=0)L.splice(i,1);else{L.push(u);toast({icon:'users',title:`${_t("Tu suis {0}",[userOf(u).n])}`,text:_t("Ses mises apparaîtront dans tes notifications.")});}$$(`[data-a="follow-user"][data-u="${u}"]`).forEach(b=>{const on=L.includes(u);b.textContent=on?_t("Suivi"):_t("Suivre");b.classList.toggle('b-soft',on);b.classList.toggle('b-ghost',!on);});save();},
  lbp:a=>{S.ui.lbp=a.dataset.v;if(['Semaine','Mois','Saison'].includes(a.dataset.v))S.ui.lbper=a.dataset.v;render(false);},ptab:a=>{S.ui.ptab=a.dataset.v;if((S.ui.route||'')!=='profil'){location.hash='#profil';return;}render(false);},
  watch:a=>{const id=a.dataset.m,L=S.me.watch,i=L.indexOf(id);if(i>=0)L.splice(i,1);else{L.push(id);toast({icon:'star',title:_t("Marché suivi"),text:_t("Tu seras prévenu à chaque signal de foule.")});}$$(`[data-watch="${id}"]`).forEach(e=>{e.innerHTML=watchTxt(L.includes(id));const b=e.closest('button');if(b)b.setAttribute('aria-pressed',L.includes(id));});save();},
  copylink:a=>copyText(SITE_URL+'/'+a.dataset.v,_t("Lien copié")),'search-open':()=>searchOpen(),'search-close':()=>searchClose(),copy:a=>copyText(a.dataset.v,_t("Adresse copiée")),

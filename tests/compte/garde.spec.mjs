@@ -17,6 +17,18 @@ const RELIEES = {
   'ACT.ord-cancel': 'api_order_cancel — tests/compte/ordres.spec.mjs',
   'ACT.guard-save': 'api_guard_set — tests/compte/ordres.spec.mjs',
   'ACT.guard-del': 'api_guard_del — tests/compte/ordres.spec.mjs',
+  'ACT.pro-share': 'fenêtre de partage (interface) ; l’envoi passe par api_ana_share — tests/compte/analyses.spec.mjs',
+  'ACT.pro-sh-send': 'api_ana_share (instantané remis au propre par le serveur) — tests/compte/analyses.spec.mjs',
+  'ACT.cl-war': 'api_clan_war (le chef déclare la guerre) — tests/compte/clans-guerres.spec.mjs',
+  'ACT.cl-war-join': 'api_clan_war_join (buy-in pris par le serveur) — tests/compte/clans-guerres.spec.mjs',
+  'ACT.cl-promote': 'api_clan_promote (le chef nomme un officier) — tests/compte/clans-chefs.spec.mjs',
+  'ACT.cl-kick': 'api_clan_kick (chef et officiers) — tests/compte/clans-chefs.spec.mjs',
+  'ACT.cl-invite': 'api_clan_invite (un bot rejoint, un vrai joueur reçoit le code) — tests/compte/clans-chefs.spec.mjs',
+  'ACT.cl-call-do': 'api_clan_call (appel épinglé et annoncé par le serveur) — tests/compte/clans-chefs.spec.mjs',
+  'ACT.stk-create': 'api_stack_create (buy-in, stacks et règlement tenus par le serveur) — tests/compte/stacks.spec.mjs',
+  'ACT.react': 'api_chat_react (compteurs tenus par le serveur, vus en direct) — tests/compte/reactions.spec.mjs',
+  'ACT.share-pick': 'api_chat_share (carte, XP et suivis tenus par le serveur) — tests/compte/mises.spec.mjs',
+  'ACT.follow-user': 'api_follow (liste et compteur d’abonnés tenus par le serveur) — tests/compte/suivre.spec.mjs',
   'ACT.cl-join': 'api_clan_join — tests/compte/clans.spec.mjs',
   'ACT.cl-apply': 'api_clan_apply (réponse de l’officier donnée par le serveur) — tests/compte/clans.spec.mjs',
   'ACT.cl-leave-do': 'api_clan_leave — tests/compte/clans.spec.mjs',
@@ -98,10 +110,10 @@ test('une action pas encore reliée est clairement indisponible : message, et ri
   const n0 = await lire(page, () => __fakeSB.calls.length);
   await page.evaluate(() => { location.hash = '#chat'; });
   await page.evaluate(() => { location.hash = '#eclair'; });
-  await page.evaluate(() => { const b = document.createElement('button'); b.dataset.a = 'cl-war'; document.body.appendChild(b); b.click(); b.remove(); });   // guerres de clans
+  await page.evaluate(() => { const b = document.createElement('button'); b.dataset.a = 'cl-sim'; document.body.appendChild(b); b.click(); b.remove(); });   // outil de simulation des clans : réservé au mode Démo
   await expect(page.locator('.toast', { hasText: 'Coming soon for accounts' }).first()).toBeVisible();
   await page.evaluate(() => { ACT.withdraw && document.dispatchEvent(new Event('x')); });
-  for (const a of ['stk-create', 'cl-war', 'cl-war-join', 'sr-share'])
+  for (const a of ['cl-sim', 'demo-rank', 'demo-rank-reset'])
     await page.evaluate(nom => { const b = document.createElement('button'); b.dataset.a = nom; b.dataset.u = 'x'; b.dataset.m = 'btc150k'; document.body.appendChild(b); b.click(); b.remove(); }, a);
   const apres = await lire(page, () => JSON.stringify({ solde: S.me.balance, xp: S.me.xp, pos: S.me.positions, hist: S.me.history, notifs: S.me.notifs.length, prix: MK.btc150k.p, messages: Object.values(S.rooms).reduce((n, r) => n + r.msgs.filter(x => x.k !== 'evt').length, 0) }));
   expect(apres).toBe(avant);

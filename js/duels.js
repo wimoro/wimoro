@@ -74,6 +74,7 @@ function duelSettle(d,winSide,proof){if(d.status!=='active')return;const mine=du
 /* manches éclair : règlement avec les prix relevés */
 const resolveFlash0=resolveFlash;
 resolveFlash=function(){const round=S.flash.round,starts={},ends={};for(const g of GAMES){const gm=G(g.id);starts[g.id]=gm.start;ends[g.id]=g.kind==='dir'?gm.price:gm.start;}resolveFlash0();
+ if(SRV()){srvDuelsApresManche(round);return;}                 /* mode Compte : c'est le serveur qui règle les duels de la manche */
  for(const d of duelsAll()){if(!duelIsFlash(d)||d.round!==round)continue;const g=duelGame(d),gm=G(g.id),r=gm.result;if(!r)continue;
   if(d.status==='open'){duelRefund(d,'expired');continue;}
   if(d.status!=='active')continue;
@@ -178,8 +179,10 @@ function vDuel(id){let d=duelOf(id);if(!d){const pay=S.ui.duelLink;if(pay&&(pay.
  ${done||d.status==='active'?`<div class="hbtns" style="margin-top:14px"><button class="btn b-white" data-a="dl-share" data-id="${d.id}">${_t("{0} Partager la carte",[ic('share',16)])}</button></div>`:''}</section></div>
  <aside class="col"><section class="pn pad"><div class="h2">${_t("Règle du marché")}</div><p class="sub" style="margin-top:6px">${esc(duelSource(d))}</p>${g?`<p class="sub">${_t("Manche {0} : {1}",[F.int(d.round),esc(g.q)])}</p>`:m?`<p class="sub">${_t("Clôture : {0}.",[esc(m.closeLong)])} <a class="link" href="#marche-${m.id}">${_t("Voir le marché")}</a></p>`:''}</section>
  <section class="pn pad"><div class="h2">${_t("Séquestre et résolution")}</div><p class="sub" style="margin-top:6px">${_t("Les deux mises sont bloquées par Wimoro dès l’acceptation. Personne ne décide du résultat : le duel suit la résolution du marché, et la preuve (prix relevé, résultat officiel) s’affiche ici et sur la carte.")}</p></section></aside></div></div>`;}
-function stackModalOpen(){if(!S.me.logged){needLogin(_t("Connecte-toi pour lancer un duel de stack."));return;}const fr=friendsOf();S.ui.stack={buyin:'25',opp:fr[0]||USER_IDS[0]};openModal(stackModalH());}
-function stackModalH(){const st=S.ui.stack,fr=friendsOf().length?friendsOf():USER_IDS.slice(0,4),b=F.parse(st.buyin)||0;return `<div class="md"><div class="md-h"><div><p>${_t("Duel de stack")}</p><h3>${_t("Une semaine, tous les marchés")}</h3></div><button class="x" data-a="close" aria-label="${_t("Fermer")}">${ic('x')}</button></div>
+/* les adversaires proposés : ses amis ; sans ami, quelques joueurs (en mode Compte : des joueurs simulés, les seuls qu'on peut défier sans leur accord) */
+const stackAdversaires=()=>{const fr=friendsOf();if(fr.length)return fr;return (SRV()?USER_IDS.filter(u=>USERS[u]&&USERS[u].bot):USER_IDS).slice(0,4);};
+function stackModalOpen(){if(!S.me.logged){needLogin(_t("Connecte-toi pour lancer un duel de stack."));return;}const fr=stackAdversaires();S.ui.stack={buyin:'25',opp:fr[0]||''};openModal(stackModalH());}
+function stackModalH(){const st=S.ui.stack,fr=stackAdversaires(),b=F.parse(st.buyin)||0;return `<div class="md"><div class="md-h"><div><p>${_t("Duel de stack")}</p><h3>${_t("Une semaine, tous les marchés")}</h3></div><button class="x" data-a="close" aria-label="${_t("Fermer")}">${ic('x')}</button></div>
  <p class="sub">${_t("Même buy-in, {0} jetons virtuels chacun. Ton stack suit tes résultats réels pendant 7 jours (1 jeton = 1 $ de résultat). Le plus gros stack à la fin remporte la cagnotte, frais {1}.",[F.int(DUEL.STACK_CHIPS),F.pct(DUEL.STACK_FEE*100)])}</p>
  <div class="cpf"><span class="cpl">${_t("Buy-in")}</span><div class="presets">${[10,25,50,100].map(v=>`<button type="button" class="btn b-ghost sm${+st.buyin===v?' on':''}" data-a="stk-buyin" data-v="${v}">${F.usd0(v)}</button>`).join('')}</div></div>
  <div class="cpf"><span class="cpl">${_t("Adversaire")}</span><div class="chips">${fr.map(u=>`<button type="button" class="chip${st.opp===u?' on':''}" data-a="stk-opp" data-v="${u}">${avH(u,18,'span')} ${esc(userOf(u).n)}</button>`).join('')}</div></div>
@@ -204,7 +207,7 @@ Object.assign(ACT,{
  'stack-open':()=>stackModalOpen(),
  'stk-buyin':a=>{S.ui.stack.buyin=a.dataset.v;stackModalRefresh();},
  'stk-opp':a=>{S.ui.stack.opp=a.dataset.v;stackModalRefresh();},
- 'stk-create':()=>{const st=S.ui.stack,d=stackCreate(F.parse(st.buyin),st.opp);if(!d)return;closeModal();toast({tone:'blue',icon:'layers',force:true,title:_t("Duel de stack lancé"),text:`${_t("{0} chacun contre {1}, {2} jetons, une semaine.",[F.usd0(d.buyin),duelUserN(d.opp),F.int(DUEL.STACK_CHIPS)])}`,href:'#duels'});render(false);}
+ 'stk-create':()=>{const st=S.ui.stack;if(SRV()){srvStackCreer(st);return;}const d=stackCreate(F.parse(st.buyin),st.opp);if(!d)return;closeModal();toast({tone:'blue',icon:'layers',force:true,title:_t("Duel de stack lancé"),text:`${_t("{0} chacun contre {1}, {2} jetons, une semaine.",[F.usd0(d.buyin),duelUserN(d.opp),F.int(DUEL.STACK_CHIPS)])}`,href:'#duels'});render(false);}
 });
 document.addEventListener('input',e=>{const i=e.target.closest('[data-dl]');if(!i||!S.ui.duel)return;S.ui.duel[i.dataset.dl]=i.value;if(i.dataset.dl==='m'||i.dataset.dl==='stake'){const f=document.activeElement===i&&i.dataset.dl==='stake';if(!f)duelModalRefresh();else{const o=$('#ov .calc');if(o){const tmp=document.createElement('div');tmp.innerHTML=duelModalH();const nc=tmp.querySelector('.calc');if(nc)o.outerHTML=nc.outerHTML;const btn=$('#ov [data-a="dl-create"]'),nb=tmp.querySelector('[data-a="dl-create"]');if(btn&&nb)btn.disabled=nb.disabled;}}}});
 document.addEventListener('change',e=>{const i=e.target.closest('select[data-dl]');if(i&&S.ui.duel){S.ui.duel.m=i.value;duelModalRefresh();}});

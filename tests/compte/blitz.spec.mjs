@@ -101,3 +101,24 @@ test('spectateur : la salle vit sans rien écrire ; le mode Démo ne parle pas a
   expect(await lire(demo, () => !!S.bz.royale)).toBe(true);
   await ctx.close();
 });
+
+test('chat du Blitz : relié au serveur ; l’historique (phrases du Blitz dites par les bots) s’affiche, on y écrit, on y reçoit en direct', async ({ page }) => {
+  const BOT = '33333333-3333-4333-8333-333333333333';
+  const FICHE = { n: 'maxou_bot', t: 2, d: 1, tone: 1, color: '#13804F', photo: '', bio: '', profit: 0, acc: 0, bets: 4, fol: 0, bot: true, pub: 1 };
+  const chat = { blitz: [{ id: 'b41', u: BOT, k: 'msg', text: '', at: T0 - 120000, tpl: { g: 'Z', i: 2 } }, { id: 'b42', u: BOT, k: 'msg', text: '', at: T0 - 60000, tpl: { g: 'Z', i: 10003 } }] };
+  const { erreurs } = await ouvrir(page, { mode: 'compte', hash: '#blitz', horloge: T0 + 30000, faux: { fiches: { [BOT]: FICHE }, chat, etat: { me: { balance: 500 }, prefs: { v: 1, tmode: 'all' } } } });
+  const fil = page.locator('.feed[data-room="blitz"]');
+  const phrases = await lire(page, () => [BZ_LINES[2], BZ_LINES[10003 % BZ_LINES.length]]);
+  await expect(fil.locator('.msg', { hasText: phrases[0] })).toHaveCount(1);                       // gabarit « Z » composé par l'écran
+  await expect(fil.locator('.msg', { hasText: phrases[1] })).toHaveCount(1);
+  expect(await lire(page, () => __fakeSB.journal().filter(c => c.kind === 'rpc' && c.name === 'api_chat_history').map(c => c.args.p_room))).toContain('blitz');
+  expect(await lire(page, () => API.topics().filter(t => /blitz/.test(t)))).toEqual(['salon:blitz']);
+  const champ = page.locator('.composer input[data-in="blitz"]');
+  await champ.fill('Qui joue ce Blitz ?'); await champ.press('Enter');
+  await expect(fil.locator('.msg.mine', { hasText: 'Qui joue ce Blitz ?' })).toHaveCount(1);
+  expect(await lire(page, () => __fakeSB.journal().filter(c => c.kind === 'rpc' && c.name === 'api_chat_send').map(c => c.args))).toEqual([{ p_room: 'blitz', p_text: 'Qui joue ce Blitz ?' }]);
+  await expect(toast(page, 'Coming soon for accounts')).toHaveCount(0);
+  await page.evaluate(([bot, fiche]) => __fakeSB.emit('salon:blitz', 'msg', { id: 'b43', u: bot, k: 'msg', text: '', at: Date.now(), tpl: { g: 'Z', i: 0 }, f: fiche }), [BOT, FICHE]);
+  await expect(fil.locator('.msg', { hasText: await lire(page, () => BZ_LINES[0]) })).toHaveCount(1);
+  expect(erreurs).toEqual([]);
+});

@@ -209,3 +209,69 @@ I18N_ADD("he",{
 "Trop d’ordres en attente : annules-en un avant d’en placer un autre.":"יותר מדי הוראות ממתינות: בטל אחת לפני שתציב אחרת.",
 "Ordre annulé : le marché {0} est résolu.":"ההוראה בוטלה: השוק {0} הוכרע."
 });
+I18N_ADD("en",{
+"Tu suis déjà 500 joueurs : c’est le maximum.":"You already follow 500 players: that is the maximum."
+});
+I18N_ADD("he",{
+"Tu suis déjà 500 joueurs : c’est le maximum.":"אתה כבר עוקב אחרי 500 שחקנים: זה המקסימום."
+});
+I18N_ADD("en",{
+"Tu as déjà partagé cette mise aujourd’hui.":"You already shared this bet today.",
+"Cette mise n’est plus disponible.":"This bet is no longer available."
+});
+I18N_ADD("he",{
+"Tu as déjà partagé cette mise aujourd’hui.":"כבר שיתפת את ההימור הזה היום.",
+"Cette mise n’est plus disponible.":"ההימור הזה כבר לא זמין."
+});
+I18N_ADD("en",{
+"Ce message n’est plus disponible.":"This message is no longer available.",
+"Pas si vite : attends un peu avant de réagir encore.":"Not so fast: wait a moment before reacting again."
+});
+I18N_ADD("he",{
+"Ce message n’est plus disponible.":"ההודעה הזו כבר לא זמינה.",
+"Pas si vite : attends un peu avant de réagir encore.":"לא כל כך מהר: חכה רגע לפני שתגיב שוב."
+});
+I18N_ADD("en",{
+"Le duel de stack contre ce joueur n’est pas encore disponible : choisis un autre adversaire.":"Stack duels against this player aren’t available yet: pick another opponent."
+});
+I18N_ADD("he",{
+"Le duel de stack contre ce joueur n’est pas encore disponible : choisis un autre adversaire.":"דו־קרב סטאק מול השחקן הזה עדיין לא זמין: בחר יריב אחר."
+});
+I18N_ADD("en",{
+"Tu as déjà invité ce joueur aujourd’hui.":"You already invited this player today.",
+"Ton rôle dans le clan ne permet pas cette action.":"Your role in the clan doesn’t allow this.",
+"Tu es maintenant officier du clan {0}.":"You are now an officer of clan {0}.",
+"Tu as été exclu du clan {0}.":"You were kicked from clan {0}.",
+"{0} t’invite à rejoindre son clan. Code d’invitation : {1}.":"{0} invites you to join their clan. Invite code: {1}.",
+"Invitation envoyée à {0}":"Invitation sent to {0}",
+"Il rejoindra le clan s’il le souhaite, avec le code d’invitation.":"They can join the clan if they wish, with the invite code."
+});
+I18N_ADD("he",{
+"Tu as déjà invité ce joueur aujourd’hui.":"כבר הזמנת את השחקן הזה היום.",
+"Ton rôle dans le clan ne permet pas cette action.":"התפקיד שלך בקלאן לא מאפשר את הפעולה הזו.",
+"Tu es maintenant officier du clan {0}.":"אתה עכשיו קצין בקלאן {0}.",
+"Tu as été exclu du clan {0}.":"הורחקת מהקלאן {0}.",
+"{0} t’invite à rejoindre son clan. Code d’invitation : {1}.":"{0} מזמין אותך להצטרף לקלאן שלו. קוד הזמנה: {1}.",
+"Invitation envoyée à {0}":"ההזמנה נשלחה אל {0}",
+"Il rejoindra le clan s’il le souhaite, avec le code d’invitation.":"הוא יוכל להצטרף לקלאן אם ירצה, עם קוד ההזמנה."
+});
+I18N_ADD("en",{
+"Une guerre est déjà en cours.":"A war is already under way.",
+"Aucune guerre en cours.":"No war under way.",
+"Tu participes déjà à cette guerre.":"You’re already in this war."
+});
+I18N_ADD("he",{
+"Une guerre est déjà en cours.":"כבר מתנהלת מלחמה.",
+"Aucune guerre en cours.":"אין מלחמה כרגע.",
+"Tu participes déjà à cette guerre.":"אתה כבר משתתף במלחמה הזו."
+});
+I18N_ADD("en",{
+"Cette analyse ne peut pas être partagée telle quelle.":"This analysis can’t be shared as it is.",
+"Analyse trop lourde pour être partagée : réduis la période affichée ou le nombre d’indicateurs.":"This analysis is too heavy to share: show a shorter period or fewer indicators.",
+"Tu as déjà partagé 12 analyses en 24 heures. Reviens un peu plus tard.":"You’ve already shared 12 analyses in 24 hours. Come back a little later."
+});
+I18N_ADD("he",{
+"Cette analyse ne peut pas être partagée telle quelle.":"אי אפשר לשתף את הניתוח הזה כמו שהוא.",
+"Analyse trop lourde pour être partagée : réduis la période affichée ou le nombre d’indicateurs.":"הניתוח כבד מדי לשיתוף: הצג תקופה קצרה יותר או פחות אינדיקטורים.",
+"Tu as déjà partagé 12 analyses en 24 heures. Reviens un peu plus tard.":"כבר שיתפת 12 ניתוחים ב-24 שעות. חזור קצת מאוחר יותר."
+});

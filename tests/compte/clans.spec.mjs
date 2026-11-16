@@ -17,7 +17,7 @@ test('l’annuaire de l’écran est celui que le serveur a reçu : mêmes clans
   expect(await lire(page, () => CLANS.filter(c => /^c\d+$/.test(c.id)).map(c => ({ id: c.id, tag: c.tag, access: c.access, minRank: c.minRank, div: c.div, n: c.n, code: clanCode(c) })))).toEqual(ANNUAIRE);
 });
 
-test('rejoindre un clan ouvert puis le quitter : appartenance tenue par le serveur, tag à côté du pseudo, attente de 7 jours ; guerres annoncées indisponibles', async ({ page }) => {
+test('rejoindre un clan ouvert puis le quitter : appartenance tenue par le serveur, tag à côté du pseudo, attente de 7 jours ; un simple membre ne déclare pas la guerre', async ({ page }) => {
   const { erreurs } = await ouvrir(page, { mode: 'compte', hash: '#clan-c1', faux: { etat: { me: ARGENT } } });
   expect(await monClan(page)).toBeNull();
   await page.locator('[data-a="cl-join"]').first().click();
@@ -28,7 +28,7 @@ test('rejoindre un clan ouvert puis le quitter : appartenance tenue par le serve
   await page.reload(); await expect(page.locator('#view > *').first()).toBeAttached();
   expect(await monClan(page)).toEqual({ id: 'c1', role: 'membre' });                              // tout vient du serveur
   await page.evaluate(() => { const b = document.createElement('button'); b.dataset.a = 'cl-war'; document.body.appendChild(b); b.click(); b.remove(); });
-  await expect(toast(page, 'Coming soon for accounts')).toBeVisible();                            // guerres de clans : pas encore pour les comptes
+  await expect(toast(page, 'Your role in the clan doesn’t allow this.')).toBeVisible();           // déclarer la guerre : le chef seulement, refusé par le serveur
   await page.locator('[data-a="cl-leave"]').first().click();
   await page.locator('[data-a="cl-leave-do"]').click();
   await expect(toast(page, 'You left')).toBeVisible();

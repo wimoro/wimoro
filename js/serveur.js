@@ -75,6 +75,11 @@ const ERR_TXT={
  clan_deja:()=>_t("Tu es déjà dans un clan."),
  clan_attente:()=>{const j=Math.max(1,Math.ceil(clanLeaveWait()/86400e3));return _t("Tu as quitté un clan il y a moins de {0} jours : encore {1} jour{2}.",[CLAN.LEAVE_WAIT_D,j,j>1?'s':'']);},
  clan_complet:()=>_t("{0} membres maximum.",[CLAN.MAX]),
+ deja_invite:()=>_t("Tu as déjà invité ce joueur aujourd’hui."),
+ role_insuffisant:()=>_t("Ton rôle dans le clan ne permet pas cette action."),
+ guerre_en_cours:()=>_t("Une guerre est déjà en cours."),
+ guerre_absente:()=>_t("Aucune guerre en cours."),
+ guerre_deja:()=>_t("Tu participes déjà à cette guerre."),
  compte_trop_recent:()=>_t("Ton compte doit avoir plus de {0} jours ({1} aujourd’hui).",[CLAN.MIN_AGE_D,accountAgeD()]),
  clan_nom_invalide:()=>_t("3 à 28 caractères."),
  clan_tag_invalide:()=>_t('3 ou 4 lettres ou chiffres.'),
@@ -84,6 +89,11 @@ const ERR_TXT={
  stop_invalide:()=>_t("Le stop loss doit être sous le prix actuel."),
  tp_invalide:()=>_t("Le take profit doit être au-dessus du prix actuel."),
  seuil_absent:()=>_t("Indique au moins un seuil."),
+ trop_de_suivis:()=>_t("Tu suis déjà 500 joueurs : c’est le maximum."),
+ deja_partage:()=>_t("Tu as déjà partagé cette mise aujourd’hui."),
+ mise_indisponible:()=>_t("Cette mise n’est plus disponible."),
+ message_indisponible:()=>_t("Ce message n’est plus disponible."),
+ trop_de_reactions:()=>_t("Pas si vite : attends un peu avant de réagir encore."),
  duel_indisponible:()=>_t("Ce duel n’est plus disponible."),
  cote_indisponible:()=>_t("La cote du marché ne permet pas ce duel pour l’instant."),
  trop_de_duels:()=>_t("Tu as déjà trop de duels en attente de réponse."),
@@ -97,8 +107,12 @@ const ERR_TXT={
  message_trop_long:()=>_t("Message trop long (280 caractères au plus)."),
  salon_indisponible:()=>_t("Ce salon n’est pas encore disponible avec ton compte."),
  pas_amis:()=>_t("Vous devez être amis pour vous écrire."),
+ analyse_invalide:()=>_t("Cette analyse ne peut pas être partagée telle quelle."),
+ analyse_trop_lourde:()=>_t("Analyse trop lourde pour être partagée : réduis la période affichée ou le nombre d’indicateurs."),
+ trop_d_analyses:()=>_t("Tu as déjà partagé 12 analyses en 24 heures. Reviens un peu plus tard."),
  rang_insuffisant:()=>_t("Ton rang ne permet pas encore cette action."),
  joueur_inconnu:()=>_t("Ce joueur est introuvable."),
+ stack_joueur_reel:()=>_t("Le duel de stack contre ce joueur n’est pas encore disponible : choisis un autre adversaire."),
  demande_absente:()=>_t("Cette demande d’ami n’existe plus."),
  trop_de_demandes:()=>_t("Trop de demandes d’ami d’un coup. Réessaie dans une heure."),
  mises_fermees:()=>_t("La prochaine manche arrive dans quelques secondes."),
@@ -111,10 +125,8 @@ const srvErreur=e=>{if(e&&e.code==='session'){srvSessionPerdue();return;}if(e&&e
 /* ----- Ce qui n'est pas encore relié au serveur est clairement indisponible en mode serveur -----
    La liste se vide au fil des lots (voir docs/PLAN.md). Le test tests/compte/garde.spec.mjs vérifie qu'aucune action
    qui touche au solde, à l'XP ou à un état partagé n'est exécutée localement quand le serveur fait autorité. */
-const SRV_BLOQUE=new Set(('share-pick '
- +'stk-create stack-open '
- +'sr-share cl-war-join cl-sim cl-share cl-promote cl-kick cl-invite cl-call-do cl-war cl-call-open '
- +'pro-sh-send pro-share follow-user follow-bet follow-pbet share react '
+const SRV_BLOQUE=new Set((''
+ +'cl-sim '
  +'wallet wallet-modal demo-login demo-rank demo-rank-open demo-rank-reset').split(/\s+/));
 const SRV_FORMS_BLOQUE=new Set([]);
 const srvBientot=()=>toast({tone:'amber',icon:'info',force:true,title:_t("Bientôt disponible avec ton compte"),text:_t("Cette fonction marche déjà en mode démo. Elle arrive pour les comptes.")});
@@ -135,12 +147,17 @@ const NOTIF_T={
  badge:p=>_t("Badge débloqué : {0}.",[badgeNom(p.id)]),
  bet_placed:p=>_t("Pari placé : {0} sur {1}, {2}.",[F.usd(+p.amt),p.s==='oui'?_t("Oui"):_t("Non"),MK[p.m]?MK[p.m].short:p.m]),
  marche_resolu:p=>+p.pay>0?_t("Marché résolu : {0}. Tu gagnes {1}.",[MK[p.m]?MK[p.m].short:p.m,F.usd(+p.pay)]):_t("Marché résolu : {0}. Ta position {1} est perdue.",[MK[p.m]?MK[p.m].short:p.m,p.s==='oui'?_t("Oui"):_t("Non")]),
- duel_recu:p=>_t("{0} te défie : {1}, {0} dit {2} pour {3}.",[userOf(p.u).n,MK[p.m]?MK[p.m].short:p.m,p.s==='oui'?_t("Oui"):_t("Non"),F.usd0(+p.k)]),
- duel_accepte:p=>_t("{0} a accepté ton duel : {1}, cagnotte {2}.",[userOf(p.u).n,MK[p.m]?MK[p.m].short:p.m,F.usd(+p.pot)]),
- duel_decline:p=>_t("{0} a décliné ton duel sur {1}. Ta mise t’est rendue.",[userOf(p.u).n,MK[p.m]?MK[p.m].short:p.m]),
- duel_expire:p=>_t("Duel expiré sans réponse : {0}. Ta mise t’est rendue.",[MK[p.m]?MK[p.m].short:p.m]),
- duel_gagne:p=>_t("{0} contre {1} : {2}.",[_t("Duel gagné"),userOf(p.u).n,MK[p.m]?MK[p.m].short:p.m]),
- duel_perdu:p=>_t("{0} contre {1} : {2}.",[_t("Duel perdu"),userOf(p.u).n,MK[p.m]?MK[p.m].short:p.m]),
+ duel_recu:p=>_t("{0} te défie : {1}, {0} dit {2} pour {3}.",[userOf(p.u).n,srvDuelNom(p),srvDuelCamp(p,p.s),F.usd0(+p.k)]),
+ duel_accepte:p=>_t("{0} a accepté ton duel : {1}, cagnotte {2}.",[userOf(p.u).n,srvDuelNom(p),F.usd(+p.pot)]),
+ duel_decline:p=>_t("{0} a décliné ton duel sur {1}. Ta mise t’est rendue.",[userOf(p.u).n,srvDuelNom(p)]),
+ duel_expire:p=>_t("Duel expiré sans réponse : {0}. Ta mise t’est rendue.",[srvDuelNom(p)]),
+ duel_nul:p=>_t("Duel annulé : break even sur {0}, les deux mises sont rendues.",[srvDuelEstEclair(p.m)&&GM[String(p.m).slice(6)]?GM[String(p.m).slice(6)].name:srvDuelNom(p)]),
+ stack_lance:p=>_t("Duel de stack lancé contre {0} : {1} chacun, {2} jetons, une semaine.",[userOf(p.u).n,F.usd0(+p.k),DUEL.STACK_CHIPS]),
+ stack_gagne:p=>_t("Duel de stack gagné contre {0} : +{1}.",[userOf(p.u).n,F.usd(+p.gain)]),
+ stack_perdu:p=>_t("Duel de stack perdu contre {0}.",[userOf(p.u).n]),
+ stack_nul:()=>_t("Duel de stack : égalité, buy-in rendu."),
+ duel_gagne:p=>_t("{0} contre {1} : {2}.",[_t("Duel gagné"),userOf(p.u).n,srvDuelNom(p)]),
+ duel_perdu:p=>_t("{0} contre {1} : {2}.",[_t("Duel perdu"),userOf(p.u).n,srvDuelNom(p)]),
  prop_vote:p=>_t("Ta proposition « {0} » est en vote.",[p.q||'']),
  prop_live:p=>_t("Ton pari « {0} » est en ligne.",[p.q||'']),
  copie_debut:p=>_t("Tu copies maintenant {0} (budget {1}, {2}).",[userOf(p.u).n,F.usd0(+p.budget),cModeTxt({mode:p.mode,pct:+p.pct,cap:+p.cap,per:+p.per})]),
@@ -161,6 +178,14 @@ const NOTIF_T={
  ordre_annule:p=>p.why==='closed'?_t("Ordre annulé : le marché {0} est résolu.",[MK[p.m]?MK[p.m].short:p.m])+(+p.rendu>0?' '+_t("Le montant réservé est de retour sur ton solde."):'')
   :`${_t("Ordre de vente annulé")}. ${_t("Tu n’as plus de parts {0} sur {1}.",[sideTxt(p.s),MK[p.m]?MK[p.m].short:p.m])}`,
  protection:p=>_t("{0} sur {1} : {2} parts {3} vendues à {4}, {5}.",[p.k==='stop'?_t("Stop loss déclenché"):_t("Take profit atteint"),MK[p.m]?MK[p.m].short:p.m,F.d1(+p.sh),sideTxt(p.s),F.c1(+p.avg),F.signed(+p.pnl)]),
+ clan_officier:p=>_t("Tu es maintenant officier du clan {0}.",[CK[p.id]?CK[p.id].name:'']),
+ clan_exclu:p=>_t("Tu as été exclu du clan {0}.",[CK[p.id]?CK[p.id].name:'']),
+ clan_invite:p=>_t("{0} t’invite à rejoindre son clan. Code d’invitation : {1}.",[userOf(p.u).n,p.code||'']),
+ guerre_won:p=>_t("Guerre gagnée contre {0}",[srvClanNom(p.foe)])+' : '+_t("+{0} pour toi, cagnotte {1} partagée entre les participants.",[F.usd(+p.gain),F.usd0(+p.pot)]),
+ guerre_lost:p=>_t("Guerre perdue contre {0}",[srvClanNom(p.foe)])+' : '+_t("{0} points contre {1}. La cagnotte va aux vainqueurs.",[p.a,p.b]),
+ guerre_draw:p=>_t("Égalité")+' '+_t("contre {0}",[srvClanNom(p.foe)]),
+ clan_appel_suivi:p=>MK[p.m]?_t("{0} membres ont suivi ton appel de clan sur {1}.",[p.n,MK[p.m].short]):'',
+ mise_suivie:p=>_t("{0} a suivi ta mise",[p.n||userOf(p.u).n]),
  parrain_bonus:p=>_t("Bonus de parrainage : {0} offerts grâce au code {1}.",[F.usd0(+p.gain),p.code||'']),
  parrain_inscrit:p=>_t("{0} s’est inscrit avec ton code de parrainage.",[p.n||'']),
  parrain_paye:p=>_t("Parrainage : {0} a placé son premier pari, {1} pour toi.",[p.n||'',F.usd0(+p.gain)]),
@@ -190,7 +215,10 @@ const rgDe=r=>({lim:{day:+(r.lim||{}).day||0,week:+(r.lim||{}).week||0,month:+(r
 const histSerie=h=>{const [,gid,won,step,mult]=h.q.split('|'),nom=GM[gid]?GM[gid].name:gid;
  return {k:'serie',q:h.win?_t("La Série {0} : {1} sur {1}, encaissé à ×{2}",[nom,won,F.d1(+mult)]):_t("La Série {0} : {1} sur {2}",[nom,won,step]),s:h.s,win:!!h.win,pnl:+h.pnl,at:h.at};};
 const histBlitz=h=>{const [,res,n]=h.q.split('|');return {k:'blitz',q:res==='g'?_t("Blitz Royale : survivant sur {0}",[F.int(+n)]):_t("Blitz Royale : éliminé"),s:h.s,win:!!h.win,pnl:+h.pnl,at:h.at};};
-const histDuel=h=>{const [,u,m]=h.q.split('|');return {k:'duel',q:_t("Duel contre {0} : {1}",[userOf(u).n,MK[m]?MK[m].short:m]),s:h.s,win:!!h.win,pnl:+h.pnl,at:h.at};};
+/* le nom d'un duel dans une notification ou l'historique : son marché, ou son jeu éclair et sa manche */
+const srvDuelNom=p=>typeof duelShort==='function'&&String(p.m||'').startsWith('flash:')?duelShort({m:p.m,round:+p.r||0}):(MK[p.m]?MK[p.m].short:p.m);
+const srvDuelCamp=(p,s)=>typeof duelSideTxt==='function'?duelSideTxt({m:p.m},s):(s==='oui'?_t("Oui"):_t("Non"));
+const histDuel=h=>{const [,u,m,r]=h.q.split('|');return {k:'duel',q:_t("Duel contre {0} : {1}",[userOf(u).n,srvDuelNom({m,r})]),s:h.s,win:!!h.win,pnl:+h.pnl,at:h.at};};
 const histCombo=h=>{const [,res,n,x]=h.q.split('|');
  return {k:'combo',q:res==='c'?_t("Combiné {0} sélections, encaissé à {1}",[n,F.usd(+x)]):res==='g'?_t("Combiné {0} sélections gagné à ×{1}",[n,F.d2(+x)]):_t("Combiné {0} sélections : perdu sur {1}",[n,MK[x]?MK[x].short:x]),s:h.s,win:!!h.win,pnl:+h.pnl,at:h.at};};
 const histDe=h=>{if(typeof h.q==='string'&&h.q.startsWith('combo|'))return histCombo(h);if(typeof h.q==='string'&&h.q.startsWith('duel|'))return histDuel(h);if(h.k==='flash'&&typeof h.q==='string'&&h.q.startsWith('serie|'))return histSerie(h);if(h.k==='flash'&&typeof h.q==='string'&&h.q.startsWith('blitz|'))return histBlitz(h);if(h.k==='flash'&&typeof h.q==='string'&&h.q.startsWith('eclair|')){const [,gid,r]=h.q.split('|'),d=GM[gid];
@@ -228,7 +256,8 @@ function hydrater(e){
  srvProps(e.props,me);                                                        /* propositions de marché : les siennes, et celles à voter */
  if(e.ref){me.refCode=e.ref.code||'';me.refBy=e.ref.by||undefined;                         /* parrainage : code, parrain et filleuls viennent du serveur */
   me.referrals=(e.ref.list||[]).map(r=>({n:r.n,at:+r.at,st:r.st==='done'?'done':'pending',paid:+r.paid||0,doneAt:r.doneAt?+r.doneAt:undefined}));}
- if(e.duels){srvFiches(e.duels.users);me.duels=(e.duels.liste||[]).map(x=>duelDe(x,e.uid));}   /* au démarrage, l'identifiant du joueur vient de l'état lui-même */
+ if(e.duels){srvFiches(e.duels.users);me.duels=(e.duels.liste||[]).map(x=>duelDe(x,e.uid));}
+ if(e.stacks){srvFiches(e.stacks.users);me.stacks=(e.stacks.liste||[]).map(stackDe);}   /* au démarrage, l'identifiant du joueur vient de l'état lui-même */
  me.notifs=(e.notifs||[]).map(notifDe);me.missions=(e.missions||[]).map(missionDe);me.badges=(e.badges||[]).slice();
  me.friends=(e.friends||[]).slice();me.freqIn=(e.freqIn||[]).slice();me.freqOut=(e.freqOut||[]).slice();me.following=(e.following||[]).slice();
  const pr=e.prefs||{};for(const k of SRV_PREFS)if(pr[k]!==undefined)me[k]=pr[k];
@@ -475,19 +504,47 @@ function srvChercher(texte){
    On ne s'abonne qu'aux salons affichés (srvSalons, appelé après chaque rendu). À l'ouverture d'un salon : son historique,
    puis les messages en direct. Chaque message diffusé porte la fiche de son auteur (pseudo, rang) : pas d'autre requête. */
 const SRV_SALONS=new Set(),SRV_MSG_VUS=new Set();
-const srvSalonOuvert=r=>r==='general'||r.startsWith('m:')||r.startsWith('dm:');
+/* le salon de son propre clan : réservé aux membres, diffusé sur un sujet privé (« clan:<identifiant> ») */
+const srvSalonClan=r=>{const c=typeof myClan==='function'?myClan():null;return !!c&&r==='clan:'+c.id;};
+/* le salon VIP : réservé au rang Ascendant et au-dessus, diffusé lui aussi sur un sujet privé (« vip ») */
+const srvSalonVip=r=>r==='vip'&&can('vip');
+const srvSujetPrive=r=>r.startsWith('clan:')||r==='vip';
+const srvSujet=r=>srvSujetPrive(r)?r:'salon:'+r;
+const srvSalonOuvert=r=>r==='general'||r==='blitz'||r.startsWith('m:')||r.startsWith('dm:')||srvSalonClan(r)||srvSalonVip(r);   /* « blitz » : le chat du Blitz, public */
 const srvPrive=r=>r.startsWith('dm:');
 const srvMoi=()=>String(S.auth.key||'').slice(4);
-function srvChatAjouter(rid,m){
- if(!m||SRV_MSG_VUS.has(m.id))return;SRV_MSG_VUS.add(m.id);
+function srvChatAjouter(rid,m,mes){
+ if(!m)return;
+ if(SRV_MSG_VUS.has(m.id)){srvChatRelu(rid,m,mes);return;}SRV_MSG_VUS.add(m.id);
  if(m.f)srvFiches({[m.u]:m.f});
  const text=m.tpl?srvBotTexte(m.tpl):m.text;if(m.tpl&&!text)return;             /* gabarit sur un marché inconnu de l'écran : ignoré */
- addMsg(rid,mkMsg({u:m.u===srvMoi()?'me':m.u,k:'msg',text,at:m.at,sid:m.id}));
+ const moi=m.u===srvMoi()?'me':m.u;
+ if(m.k==='evt'){const e=m.ev||{},k=MK[e.m],f=CK[e.foe];
+  const t=e.code==='appel'&&k?_t("Appel de clan : {0}, côté {1}. Chacun suit avec sa mise, dans ses limites.",[k.short,e.s==='oui'?_t("Oui"):_t("Non")])
+   :e.code==='guerre'&&f?_t("Guerre de clans contre {0} [{1}] ! 48 h pour marquer des points. Buy-in {2}.",[f.name,f.tag,F.usd0(+e.k)]):'';
+  if(t)addMsg(rid,mkMsg({k:'evt',text:t,at:m.at,sid:m.id}));return;}
+ if(m.k==='ana'){const a=m.ana||{},id=+a.ana;if(!id||!MK[a.m])return;                    /* analyse partagée : le message porte une référence, l'instantané se lit à part */
+  addMsg(rid,mkMsg({u:moi,k:'ana',text:m.text||'',ana:SRV_ANA.get(id)||null,anaId:id,r:srvReactions(m.r),my:srvMiennes(mes,m.id),at:m.at,sid:m.id}));
+  if(!SRV_ANA.has(id))srvAnaDemander(id,m.id);return;}
+ if(m.k==='bet'){if(!m.bet||!MK[m.bet.m])return;                                /* mise partagée : une carte, avec son nombre de suivis */
+  addMsg(rid,mkMsg({u:moi,k:'bet',text:'',bet:{m:m.bet.m,s:m.bet.s,amt:+m.bet.amt,price:+m.bet.price},followers:m.fc|0,r:srvReactions(m.r),my:srvMiennes(mes,m.id),at:m.at,sid:m.id}));return;}
+ addMsg(rid,mkMsg({u:moi,k:'msg',text,r:srvReactions(m.r),my:srvMiennes(mes,m.id),at:m.at,sid:m.id}));
 }
+/* message déjà à l'écran, relu dans l'historique (salon rouvert) : ses compteurs sont remis à jour */
+function srvChatRelu(rid,m,mes){
+ if(!mes)return;const R=S.rooms[rid],x=R&&R.msgs.find(y=>y.sid===m.id);if(!x)return;
+ x.r=srvReactions(m.r);x.my=srvMiennes(mes,m.id);refreshReacts(x);
+ if(x.k==='bet'){x.followers=Math.max(x.followers|0,m.fc|0);setFc(x);}
+}
+/* le serveur annonce qu'une mise partagée vient d'être suivie : son compteur est mis à jour sur place */
+function srvChatSuivis(rid,d){const R=S.rooms[rid];if(!R||!d)return;const x=R.msgs.find(y=>y.sid===d.id);if(x){x.followers=Math.max(x.followers|0,d.fc|0);setFc(x);}}   /* un compteur de suivis ne fait que monter */
 function srvChatRetirer(rid,id){const R=S.rooms[rid];if(!R)return;const i=R.msgs.findIndex(x=>x.sid===id);if(i<0)return;R.msgs.splice(i,1);render(false);}
 /* Message d'un bot : le serveur envoie un gabarit et ses paramètres ({g,i,m,p,s}) ; la phrase est composée ici, dans la
    langue du lecteur, avec les mêmes listes de phrases que le mode Démo. */
 function srvBotTexte(t){
+ if(t.g==='A'){const L=typeof PRO_REPLY!=='undefined'?PRO_REPLY:[],n=String(t.n||'');return L.length&&n?'@'+n+' '+L[Math.abs(t.i|0)%L.length]():'';}   /* réponse à une analyse partagée */
+ if(t.g==='Z'){const L=typeof BZ_LINES!=='undefined'?BZ_LINES:[];return L.length?L[Math.abs(t.i|0)%L.length]:'';}   /* chat du Blitz : les phrases du Blitz de la démo */
+ if(t.g==='C'){const L=typeof CLAN_ACCUEIL!=='undefined'?CLAN_ACCUEIL:[];return L.length?L[Math.abs(t.i|0)%L.length]():'';}   /* accueil d'un salon de clan */
  const m=MK[t.m];if(!m)return '';
  const lignes=t.g==='G'?GLOBAL_LINES:(MLINES[t.m]||[]).concat(GEN_LINES),p=Number(t.p)||0;
  return lignes[Math.abs(t.i|0)%lignes.length].replace(/\{id\}/g,m.id).replace(/\{pct\}/g,F.pct(p)).replace(/\{side\}/g,t.s?_t("Oui"):_t("Non"))
@@ -497,9 +554,10 @@ function srvSalons(){
  const vus=new Set(Array.from(document.querySelectorAll('.feed[data-room]')).map(f=>f.dataset.room).filter(srvSalonOuvert));
  if(document.querySelector('[data-hcmini]'))vus.add('general');
  for(const r of vus)if(!SRV_SALONS.has(r)){SRV_SALONS.add(r);srvSalonOuvrir(r);}
- for(const r of Array.from(SRV_SALONS))if(!vus.has(r)){SRV_SALONS.delete(r);if(!srvPrive(r))API.unsubscribe('salon:'+r);}
+ for(const r of Array.from(SRV_SALONS))if(!vus.has(r)){SRV_SALONS.delete(r);if(!srvPrive(r))API.unsubscribe(srvSujet(r));}
  if((S.ui.route||'')==='chat'&&!srvDmListeVue){srvDmListeVue=true;srvDmListe();}
  if((S.ui.route||'')==='classement')srvClassement();
+ if((S.ui.route||'')==='duels')srvStacksRelire();
 }
 /* classement : les 50 meilleures fiches viennent du serveur et remplissent l'annuaire (relues au plus une fois par minute) */
 let srvClassementVu=0;
@@ -513,15 +571,65 @@ let srvDmListeVue=false;
 async function srvDmListe(){try{const r=await API.call('api_dm_list');srvFiches(r.users);(r.ids||[]).forEach(u=>room('dm:'+u));if((r.ids||[]).length&&(S.ui.route||'')==='chat')render(false);}catch(e){console.warn('[srv] conversations privées',e.code);}}
 async function srvSalonOuvrir(r){
  try{
-  if(srvPrive(r)){const h=await API.call('api_dm_history',{p_user:r.slice(3)});srvFiches(h.users);(h.msgs||[]).forEach(m=>srvChatAjouter(r,m));return;}
-  await API.subscribe('salon:'+r,(evt,d)=>{if(evt==='msg')srvChatAjouter(r,d);else if(evt==='del')srvChatRetirer(r,d&&d.id);});
+  if(srvPrive(r)){const h=await API.call('api_dm_history',{p_user:r.slice(3)});srvFiches(h.users);(h.msgs||[]).forEach(m=>srvChatAjouter(r,m,h.mes||{}));return;}
+  await API.subscribe(srvSujet(r),(evt,d)=>{if(evt==='msg')srvChatAjouter(r,d);else if(evt==='del')srvChatRetirer(r,d&&d.id);else if(evt==='fc')srvChatSuivis(r,d);else if(evt==='re')srvChatReactions(r,d);},srvSujetPrive(r));
   const h=await API.call('api_chat_history',{p_room:r});
-  srvFiches(h.users);(h.msgs||[]).forEach(m=>srvChatAjouter(r,m));
+  srvFiches(h.users);(h.msgs||[]).forEach(m=>srvChatAjouter(r,m,h.mes||{}));
  }catch(e){SRV_SALONS.delete(r);console.warn('[srv] salon indisponible',r,e.code);}
+}
+/* ----- Mode Pro : analyses partagées dans les chats -----
+   Le message de chat ne porte qu'une référence ; l'instantané (bougies, indicateurs, tracés) se lit à part, par lots de six.
+   C'est un contenu écrit par un autre joueur : le serveur l'a déjà remis au propre, et l'écran le refait ici avant de le
+   dessiner (srvAnaPropre) : seuls les champs connus sont repris, avec les mêmes garde-fous que les réglages du joueur. */
+const SRV_ANA=new Map(),SRV_ANA_FILE=[],SRV_ANA_ATTENTE=new Set();let srvAnaT=0;
+function srvAnaPropre(s){
+ if(!s||typeof s!=='object')return null;const n=s.n|0,mk=MK[s.m];if(!(n>=1&&n<=4000)||!mk||!PIVK[s.iv])return null;
+ const num=v=>typeof v==='number'&&isFinite(v)?v:null,serie=a=>Array.isArray(a)&&a.length===n?a.map(num):null,nom=v=>String(v||'').replace(/[^\w-]/g,'').slice(0,24);
+ const o=serie(s.o),h=serie(s.h),l=serie(s.l),c=serie(s.c),vol=serie(s.vol);if(!o||!h||!l||!c||!vol)return null;
+ const inds=[];for(const d of Array.isArray(s.inds)?s.inds.slice(0,24):[]){if(!d||typeof d!=='object'||!PIND.hasOwnProperty(d.k))continue;
+  const f=pindFix({id:nom(d.id),k:d.k,p:Object.assign({},d.p&&typeof d.p==='object'?d.p:{}),c:d.c,w:d.w});if(!f)continue;
+  const vals={};let ok=true;for(const k of d.k==='bb'||d.k==='macd'?['a','b','c']:['a']){const v=serie(d.vals&&d.vals[k]);if(!v){ok=false;break;}vals[k]=v;}
+  if(ok)inds.push({id:f.id,k:f.k,p:f.p,c:f.c,w:f.w,vals});}
+ const dr=[];for(const d of Array.isArray(s.dr)?s.dr.slice(0,300):[]){if(!d||typeof d!=='object')continue;
+  const t={id:nom(d.id),k:String(d.k),a:Array.isArray(d.a)?d.a.slice(0,2).map(Number):null,b:Array.isArray(d.b)?d.b.slice(0,2).map(Number):undefined,c:d.c,w:d.w,txt:typeof d.txt==='string'?d.txt:''};
+  if(proDrOk(t))dr.push({id:t.id,k:t.k,a:t.a,b:t.b,c:t.c,w:t.w,txt:t.txt});}
+ return {v:1,id:nom(s.id),m:mk.id,short:mk.short,q:mk.q,iv:s.iv,type:s.type==='courbe'?'courbe':'bougies',side:s.side==='non'?'non':'oui',at:+s.at||Date.now(),p:num(s.p),
+  ms:+s.ms>0?+s.ms:PIVK[s.iv].ms,T0:+s.T0||0,n,o,h,l,c,vol,end:isFinite(+s.end)?+s.end:n,vn:clamp(+s.vn||n,1,8000),inds,dr,txt:''};
+}
+/* l'instantané est arrivé : chaque message qui s'y réfère reçoit sa carte, redessinée sur place */
+function srvAnaPoser(id,s){SRV_ANA.set(id,s);
+ for(const rid in S.rooms)for(const x of S.rooms[rid].msgs)if(x.k==='ana'&&x.anaId===id&&!x.ana){x.ana=s;if(!s.txt)s.txt=x.text||'';
+  document.querySelectorAll('.msg[data-id="'+x.id+'"]').forEach(el=>{el.outerHTML=msgH(x);});}}
+function srvAnaDemander(id,msg){if(SRV_ANA.has(id)||SRV_ANA_ATTENTE.has(id))return;SRV_ANA_ATTENTE.add(id);SRV_ANA_FILE.push([id,msg]);clearTimeout(srvAnaT);srvAnaT=setTimeout(srvAnaCharger,60);}
+async function srvAnaCharger(){
+ const lot=SRV_ANA_FILE.splice(0,6);if(!lot.length)return;
+ try{const r=await API.call('api_ana',{p_msgs:lot.map(e=>e[1])});
+  for(const [id,msg] of lot){const s=srvAnaPropre(r.snaps&&r.snaps[msg]);if(s)srvAnaPoser(id,s);}}
+ catch(e){console.warn('[srv] analyses indisponibles',e.code);}
+ finally{lot.forEach(e=>SRV_ANA_ATTENTE.delete(e[0]));}
+ if(SRV_ANA_FILE.length)srvAnaT=setTimeout(srvAnaCharger,60);
+}
+/* partager son analyse : le serveur remet l'instantané au propre, le garde, et publie un message dans chaque salon choisi */
+let srvAnaOccupe=false;
+async function srvAnaPartager(sh,rooms){
+ if(srvAnaOccupe)return;const s=sh.snap,txt=s.txt||'';
+ const envoi={m:s.m,iv:s.iv,type:s.type,side:s.side,ms:s.ms,T0:s.T0,n:s.n,o:s.o,h:s.h,l:s.l,c:s.c,vol:s.vol,end:s.end,vn:s.vn,
+  inds:s.inds.map(d=>({k:d.k,p:d.p,c:d.c,w:d.w,vals:d.vals})),dr:s.dr.map(d=>({k:d.k,a:d.a,b:d.b,c:d.c,w:d.w,txt:d.txt||''}))};
+ if(JSON.stringify(envoi).length>390000){srvErreur({code:'analyse_trop_lourde'});return;}
+ srvAnaOccupe=true;const b=$('#ov [data-a="pro-sh-send"]');if(b)b.disabled=true;
+ try{
+  const r=await API.call('api_ana_share',{p_snap:envoi,p_rooms:rooms,p_text:txt});
+  const propre=srvAnaPropre(r.snap);
+  for(const rid of rooms){const m=r.msgs&&r.msgs[rid];if(!m)continue;if(propre&&m.ana){propre.txt=m.text||'';SRV_ANA.set(+m.ana.ana,propre);}srvChatAjouter(rid,m);}
+  if(PV.share===sh){PV.share=null;closeModal();}S.ui.room=rooms.find(x=>!x.startsWith('m:'))||rooms[0];
+  toast({tone:'blue',icon:'share',title:_t('Analyse partagée'),text:rooms.map(x=>x==='general'?_t('Chat général'):x.startsWith('m:')?_t('Chat du marché'):x.startsWith('clan:')?_t('Mon clan'):userOf(x.slice(3)).n).join(', '),href:'#chat',dur:5200});
+  srvAppliquer(r);
+ }catch(e){srvErreur(e);const b2=$('#ov [data-a="pro-sh-send"]');if(b2)b2.disabled=!proShareRooms().length;}
+ finally{srvAnaOccupe=false;}
 }
 let srvChatOccupe=false;
 async function srvChatEnvoyer(rid,inp,text){
- if(!srvSalonOuvert(rid)){srvBientot();return;}                 /* VIP, clan, privé : pas encore reliés */
+ if(!srvSalonOuvert(rid)){srvBientot();return;}                 /* clan d'un autre, salon VIP sans le rang : fermés */
  if(srvChatOccupe)return;srvChatOccupe=true;
  try{
   const r=srvPrive(rid)?await API.call('api_dm_send',{p_user:rid.slice(3),p_text:text}):await API.call('api_chat_send',{p_room:rid,p_text:text});
@@ -686,7 +794,7 @@ async function srvCopieRegler(c,action,modale){
 
 /* ----- Clans : l'appartenance, la création (frais), les candidatures et la contribution sont tenues par le serveur.
    L'annuaire des 100 clans de démonstration reste celui de l'écran (le serveur a le même : tests/fixtures/clans-demo.json) ;
-   les clans créés par des joueurs viennent du serveur et s'y ajoutent. Guerres, appels, chat de clan : indisponibles. ----- */
+   les clans créés par des joueurs viennent du serveur et s'y ajoutent. Le chat du clan est un salon réservé à ses membres (sujet privé). Guerres et appels de clan : indisponibles. ----- */
 function srvClanObjet(x,moi){
  const m=x.members||[],chefMoi=x.chief===moi;
  const c=CK[x.id]||{id:x.id,div:'bronze',roi:0,coef:1,war:null,calls:[],feed:[],wars:[],rank:20,srv:true};
@@ -701,10 +809,54 @@ function srvClan(p,me,moi){
  if(!p)return;me=me||S.me;moi=moi||srvMoi();
  srvFiches(p.users);for(const x of p.clans||[])srvClanObjet(x,moi);
  me.clan=p.mine&&CK[p.mine.id]?{id:p.mine.id,role:p.mine.role,since:+p.mine.since}:null;
+ if(me.clan)srvClanFil(CK[me.clan.id],p,me,moi);
  me.clanXP=p.mine?+p.mine.xp||0:0;me.clanVol=p.mine?{[today()]:+p.mine.jour||0}:{};me.clanSkipped=p.mine?p.mine.ecartes|0:0;
  me.clanApps=Object.assign({},p.apps||{});me.clanLeftAt=p.leftAt?+p.leftAt:0;
 }
-let srvClanOccupe=false;
+/* Le fil d'activité et les appels du clan du joueur : le serveur envoie des codes, l'écran compose les phrases de la démo. */
+function srvClanFil(c,p,me,moi){
+ const nom=u=>u===moi?(me.n||''):((USERS[u]||{}).n||''),cote=s=>s==='oui'?_t("Oui"):_t("Non");
+ const phrase=f=>{const n=nom(f.u),q=f.p||{},k=MK[q.m];
+  return f.code==='rejoint'?_t("{0} a rejoint le clan.",[n]):f.code==='quitte'?_t("{0} a quitté le clan.",[n]):f.code==='fonde'?_t("{0} a fondé le clan.",[n])
+   :f.code==='mise'?(k?_t("{0} vient de miser {1} sur {2}.",[n,F.usd0(+q.amt),k.short]):''):f.code==='officier'?_t("{0} est nommé officier.",[nom(q.u)])
+   :f.code==='exclu'?_t("{0} a été exclu du clan.",[nom(q.u)]):f.code==='invite'?_t("{0} rejoint le clan sur invitation de {1}.",[n,nom(q.par)])
+   :f.code==='appel'?(k?_t("Appel de clan : {0} épingle {1} côté {2}.",[n,k.short,cote(q.s)]):'')
+   :f.code==='guerre'?(CK[q.foe]?_t("Guerre déclarée contre {0} [{1}] : 48 h, buy-in {2} par participant.",[CK[q.foe].name,CK[q.foe].tag,F.usd0(+q.k)]):''):'';};
+ const connu=f=>!!nom(f.u)&&(!(f.p||{}).u||!!nom(f.p.u))&&(!(f.p||{}).par||!!nom(f.p.par));          /* un joueur cité n'existe plus : la ligne n'est pas affichée */
+ c.feed=(p.feed||[]).filter(connu).map(f=>({u:f.u===moi?'me':f.u,txt:phrase(f),at:+f.at})).filter(f=>f.txt);
+ c.calls=(p.calls||[]).map(k=>({id:'k'+k.id,m:k.m,s:k.s,by:k.by===moi?'me':k.by,at:+k.at,followers:Array.from({length:k.n|0},()=>'')}));
+ /* la guerre du clan : les deux camps et leurs points viennent du serveur (adversaires et membres simulés compris) */
+ const w=p.war&&CK[p.war.foe]?p.war:null,adv=w?CK[w.foe].tag.toLowerCase():'';
+ c.war=w?{id:'w'+w.id,foe:w.foe,at:+w.at,endAt:+w.endAt,pot:+w.pot,buyin:+w.buyin,status:'live',
+  mine:(w.mine||[]).map(x=>({u:x.u===moi?'me':x.u,pts:+x.pts,paid:x.u===moi?+w.buyin:undefined})),theirs:(w.theirs||[]).map(x=>({u:adv+'_'+x.i,pts:+x.pts}))}:null;
+ c.wars=(p.wars||[]).filter(x=>CK[x.foe]).map(x=>({foe:x.foe,at:+x.at,status:x.status,a:+x.a,b:+x.b,pot:+x.pot}));
+}
+const srvClanNom=id=>CK[id]?CK[id].name:'';
+/* déclarer la guerre (le chef) ; y participer (chaque membre, avec son buy-in) : tout est tenu par le serveur */
+function srvClanGuerre(){srvClanAgir('api_clan_war',{},()=>{const c=myClan();if(!c||!c.war)return;
+ toast({tone:'blue',icon:'swords',force:true,title:`${_t("Guerre déclarée contre {0}",[srvClanNom(c.war.foe)])}`,text:_t("48 h, buy-in par participant, score des 10 meilleurs.")});});}
+function srvClanGuerreRejoindre(){if(typeof rgBlocked==='function'&&rgBlocked('bet'))return;srvClanAgir('api_clan_war_join',{},()=>{const c=myClan();if(!c||!c.war)return;updateHeader();
+ toast({tone:'blue',icon:'shield',force:true,title:_t("Tu participes à la guerre"),text:`${_t("{0} dans la cagnotte de guerre (séquestre Wimoro). Tes points suivent tes mises pendant 48 h.",[F.usd0(c.war.buyin)])}`});});}
+let srvClanOccupe=false,srvClanLu=0;
+/* une action de chef ou d'officier : le serveur décide, l'écran relit le clan */
+async function srvClanAgir(nom,args,apres){
+ if(srvClanOccupe)return;srvClanOccupe=true;
+ try{const r=await API.call(nom,args);srvClan(r.clan);srvAppliquer(r);if(apres)apres(r);srvClanVue();}
+ catch(e){srvErreur(e);}
+ finally{srvClanOccupe=false;}
+}
+function srvClanInviter(u){const n=duelUserN(u);srvClanAgir('api_clan_invite',{p_user:u},r=>{
+ if(r.r==='rejoint')toast({tone:'green',icon:'userplus',title:`${_t("{0} a rejoint le clan",[n])}`,text:_t("Invitation acceptée.")});
+ else toast({tone:'blue',icon:'send',force:true,title:`${_t("Invitation envoyée à {0}",[n])}`,text:_t("Il rejoindra le clan s’il le souhaite, avec le code d’invitation.")});});}
+function srvClanAppel(m,s){srvClanAgir('api_clan_call',{p_market:m,p_side:s},()=>{closeModal();
+ toast({tone:'blue',icon:'target',force:true,title:_t("Appel de clan lancé"),text:_t("Les membres le voient en tête du fil et dans le chat.")});S.ui.cltab='activite';
+ setTimeout(srvClanRelire,14500);});}                           /* quelques secondes plus tard, des membres l'ont suivi : le serveur le dit */
+async function srvClanRelire(){
+ if(!SRV()||srvClanOccupe||!myClan())return;srvClanOccupe=true;srvClanLu=Date.now();
+ try{const r=await API.call('api_clan');srvClan(r.clan);srvAppliquer(r);srvClanVue();}
+ catch(e){if(e&&e.code==='session')srvSessionPerdue();}
+ finally{srvClanOccupe=false;}
+}
 const srvClanVue=()=>{updateHeader();if((S.ui.route||'').startsWith('clan'))render(false);};
 async function srvClanRejoindre(c,viaCode,code,err){
  if(srvClanOccupe)return;srvClanOccupe=true;
@@ -740,8 +892,9 @@ async function srvClanCreer(f,name,tag){
 }
 /* une candidature en attente : l'écran relit toutes les 3 secondes, jusqu'à la réponse de l'officier */
 async function srvClanTick(){
- if(!SRV()||srvClanOccupe||!Object.keys(S.me.clanApps||{}).length)return;
- srvClanOccupe=true;
+ const k0=myClan(),surMonClan=!!k0&&(S.ui.route||'')==='clan-'+k0.id&&Date.now()-srvClanLu>20000;
+ if(!SRV()||srvClanOccupe||(!Object.keys(S.me.clanApps||{}).length&&!surMonClan))return;
+ srvClanOccupe=true;srvClanLu=Date.now();
  try{const avant=Object.keys(S.me.clanApps),r=await API.call('api_clan');srvClan(r.clan);srvAppliquer(r);
   const k=myClan(),finies=avant.filter(id=>!(id in S.me.clanApps));
   if(k&&finies.includes(k.id))toast({tone:'green',icon:'shield',force:true,title:`${_t("Bienvenue chez {0} [{1}]",[k.name,k.tag])}`,text:_t("Ta candidature a été acceptée par un officier."),href:'#clan-'+k.id});
@@ -813,6 +966,57 @@ async function srvGardeRetirer(d){
  finally{srvOrdreOccupe=false;}
 }
 
+/* ----- Suivre un joueur : la liste est tenue par le serveur, le compteur d'abonnés de sa fiche aussi ----- */
+let srvSuivreOccupe=false;
+async function srvSuivre(u,oui){
+ if(srvSuivreOccupe)return;srvSuivreOccupe=true;
+ try{const r=await API.call('api_follow',{p_user:u,p_on:!!oui});
+  srvFiches(r.users);S.me.following=(r.following||[]).slice();srvAppliquer(r);
+  const on=S.me.following.includes(u);
+  if(on)toast({icon:'users',title:`${_t("Tu suis {0}",[userOf(u).n])}`,text:_t("Ses mises apparaîtront dans tes notifications.")});
+  $$(`[data-a="follow-user"][data-u="${u}"]`).forEach(b=>{b.textContent=on?_t("Suivi"):_t("Suivre");b.classList.toggle('b-soft',on);b.classList.toggle('b-ghost',!on);});}
+ catch(e){srvErreur(e);}
+ finally{srvSuivreOccupe=false;}
+}
+
+/* ----- Réactions sous les messages : compteurs tenus par le serveur, vus en direct par les lecteurs du salon ----- */
+const srvReactions=r=>{const o={};if(r)for(const e of REM)if(r[e]>0)o[e]=r[e]|0;return o;};
+const srvMiennes=(mes,id)=>((mes&&mes[id])||[]).filter(e=>REM.includes(e));
+const srvSalonDe=x=>Object.keys(S.rooms).find(r=>S.rooms[r].msgs.includes(x))||'';
+let srvReagit='';
+async function srvReagir(x,e){
+ const rid=srvSalonDe(x);
+ if(x.sid==null||!srvSalonOuvert(rid)){srvBientot();return;}                    /* message local, ou salon fermé à ce joueur */
+ const cle=x.id+':'+e;if(srvReagit===cle)return;srvReagit=cle;                  /* un clic à la fois sur la même réaction */
+ try{const r=await API.call('api_chat_react',{p_room:rid,p_msg:String(x.sid),p_emoji:e});x.r=srvReactions(r.r);x.my=srvMiennes({m:r.my},'m');refreshReacts(x);}
+ catch(err){srvErreur(err);}
+ finally{if(srvReagit===cle)srvReagit='';}
+}
+function srvChatReactions(rid,d){const R=S.rooms[rid];if(!R||!d)return;const x=R.msgs.find(y=>y.sid===d.id);if(x){x.r=srvReactions(d.r);refreshReacts(x);}}
+/* un joueur a réagi à mon message : une bulle, comme en mode Démo ; le point d'XP vient du serveur */
+function srvReactionRecue(d){
+ toast({icon:'smile',title:`${_t("{0} a réagi {1} à ton message",[d.n||userOf(d.u).n,REM.includes(d.e)?d.e:''])}`,text:'+1 XP',href:''});
+ srvVu=0;srvRafraichir();
+}
+
+/* ----- Mises partagées dans le chat : la carte, ses suivis et leurs XP sont tenus par le serveur ----- */
+Object.assign(SRV_TOAST,{
+ guerre_won:p=>toast({tone:'green',icon:'trophy',force:true,title:`${_t("Guerre gagnée contre {0}",[srvClanNom(p.foe)])}`,text:`${_t("+{0} pour toi, cagnotte {1} partagée entre les participants.",[F.usd(+p.gain),F.usd0(+p.pot)])}`,href:'#clan-'+p.id}),
+ guerre_lost:p=>toast({tone:'red',icon:'shield',force:true,title:`${_t("Guerre perdue contre {0}",[srvClanNom(p.foe)])}`,text:`${_t("{0} points contre {1}. La cagnotte va aux vainqueurs.",[p.a,p.b])}`,href:'#clan-'+p.id}),
+ mise_suivie:p=>toast({icon:'users',title:`${_t("{0} a suivi ta mise",[p.n||userOf(p.u).n])}`,text:'+20 XP',href:String(p.room||'').startsWith('m:')?'#marche-'+p.room.slice(2):'#chat'})
+});
+/* discret : annonce automatique après un pari (case « Annoncer ma mise ») — un refus du serveur y reste silencieux */
+async function srvPartagerMise(rid,m,s,discret){
+ if(!srvSalonOuvert(rid)){if(!discret)srvBientot();return;}                      /* dans une conversation privée aussi : la carte ne va qu'à l'ami */
+ try{const r=await API.call('api_chat_share',{p_room:rid,p_market:m,p_side:s});srvChatAjouter(rid,r.msg);srvAppliquer(r);}
+ catch(e){if(!discret)srvErreur(e);else if(e&&e.code==='session')srvSessionPerdue();}
+}
+async function srvSuivreMise(idLocal){
+ const x=MSG[idLocal];if(!x||!x.sid)return;
+ try{const r=await API.call('api_chat_follow',{p_msg:x.sid});x.followers=Math.max(x.followers|0,r.fc|0);setFc(x);srvAppliquer(r);}
+ catch(e){if(e&&e.code==='session')srvSessionPerdue();else if(!e||e.code!=='deja_suivi')console.warn('[srv] mise non suivie',e&&e.code);}
+}
+
 /* ----- Paris combinés : prix bloqués, mise et gain tenus par le serveur ; le « slip » reste une sélection locale ----- */
 const comboDe=x=>({id:String(x.id),at:+x.at,stake:+x.stake,mult:+x.mult,fee:+x.fee,pay:+x.pay,status:x.status,cash:x.cash==null?undefined:+x.cash,endAt:x.endAt||undefined,
  legs:(x.legs||[]).map(l=>({m:l.m,s:l.s,price:+l.price,mult:+l.mult,res:l.res||null}))});
@@ -835,14 +1039,16 @@ async function srvComboEncaisser(cb){if(srvComboOccupe)return;srvComboOccupe=tru
  finally{srvComboOccupe=false;}
 }
 
-/* ----- Duels entre amis sur un marché : mises sous séquestre et règlement tenus par le serveur -----
-   Le serveur rend les duels du joueur (créés ou reçus) ; l'écran les met à sa forme et garde son affichage. Les duels
-   sur une manche éclair et les duels de stack ne sont pas encore reliés. */
+/* ----- Duels entre amis, sur un marché ou sur une manche éclair : mises sous séquestre et règlement tenus par le serveur -----
+   Le serveur rend les duels du joueur (créés ou reçus) ; l'écran les met à sa forme et garde son affichage. Un duel
+   éclair passe par l'Edge Function « eclair » (prix, frais et issue : moteur du serveur). Les duels de stack ne sont pas
+   encore reliés. */
 const duelDe=(x,qui)=>{const moi=qui||srvMoi(),par=x.by===moi?'me':x.by,adv=x.opp?(x.opp===moi?'me':x.opp):null,mien=par==='me'?x.side:(x.side==='oui'?'non':'oui');
  const st=x.st==='regle'?(x.winSide===mien?'won':'lost'):x.st;
- return {id:String(x.id),code:x.code,kind:'market',m:x.m,round:0,side:x.side,by:par,opp:adv,stake:+x.stake,fee:+x.fee||0,status:st,at:+x.at,expiresAt:+x.expiresAt,price0:x.price0||0,
+ const jeu=typeof x.m==='string'&&x.m.startsWith('flash:')?GM[x.m.slice(6)]:null;
+ return {id:String(x.id),code:x.code,kind:'market',m:x.m,round:jeu?+x.round||0:0,side:x.side,by:par,opp:adv,stake:+x.stake,fee:+x.fee||0,status:st,at:+x.at,expiresAt:+x.expiresAt,price0:x.price0||0,
   price:x.price||undefined,oppStake:x.oppStake==null?undefined:+x.oppStake,oppFee:+x.oppFee||0,pot:x.pot==null?undefined:+x.pot,acceptAt:x.acceptAt||undefined,settleAt:x.settleAt||undefined,winSide:x.winSide||undefined,
-  proof:x.winSide?{txt:_t("Résultat officiel du marché : {0}.",[x.winSide==='oui'?_t("Oui"):_t("Non")]),at:x.settleAt}:undefined};};
+  proof:x.winSide?(jeu?{txt:jeu.rs(x.winSide==='oui'),at:x.settleAt}:{txt:_t("Résultat officiel du marché : {0}.",[x.winSide==='oui'?_t("Oui"):_t("Non")]),at:x.settleAt}):undefined};};
 function srvDuelsEtat(x){if(!x)return;srvFiches(x.users);S.me.duels=(x.liste||[]).map(d=>duelDe(d));}
 let srvDuelOccupe=false;
 async function srvDuelAppel(nom,args){if(srvDuelOccupe)return null;srvDuelOccupe=true;
@@ -850,20 +1056,64 @@ async function srvDuelAppel(nom,args){if(srvDuelOccupe)return null;srvDuelOccupe
  catch(e){srvErreur(e);return null;}
  finally{srvDuelOccupe=false;}
 }
+/* duel sur une manche éclair : même réponse que les fonctions des marchés, donnée par l'Edge Function */
+async function srvDuelEclair(action,corps){if(srvDuelOccupe)return null;srvDuelOccupe=true;
+ try{const r=await API.fn('eclair',Object.assign({action},corps||{}));if(typeof r.now==='number')FSKEW=r.now-Date.now();srvAppliquer(r);srvDuelsEtat(r.duels);updateHeader();return r;}
+ catch(e){if(e.code==='mises_fermees')toast({tone:'amber',icon:'lock',title:_t("Mises fermées"),text:errTxt(e)});else srvErreur(e);return null;}
+ finally{srvDuelOccupe=false;}
+}
+const srvDuelEstEclair=m=>String(m||'').startsWith('flash:');
+/* fin d'une manche : s'il reste un duel éclair de cette manche (ou d'une plus ancienne), le serveur le règle ou le rend */
+let srvDuelsRegle=false;
+function srvDuelsApresManche(manche){
+ if(!(S.me.duels||[]).some(d=>srvDuelEstEclair(d.m)&&['open','active'].includes(d.status)&&d.round<=manche))return;
+ setTimeout(()=>srvDuelsEclairRegler(0),900);                  /* une petite seconde : l'horloge du serveur change de manche */
+}
+async function srvDuelsEclairRegler(essai){
+ if(srvDuelsRegle)return;srvDuelsRegle=true;let reste=false;
+ try{const r=await API.fn('eclair',{action:'duel_settle'});if(typeof r.now==='number')FSKEW=r.now-Date.now();srvAppliquer(r);srvDuelsEtat(r.duels);updateHeader();
+  reste=(S.me.duels||[]).some(d=>srvDuelEstEclair(d.m)&&['open','active'].includes(d.status)&&d.round<S.flash.round);
+  if(r.regles>0){srvVu=0;srvRafraichir();}                       /* un duel réglé : l'historique et les statistiques viennent du serveur */
+  if((S.ui.route||'').startsWith('duel'))render(false);}
+ catch(e){if(e.code==='session'||e.code==='exclu'||e.code==='suspendu')srvErreur(e);else console.warn('[srv] règlement des duels éclair remis à plus tard',e.code);}
+ finally{srvDuelsRegle=false;}
+ if(reste&&(essai|0)<3)setTimeout(()=>srvDuelsEclairRegler((essai|0)+1),1500);
+}
 async function srvDuelCreer(st){const stake=F.parse(st.stake);
- if(String(st.m).startsWith('flash:')){srvBientot();return;}                              /* duel sur une manche éclair : pas encore relié */
  if(typeof rgBlocked==='function'&&rgBlocked('bet'))return;
- const r=await srvDuelAppel('api_duel_create',{p:{m:st.m,side:st.side,stake,opp:st.opp||null,key:cleOp()}});if(!r)return;
+ const r=srvDuelEstEclair(st.m)?await srvDuelEclair('duel_create',{gid:String(st.m).slice(6),side:st.side,stake,opp:st.opp||null,key:cleOp()})
+  :await srvDuelAppel('api_duel_create',{p:{m:st.m,side:st.side,stake,opp:st.opp||null,key:cleOp()}});if(!r)return;
  const d=duelOf(String(r.duel.id));closeModal();if(!d)return;
  if(st.opp){toast({tone:'blue',icon:'swords',force:true,title:`${_t("Défi envoyé à {0}",[duelUserN(st.opp)])}`,text:`${_t("{0} : tu dis {1} pour {2}. Ta mise est bloquée sous séquestre.",[duelShort(d),duelSideTxt(d,d.side),F.usd0(stake)])}`,href:'#duel-'+d.id});if((S.ui.route||'').startsWith('duel'))render(false);}
  else duelShareOpen(d);
 }
 async function srvDuelAccepter(id){const connu=duelOf(id),lien=!connu&&S.ui.duelLink?S.ui.duelLink:null;if(!connu&&!lien)return;
  if(typeof rgBlocked==='function'&&rgBlocked('bet'))return;
- const r=await srvDuelAppel('api_duel_accept',{p:lien?{code:lien.c}:{id:+id}});if(!r)return;
+ const eclair=srvDuelEstEclair(connu?connu.m:lien.m);
+ const r=eclair?await srvDuelEclair('duel_accept',lien?{code:lien.c}:{id:+id}):await srvDuelAppel('api_duel_accept',{p:lien?{code:lien.c}:{id:+id}});if(!r)return;
  S.ui.duelLink=null;const d=duelOf(String(r.duel.id));if(!d)return;
  toast({tone:'blue',icon:'swords',force:true,title:_t("Duel accepté"),text:`${_t("Tu dis {0} pour {1}. Cagnotte {2} sous séquestre.",[duelSideTxt(d,duelMySide(d)),F.usd(d.oppStake),F.usd(d.pot)])}`,href:'#duel-'+d.id});
  location.hash='#duel-'+d.id;render(false);
+}
+/* ----- Duels de stack : buy-in, stacks et règlement tenus par le serveur (adversaire simulé) ----- */
+const stackDe=x=>({id:String(x.id),kind:'stack',buyin:+x.buyin,opp:x.opp,status:x.st,at:+x.at,endAt:+x.endAt,settleAt:x.settleAt||undefined,my:+x.my,theirs:+x.theirs,path:[+x.my],opath:[+x.theirs]});
+function srvStacksEtat(x){if(!x)return;srvFiches(x.users);S.me.stacks=(x.liste||[]).map(stackDe);}
+async function srvStackCreer(st){const buyin=F.parse(st.buyin);
+ if(typeof rgBlocked==='function'&&rgBlocked('bet'))return;
+ if(srvDuelOccupe)return;srvDuelOccupe=true;
+ try{const r=await API.call('api_stack_create',{p:{buyin,opp:st.opp||null,key:cleOp()}});srvStacksEtat(r.stacks);srvAppliquer(r);updateHeader();closeModal();
+  const d=(S.me.stacks||[]).find(x=>x.id===String(r.stack));
+  if(d)toast({tone:'blue',icon:'layers',force:true,title:_t("Duel de stack lancé"),text:`${_t("{0} chacun contre {1}, {2} jetons, une semaine.",[F.usd0(d.buyin),duelUserN(d.opp),F.int(DUEL.STACK_CHIPS)])}`,href:'#duels'});
+  render(false);}
+ catch(e){srvErreur(e);}
+ finally{srvDuelOccupe=false;}
+}
+/* sur la page des duels : les stacks en cours bougent avec les marchés, on les relit (toutes les 20 secondes au plus) */
+let srvStacksVus=0;
+async function srvStacksRelire(){
+ if(!(S.me.stacks||[]).some(x=>x.status==='active')||Date.now()-srvStacksVus<20000)return;srvStacksVus=Date.now();
+ try{const r=await API.call('api_stacks');const avant=JSON.stringify(S.me.stacks);srvStacksEtat(r.stacks);if(r.me)srvAppliquer(r);if(JSON.stringify(S.me.stacks)!==avant&&(S.ui.route||'')==='duels')render(false);}
+ catch(e){if(e&&e.code==='session')srvSessionPerdue();}
 }
 async function srvDuelFermer(d,action){
  const r=await srvDuelAppel('api_duel_close',{p_id:+d.id,p_action:action});if(!r)return;
@@ -980,11 +1230,14 @@ async function srvBzRacheter(){const r=bzR();if(!r||!bzCanRebuy(r)||SRV_BZ.occup
 function srvPerso(evt,d){
  if(evt==='dm'){if(d&&d.u)srvChatAjouter('dm:'+d.u,d);return;}
  if(evt==='maj'){srvVu=0;srvRafraichir();return;}                    /* le serveur a changé quelque chose sans notification (exécution partielle d'un ordre) */
+ if(evt==='re'){if(d&&d.u)srvChatReactions('dm:'+d.u,d);return;}
+ if(evt==='fc'){if(d&&d.u)srvChatSuivis('dm:'+d.u,d);return;}                       /* mise partagée en privé : son compteur de suivis */                    /* réaction de l'autre participant, dans une conversation privée */
+ if(evt==='reac'){if(d)srvReactionRecue(d);return;}
  if(evt==='notif'&&d&&d.n){
   if(S.me.notifs.some(x=>x.id===d.n.id))return;
   S.me.notifs.unshift(notifDe(d.n));S.me.notifs=S.me.notifs.slice(0,30);updateBell();
   if(SRV_TOAST[d.n.code]){try{SRV_TOAST[d.n.code](d.n.p||{});}catch(e){}}                             /* ce que le serveur vient de faire pour le joueur, annoncé comme en mode Démo */
-  if(/^fr_|^duel_|^combo_|^parrain_|^prop_|^copie_|^clan_|^ordre_|^protection$|^marche_resolu$|^admin_solde$|^kyc_ok$|^blitz_gagne$/.test(d.n.code||'')){srvVu=0;srvRafraichir();}                   /* demande d'ami ou acceptation : les listes viennent du serveur */
+  if(/^fr_|^duel_|^stack_|^guerre_|^combo_|^parrain_|^prop_|^copie_|^clan_|^mise_|^ordre_|^protection$|^marche_resolu$|^admin_solde$|^kyc_ok$|^blitz_gagne$/.test(d.n.code||'')){srvVu=0;srvRafraichir();}                   /* demande d'ami ou acceptation : les listes viennent du serveur */
  }
 }
 
@@ -1027,6 +1280,7 @@ async function bootServeur(){
  const [etat]=await Promise.all([API.loadState(),srvMarches().catch(e=>console.warn('[srv] marchés indisponibles',e.code))]);
  hydrater(etat);srvArgentSuivre();
  if(SRV_ECLAIR_DU>0)setTimeout(()=>srvEclairRegler(0,3),1200);                 /* des manches jouées avant le rechargement restent à régler */
+ setTimeout(()=>srvDuelsApresManche(S.flash.round-1),1500);                     /* de même pour un duel éclair dont la manche s'est terminée entre-temps */
  API.on('session',()=>srvSessionPerdue());
  API.subscribe('marches',(evt,d)=>{if(evt==='tick')srvTick(d);else if(evt==='etat')srvMarchesEtat();}).then(srvMarchesRattraper).catch(e=>console.warn('[srv] temps réel indisponible',e.code));
  API.subscribe('joueur:'+etat.uid,srvPerso,true).catch(e=>console.warn('[srv] sujet privé indisponible',e.code));
