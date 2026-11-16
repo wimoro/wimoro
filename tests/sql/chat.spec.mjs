@@ -66,11 +66,13 @@ test('K13 · anti-spam : trop vite, message répété, plus de 12 par minute, vi
   expect((await envoyer(u, 'general', 'a\u0007b\u001b <script>alert(1)</script>')).msg.text).toBe('a b  <script>alert(1)</script>');
 });
 
-test('salons : seuls le général et les marchés existants sont ouverts ; privé, clan et VIP restent fermés', async () => {
-  for (const salon of ['vip', 'dm:' + bob, 'clan:abc', 'm:marche-inconnu', 'blitz', '', null]) {
+test('salons : seuls le général et les marchés existants sont ouverts à tous ; privé et clan d’un autre restent fermés ; le salon VIP demande son rang', async () => {
+  for (const salon of ['dm:' + bob, 'clan:abc', 'm:marche-inconnu', 'blitz', '', null]) {
     expect(await refusEnvoi(alice, salon, 'coucou'), String(salon)).toMatch(/salon_indisponible/);
     expect(await refus(db, alice, 'select public.api_chat_history($1)', [salon]), String(salon)).toMatch(/salon_indisponible/);
   }
+  expect(await refusEnvoi(alice, 'vip', 'coucou')).toMatch(/rang_insuffisant/);                   // rang Ascendant : tests/sql/salon-vip.spec.mjs
+  expect(await refus(db, alice, 'select public.api_chat_history($1)', ['vip'])).toMatch(/rang_insuffisant/);
 });
 
 test('les anciens messages figés ne sont plus servis ; visiteurs et écritures directes refusés', async () => {

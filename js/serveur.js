@@ -495,8 +495,11 @@ function srvChercher(texte){
 const SRV_SALONS=new Set(),SRV_MSG_VUS=new Set();
 /* le salon de son propre clan : réservé aux membres, diffusé sur un sujet privé (« clan:<identifiant> ») */
 const srvSalonClan=r=>{const c=typeof myClan==='function'?myClan():null;return !!c&&r==='clan:'+c.id;};
-const srvSujet=r=>r.startsWith('clan:')?r:'salon:'+r;
-const srvSalonOuvert=r=>r==='general'||r.startsWith('m:')||r.startsWith('dm:')||srvSalonClan(r);
+/* le salon VIP : réservé au rang Ascendant et au-dessus, diffusé lui aussi sur un sujet privé (« vip ») */
+const srvSalonVip=r=>r==='vip'&&can('vip');
+const srvSujetPrive=r=>r.startsWith('clan:')||r==='vip';
+const srvSujet=r=>srvSujetPrive(r)?r:'salon:'+r;
+const srvSalonOuvert=r=>r==='general'||r.startsWith('m:')||r.startsWith('dm:')||srvSalonClan(r)||srvSalonVip(r);
 const srvPrive=r=>r.startsWith('dm:');
 const srvMoi=()=>String(S.auth.key||'').slice(4);
 function srvChatAjouter(rid,m,mes){
@@ -557,7 +560,7 @@ async function srvDmListe(){try{const r=await API.call('api_dm_list');srvFiches(
 async function srvSalonOuvrir(r){
  try{
   if(srvPrive(r)){const h=await API.call('api_dm_history',{p_user:r.slice(3)});srvFiches(h.users);(h.msgs||[]).forEach(m=>srvChatAjouter(r,m,h.mes||{}));return;}
-  await API.subscribe(srvSujet(r),(evt,d)=>{if(evt==='msg')srvChatAjouter(r,d);else if(evt==='del')srvChatRetirer(r,d&&d.id);else if(evt==='fc')srvChatSuivis(r,d);else if(evt==='re')srvChatReactions(r,d);},r.startsWith('clan:'));
+  await API.subscribe(srvSujet(r),(evt,d)=>{if(evt==='msg')srvChatAjouter(r,d);else if(evt==='del')srvChatRetirer(r,d&&d.id);else if(evt==='fc')srvChatSuivis(r,d);else if(evt==='re')srvChatReactions(r,d);},srvSujetPrive(r));
   const h=await API.call('api_chat_history',{p_room:r});
   srvFiches(h.users);(h.msgs||[]).forEach(m=>srvChatAjouter(r,m,h.mes||{}));
  }catch(e){SRV_SALONS.delete(r);console.warn('[srv] salon indisponible',r,e.code);}
@@ -614,7 +617,7 @@ async function srvAnaPartager(sh,rooms){
 }
 let srvChatOccupe=false;
 async function srvChatEnvoyer(rid,inp,text){
- if(!srvSalonOuvert(rid)){srvBientot();return;}                 /* VIP, clan d'un autre : pas reliés */
+ if(!srvSalonOuvert(rid)){srvBientot();return;}                 /* clan d'un autre, salon VIP sans le rang : fermés */
  if(srvChatOccupe)return;srvChatOccupe=true;
  try{
   const r=srvPrive(rid)?await API.call('api_dm_send',{p_user:rid.slice(3),p_text:text}):await API.call('api_chat_send',{p_room:rid,p_text:text});
@@ -910,7 +913,7 @@ const srvSalonDe=x=>Object.keys(S.rooms).find(r=>S.rooms[r].msgs.includes(x))||'
 let srvReagit='';
 async function srvReagir(x,e){
  const rid=srvSalonDe(x);
- if(x.sid==null||!srvSalonOuvert(rid)){srvBientot();return;}                    /* salons pas encore reliés (VIP, clan) */
+ if(x.sid==null||!srvSalonOuvert(rid)){srvBientot();return;}                    /* message local, ou salon fermé à ce joueur */
  const cle=x.id+':'+e;if(srvReagit===cle)return;srvReagit=cle;                  /* un clic à la fois sur la même réaction */
  try{const r=await API.call('api_chat_react',{p_room:rid,p_msg:String(x.sid),p_emoji:e});x.r=srvReactions(r.r);x.my=srvMiennes({m:r.my},'m');refreshReacts(x);}
  catch(err){srvErreur(err);}

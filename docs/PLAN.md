@@ -214,8 +214,19 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
       par un troisième joueur (K09). _Recette 5 (fin)._ _Tests_ `tests/sql/prive.spec.mjs`, `tests/compte/prive.spec.mjs`,
       `tests/e2e/comptes.spec.mjs` (un tiers abonné au sujet privé d'un autre ne reçoit rien, sur le vrai temps réel).
 - [x] Les notifications destinées à un autre joueur (demande d'ami, acceptation, message reçu) lui arrivent en direct.
-- [ ] Salon VIP (rang Ascendant) : annoncé comme indisponible en mode Compte. Le salon de clan, lui, est relié (voir plus
-      bas).
+- [x] Salon VIP : relié pour les joueurs du rang Ascendant et au-dessus (les autres gardent l'aperçu verrouillé de
+      l'écran). Écrire, relire, réagir, partager une mise ou une analyse y suivent les règles des autres salons ; sans le
+      rang, le serveur répond « rang insuffisant ». Ses messages passent par le sujet **privé** « vip », qu'une règle
+      d'accès n'ouvre qu'à ce rang (`wm.vip_ok`, règle `wm_vip_lit_son_salon`). Les bots n'y parlent pas (comme dans la
+      démo) ; ils y réagissent. Le panel d'administration voit et peut masquer ses messages. _Tests_
+      `tests/sql/salon-vip.spec.mjs` (3), `tests/compte/salon-vip.spec.mjs` (2), `tests/e2e/comptes.spec.mjs` (refus du
+      vrai serveur sans le rang).
+- [x] Corrigé au passage : suivre une mise partagée demande d'avoir accès au salon où elle a été publiée. Avant, un joueur
+      extérieur à un clan pouvait suivre, par son numéro, une mise partagée dans le chat de ce clan (test ajouté : il
+      échouait avant la correction).
+- [ ] Limites du salon VIP : (1) aucun compte de test n'a le rang Ascendant : le salon n'a pas été joué de bout en bout
+      contre la vraie base (il l'est dans la base embarquée et avec le faux serveur) ; (2) comme pour les clans, le droit
+      d'écouter le sujet privé est vérifié à l'abonnement puis gardé jusqu'à l'expiration du jeton (une heure au plus).
 - [ ] Limite : écrire en privé demande le rang Bronze (300 XP et 3 paris réglés), comme à l'écran ; le scénario complet
       entre deux vrais comptes neufs n'a donc pas pu être joué de bout en bout (il l'est côté base et avec le faux serveur).
 - [x] Cartes de mise et d'analyse, réactions, « suivre cette mise » : reliées au serveur (voir plus bas). Mentions et
@@ -625,3 +636,4 @@ Rien d'obligatoire. Le détail et les constats sont dans `docs/EXPLOITATION.md`,
 | 16 nov. 2026 | Clans : fil d'activité, outils du chef et des officiers, appels de clan. | migration `clans_chefs` (empreinte identique) ; 310 tests (163 SQL) ; 23 scénarios de bout en bout contre le vrai back ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
 | 16 nov. 2026 | Guerres de clans. | migrations `clans_guerres` et `clans_guerres_participants` (empreintes identiques) ; 316 tests (167 SQL) ; 23 scénarios de bout en bout contre le vrai back ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
 | 16 nov. 2026 | Mode Pro : partager son analyse dans les chats. | migration `analyses` (empreinte identique) ; 325 tests (172 SQL) ; 24 scénarios de bout en bout contre le vrai back, dont deux comptes sur le partage d'analyse ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
+| 16 nov. 2026 | Salon VIP (rang Ascendant) ; suivi d'une mise réservé aux lecteurs de son salon. | migration `salon_vip` (empreinte identique) ; 330 tests (175 SQL) ; 24 scénarios de bout en bout contre le vrai back ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |

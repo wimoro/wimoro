@@ -234,7 +234,7 @@
       if (gain) { me.xp += gain; ev.push({ k: 'xp', n: gain, src: 'chat' }); rangMonte(me, avant, ev); }
       missionAvance(e, 'chat', ev);
       var diffuse = clone(m); diffuse.f = ficheDe(uid()); persist();
-      setTimeout(function () { window.__fakeSB.emit('salon:' + a.p_room, 'msg', diffuse); }, 5);
+      setTimeout(function () { window.__fakeSB.emit(/^clan:/.test(a.p_room) || a.p_room === 'vip' ? a.p_room : 'salon:' + a.p_room, 'msg', diffuse); }, 5);
       var rep = reponse(ev); rep.msg = clone(m); return rep; },
     api_mission_claim: function (a) { var e = etat(), me = e.me, m = e.missions.filter(function (x) { return x.id === a.p_id; })[0], ev = [];
       if (!m || m.claimed || m.have < m.goal) throw { message: 'mission_indisponible' };
@@ -790,6 +790,7 @@
     return n; }
   var salonOk = function (r) { if (r === 'general' || (/^m:/.test(String(r)) && typeof MK !== 'undefined' && MK[String(r).slice(2)])) return;
     var k = etat().clanM; if (k && r === 'clan:' + k.id) return;                                  /* le salon de son clan, et lui seul */
+    if (r === 'vip') { if (rangDe(etat().me).t >= 6) return; throw { message: 'rang_insuffisant' }; }   /* le salon VIP : rang Ascendant */
     throw { message: 'salon_indisponible' }; };
   var ficheDe = function (id) { if (db.fiches[id]) return clone(db.fiches[id]); var e = db.etats[id]; if (!e) return { n: 'joueur', t: 0, d: 0, tone: 0, color: '#2448FF', photo: '', bio: '', profit: 0, acc: 0, bets: 0, fol: 0, bot: false, pub: 1 };
     var r = rangDe(e.me); return { n: e.me.n, t: r.t, d: r.d, tone: 1, color: e.me.color, photo: e.me.photo || '', bio: e.me.bio || '', profit: 0, acc: 0, bets: e.me.played | 0, fol: 0, bot: false, pub: 1 }; };
