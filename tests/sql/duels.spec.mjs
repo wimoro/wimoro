@@ -71,6 +71,8 @@ test('refuser, annuler, laisser expirer : la mise revient (pas les frais d’ouv
   expect(await non(bob, 'api_duel_accept', { id: d3.id })).toMatch(/duel_indisponible/);        // trop tard
   const etat = (await enTantQue(db, alice, s => s('select public.api_state() as r')))[0].r;       // au chargement suivant : expiré, mise rendue
   expect(etat.duels.liste.find(d => d.id === d3.id).st).toBe('expired');
+  expect(etat.me.balance, 'la réponse elle-même porte la mise rendue').toBeCloseTo(a0.balance - d1.fee - d2.fee - d3.fee, 2);
+  expect(etat.notifs.some(n => n.code === 'duel_expire')).toBe(true);
   expect((await stats(alice)).balance).toBeCloseTo(a0.balance - d1.fee - d2.fee - d3.fee, 2);
   expect((await q(db, `select count(*)::int as n from public.notifications where user_id = $1 and code = 'duel_expire'`, [alice]))[0].n).toBe(1);
 });

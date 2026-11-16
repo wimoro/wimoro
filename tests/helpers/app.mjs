@@ -18,11 +18,11 @@ export const debutManche = (n = 1000) => Date.UTC(2026, 10, 1) + n * 45000;
 
 /**
  * @param {import('@playwright/test').Page} page
- * @param {{ mode?: 'visiteur'|'demo'|'compte', lang?: 'en'|'fr'|'he', hash?: string, faux?: object (voir fake-supabase.js : etat, comptes, marches…), local?: Record<string,string>, horloge?: number|Date }} [o]
+ * @param {{ mode?: 'visiteur'|'demo'|'compte', lang?: 'en'|'fr'|'he', hash?: string, faux?: object (voir fake-supabase.js : etat, comptes, marches…), local?: Record<string,string>, horloge?: number|Date, requete?: string }} [o]
  *        horloge : fige l'heure au départ (les minuteurs n'avancent qu'avec page.clock.runFor / fastForward).
  */
 export async function ouvrir(page, o = {}) {
-  const { mode = 'visiteur', lang = 'en', hash = '#accueil', faux = {}, local = {}, horloge = null } = o;
+  const { mode = 'visiteur', lang = 'en', hash = '#accueil', faux = {}, local = {}, horloge = null, requete = '' } = o;
   const erreurs = [];
   page.on('pageerror', e => erreurs.push(`${e.name}: ${e.message}`));
   page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) erreurs.push('console.error: ' + m.text()); });
@@ -41,7 +41,7 @@ export async function ouvrir(page, o = {}) {
     }
     window.__FAKE_SB__ = cfg;
   }, { lang, mode, cfg, local });
-  await page.goto('/index.html' + hash);
+  await page.goto('/index.html' + requete + hash);                    // requete : ex. '?r=CODE' (lien d'invitation)
   await expect(page.locator('#view > *').first()).toBeAttached({ timeout: 15000 });
   return { erreurs };
 }

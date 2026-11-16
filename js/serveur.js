@@ -85,7 +85,7 @@ const srvErreur=e=>{if(e&&e.code==='session'){srvSessionPerdue();return;}if(e&&e
 const SRV_BLOQUE=new Set(('share-pick vote '
  +'cp-start cp-stop-do cp-edit cp-manage cp-pause cp-stop cp-open limit-place ord-cancel guard guard-save guard-del stk-create stack-open '
  +'sr-share cl-war-join cl-sim cl-join cl-apply cl-leave-do cl-share cl-promote cl-kick cl-invite cl-call-do cl-war cl-feedopt cl-create-open cl-leave cl-call-open cl-war-open '
- +'pro-sh-send pro-share follow-user follow-bet follow-pbet share ref-copy ref-share propose react '
+ +'pro-sh-send pro-share follow-user follow-bet follow-pbet share propose react '
  +'wallet wallet-modal demo-login demo-rank demo-rank-open demo-rank-reset').split(/\s+/));
 const SRV_FORMS_BLOQUE=new Set(['create','clan','clcode']);
 const srvBientot=()=>toast({tone:'amber',icon:'info',force:true,title:_t("Bientôt disponible avec ton compte"),text:_t("Cette fonction marche déjà en mode démo. Elle arrive pour les comptes.")});
@@ -112,6 +112,9 @@ const NOTIF_T={
  duel_expire:p=>_t("Duel expiré sans réponse : {0}. Ta mise t’est rendue.",[MK[p.m]?MK[p.m].short:p.m]),
  duel_gagne:p=>_t("{0} contre {1} : {2}.",[_t("Duel gagné"),userOf(p.u).n,MK[p.m]?MK[p.m].short:p.m]),
  duel_perdu:p=>_t("{0} contre {1} : {2}.",[_t("Duel perdu"),userOf(p.u).n,MK[p.m]?MK[p.m].short:p.m]),
+ parrain_bonus:p=>_t("Bonus de parrainage : {0} offerts grâce au code {1}.",[F.usd0(+p.gain),p.code||'']),
+ parrain_inscrit:p=>_t("{0} s’est inscrit avec ton code de parrainage.",[p.n||'']),
+ parrain_paye:p=>_t("Parrainage : {0} a placé son premier pari, {1} pour toi.",[p.n||'',F.usd0(+p.gain)]),
  combo_gagne:p=>_t("Combiné gagné : +{0}",[F.usd(+p.gain)]),
  combo_perdu:p=>_t("Combiné {0} sélections : perdu sur {1}",[p.n,MK[p.m]?MK[p.m].short:p.m]),
  blitz_gagne:p=>_t("Blitz gagné : +{0}",[F.usd(+p.gain-+p.paye)]),
@@ -168,6 +171,8 @@ function hydrater(e){
  {const b=e.eclair&&e.eclair.b||{};if(Object.keys(b).length){me.fmy={r:e.eclair.r,b:{}};for(const g in b)me.fmy.b[g]=miseDe(b[g]);}SRV_ECLAIR_DU=e.eclair?(e.eclair.du|0):0;}
  me.serie=serieDe(e.serie);SRV_BZ.aRegler=(e.blitz||[]).slice();
  me.combos=(e.combos||[]).map(comboDe);
+ if(e.ref){me.refCode=e.ref.code||'';me.refBy=e.ref.by||undefined;                         /* parrainage : code, parrain et filleuls viennent du serveur */
+  me.referrals=(e.ref.list||[]).map(r=>({n:r.n,at:+r.at,st:r.st==='done'?'done':'pending',paid:+r.paid||0,doneAt:r.doneAt?+r.doneAt:undefined}));}
  if(e.duels){srvFiches(e.duels.users);me.duels=(e.duels.liste||[]).map(x=>duelDe(x,e.uid));}   /* au démarrage, l'identifiant du joueur vient de l'état lui-même */
  me.notifs=(e.notifs||[]).map(notifDe);me.missions=(e.missions||[]).map(missionDe);me.badges=(e.badges||[]).slice();
  me.friends=(e.friends||[]).slice();me.freqIn=(e.freqIn||[]).slice();me.freqOut=(e.freqOut||[]).slice();me.following=(e.following||[]).slice();
@@ -696,7 +701,7 @@ function srvPerso(evt,d){
  if(evt==='notif'&&d&&d.n){
   if(S.me.notifs.some(x=>x.id===d.n.id))return;
   S.me.notifs.unshift(notifDe(d.n));S.me.notifs=S.me.notifs.slice(0,30);updateBell();
-  if(/^fr_|^duel_|^combo_|^marche_resolu$|^admin_solde$|^kyc_ok$|^blitz_gagne$/.test(d.n.code||'')){srvVu=0;srvRafraichir();}                   /* demande d'ami ou acceptation : les listes viennent du serveur */
+  if(/^fr_|^duel_|^combo_|^parrain_|^marche_resolu$|^admin_solde$|^kyc_ok$|^blitz_gagne$/.test(d.n.code||'')){srvVu=0;srvRafraichir();}                   /* demande d'ami ou acceptation : les listes viennent du serveur */
  }
 }
 
@@ -771,6 +776,7 @@ async function srvInscription(f,o,err){
  try{
   if(!(await API.call('api_pseudo_libre',{p_pseudo:o.pseudo}))){err.textContent=_t("Ce pseudo est déjà pris.");btnOccupe(f,false);return;}
   const etat=await API.signUp(o);
+  LS.r('wimoro-ref');                                                 /* le code de parrainage est parti avec l'inscription : le serveur l'a lu */
   if(etat==='connecte'){srvRecharger('#bienvenue','inscription');return;}
   S.ui.authWait=o.email;err.textContent='';render(false);            /* confirmation d'e-mail active : écran « vérifie ta boîte mail » */
  }catch(e){err.textContent=errTxt(e);btnOccupe(f,false);}
