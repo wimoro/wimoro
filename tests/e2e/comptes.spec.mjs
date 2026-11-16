@@ -833,6 +833,25 @@ test('partager une mise : la carte est posée par le vrai serveur et vue en dire
   await a.ctx.close(); await b.ctx.close();
 });
 
+test('mise partagée en privé : le vrai serveur ne l’accepte que pour un ami (et avec le rang Bronze), sinon rien n’est écrit', async ({ page }) => {
+  const erreurs = await ouvrirReel(page, '#connexion');
+  await page.locator('#le').fill(EMAIL); await page.locator('#lp').fill(MDP); await page.locator('form[data-form="login"] [type=submit]').click();
+  await expect(page).toHaveURL(/#accueil/, { timeout: 20000 }); await pret(page);
+  const essai = args => page.evaluate(async args => { try { await API.call('api_chat_share', args); return 'accepté'; } catch (e) { return e.code; } }, args);
+  const moi = await lire(page, () => srvMoi());
+  const conversations = () => lire(page, async () => ((await API.call('api_dm_list')).ids || []).length);
+  const avant = await conversations();
+  expect(await essai({ p_room: 'dm:pas-un-identifiant', p_market: 'clasico', p_side: 'oui' })).toBe('salon_indisponible');
+  expect(await essai({ p_room: 'dm:' + moi, p_market: 'clasico', p_side: 'oui' })).toBe('joueur_inconnu');                 // pas à soi-même
+  expect(await essai({ p_room: 'dm:00000000-0000-4000-8000-000000000000', p_market: 'clasico', p_side: 'oui' })).toBe('joueur_inconnu');
+  // un joueur du classement (lu sur le vrai serveur) qui n'est pas un ami
+  const autre = await lire(page, async moi => { const r = await API.call('api_leaderboard'); return Object.keys(r.users || {}).find(k => k !== moi && !friendsOf().includes(k)) || null; }, moi);
+  expect(autre, 'un joueur du classement qui n’est pas un ami').toMatch(/^[0-9a-f-]{36}$/);
+  expect(await essai({ p_room: 'dm:' + autre, p_market: 'clasico', p_side: 'oui' })).toBe('pas_amis');
+  expect(await conversations(), 'aucune conversation n’est née de ces refus').toBe(avant);
+  expect(erreurs).toEqual([]);
+});
+
 test('réactions : A réagit au message de B et à celui d’un bot, B voit les compteurs en direct ; second clic, la réaction est retirée ; rechargé, tout revient du vrai serveur', async ({ browser }) => {
   test.setTimeout(180000);
   const SALON = 'm:clasico';

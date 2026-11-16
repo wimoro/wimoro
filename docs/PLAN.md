@@ -302,6 +302,16 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
       les 5 secondes, sans effet tant que personne ne partage). _Tests_ `tests/sql/chat-mises.spec.mjs` (3),
       `tests/compte/mises.spec.mjs` (2), `tests/e2e/comptes.spec.mjs` (partage pour de vrai, carte reçue en direct par un
       autre joueur, suivis crédités par le vrai serveur, refus sans le rang Argent).
+- [x] Partager une mise dans une conversation privée (bouton « Partager une mise » d'une conversation : il répondait
+      « Bientôt disponible ») : mêmes conditions qu'un message privé (amis, rang Bronze) ; la carte n'est poussée qu'à
+      l'ami, sur son sujet privé ; lui seul peut la suivre, et le compteur de suivis n'est alors envoyé qu'aux deux
+      participants. _Choix_ : aucun joueur simulé ne suit une mise partagée en privé ; la règle « une fois par 24 heures
+      et par position » vaut tous salons confondus. _Tests_ `tests/sql/mise-privee.spec.mjs` (2),
+      `tests/compte/prive.spec.mjs` (1 de plus), `tests/e2e/comptes.spec.mjs` (refus du vrai serveur : pas à soi-même,
+      pas à un inconnu, pas à un joueur qui n'est pas un ami).
+- [ ] Limite : une mise partagée en privé puis suivie par l'ami n'a pas été jouée contre la vraie base (les messages
+      privés demandent le rang Bronze, que les comptes de test n'ont pas) ; elle est prouvée dans la base embarquée et
+      avec le faux serveur.
 - [ ] Limite : un vrai joueur qui suit la mise d'un autre n'a pas été joué contre la vraie base (les comptes de test n'ont
       pas le rang Argent) ; c'est prouvé dans la base embarquée et avec le faux serveur. Le refus, lui, est joué pour de vrai.
 - [x] Réactions sous les messages (`api_chat_react`), mêmes règles que la démo : quatre réactions, un clic pose la sienne,
@@ -529,7 +539,7 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 - [x] Recette finale, 10 points, le 16 nov. 2026, sur le site en ligne (<https://wimoro.com>) : 130 tests d'écran (mode Démo,
       visiteur et mode Compte avec le faux serveur, trois langues) et 18 scénarios avec de vrais comptes contre le vrai
       serveur, tous verts ; en local, 264 tests dont 134 sur la base. Depuis, chaque lot a rejoué la suite : au dernier
-      lot du 16 nov. 2026, 333 tests en local (dont 177 sur la base) et 24 scénarios avec de vrais comptes, en local
+      lot du 16 nov. 2026, 336 tests en local (dont 179 sur la base) et 25 scénarios avec de vrais comptes, en local
       puis sur le site en ligne. Point par point :
 
       | N° | Ce qui est vérifié | Preuve | Réserve |
@@ -598,6 +608,7 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 | Mention « enregistrée sur cet appareil » | Retirée de la fenêtre de partage quand un compte est connecté. | Seule exception à « ne change pas les textes » : avec un compte, la phrase serait fausse. |
 | Salon VIP | Sujet temps réel privé, ouvert par une règle d'accès au rang Ascendant ; les bots n'y parlent pas. | Un sujet public aurait laissé n'importe qui écouter le salon ; dans la démo, ce salon ne contient que les messages des joueurs. |
 | Suivre une mise partagée | Refusé si l'on n'a pas accès au salon où elle a été publiée. | Sinon un joueur hors d'un clan pouvait suivre, par son numéro, une mise partagée dans le chat de ce clan. |
+| Mise partagée en privé | Poussée au seul ami ; pas de suivi par des joueurs simulés ; compteur envoyé aux deux participants seulement. | Une conversation privée ne doit rien laisser passer par un sujet public. |
 | Chat du Blitz | Salon public ; les bots y disent les phrases du Blitz de la démo ; les lignes d'événement de manche ne sont pas reprises. | Le déroulé d'un Blitz est calculé par l'écran (moteur partagé) : le chat ne porte que la conversation. |
 
 ## À faire par l'humain
@@ -657,3 +668,4 @@ Rien d'obligatoire. Le détail et les constats sont dans `docs/EXPLOITATION.md`,
 | 16 nov. 2026 | Mode Pro : partager son analyse dans les chats. | migration `analyses` (empreinte identique) ; 325 tests (172 SQL) ; 24 scénarios de bout en bout contre le vrai back, dont deux comptes sur le partage d'analyse ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
 | 16 nov. 2026 | Salon VIP (rang Ascendant) ; suivi d'une mise réservé aux lecteurs de son salon. | migration `salon_vip` (empreinte identique) ; 330 tests (175 SQL) ; 24 scénarios de bout en bout contre le vrai back ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
 | 16 nov. 2026 | Chat du Blitz ; cases du plan remises à jour. | migration `chat_blitz` (empreinte identique) ; 333 tests (177 SQL) ; 24 scénarios de bout en bout contre le vrai back, dont le chat du Blitz ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
+| 16 nov. 2026 | Mise partagée dans une conversation privée. | migration `mise_privee` (empreinte identique) ; 336 tests (179 SQL) ; 25 scénarios de bout en bout contre le vrai back ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
