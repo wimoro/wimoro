@@ -143,3 +143,11 @@ I18N_ADD("he",{
 "Cette série est terminée.":"הרצף הזה הסתיים.",
 "Ton choix est déjà fait pour cette manche.":"כבר בחרת בסיבוב הזה."
 });
+I18N_ADD("en",{
+"Tu es déjà inscrit à ce Blitz.":"You're already in this Blitz.",
+"Le rachat n’est plus possible.":"The rebuy is no longer available."
+});
+I18N_ADD("he",{
+"Tu es déjà inscrit à ce Blitz.":"כבר נרשמת לבליץ הזה.",
+"Le rachat n’est plus possible.":"הרכישה החוזרת כבר לא אפשרית."
+});

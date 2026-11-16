@@ -38,7 +38,7 @@ const bzCanRebuy=r=>!!(r&&r.state==='live'&&r.between&&r.round===1&&r.me&&!r.me.
 function bzRebuy(){const r=bzR();if(!bzCanRebuy(r))return false;if(typeof rgBlocked==='function'&&rgBlocked('bet'))return false;
  if(BZ.REBUY>S.me.balance){toast({tone:'amber',icon:'wallet',title:_t("Solde insuffisant"),text:_t("Dépose des fonds pour continuer."),href:'#depot'});return false;}
  S.me.balance-=BZ.REBUY;r.pot+=BZ.REBUY;r.me.alive=true;r.me.rebuy=true;r.me.choice=null;r.me.paid+=BZ.REBUY;updateHeader();save();bzRefresh();toast({tone:'blue',icon:'bolt',force:true,title:_t("Rachat accepté"),text:`${_t("{0} ajoutés à la cagnotte. Tu reviens en jeu à la manche {1}. C’était ton seul rachat.",[F.usd0(BZ.REBUY),r.round+1])}`});return true;}
-function bzChoose(c){const r=bzR();if(!r||r.state!=='live'||!r.me||!r.me.alive||r.between)return;if(!bzOpen(r)){toast({tone:'amber',icon:'lock',title:_t("Choix fermés"),text:`${_t("Le choix se fait dans les {0} premières secondes de la manche.",[BZ.CHOICE_MS/1000])}`});return;}r.me.choice=c;bzRefresh();}
+function bzChoose(c){const r=bzR();if(!r||r.state!=='live'||!r.me||!r.me.alive||r.between)return;if(!bzOpen(r)){toast({tone:'amber',icon:'lock',title:_t("Choix fermés"),text:`${_t("Le choix se fait dans les {0} premières secondes de la manche.",[BZ.CHOICE_MS/1000])}`});return;}if(SRV()){srvBzChoisir(c);return;}r.me.choice=c;bzRefresh();}
 /* résultat d'une manche : prix de fin contre prix de départ, bande break even du jeu */
 function bzOutcome(r){const d=bzGame(),g=G(d.id),m=Math.abs(g.price/r.p0-1);if(m<=d.be)return 2;return g.price>r.p0?1:0;}
 function bzStartRound(r){const g=G(BZ.GID);r.round++;r.rStart=now();r.rEnd=r.rStart+BZ.ROUND_MS;r.p0=g.price;r.path=[g.price];r.closed=false;r.bots.forEach(b=>{if(b.alive)b.choice=null;});if(r.me)r.me.choice=null;r.pend=r.p0;}
@@ -190,8 +190,8 @@ async function serieShare(){const s=serieCur();if(!s||!s.step)return;try{if(docu
 
 Object.assign(VIEWS,{blitz:vBlitz,serie:vSerie});TITLES.blitz=_t("Blitz Royale");TITLES.serie=_t("La Série");
 Object.assign(ACT,{
- 'bz-join':()=>{if(!S.me.logged){needLogin(_t("Connecte-toi pour entrer dans le Blitz."));return;}if(bzJoin())bzRefresh();},
- 'bz-rebuy':()=>{if(bzRebuy())bzRefresh();},
+ 'bz-join':()=>{if(!S.me.logged){needLogin(_t("Connecte-toi pour entrer dans le Blitz."));return;}if(SRV()){srvBzEntrer();return;}if(bzJoin())bzRefresh();},
+ 'bz-rebuy':()=>{if(SRV()){srvBzRacheter();return;}if(bzRebuy())bzRefresh();},
  'bz-choose':a=>{if(!S.me.logged){needLogin(_t("Connecte-toi pour jouer."));return;}bzChoose(a.dataset.v==='oui'?1:a.dataset.v==='non'?0:2);},
  'sr-gid':a=>{S.ui.serie=S.ui.serie||{gid:'btc',stake:10};S.ui.serie.gid=a.dataset.v;serieRefresh();},
  'sr-stake':a=>{S.ui.serie=S.ui.serie||{gid:'btc',stake:10};S.ui.serie.stake=+a.dataset.v;serieRefresh();},

@@ -47,6 +47,11 @@ const ERR_TXT={
  kyc_piece:()=>_t("Ajoute ta pièce d’identité."),
  mission_indisponible:()=>_t("Cette récompense a déjà été récupérée."),
  suspendu:()=>_t("Ce compte est suspendu."),
+ inscriptions_closes:()=>_t("Blitz en cours : les inscriptions sont closes. Suis la partie et le chat, le prochain Blitz arrive juste après."),
+ deja_inscrit:()=>_t("Tu es déjà inscrit à ce Blitz."),
+ elimine:()=>_t("Tu as été éliminé cette fois."),
+ rachat_indisponible:()=>_t("Le rachat n’est plus possible."),
+ rachat_fait:()=>_t("Le rachat n’est plus possible."),
  serie_en_cours:()=>_t("Tu as déjà une série en cours."),
  serie_absente:()=>_t("Cette série est terminée."),
  deja_choisi:()=>_t("Ton choix est déjà fait pour cette manche."),
@@ -73,7 +78,7 @@ const srvErreur=e=>{if(e&&e.code==='session'){srvSessionPerdue();return;}if(e&&e
    qui touche au solde, à l'XP ou à un état partagé n'est exécutée localement quand le serveur fait autorité. */
 const SRV_BLOQUE=new Set(('share-pick vote '
  +'cp-start cp-stop-do cp-edit cp-manage cp-pause cp-stop cp-open limit-place ord-cancel guard guard-save guard-del dl-create dl-cancel dl-accept dl-share dl-decline duel-open stk-create stack-open '
- +'bz-join bz-rebuy bz-choose sr-share cl-war-join cl-sim cl-join cl-apply cl-leave-do cl-share cl-promote cl-kick cl-invite cl-call-do cl-war cl-feedopt cl-create-open cl-leave cl-call-open cl-war-open '
+ +'sr-share cl-war-join cl-sim cl-join cl-apply cl-leave-do cl-share cl-promote cl-kick cl-invite cl-call-do cl-war cl-feedopt cl-create-open cl-leave cl-call-open cl-war-open '
  +'cb-place cb-cash cb-add cb-clear cb-rm cb-stake pro-sh-send pro-share follow-user follow-bet follow-pbet share ref-copy ref-share propose react '
  +'wallet wallet-modal demo-login demo-rank demo-rank-open demo-rank-reset').split(/\s+/));
 const SRV_FORMS_BLOQUE=new Set(['create','clan','clcode']);
@@ -95,6 +100,7 @@ const NOTIF_T={
  badge:p=>_t("Badge débloqué : {0}.",[badgeNom(p.id)]),
  bet_placed:p=>_t("Pari placé : {0} sur {1}, {2}.",[F.usd(+p.amt),p.s==='oui'?_t("Oui"):_t("Non"),MK[p.m]?MK[p.m].short:p.m]),
  marche_resolu:p=>+p.pay>0?_t("Marché résolu : {0}. Tu gagnes {1}.",[MK[p.m]?MK[p.m].short:p.m,F.usd(+p.pay)]):_t("Marché résolu : {0}. Ta position {1} est perdue.",[MK[p.m]?MK[p.m].short:p.m,p.s==='oui'?_t("Oui"):_t("Non")]),
+ blitz_gagne:p=>_t("Blitz gagné : +{0}",[F.usd(+p.gain-+p.paye)]),
  admin_solde:p=>+p.delta>=0?_t("Ton solde a été crédité de {0} par l’équipe Wimoro.",[F.usd(+p.delta)]):_t("Ton solde a été débité de {0} par l’équipe Wimoro.",[F.usd(-p.delta)]),
  dep_credited:p=>depNotifTxt({method:p.method,usd:+p.usd,amt:+p.amt,coin:p.coin,net:p.method&&FIAT[p.method]?FIAT[p.method].n:p.net}),
  wd_sent:p=>wdNotifTxt({method:p.method,amt:+p.recv,fee:0,net:p.method&&FIAT[p.method]?FIAT[p.method].n:p.net}),
@@ -117,7 +123,8 @@ const rgDe=r=>({lim:{day:+(r.lim||{}).day||0,week:+(r.lim||{}).week||0,month:+(r
    « serie|jeu|manches gagnées|manche atteinte|multiplicateur » : leur libellé est composé ici, dans la langue du lecteur */
 const histSerie=h=>{const [,gid,won,step,mult]=h.q.split('|'),nom=GM[gid]?GM[gid].name:gid;
  return {k:'serie',q:h.win?_t("La Série {0} : {1} sur {1}, encaissé à ×{2}",[nom,won,F.d1(+mult)]):_t("La Série {0} : {1} sur {2}",[nom,won,step]),s:h.s,win:!!h.win,pnl:+h.pnl,at:h.at};};
-const histDe=h=>{if(h.k==='flash'&&typeof h.q==='string'&&h.q.startsWith('serie|'))return histSerie(h);if(h.k==='flash'&&typeof h.q==='string'&&h.q.startsWith('eclair|')){const [,gid,r]=h.q.split('|'),d=GM[gid];
+const histBlitz=h=>{const [,res,n]=h.q.split('|');return {k:'blitz',q:res==='g'?_t("Blitz Royale : survivant sur {0}",[F.int(+n)]):_t("Blitz Royale : éliminé"),s:h.s,win:!!h.win,pnl:+h.pnl,at:h.at};};
+const histDe=h=>{if(h.k==='flash'&&typeof h.q==='string'&&h.q.startsWith('serie|'))return histSerie(h);if(h.k==='flash'&&typeof h.q==='string'&&h.q.startsWith('blitz|'))return histBlitz(h);if(h.k==='flash'&&typeof h.q==='string'&&h.q.startsWith('eclair|')){const [,gid,r]=h.q.split('|'),d=GM[gid];
   return {k:'flash',q:d?_t("Éclair {0}, manche {1} : {2}",[d.name,F.int(+r),sideLabel(d,h.s)]):h.q,s:h.s==='non'?'non':'oui',eq:h.s==='be',win:!!h.win,pnl:+h.pnl,at:h.at};}
  return {k:h.k,m:h.m||undefined,q:h.m&&MK[h.m]?MK[h.m].q:(h.q||h.m||''),s:h.s,win:!!h.win,pnl:+h.pnl,at:h.at};};
 const miseDe=m=>({id:m.id,s:m.s,amt:+m.amt,fee:+m.fee,net:+m.net,price:m.price,mult:+m.mult,tk:m.tk|0});
@@ -142,7 +149,7 @@ function hydrater(e){
  me.deps=(e.deps||[]).map(depDe);me.wds=(e.wds||[]).map(wdDe);if(e.rg)me.rg=rgDe(e.rg);
  /* pari éclair : les mises de la manche en cours sont rendues par le serveur (flashBoot les replace sur leurs paris) */
  {const b=e.eclair&&e.eclair.b||{};if(Object.keys(b).length){me.fmy={r:e.eclair.r,b:{}};for(const g in b)me.fmy.b[g]=miseDe(b[g]);}SRV_ECLAIR_DU=e.eclair?(e.eclair.du|0):0;}
- me.serie=serieDe(e.serie);
+ me.serie=serieDe(e.serie);SRV_BZ.aRegler=(e.blitz||[]).slice();
  me.notifs=(e.notifs||[]).map(notifDe);me.missions=(e.missions||[]).map(missionDe);me.badges=(e.badges||[]).slice();
  me.friends=(e.friends||[]).slice();me.freqIn=(e.freqIn||[]).slice();me.freqOut=(e.freqOut||[]).slice();me.following=(e.following||[]).slice();
  const pr=e.prefs||{};for(const k of SRV_PREFS)if(pr[k]!==undefined)me[k]=pr[k];
@@ -501,13 +508,118 @@ async function srvSerieRegler(){
 }
 planifier('serveur : série',1000,()=>{if(typeof serieTick==='function')serieTick();},'serveur');
 
+/* ----- Blitz Royale -----
+   La salle se déduit de l'heure avec le moteur partagé (joueurs simulés, choix, issues, jackpot reporté) : l'écran la
+   reconstruit chaque seconde et la donne au même affichage qu'en mode Démo. Le serveur tient les vrais joueurs : il est
+   interrogé à l'ouverture de l'écran, pendant les inscriptions, après chaque manche et pour la clôture. */
+const SRV_BZ={vues:{},lu:{},annonce:{},clos:{},aRegler:[],occupe:false,cle:'',salle:null};
+const srvBzVue=id=>SRV_BZ.vues[id]||{id,n:0,pot:0,vivants:[],moi:null,clos:null};
+const srvBzChute=(moi,issues,n)=>{for(let i=1;i<=n;i++){const c=moi.choix?moi.choix[i]:undefined;if(c===undefined||c===null||+c!==issues[i-1]){if(i===1&&moi.rachat)continue;return i;}}return 0;};
+async function srvBzAppel(action,corps,ev){
+ const r=await API.fn('eclair',Object.assign({action},corps||{}));
+ if(typeof r.now==='number')FSKEW=r.now-Date.now();
+ if(r.blitz)SRV_BZ.vues[r.blitz.id]=r.blitz;
+ if(r.me)srvAppliquer(r,ev);
+ for(const h of r.hist||[])S.me.history.unshift(histDe(h));
+ return r;
+}
+/* où en est le Blitz `id` à l'heure t (serveur) : salle d'attente, manche en cours (ou pause), terminé */
+function srvBzPhase(id,t){const M=MoteurEclair,B=M.BZ,b=M.bzBots(id),v=srvBzVue(id),debut=M.bzDebut(id),log=[],issues=[];
+ if(t<debut)return {id,b,v,phase:'lobby',debut,log,issues,vivB:b.n};
+ let vivB=b.n;
+ for(let i=1;i<=B.ROUNDS;i++){const m=M.bzManche(id,i),x=M.bzIssue(id,i);
+  if(t<m.fin)return {id,b,v,phase:'live',i,m,x,pause:t<m.debut,debut,log,issues,vivB};
+  issues.push(x.out);const mb=b.manches[i-1],apres=mb?mb.vivants:0,moiVivant=v.moi&&srvBzChute(v.moi,issues,i)===0?1:0,reels=v.vivants[i-1]!==undefined?v.vivants[i-1]|0:moiVivant;
+  log.unshift({round:i,out:x.out,p0:x.p0,p1:x.p1,gone:vivB-apres,alive:apres+reels});vivB=apres;
+  if(apres+reels===0||i===B.ROUNDS)return {id,b,v,phase:'done',i,fin:m.fin,debut,log,issues,vivB,reels};
+ }
+}
+/* la salle au format de l'écran (S.bz.royale). Les heures sont converties à l'horloge de l'appareil. */
+function srvBzSalle(e,t){const M=MoteurEclair,B=M.BZ,b=e.b,v=e.v,d=MoteurEclair.JEUX[B.GID];
+ const nb=e.phase==='lobby'?Math.round(b.n*clamp(1-(e.debut-t)/600000,.12,1)):b.n;
+ const cle=e.id+':'+e.phase+':'+(e.i||0)+':'+(e.pause?1:0)+':'+nb+':'+e.vivB;
+ let r=SRV_BZ.salle;
+ if(SRV_BZ.cle!==cle||!r){SRV_BZ.cle=cle;const bots=new Array(nb);for(let k=0;k<nb;k++)bots[k]={u:USER_IDS[k]||('bot'+(k+1)),alive:k<e.vivB,rebuy:false,choice:null};
+  r=SRV_BZ.salle={id:'bz'+e.id,sid:e.id,bots,log:e.log,path:null,closed:false};}
+ const moi=v.moi,faites=e.issues.length,chute=moi?srvBzChute(moi,e.issues,faites):0;
+ Object.assign(r,{state:e.phase,startAt:e.debut-FSKEW,prime:b.prime,buyin:b.buyin,carried:M.bzReport(e.id),target:b.n,log:e.log,
+  pot:M.bzReport(e.id)+nb*b.buyin+(+v.pot||0),
+  me:moi?{alive:chute===0,rebuy:!!moi.rachat,choice:null,paid:+moi.paye,outRound:chute||undefined}:null});
+ if(e.phase==='live'){const m=e.pause?M.bzManche(e.id,e.i-1):e.m,x=e.pause?M.bzIssue(e.id,e.i-1):e.x;
+  r.round=e.pause?e.i-1:e.i;r.rStart=m.debut-FSKEW;r.rEnd=m.fin-FSKEW;r.p0=x.p0;r.between=e.pause?e.m.debut-FSKEW:0;
+  if(!e.pause){if(!r.path||r.pathDe!==e.i){r.path=[x.p0];r.pathDe=e.i;}
+   const mb=b.manches[e.i-1],f=clamp((t-e.m.debut)/B.CHOICE_MS,0,1),nO=mb?Math.round(mb.haut*f):0,nE=mb?Math.round(mb.be*f):0,nN=mb?Math.round(mb.bas*f):0;
+   for(let k=0;k<e.vivB&&k<r.bots.length;k++)r.bots[k].choice=k<nO?1:k<nO+nE?2:k<nO+nE+nN?0:null;
+   if(r.me&&r.me.alive&&moi.choix&&moi.choix[e.i]!==undefined)r.me.choice=+moi.choix[e.i];}
+  else r.path=null;}
+ else{r.round=e.i||0;r.between=0;}
+ return r;
+}
+/* annonces de fin de manche et de fin de Blitz : mêmes messages qu'en mode Démo */
+function srvBzAnnoncer(e){const B=MoteurEclair.BZ,v=e.v,moi=v.moi;if(!moi)return;
+ for(let i=1;i<=e.issues.length;i++){const k=e.id+':'+i;if(SRV_BZ.annonce[k])continue;SRV_BZ.annonce[k]=1;
+  const out=e.issues[i-1],lab=out===2?_t("Break even"):out===1?_t("Haut"):_t("Bas"),avant=srvBzChute(moi,e.issues,i-1),apres=srvBzChute(moi,e.issues,i);
+  if(avant!==0||(e.phase==='done'&&i===e.issues.length))continue;                              /* déjà éliminé, ou dernière manche : c'est la clôture qui parle */
+  const ligne=e.log.find(l=>l.round===i)||{alive:0},part=ligne.alive?S.bz.royale.pot*(1-B.RAKE)/ligne.alive:0;
+  if(apres)toast({tone:'red',icon:'bolt',flash:true,title:`${_t("Éliminé à la manche {0}",[i])}`,text:`${_t("C’était {0}. {1}",[lab,i===1&&!moi.rachat?`${_t("Rachat possible à {0} avant la manche 2.",[F.usd0(B.REBUY)])}`:_t("Tu restes en spectateur.")])}`,href:'#blitz'});
+  else toast({tone:'green',icon:'bolt',flash:true,title:`${_t("Manche {0} : tu survis",[i])}`,text:`${_t("{0}. {1} en vie, ta part : {2}.",[lab,F.int(ligne.alive),F.usd(part)])}`,href:'#blitz'});}
+}
+function srvBzFin(id,vue){const c=vue.clos,moi=vue.moi;if(!c||SRV_BZ.clos[id])return;SRV_BZ.clos[id]=1;
+ S.bz.history.unshift({id:'bz'+id,at:now(),pot:+c.cagnotte,players:c.joueurs,alive:c.survivants,each:+c.chacun,me:moi?(moi.gagne?'won':'lost'):null,prime:MoteurEclair.bzPrime(id)});S.bz.history=S.bz.history.slice(0,8);
+ if(moi&&moi.gagne){toast({tone:'green',icon:'trophy',force:true,title:`${_t("Blitz gagné : +{0}",[F.usd(+moi.gain-+moi.paye)])}`,text:`${_t("{0} survivant{1} se partagent {2}.",[c.survivants,c.survivants>1?'s':'',F.usd0(+c.cagnotte)])}`,href:'#blitz'});confetti(60);}
+}
+async function srvBzLire(id,cle){if(SRV_BZ.lu[id]===cle||SRV_BZ.occupe)return;SRV_BZ.lu[id]=cle;try{await srvBzAppel('blitz_state',{id});srvBzTick();}catch(e){delete SRV_BZ.lu[id];console.warn('[srv] Blitz indisponible',e.code);}}   /* la salle est refaite aussitôt avec ce que dit le serveur */
+async function srvBzClore(id){if(SRV_BZ.occupe||now()<(SRV_BZ.apres||0))return;SRV_BZ.occupe=true;SRV_BZ.apres=now()+1500;
+ try{const r=await srvBzAppel('blitz_settle',{id});SRV_BZ.aRegler=SRV_BZ.aRegler.filter(x=>x!==id);if(r.blitz)srvBzFin(id,r.blitz);updateHeader();}
+ catch(e){if(e.code==='session'||e.code==='exclu'||e.code==='suspendu')srvErreur(e);else{SRV_BZ.apres=now()+(e.code==='blitz_en_cours'?1500:6000);if(e.code!=='blitz_en_cours')console.warn('[srv] clôture du Blitz remise à plus tard',e.code);}}
+ finally{SRV_BZ.occupe=false;}
+}
+/* chaque seconde : la salle du moment, les lectures du serveur aux moments utiles, la clôture quand le Blitz est fini */
+function srvBzTick(){
+ if(!S.me.logged||typeof bzRefresh!=='function')return;
+ const M=MoteurEclair,t=fNow(),vu=(S.ui.route||'')==='blitz';let id=M.bzId(t),e=srvBzPhase(id,t);
+ const mien=!!e.v.moi||SRV_BZ.aRegler.length>0;
+ if(!vu&&!mien){const suivant=srvBzVue(id+1);if(!suivant.moi)return;}                    /* ni sur l'écran, ni inscrit : rien à faire */
+ if(e.phase==='done'){
+  if(e.v.moi&&!e.v.moi.regle)srvBzClore(id);else if(vu&&!e.v.clos)srvBzLire(id,'fin');
+  if(e.v.clos)srvBzFin(id,e.v);
+  if(t>=e.fin+6000){id++;e=srvBzPhase(id,t);}}
+ for(const vieux of SRV_BZ.aRegler)if(vieux<M.bzId(t)){srvBzClore(vieux);break;}             /* un Blitz joué avant de partir, à régler au retour */
+ if(vu||e.v.moi)srvBzLire(e.id,e.phase==='lobby'?'l'+Math.floor(t/30000):e.phase+':'+e.issues.length);
+ S.bz.royale=srvBzSalle(e,t);
+ if(e.phase!=='lobby')srvBzAnnoncer(e);
+ bzRefresh(true);
+}
+planifier('serveur : blitz',1000,srvBzTick,'serveur');
+async function srvBzEntrer(){const r=bzR();if(!r||r.state!=='lobby'||SRV_BZ.occupe)return;if(typeof rgBlocked==='function'&&rgBlocked('bet'))return;
+ if(r.buyin>S.me.balance){toast({tone:'amber',icon:'wallet',title:_t("Solde insuffisant"),text:_t("Dépose des fonds pour continuer."),href:'#depot'});return;}
+ SRV_BZ.occupe=true;
+ try{await srvBzAppel('blitz_join',{id:r.sid,key:cleOp()});
+  toast({tone:'blue',icon:'bolt',force:true,title:_t("Inscrit au Blitz Royale"),text:`${_t("Buy-in {0}. Départ dans {1} s, 10 manches de 60 secondes.",[F.usd0(r.buyin),Math.max(1,Math.round((r.startAt-now())/1000))])}`});}
+ catch(e){srvErreur(e);}
+ finally{SRV_BZ.occupe=false;updateHeader();srvBzTick();}
+}
+async function srvBzChoisir(c){const r=bzR();if(!r||SRV_BZ.occupe)return;SRV_BZ.occupe=true;
+ try{await srvBzAppel('blitz_choose',{id:r.sid,choice:c===1?'oui':c===0?'non':'be'});}
+ catch(e){if(e.code==='choix_fermes')toast({tone:'amber',icon:'lock',title:_t("Choix fermés"),text:`${_t("Le choix se fait dans les {0} premières secondes de la manche.",[BZ.CHOICE_MS/1000])}`});else srvErreur(e);}
+ finally{SRV_BZ.occupe=false;srvBzTick();}
+}
+async function srvBzRacheter(){const r=bzR();if(!r||!bzCanRebuy(r)||SRV_BZ.occupe)return;if(typeof rgBlocked==='function'&&rgBlocked('bet'))return;
+ if(BZ.REBUY>S.me.balance){toast({tone:'amber',icon:'wallet',title:_t("Solde insuffisant"),text:_t("Dépose des fonds pour continuer."),href:'#depot'});return;}
+ SRV_BZ.occupe=true;
+ try{await srvBzAppel('blitz_rebuy',{id:r.sid});
+  toast({tone:'blue',icon:'bolt',force:true,title:_t("Rachat accepté"),text:`${_t("{0} ajoutés à la cagnotte. Tu reviens en jeu à la manche {1}. C’était ton seul rachat.",[F.usd0(BZ.REBUY),r.round+1])}`});}
+ catch(e){srvErreur(e);}
+ finally{SRV_BZ.occupe=false;updateHeader();srvBzTick();}
+}
+
 /* ----- Sujet privé du joueur : ses messages privés et ses notifications arrivent en direct, à lui seul ----- */
 function srvPerso(evt,d){
  if(evt==='dm'){if(d&&d.u)srvChatAjouter('dm:'+d.u,d);return;}
  if(evt==='notif'&&d&&d.n){
   if(S.me.notifs.some(x=>x.id===d.n.id))return;
   S.me.notifs.unshift(notifDe(d.n));S.me.notifs=S.me.notifs.slice(0,30);updateBell();
-  if(/^fr_|^marche_resolu$|^admin_solde$|^kyc_ok$/.test(d.n.code||'')){srvVu=0;srvRafraichir();}                   /* demande d'ami ou acceptation : les listes viennent du serveur */
+  if(/^fr_|^marche_resolu$|^admin_solde$|^kyc_ok$|^blitz_gagne$/.test(d.n.code||'')){srvVu=0;srvRafraichir();}                   /* demande d'ami ou acceptation : les listes viennent du serveur */
  }
 }
 

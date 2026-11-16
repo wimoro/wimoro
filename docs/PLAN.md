@@ -188,7 +188,14 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
       fonctions `srv_serie_…` réservées à la clé de service). Heure de début, prix de départ, cote et issue viennent du
       serveur. _Tests_ `tests/sql/serie.spec.mjs` (7), `tests/compte/serie.spec.mjs` (3), `tests/e2e/comptes.spec.mjs`
       (une manche gagnée puis encaissée contre le vrai serveur : le stack payé est celui que l'écran annonce).
-- [ ] Blitz Royale : annoncé comme indisponible en mode Compte.
+- [x] Blitz Royale en mode Compte : la salle (joueurs simulés, choix, issues, jackpot reporté) se déduit de l'heure avec le
+      moteur partagé ; l'entrée, les choix, le rachat et le gain des vrais joueurs sont écrits par le serveur (Edge Function
+      `eclair`, actions `blitz_…` ; fonctions `srv_blitz_…`). _Tests_ `tests/sql/blitz.spec.mjs` (5),
+      `tests/compte/blitz.spec.mjs` (3 : dix manches gagnées, chute + rachat, spectateur), `tests/e2e/comptes.spec.mjs`
+      (salle et inscription contre le vrai serveur).
+- [ ] Limite : un Blitz entier (dix manches puis le paiement) n'a pas été joué contre le vrai serveur — il faudrait attendre
+      un créneau réel de 15 minutes dans un test. Le paiement est prouvé dans la base embarquée et avec le faux serveur.
+- [ ] Limite : le chat du Blitz, les salons VIP et de clan restent fermés à l'écriture en mode Compte.
 - [ ] Limite assumée de la maquette : le pari éclair, la Série et le Blitz sont **déterministes** (tout se déduit de l'heure,
       avec un moteur public). Un joueur qui lit le code peut donc connaître l'issue d'une manche à l'avance. Sans
       conséquence avec de l'argent fictif ; à remplacer par un tirage secret côté serveur avant tout argent réel.
@@ -327,6 +334,10 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 | Démarrage du direct | Les marchés sont relus une fois juste après l'abonnement au temps réel. | Un changement de prix pouvait être manqué entre la première lecture et l'abonnement (constaté par un test contre le vrai serveur). |
 | La Série : XP et « paris réglés » | Les 10 XP sont donnés au premier choix (pas au lancement) ; une série reprise avant tout gain ne compte pas comme un pari réglé. | En mode Démo, lancer puis reprendre sa mise rapportait 10 XP et un « pari réglé » : sur un serveur, c'était une faille (rang gratuit). |
 | La Série : cote | La cote retenue est celle que le serveur calcule à la réception du choix, pas celle affichée une fraction de seconde plus tôt. | Le serveur fait autorité ; l'écran affiche ensuite la cote retenue. |
+| Blitz : cadence | Un Blitz toutes les 15 minutes en mode Compte (10 minutes en mode Démo) : inscriptions jusqu'à 2 minutes après le début du créneau, puis au plus 10 manches. | Un Blitz complet dure 11 minutes 40 : avec un créneau fixe de 15 minutes, tous les écrans et le serveur calculent la même salle sans se parler. |
+| Blitz : prime time | 21 h, heure de Paris en hiver (20 h UTC), pour tout le monde. | En mode Démo c'était 21 h à l'heure de chaque appareil ; un serveur doit choisir une seule heure. |
+| Blitz : joueurs simulés | Leurs choix sont tirés une fois par manche (1 % ne choisit pas) ; le jackpot reporté ne compte que leurs entrées. | Même allure qu'en mode Démo, mais calculable à l'identique par l'écran et le serveur. |
+| Blitz : paiement | Réglé à la demande : le premier inscrit qui revient après la fin déclenche le paiement de tous les inscrits. | Pas de tâche planifiée capable d'exécuter le moteur (JavaScript) ; aucun gain ne se perd, il attend au plus le retour d'un inscrit (un mois). |
 | Protection de `main` | Non activée. | Elle changerait ta façon de publier ; elle reste proposée, facultative. |
 
 ## À faire par l'humain
@@ -362,3 +373,4 @@ Rien d'obligatoire. Le détail et les constats sont dans `docs/EXPLOITATION.md`,
 | 16 nov. 2026 | 4.5 (fin) : messages des bots dans le chat, en gabarit + paramètres. | migration `chat_bots` (empreinte identique) ; 180 tests (81 SQL) ; 9 scénarios de bout en bout contre le vrai back |
 | 16 nov. 2026 | Phase 6 : panel d'administration (joueurs, marchés avec résolution, chat, bots, chiffres, journal). Bots du chat : un rythme par salon regardé. Démarrage du direct : relecture de rattrapage. | migrations `admin`, `chat_bots_rythme` (empreintes identiques) ; 196 tests (88 SQL) ; 10 scénarios de bout en bout contre le vrai back |
 | 16 nov. 2026 | 4.4 (suite) : La Série en mode Compte. | migration `serie` (empreinte identique), Edge Function `eclair` version 2 ; 206 tests (95 SQL) ; 11 scénarios de bout en bout contre le vrai back |
+| 16 nov. 2026 | 4.4 (fin) : Blitz Royale en mode Compte. | migration `blitz` (empreinte identique), Edge Function `eclair` version 3 ; 214 tests (100 SQL) ; 12 scénarios de bout en bout contre le vrai back |

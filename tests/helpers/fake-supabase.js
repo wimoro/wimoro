@@ -61,7 +61,7 @@
 
   /* ----- Les fonctions du contrat ----- */
   var RPC = {
-    api_state: function () { var e0 = etat(); regler(e0, []); rgMaj(e0, []); var e = clone(e0); e.deps = e0.deps.map(depJson); e.eclair = eclairJson(e0); delete e.eclairMises; e.serie = serieJson(e0); e.now = Date.now() + (CFG.decalage || 0); return e; },
+    api_state: function () { var e0 = etat(); regler(e0, []); rgMaj(e0, []); var e = clone(e0); e.deps = e0.deps.map(depJson); e.eclair = eclairJson(e0); delete e.eclairMises; e.serie = serieJson(e0); e.blitz = Object.keys(e0.blitzJ || {}).filter(function (i) { return !e0.blitzJ[i].regle; }).map(Number); delete e.blitzJ; e.now = Date.now() + (CFG.decalage || 0); return e; },
     api_pseudo_libre: function (a) { return /^[A-Za-z0-9._]{3,20}$/.test(a.p_pseudo || '') && !pseudoPris(a.p_pseudo); },
     api_profile_update: function (a) { var p = a.p || {}, me = etat().me;
       if ('n' in p) { if (!/^[A-Za-z0-9._]{3,20}$/.test(p.n || '')) throw { message: 'pseudo_invalide' }; if (pseudoPris(p.n, uid())) throw { message: 'pseudo_pris' }; me.n = p.n; }
@@ -359,6 +359,43 @@
         regles.push({ r: r, step: pas, out: iss.out, p1: iss.p1, stack: s.stack, stake: s.stake, gid: s.gid, won: s.won }); }
       rep = reponse(ev); rep.serie = serieJson(e); rep.hist = hist; rep.regles = regles; return rep; }
     return null; }
+  /* Blitz Royale : un seul vrai joueur (le compte du test) ; mêmes règles que supabase/migrations/…_blitz.sql */
+  function blitzAction(b) { var ME = MoteurEclair, B = ME.BZ, e = etat(), me = e.me, t = Date.now(), k = ME.bzId(t), id = +b.id, ev = [], rep, r2 = function (x) { return Math.round(x * 100) / 100; };
+    var J = e.blitzJ = e.blitzJ || {}, j = J[id]; db.blitzClos = db.blitzClos || {};
+    var issues = function (n) { var L = []; for (var i = 1; i <= n; i++) L.push(ME.bzIssue(id, i).out); return L; };
+    var finies = function () { var n = 0; for (var i = 1; i <= B.ROUNDS; i++) if (t >= ME.bzManche(id, i).fin) n = i; return n; };
+    var chute = function (jj, iss, n) { for (var i = 1; i <= n; i++) { var c = jj.choix[i]; if (c === undefined || c !== iss[i - 1]) { if (i === 1 && jj.rachat) continue; return i; } } return 0; };
+    var vue = function (iss) { var jj = J[id]; return { id: id, n: jj ? 1 : 0, pot: jj ? jj.paye : 0, vivants: iss.map(function (_, i) { return jj && chute(jj, iss, i + 1) === 0 ? 1 : 0; }),
+      moi: jj ? { paye: jj.paye, rachat: jj.rachat, choix: clone(jj.choix), regle: jj.regle, gagne: jj.gagne, gain: jj.gain, sortie: chute(jj, iss, iss.length) || null } : null, clos: db.blitzClos[id] || null }; };
+    if (!(id >= k - 200 && id <= k + 1)) throw { message: 'blitz_inconnu' };
+    if (b.action === 'blitz_state') return { blitz: vue(issues(finies())) };
+    if (b.action === 'blitz_join') { var cle = uid() + ':' + b.key, bb = ME.bzBots(id); if (!b.key) throw { message: 'cle_absente' };
+      if (db.ops[cle]) { rep = clone(db.ops[cle]); rep.rejoue = true; return rep; }
+      if (e.rg && e.rg.pause > t) throw { message: 'pause' }; if (t >= ME.bzDebut(id)) throw { message: 'inscriptions_closes' }; if (j) throw { message: 'deja_inscrit' }; if (me.balance < bb.buyin) throw { message: 'solde_insuffisant' };
+      me.balance = r2(me.balance - bb.buyin); me.played++; J[id] = { paye: bb.buyin, rachat: false, choix: {}, regle: false, gagne: null, gain: 0 };
+      var av = rangDe(me); me.xp += 10; ev.push({ k: 'xp', n: 10, src: 'blitz' }); rangMonte(me, av, ev);
+      rep = reponse(ev); rep.blitz = vue([]); db.ops[cle] = clone(rep); return rep; }
+    if (b.action === 'blitz_choose') { var c = { oui: 1, non: 0, be: 2 }[b.choice], m = 0; if (c === undefined) throw { message: 'cote_invalide' };
+      for (var i = 1; i <= B.ROUNDS; i++) { var mm = ME.bzManche(id, i); if (t >= mm.debut && t < mm.debut + B.CHOICE_MS) m = i; }
+      if (!m) throw { message: 'choix_fermes' }; if (!j) throw { message: 'pas_inscrit' }; if (chute(j, issues(m - 1), m - 1)) throw { message: 'elimine' };
+      j.choix[m] = c; rep = reponse(ev); rep.blitz = vue(issues(m - 1)); return rep; }
+    if (b.action === 'blitz_rebuy') { if (!j) throw { message: 'pas_inscrit' }; if (j.rachat) throw { message: 'rachat_fait' }; var i1 = ME.bzIssue(id, 1).out;
+      if (chute({ choix: j.choix, rachat: false }, [i1], 1) !== 1 || t < ME.bzManche(id, 1).fin || t >= ME.bzManche(id, 2).debut) throw { message: 'rachat_indisponible' };
+      if (me.balance < B.REBUY) throw { message: 'solde_insuffisant' }; me.balance = r2(me.balance - B.REBUY); j.rachat = true; j.paye += B.REBUY;
+      rep = reponse(ev); rep.blitz = vue([i1]); return rep; }
+    if (b.action === 'blitz_settle') { var bots = ME.bzBots(id), iss = issues(B.ROUNDS), L = B.ROUNDS, hist = [];
+      if (!db.blitzClos[id]) {
+        for (var r = 1; r <= B.ROUNDS; r++) { var bv = bots.manches[r - 1] ? bots.manches[r - 1].vivants : 0, rv = j && chute(j, iss, r) === 0 ? 1 : 0; if (bv + rv === 0) { L = r; break; } }
+        if (t < ME.bzManche(id, L).fin) throw { message: 'blitz_en_cours' };
+        var surv = (bots.manches[L - 1] ? bots.manches[L - 1].vivants : 0) + (j && chute(j, iss, L) === 0 ? 1 : 0), pot = ME.bzReport(id) + bots.n * bots.buyin + (j ? j.paye : 0), chacun = surv ? Math.floor(pot * .95 / surv * 100) / 100 : 0;
+        db.blitzClos[id] = { joueurs: bots.n + (j ? 1 : 0), survivants: surv, cagnotte: pot, chacun: chacun, manches: L };
+        if (j && !j.regle) { var avant = rangDe(me), ch = chute(j, iss, L), h; j.regle = true; me.settled++;
+          if (!ch) { j.gagne = true; j.gain = chacun; me.balance = r2(me.balance + chacun); me.wins++; me.realized = r2((me.realized || 0) + chacun - j.paye); me.xp += 80; ev.push({ k: 'xp', n: 80, src: 'blitz' });
+            h = { k: 'flash', q: 'blitz|g|' + (bots.n + 1), s: 'oui', win: true, pnl: r2(chacun - j.paye), at: t }; }
+          else { j.gagne = false; me.realized = r2((me.realized || 0) - j.paye); h = { k: 'flash', q: 'blitz|p|' + (bots.n + 1), s: 'non', win: false, pnl: -j.paye, at: t }; }
+          e.history.unshift(clone(h)); hist.push(h); rangMonte(me, avant, ev); } }
+      rep = reponse(ev); rep.blitz = vue(iss); rep.hist = hist; return rep; }
+    return null; }
   function eclairMiser(b) { var ME = MoteurEclair, e = etat(), me = e.me, t = Date.now(), d = ME.JEUX[b.gid], amt = Math.round(Number(b.amt) * 100) / 100, cle = uid() + ':' + b.key;
     if (!d) throw { message: 'jeu_inconnu' }; if (['oui', 'non', 'be'].indexOf(b.side) < 0) throw { message: 'cote_invalide' };
     if (!(amt >= 1) || !(amt <= 10000)) throw { message: 'montant_invalide' }; if (!b.key) throw { message: 'cle_absente' };
@@ -416,11 +453,11 @@
     var b = (opt && opt.body) || {}; rec('fn', name, { pseudo: b.pseudo });
     var ko = function (code) { return Promise.resolve({ data: null, error: { message: 'Edge Function returned a non-2xx status code', context: { json: function () { return Promise.resolve({ ok: false, code: code }); } } } }); };
     if (name === 'eclair') {
-      calls[calls.length - 1].args = { action: b.action, gid: b.gid, side: b.side, amt: b.amt, stake: b.stake, choice: b.choice };
+      calls[calls.length - 1].args = { action: b.action, gid: b.gid, side: b.side, amt: b.amt, stake: b.stake, choice: b.choice, id: b.id };
       if (CFG.horsLigne) return Promise.reject(new TypeError('Failed to fetch'));
       var forcee = (CFG.fn || {}).eclair; if (forcee) return ko(forcee);
       if (!uid()) return ko('session');
-      try { var rep = b.action === 'bet' ? eclairMiser(b) : b.action === 'settle' ? eclairRegler() : /^serie_/.test(b.action || '') ? serieAction(b) : null; if (!rep) return ko('requete'); persist(); rep.ok = true; rep.now = Date.now() + (CFG.decalage || 0);
+      try { var rep = b.action === 'bet' ? eclairMiser(b) : b.action === 'settle' ? eclairRegler() : /^serie_/.test(b.action || '') ? serieAction(b) : /^blitz_/.test(b.action || '') ? blitzAction(b) : null; if (!rep) return ko('requete'); persist(); rep.ok = true; rep.now = Date.now() + (CFG.decalage || 0);
         return new Promise(function (ok) { setTimeout(function () { ok({ data: clone(rep), error: null }); }, CFG.latence || 3); }); }
       catch (e) { return ko(e.message || 'serveur'); }
     }
