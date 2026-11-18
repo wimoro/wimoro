@@ -177,7 +177,7 @@ function copyCardInner(u){
  if(c){const pnl=cPnl(c);return head(`${_t("Tu copies {0}",[esc(U.n)])}`,`${_t("{0} depuis {1} · {2} · {3}",[c.status==='paused'?_t("Copie en pause"):_t("Copie active"),ago(c.at),cModeTxt(c),cCatsTxt(c)])}`)+`<div class="cp-kpis"><div><small>${_t("Résultat")}</small><b class="num ${plc(pnl)}">${F.signed(pnl)}</b></div><div><small>${_t("Paris copiés")}</small><b class="num">${F.int(c.n)}</b></div><div><small>${_t("En jeu")}</small><b class="num">${F.usd0(cOpen(c))}</b></div></div><button class="btn b-white lg full" data-a="cp-manage" data-id="${c.id}">${_t("Gérer la copie")}</button>`;}
  const lock=!can('copy');
  return head(`${_t("Copier {0}",[esc(U.n)])}`,_t("Chaque nouveau pari de ce joueur est reproduit automatiquement sur ton compte, avec ton budget et tes réglages."))+copyKpiH(u)
-  +(lock?`<button class="btn b-ink lg full" data-a="lock" data-g="copy">${_t("{0} Se débloque au rang {1}",[ic('lock',14),gateName()])}</button>`:`<button class="btn b-oui lg full" data-a="cp-open" data-u="${u}">${_t("{0} Copier automatiquement",[ic('copy',16,'#fff')])}</button>`)
+  +(lock?`<button class="btn b-ink lg full" data-a="lock" data-g="copy">${_t("{0} Se débloque au rang {1}",[ic('lock',14),gateName()])}</button>`:`<button class="btn b-pri lg full" data-a="cp-open" data-u="${u}">${_t("{0} Copier automatiquement",[ic('copy',16,'#fff')])}</button>`)
   +`<p class="note">${_t("Réservé au rang {0} et plus. Les performances passées ne garantissent pas les résultats futurs.",[gateName()])}</p>`;
 }
 const copyCardH=u=>`<section class="pn pad cp-card" data-cpcard="${u}">${copyCardInner(u)}</section>`;
@@ -225,7 +225,7 @@ function copyModalH(){const st=S.ui.cp,U=userOf(st.u),k=cpCheck(st),prop=st.mode
  <div class="cpf"><span class="cpl">${_t("Arrêt de perte")}</span><div class="chips" data-cpstop>${[[10,F.pct(10)],[20,F.pct(20)],[30,F.pct(30)],[50,F.pct(50)],[0,_t("Aucun")]].map(([v,l])=>`<button type="button" class="chip${st.stop===v?' on':''}" data-a="cp-stop-set" data-v="${v}">${l}</button>`).join('')}</div><span class="sub">${_t("La copie s’arrête et vend ses positions si sa perte atteint ce seuil de ton budget.")}</span></div>
  ${st.edit?'':`<label class="chk"><input type="checkbox" data-cp-existing checked> ${_t("Copier aussi ses mises en cours")}</label>`}
  <div data-cpsum>${cpSumH(st)}</div>
- <button class="btn b-oui lg full" data-a="cp-start" data-cpgo${k.ok?'':' disabled'}>${st.edit?_t("Enregistrer les réglages"):_t("Démarrer la copie")}</button>
+ <button class="btn b-pri lg full" data-a="cp-start" data-cpgo${k.ok?'':' disabled'}>${st.edit?_t("Enregistrer les réglages"):_t("Démarrer la copie")}</button>
  <p class="note">${_t("Chaque pari copié passe par le carnet d’ordres avec les frais d’entrée habituels ; {0} en touche {1} %, sans surcoût pour toi. Les paris éclair ne sont pas copiés. Les performances passées ne garantissent pas les résultats futurs. Tu peux arrêter à tout moment.",[esc(U.n),sharePct()])}</p></div>`;}
 function copyModalSync(){const st=S.ui.cp;if(!st)return;const k=cpCheck(st),s=$('[data-cpsum]'),b=$('[data-cpgo]');if(s){s.innerHTML=cpSumH(st);fixText(s);}if(b)b.disabled=!k.ok;
  $$('[data-cpstop] .chip').forEach(x=>x.classList.toggle('on',+x.dataset.v===st.stop));$$('[data-cppct] .chip').forEach(x=>x.classList.toggle('on',+x.dataset.v===+st.pct));
