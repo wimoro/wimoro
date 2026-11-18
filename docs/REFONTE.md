@@ -23,6 +23,52 @@ puis `git log --oneline refonte-design`.** Le suivi de la réparation du back re
 | 7. Nettoyage | à faire |
 | 8. Vérification et livraison | à faire |
 
+## Reprise (mis à jour à chaque étape)
+
+**Où j'en suis** : système de design et navigation en place (commit `33aebcf`), tests de démonstration verts. Je suis
+dans l'étape 6, écran par écran.
+
+**Ce qui est fait dans le code**
+- `css/main.css` n'est plus chargé (supprimé à l'étape 7). Le site charge `tokens.css`, `base.css`, `components.css`,
+  `screens.css`. Plus de polices Google. Thème clair par défaut (le choix enregistré `wimoro-theme` est seul pris en compte).
+- `index.html` : en-tête et barre d'onglets à 5 destinations ; la puce de rang et les boutons « Déposer » de l'en-tête
+  sont retirés (rang dans Profil, dépôt dans Portefeuille).
+- `js/refonte.js` (nouveau, chargé avant `serveur.js`) : sous-navigations `comNavH` et `jeuxNavH`, écran `#portefeuille`
+  (`vWallet`), profil allégé (`vProfil`), présentation visiteur (`introH`), `ACT.ptab` aiguillé (positions et historique
+  → portefeuille).
+- `js/i18n-4.js` (nouveau) : traductions anglaise et hébraïque de tout texte ajouté par la refonte.
+- `js/account.js` : menu du compte réduit ; l'ancienne version reste sous `umenuAncienItemsH` (marquée `ANCIEN-MENU`,
+  à supprimer au nettoyage). `js/blitz.js` : `bzModesH` renvoie à `jeuxNavH`.
+- Classes de bouton renommées dans tous les gabarits : `b-pri`, `b-yes`, `b-no`, `b-yes-soft`, `b-no-soft`.
+
+**Reste à faire, dans l'ordre**
+1. Accueil et liste des marchés (alléger : une colonne latérale courte, boutons Oui / Non côte à côte).
+2. Fiche d'un marché et ticket (détails repliés, 3 gestes pour parier).
+3. Éclair, Blitz, Série, duels, combinés.
+4. Inscription, connexion, onboarding, KYC.
+5. Portefeuille, dépôt, retrait.
+6. Profil, rang, réglages, notifications.
+7. Communauté : chat, clans, amis, classement, copies.
+8. Mode Pro. 9. Pages secondaires. 10. Administration (`css/admin.css`).
+11. Icônes : un seul jeu au trait sous licence libre (Lucide) dans `ICP` (`js/core.js`) et `index.html`.
+12. Styles en ligne des gabarits → classes (utilitaires `t-1…5`, `mt-1…6`, etc. dans `base.css`).
+13. Couleurs codées en dur dans le JavaScript des graphiques (`flash.js:218`, `account.js:97`, `ICV` dans `core.js:56`).
+14. Nettoyage (`main.css`, `umenuAncienItemsH`, code mort relevé dans l'inventaire), documentation du système de design.
+15. Vérification complète (345 tests, parcours, captures clair et sombre, hébreu), puis livraison (pull request).
+
+**Outils de travail (hors dépôt)** : dossier `scratchpad/outils` de la session — `capture.mjs` (captures Playwright :
+`node capture.mjs <dossier> --mode=demo|visiteur|compte --lang=fr|en|he --theme=light|dark [--only=…] [--viewport]
+[--jpeg --dpr=1.5 --maxh=1800 --q=55]`), `classes.mjs` (inventaire des classes), `migrer-css.mjs` + `composants.txt` +
+`roles.txt` (migration de l'ancien CSS, déjà appliquée), `renommer-boutons.cjs` (déjà appliqué). S'ils ont disparu,
+ils se réécrivent en quelques minutes : seul `capture.mjs` sert encore. Les captures « avant » se refont à tout moment
+depuis `main` (`git worktree add ../avant origin/main` puis `node tools/serve.mjs 4174` dans ce dossier).
+
+**Pièges rencontrés**
+- Garde-fou ECC : la première création ou modification d'un fichier est refusée ; énoncer les faits demandés puis
+  réessayer. Pour un nouveau fichier, écrire d'abord une ligne, puis le vrai contenu.
+- Les commandes `node -e` et les heredocs abîment les barres obliques inverses : écrire les scripts dans des fichiers.
+- Ne pas lancer deux suites Playwright (`npx playwright test`) en même temps dans le dépôt.
+
 ## 0. Plugins disponibles dans la session
 
 **unslop** (`unslop@heydamir`, version `620163eedb35`) : un skill, `unslop:unslop` (`/unslop`). Il apporte une méthode

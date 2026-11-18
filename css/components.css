@@ -291,3 +291,20 @@
 .mrow-c{color:var(--text-4);display:grid}
 [dir=rtl] .mrow-c svg{transform:scaleX(-1)}
 @media (hover:hover){.mrow:hover{background:var(--fill)}}
+
+/* ====================================================================== Détail à la demande */
+/* <details class="tdet"> (ticket de pari) et sections repliables (.repli, posées par refonte.js) */
+.tdet{border-top:1px solid var(--line)}
+.tdet summary{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);min-height:var(--tap);font-size:var(--fs-2);font-weight:var(--fw-medium);color:var(--text-2);cursor:pointer;list-style:none}
+.tdet summary::-webkit-details-marker{display:none}
+.tdet summary::after,.repli-t::after{content:'';flex:none;width:8px;height:8px;margin-inline:var(--sp-2) 4px;border-inline-end:2px solid var(--text-3);border-bottom:2px solid var(--text-3);transform:rotate(45deg);transition:transform var(--dur-2) var(--ease)}
+.tdet[open] summary::after,.repli-t[aria-expanded="true"]::after{transform:rotate(-135deg)}
+.tdet>*+*{margin-top:var(--sp-3)}
+.tdet>:last-child{margin-bottom:var(--sp-1)}
+.repli-t{display:flex;align-items:center;justify-content:space-between;cursor:pointer;-webkit-user-select:none;user-select:none}
+.repli.plie>.repli-t{margin-bottom:0}
+.repli.plie>:not(.repli-t){display:none}
+@media (max-width:760px){
+  .subnav{gap:var(--sp-4)}
+  .subnav a{font-size:var(--fs-2)}
+}

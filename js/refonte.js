@@ -62,6 +62,24 @@ function vProfil(){const r=myRank(),st=stats(),pf=portfolio(),pg=progress(),t=['
  <section class="pn clip"><div class="wal-tabs"><div class="tabs ptabs">${[['badges',_t("Badges")],['settings',_t("Paramètres")],['mine',`<span class="lg-only">${_t("Mes paris créés")}</span><span class="sm-only">${_t("Créés")}</span>${(S.me.props||[]).length?' ('+S.me.props.length+')':''}`]].map(([k,l])=>`<button class="${t===k?'on':''}" data-a="ptab" data-v="${k}">${l}</button>`).join('')}</div></div><div data-ptab-body>${ptabH(t)}</div></section></div>`;}
 VIEWS.profil=vProfil;
 
+/* ===================== Accueil : la colonne latérale ne garde que les grosses mises en direct ===================== */
+/* Le rang est dans Profil, le classement et le chat dans Communauté. Le fil [data-bigs] est alimenté par pushBig (auth.js). */
+function bigsBlocH(){return `<section class="pn pad"><div class="ph"><div><div class="h2">${_t("Grosses mises en direct")}</div><div class="sub">${_t("Les plus gros paris de la dernière heure")}</div></div></div><div class="bigs" data-bigs>${bigsH()}</div></section>`;}
+
 /* ===================== Accueil : Wimoro en une phrase, pour un visiteur ===================== */
 function introH(){return `<section class="intro"><h2 class="ptitle">${_t("Parie sur ce qui va arriver")}</h2><p class="plead">${_t("Choisis un marché, réponds Oui ou Non, et gagne si tu as vu juste. Ici, tout l’argent est fictif.")}</p><div class="hbtns"><a class="btn b-pri lg" href="#inscription">${_t("Créer un compte")}</a><button class="btn b-ink lg" data-a="demo-login">${_t("Explorer avec le compte démo")}</button></div></section>`;}
 {const v=VIEWS.accueil;VIEWS.accueil=a=>{const h=v(a);return S.me.logged?h:enTete(h,introH());};}
+
+/* ===================== Sections repliables : l'essentiel d'abord, le détail à la demande =====================
+   Sur téléphone et tablette (colonnes empilées, 1100 px et moins), les blocs de la colonne secondaire des écrans listés
+   ci-dessous arrivent repliés : seul leur titre s'affiche, un appui les déplie. Rien n'est retiré du document : les
+   mises à jour en direct (data-fx, data-bz…) continuent d'écrire dedans. Le choix est gardé le temps de la visite. */
+const REPLI={ouvert:new Set(),routes:{eclair:1,blitz:1,serie:1,duels:1,duel:1,combines:1,clan:1,classement:1,joueur:1},
+ sel:'aside.col>section.pn:not(.chat):not(.ticket),.g-side>.col+.col>section.pn:not([data-flbet])'};
+function replier(){const view=$('#view');if(!view)return;const r=(S.ui.route||'accueil').split('-')[0];if(!REPLI.routes[r]||innerWidth>1100)return;
+ view.querySelectorAll(REPLI.sel).forEach(sec=>{const tete=sec.firstElementChild;if(!tete||sec.classList.contains('repli'))return;const titre=tete.matches('.h2,h2,h3')?tete:tete.querySelector('.h2,h2,h3');if(!titre)return;
+  const cle=r+':'+titre.textContent.trim(),o=REPLI.ouvert.has(cle);sec.classList.add('repli');sec.classList.toggle('plie',!o);sec.dataset.repli=cle;tete.classList.add('repli-t');tete.setAttribute('role','button');tete.tabIndex=0;tete.setAttribute('aria-expanded',String(o));});}
+function repliBascule(tete){const sec=tete.parentElement,o=sec.classList.toggle('plie');tete.setAttribute('aria-expanded',String(!o));if(o)REPLI.ouvert.delete(sec.dataset.repli);else REPLI.ouvert.add(sec.dataset.repli);}
+document.addEventListener('click',e=>{const t=e.target.closest('.repli-t');if(t&&!e.target.closest('a,button,input,select,label'))repliBascule(t);});
+document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.classList&&e.target.classList.contains('repli-t')){e.preventDefault();repliBascule(e.target);}});
+{const r0=render;render=function(top){r0(top);replier();};}
