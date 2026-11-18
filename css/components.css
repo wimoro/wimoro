@@ -297,8 +297,8 @@
 .tdet{border-top:1px solid var(--line)}
 .tdet summary{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);min-height:var(--tap);font-size:var(--fs-2);font-weight:var(--fw-medium);color:var(--text-2);cursor:pointer;list-style:none}
 .tdet summary::-webkit-details-marker{display:none}
-.tdet summary::after,.repli-t::after{content:'';flex:none;width:8px;height:8px;margin-inline:var(--sp-2) 4px;border-inline-end:2px solid var(--text-3);border-bottom:2px solid var(--text-3);transform:rotate(45deg);transition:transform var(--dur-2) var(--ease)}
-.tdet[open] summary::after,.repli-t[aria-expanded="true"]::after{transform:rotate(-135deg)}
+.tdet summary::after,.repli-b::after{content:'';flex:none;width:8px;height:8px;margin-inline:var(--sp-2) 4px;border-inline-end:2px solid var(--text-3);border-bottom:2px solid var(--text-3);transform:rotate(45deg);transition:transform var(--dur-2) var(--ease)}
+.tdet[open] summary::after,.repli-b[aria-expanded="true"]::after{transform:rotate(-135deg)}
 .tdet>*+*{margin-top:var(--sp-3)}
 .tdet>:last-child{margin-bottom:var(--sp-1)}
 .repli-t{display:flex;align-items:center;justify-content:space-between;cursor:pointer;-webkit-user-select:none;user-select:none}
@@ -313,3 +313,5 @@
 .link,.lk,.sw{position:relative}
 a.link::before,button.link::before,.lk::after,.sw::after{content:'';position:absolute;inset:-12px -4px}
 .repli-t{min-height:var(--tap)}
+/* le bouton qui porte l'état (aria-expanded) : l'en-tête entier reste cliquable à la souris */
+.repli-b{flex:none;display:grid;place-items:center;width:var(--tap);height:var(--tap);margin-inline-end:calc(-1*var(--sp-3))}

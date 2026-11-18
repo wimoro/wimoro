@@ -168,7 +168,7 @@ function ordersBoxH(m){const L=ordersOpen(m.id);return `<section class="pn pad" 
 function ordersTableH(){const L=ordersOpen(),D=ordersDone().slice(0,6);if(!L.length&&!D.length)return '';
  return `<div class="ords"><div class="ph" style="padding:14px 20px 4px"><div><div class="h2 t-3">${_t("Ordres limite")}</div><div class="sub">${L.length?`${_t("{0} en attente, {1} réservés sur ton solde",[L.length,F.usd(reservedCash())])}`:_t("Aucun ordre en attente")}</div></div></div><div class="p-0-5-3">${L.map(o=>ordRowH(o,true)).join('')}${D.length?`<details class="ord-old"><summary>${_t("Ordres terminés ({0})",[D.length])}</summary>${D.map(o=>ordRowH(o,true)).join('')}</details>`:''}</div></div>`;}
 function ordersRefresh(){$$('[data-ordbox]').forEach(el=>{const m=MK[el.dataset.ordbox];if(!m)return;el.outerHTML=ordersBoxH(m);const n=$(`[data-ordbox="${m.id}"]`);if(n)fixText(n);});
- if(S.ui.route==='profil'&&S.ui.ptab==='positions'){const pt=$('[data-ptab-body]');if(pt){pt.innerHTML=ptabH('positions');fixText(pt);}}
+ if(S.ui.route==='portefeuille'&&S.ui.ptab!=='history'){const pt=$('[data-ptab-body]');if(pt){pt.innerHTML=ptabH('positions');fixText(pt);}}
  const pb=$('[data-posbox]');if(pb&&MK[pb.dataset.posbox]){pb.outerHTML=posBoxH(MK[pb.dataset.posbox]);const n=$('[data-posbox]');if(n)fixText(n);}}
 
 Object.assign(ACT,{
@@ -180,8 +180,8 @@ Object.assign(ACT,{
  guard:a=>guardOpen(a.dataset.m,a.dataset.s),
  'guard-set':a=>{const d=S.ui.guard;if(!d)return;d[a.dataset.k]=a.dataset.v;const i=$(`[data-gd="${a.dataset.k}"]`);if(i)i.value=d[a.dataset.k];guardSync();},
  'guard-save':()=>{const d=S.ui.guard;if(!d)return;const c=guardCalc(d);if(!c.ok){if(c.none){d.tried=true;guardSync();const i=$('[data-gd="stop"]');if(i)i.focus();}return;}dropGuard(d.m,d.s);guardsAll().push({m:d.m,s:d.s,stop:c.stop||0,tp:c.tp||0,at:now()});S.ui.guard=null;closeModal();save();
-  toast({icon:'shield',title:_t("Protection activée"),text:`${_t("{0}{1}{2} sur {3}.",[c.stop?`${_t("Stop loss à {0}",[F.c(c.stop)])}`:'',c.stop&&c.tp?', ':'',c.tp?`${_t("take profit à {0}",[F.c(c.tp)])}`:'',c.m.short])}`,dur:3200});ordersRefresh();if(S.ui.route==='profil')render(false);},
- 'guard-del':()=>{const d=S.ui.guard;if(!d)return;dropGuard(d.m,d.s);S.ui.guard=null;closeModal();save();toast({icon:'shield',title:_t("Protection retirée"),dur:2200});ordersRefresh();if(S.ui.route==='profil')render(false);}
+  toast({icon:'shield',title:_t("Protection activée"),text:`${_t("{0}{1}{2} sur {3}.",[c.stop?`${_t("Stop loss à {0}",[F.c(c.stop)])}`:'',c.stop&&c.tp?', ':'',c.tp?`${_t("take profit à {0}",[F.c(c.tp)])}`:'',c.m.short])}`,dur:3200});ordersRefresh();if(S.ui.route==='profil'||S.ui.route==='portefeuille')render(false);},
+ 'guard-del':()=>{const d=S.ui.guard;if(!d)return;dropGuard(d.m,d.s);S.ui.guard=null;closeModal();save();toast({icon:'shield',title:_t("Protection retirée"),dur:2200});ordersRefresh();if(S.ui.route==='profil'||S.ui.route==='portefeuille')render(false);}
 });
 {const live=fn=>()=>{if(!document.hidden)fn();};planifier('ordres : exécution locale',2000,live(ordersTick));}
 

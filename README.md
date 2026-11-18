@@ -29,7 +29,7 @@ node tools/serve.mjs          # http://127.0.0.1:4173
 ```bash
 npm ci
 npx playwright install chromium
-npx playwright test           # 168 tests : back (base embarquée), écrans bureau et mobile
+npx playwright test           # environ 363 tests : back (base embarquée), écrans bureau et mobile
 E2E=1 npx playwright test --project=e2e    # bout en bout contre le VRAI back (crée un compte de test jetable)
 ```
 
@@ -49,11 +49,14 @@ node tools/version.mjs        # met à jour l'empreinte anti-cache des fichiers 
 |---|---|
 | `admin.html`, `js/admin.js` | le panel d'administration (réservé aux comptes administrateurs, contrôle fait par le serveur) |
 | `index.html`, `css/`, `js/` | le site. `js/api.js` est le seul fichier qui parle à Supabase ; `js/serveur.js` porte le mode Compte |
+| `css/` | `tokens.css` (couleurs, tailles, espacements, thème clair et sombre), `base.css` (socle et mise en page), `components.css` (boutons, champs, cartes, navigation), `screens.css` (écrans), `admin.css` (panel d'administration) |
+| `js/refonte.js` | présentation de la refonte : sous-navigations (Communauté, Éclair), écran Portefeuille, profil, sections repliables |
+| `js/i18n-4.js` | traductions (anglais et hébreu) des textes ajoutés par la refonte |
 | `supabase/migrations/` | le back, versionné : photo de départ (`0000_baseline.sql`) puis une migration par changement |
 | `supabase/functions/` | Edge Functions : connexion par pseudo ; pari éclair (avec une copie conforme de `js/moteur-eclair.js`) |
-| `tests/` | `sql/` (back), `demo/` et `compte/` (écrans), `e2e/` (vrai back) |
+| `tests/` | `sql/` (back), `demo/` et `compte/` (écrans), `e2e/` (vrai back), `refonte/` (parcours de navigation) |
 | `tools/` | serveur local, anti-cache, audit, vérification des migrations |
-| `docs/` | [audit](docs/AUDIT.md), [plan et avancement](docs/PLAN.md), [architecture](docs/ARCHITECTURE.md), [back](docs/BACKEND.md), [exploitation](docs/EXPLOITATION.md) |
+| `docs/` | [audit](docs/AUDIT.md), [plan et avancement](docs/PLAN.md), [architecture](docs/ARCHITECTURE.md), [back](docs/BACKEND.md), [exploitation](docs/EXPLOITATION.md), [suivi de la refonte du design](docs/REFONTE.md), [système de design](docs/DESIGN-SYSTEM.md) |
 
 ## État
 

@@ -68,7 +68,9 @@ const probes = {
       diffs.push(`${f} : ${d.length} ligne(s) différente(s) → ` + d.slice(0, 6).map(n => { const x = a[n - 1] || '', y = b[n - 1] || ''; let p = 0; while (p < x.length && x[p] === y[p]) p++; return `l.${n + 2} « …${x.slice(Math.max(0, p - 25), p + 45).replace(/\s+/g, ' ')}… » devient « …${y.slice(Math.max(0, p - 25), p + 45).replace(/\s+/g, ' ')}… »`; }).join(' | '));
     });
     log(`S1  fichiers identiques au bloc d'origine : ${same}/${order.length}`); diffs.forEach(d => log('S1    ≠ ' + d));
-    const css0 = (html.match(/<style>([\s\S]*?)<\/style>/) || [, ''])[1].trim(), css1 = fs.readFileSync(path.join(ROOT, 'css/main.css'), 'utf8').replace(/^\/\*[^\n]*\*\/\s*/, '').trim();
+    const css0 = (html.match(/<style>([\s\S]*?)<\/style>/) || [, ''])[1].trim();
+    if (!fs.existsSync(path.join(ROOT, 'css/main.css'))) { log('S1  css/main.css : remplacé par la refonte du design (css/tokens, base, components, screens), comparaison sans objet'); return; }
+    const css1 = fs.readFileSync(path.join(ROOT, 'css/main.css'), 'utf8').replace(/^\/\*[^\n]*\*\/\s*/, '').trim();
     log(`S1  css/main.css identique au <style> d'origine : ${css0 === css1}`);
   },
   // ───────────────────────────────────────────────────────────── B01

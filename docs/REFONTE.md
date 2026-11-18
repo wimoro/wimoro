@@ -19,14 +19,15 @@ puis `git log --oneline refonte-design`.** Le suivi de la réparation du back re
 | 3. Audit et direction (unslop) | fait |
 | 4. Système de design (variables, composants, documentation) | fait — voir [DESIGN-SYSTEM.md](DESIGN-SYSTEM.md) |
 | 5. Navigation et structure | fait |
-| 6. Écrans, dans l'ordre du brief | en cours |
-| 7. Nettoyage | à faire |
-| 8. Vérification et livraison | à faire |
+| 6. Écrans, dans l'ordre du brief | fait |
+| 7. Nettoyage | fait (`css/main.css` et code mort retirés) |
+| 8. Vérification et livraison | fait : pull request ouverte, non fusionnée ; rien n'est en ligne |
 
 ## Reprise (mis à jour à chaque étape)
 
-**Où j'en suis** : système de design et navigation en place (commit `33aebcf`), tests de démonstration verts. Je suis
-dans l'étape 6, écran par écran.
+**Où j'en suis** : la refonte est livrée dans une pull request, non fusionnée. Rien n'est en ligne. Les étapes 0 à 8
+sont faites ; la liste « Reste à faire » ci-dessous est gardée comme trace de l'ordre suivi. Avant la mise en ligne :
+supprimer `docs/refonte/captures/`.
 
 **Ce qui est fait dans le code**
 - `css/main.css` n'est plus chargé (supprimé à l'étape 7). Le site charge `tokens.css`, `base.css`, `components.css`,
@@ -232,6 +233,111 @@ Verdict : une interface dessinée, mais surchargée. La direction étant fixée 
 Écart assumé avec unslop : il recommande une police dessinée pour l'hébreu ; le brief impose la pile système, qui
 l'emporte (les familles système qui dessinent bien l'hébreu passent en tête, voir `tokens.css`).
 
+## 7. Non-régression
+
+### Comparaison automatique avant / après
+Outil du dépôt (`tools/audit/inventaire.mjs`) et comparaison des gabarits du commit `8b4489f` avec ceux de la branche :
+
+| Mesure | Avant | Après | Disparu |
+|---|---:|---:|---|
+| Actions (`ACT`) | 244 | 244 | aucune |
+| Actions ayant un déclencheur `data-a` dans les gabarits | 244 | 244 | aucune |
+| Formulaires (`FORMS`) | 14 | 14 | aucun |
+| Écrans (`VIEWS`) | 26 | 27 | aucun (ajout : `portefeuille`) |
+| Attributs `data-*` posés par les gabarits | 180 | 179 | `data-rankchip` (la puce de rang de l'en-tête ; le rang est dans Profil) |
+| Identifiants | 71 | 71 | aucun |
+| Tests Playwright | 336 | 336 + parcours | un test adapté (voir journal) |
+
+### Où se trouve chaque fonction
+| Fonction | Où elle se trouve maintenant | Comment c'est vérifié |
+|---|---|---|
+| Parcourir les marchés, catégories, tri, courbe ou volume | Marchés (`#accueil`) | `demo/chargement`, `compte/marches-etat`, parcours 1 |
+| Marché phare, grosses mises en direct | Marchés (colonne de droite ; sous la liste sur téléphone) | `compte/simulateurs`, captures |
+| Recherche (marchés, joueurs, paris Éclair) | en-tête : champ sur ordinateur, loupe sur téléphone | capture « recherche » |
+| Fiche d'un marché : graphique, périodes, règles, chat du marché | `#marche-…` (inchangé) | `demo/chargement`, captures |
+| Acheter Oui ou Non, vendre, montants rapides, annoncer sa mise | ticket de la fiche, ou feuille ouverte depuis une liste | `demo/parcours`, `compte/paris`, parcours 2 et 3 |
+| Détail d'un pari (prix moyen, parts, impact, frais, ordre max) | dans le ticket, replié sous « Détail du pari » | parcours 3 |
+| Ordre limite, stop loss et take profit | ticket (« Ordre limite ») et bouton de la position | `compte/garde` ; capture « marché, ordre limite » |
+| Combinés | « Ajouter au combiné » dans le détail du ticket ; barre des combinés ; `#combines` depuis Portefeuille | `compte/combines` |
+| Marchés à plusieurs issues | inchangé | `compte/paris` (K21), captures |
+| Mode Pro : indicateurs, tracés, partage d'analyse | bouton « Mode Pro » du graphique (inchangé) | `compte/analyses`, capture |
+| Suivre un marché, partager, défier | boutons en tête de la fiche | `compte/duels` |
+| Pari Éclair : mise, rotation ou libre, catégories, alertes, aide | Éclair (`#eclair`) ; blocs secondaires repliés sur téléphone | `demo/eclair`, `compte/eclair`, parcours 4 |
+| Blitz Royale, La Série | Éclair, sous-navigation | `compte/blitz`, `compte/serie` |
+| Duels et duels de stack | Éclair, sous-navigation (`#duels`) ; bouton « Défier » | `compte/duels`, `compte/duels-eclair`, `compte/stacks` |
+| Créer un pari, voter | Marchés, bouton « Créer un pari » (`#creer`) | `compte/propositions` |
+| Solde, positions, historique | Portefeuille (`#portefeuille`) | `compte/argent`, `compte/paris`, parcours 5 |
+| Déposer : crypto, carte, virement, PayPal, dépôt simulé | Portefeuille → Déposer (`#depot`) | `compte/argent`, parcours 6 |
+| Retirer | Portefeuille → Retirer (`#retrait`) | `compte/argent`, parcours 7 |
+| KYC | Portefeuille, Profil (« Faire le KYC »), page de dépôt | `compte/argent`, `compte/comptes` |
+| Chat : général, marchés, VIP, clan, messages privés, réactions, partager une mise, citer | Communauté (`#chat`) | `compte/chat`, `prive`, `reactions`, `salon-vip`, `mises`, parcours 8 |
+| Clans : annuaire, fiche, créer, rejoindre, guerres, appels, outils du chef | Communauté → Clans | `compte/clans`, `clans-chefs`, `clans-guerres`, `clan-chat` |
+| Classement, fiche d'un joueur, suivre un joueur | Communauté → Classement | `compte/suivre`, parcours 9 |
+| Amis : demandes, recherche, invitation | Communauté → Amis | `compte/amis`, parcours 9 |
+| Copy trading | Communauté → Copies ; fiche d'un joueur | `compte/copies` |
+| Profil : identité, statistiques, badges, paris créés | Profil (`#profil`) | captures |
+| Rang, missions, avantages | Profil → Mon rang (`#rang`) | `compte/etat`, parcours 13 |
+| Modifier le profil : photo, couleur, bio, confidentialité, mot de passe | Profil → Modifier le profil | `compte/comptes` |
+| Notifications : panneau, effacer, réglage des pop-up | cloche de l'en-tête ; Profil | capture « notifications » |
+| Langue | Profil ; en-tête pour un visiteur ; pied de la connexion | `i18n`, parcours 10 |
+| Thème clair ou sombre | bouton de l'en-tête (ordinateur, visiteur) ; Profil | parcours 11 |
+| Parrainage | Profil → Parrainage | `compte/parrainage` |
+| Jeu responsable : limites, pause, auto-exclusion, export, aide | Profil et Portefeuille → Jeu responsable | `compte/argent`, `compte/comptes` |
+| Inscription, connexion (e-mail, pseudo, portefeuille, compte démo), mot de passe oublié, onboarding | onglet Profil ou boutons de l'en-tête pour un visiteur ; présentation en tête de l'accueil | `compte/comptes`, `demo/parcours` |
+| Déconnexion | Profil (« Mon compte ») et menu du compte | `demo/parcours`, parcours 12 |
+| Outils de démonstration : changer de rang, réinitialiser | Profil | `compte/analyses` |
+| États du mode Compte : serveur injoignable, session expirée, compte suspendu, « Bientôt disponible » | inchangés | `compte/garde`, `compte/comptes`, `compte/chargement` |
+| Administration | `admin.html` (mêmes écrans, nouvel habillage) | `compte/admin` |
+
+Les « parcours » renvoient à `tests/refonte/parcours.spec.mjs`, écrit par l'agent `ecc:e2e-runner`.
+
+### Ce qui a été retiré de l'écran (sans retirer de fonction)
+- En-tête : la puce de rang et les deux boutons « Déposer ». Le rang est dans Profil, le dépôt dans Portefeuille (2 gestes).
+- Accueil : la carte de clan, la carte de rang, le « Top de la semaine » et le mini-chat. Ils doublaient Communauté et Profil.
+- Profil : les onglets Positions et Historique (déplacés dans Portefeuille), l'encart « Activité récente » (doublon du
+  panneau de notifications) et la carte de clan.
+- Menu du compte : Amis, Clan, Duels, Combinés, Déposer, Retirer, désormais portés par les destinations.
+
+## 8. Vérification
+
+Rapport au format du skill `ecc:verification-loop`, adapté à un site sans build :
+
+| Contrôle | Résultat |
+|---|---|
+| Construction | sans objet (site statique) ; `node --check` et `node tools/version.mjs --verifier` passent |
+| Tests | **364 passent**, 1 ignoré (le test « téléphone » ne tourne que dans le projet mobile) : les 336 d'origine + 28 parcours de la refonte (`tests/refonte/parcours.spec.mjs`, agent `ecc:e2e-runner`) |
+| Sécurité | agent `ecc:security-reviewer` : aucun constat critique, élevé ni moyen ; plus aucune requête vers un tiers au chargement |
+| Revue de code | agent `ecc:code-reviewer` : 4 rafraîchissements visaient encore l'ancien emplacement des positions, corrigés ; un défaut d'accessibilité des sections repliables, corrigé |
+| Différences | 244 actions, 14 formulaires, 26 écrans conservés (section 7) |
+| Cible | NON RÉALISÉE : rien n'est déployé, wimoro.com est intact |
+
+**Contrôle automatique des écrans** (script hors dépôt : il ouvre les 28 écrans dans Chrome et mesure le contraste de
+chaque texte avec son fond réel, le débordement horizontal, les tailles de texte, les erreurs de console). Résultat après
+corrections : aucun débordement, aucune erreur, aucun contraste sous le seuil AA, en clair et en sombre, sur téléphone
+et ordinateur, pour un visiteur (6 écrans) et en hébreu (7 écrans). Avant corrections : 10 motifs fautifs en clair.
+
+**Captures** : `docs/refonte/captures/` — `avant/` (26 écrans), `apres-clair/` et `apres-sombre/` (27 écrans), en
+`mobile/` (390 × 844) et `desktop/` (1440 × 900), compte démo, français. 9,6 Mo : **à retirer avant la mise en ligne.**
+
+**Poids** : CSS 226 Ko (48,4 Ko compressé) contre 222 Ko (47,4 Ko) ; JavaScript 1 369 Ko contre 1 366 Ko ; polices
+externes supprimées (2 familles Google, 1 pour l'hébreu, 3 requêtes vers un tiers en moins).
+
+**Non vérifié** : le vrai back-end (la suite `E2E=1` crée des comptes en production et n'a pas été lancée ; elle reste à
+adapter à la nouvelle navigation) ; un vrai téléphone et Safari (tout a été vu dans Chrome en émulation) ; un lecteur
+d'écran ; le Mode Pro, l'administration et les états d'erreur du mode Compte n'ont pas été regardés en capture (ils
+sont couverts par les tests et le contrôle automatique) ; sur les 108 captures « après », une quinzaine ont été
+regardées de près.
+
+## 9. Améliorations repérées, hors périmètre
+- Ordres limites et protections : toujours bloqués en mode Compte (migration en attente, voir PLAN.md).
+- `js/auth.js` : deux valeurs du brouillon « créer un pari » ne passent pas par `esc()` (déjà le cas avant).
+- Code mort d'avant la refonte : `homeChatH`, `ACT.hroom`, `authThemeBtn`, `PRIV`, l'action `ob-kyc`.
+- Chiffres écrits en dur dans des textes (« Saison 3. Fin dans 12 jours », « 38 900 joueurs ») ; « 25 votes » contre 50.
+- Le marché phare de l'accueil est toujours le Bitcoin, malgré son libellé « qui bouge le plus ».
+- Images partagées (duel, série, clan, analyse) : palette d'origine. Administration : 12 styles en ligne, non traduite.
+- `css/screens.css` garde l'ordre de l'ancienne feuille, avec des sections « Reprise à la main » : à fusionner écran par
+  écran. Les anciens noms de variables restent en alias dans `css/tokens.css` (lus par le Mode Pro).
+
 ## Décisions prises sans consulter le propriétaire
 
 | Sujet | Décision | Pourquoi |
@@ -239,6 +345,21 @@ l'emporte (les familles système qui dessinent bien l'hébreu passent en tête, 
 | Fichier de suivi | `docs/REFONTE.md`, séparé de `docs/PLAN.md` | PLAN.md suit la réparation du back, un autre chantier |
 | Captures | Compte démo, français, navigateur Chrome, hasard figé | Écrans les plus remplis ; captures comparables avant / après |
 | Inventaire | Outil du dépôt pour les actions + cinq agents pour les écrans | 1,4 Mo de code : relevé parallèle, citations vérifiables |
+| Couleurs | Accent = le bleu du logo ; Oui en vert, Non en rouge (avant : bleu et ambre) | Demandé par le brief : le vert et le rouge portent le sens |
+| Troisième issue de l'Éclair (« break even ») | Neutre (gris), plus de doré | Une seule couleur d'accent ; ni Oui ni Non |
+| Tailles de texte | 12, 14, 16, 20, 28 px ; 40 px pour les deux temps forts | Proche des tailles d'origine : aucun débordement ; 16 px dans les champs (pas de zoom sur iPhone) |
+| Boutons secondaires | Gris (ancien bouton noir) ; une seule action en couleur par écran | Le noir concurrençait l'action principale |
+| Thème | Clair par défaut, même si l'appareil est en sombre ; le choix fait avec le bouton est retenu | Demandé par le brief |
+| Polices | Pile système ; plus aucune police Google | Brief ; trois requêtes externes en moins |
+| Icônes | Jeu Lucide (licence ISC), tracés copiés dans `js/core.js` | Un seul jeu au trait, sous licence libre, sans dépendance |
+| Accueil | Carte de clan, carte de rang, « Top de la semaine » et mini-chat retirés | Doublons de Communauté et de Profil ; l'accueil répond à « sur quoi parier ? » |
+| Présentation pour un visiteur | Un titre, une phrase et deux boutons en tête de l'accueil | Comprendre Wimoro en cinq secondes ; les deux boutons existaient déjà |
+| Ticket de pari | Gain et bouton visibles ; prix moyen, parts, impact, frais, ordre max, combiné sous « Détail du pari » | L'essentiel d'abord ; la case « Annoncer ma mise » reste visible car elle est cochée par défaut |
+| Blocs secondaires | Repliés sur téléphone pour Éclair, Blitz, Série, duels, combinés, clan, classement, joueur | Écrans très longs ; un appui les déplie ; dépôt, retrait, amis et jeu responsable restent dépliés |
+| Menu du compte | Conservé sur ordinateur, réduit à ce que les destinations ne portent pas | Aucune action retirée de l'inventaire |
+| Sous-navigation Communauté | Libellé « Copies » | Trois noms désignaient la même fonction ; celui-ci existait déjà dans les trois langues |
+| Test `compte/simulateurs` | S'ouvre sur l'écran du chat ; la liste des lectures au démarrage gagne `api_dm_list` | L'accueil n'affiche plus de salon ; ce que le test protège (aucun appel périodique) est inchangé |
+| Captures | JPEG allégés, hauteur limitée à 1 600 px | Garder le dépôt léger ; dossier à retirer avant la mise en ligne |
 
 ## Journal
 

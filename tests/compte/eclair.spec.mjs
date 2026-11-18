@@ -82,7 +82,7 @@ test('manche terminée pendant l’absence : réglée par le serveur au chargeme
   const mise = await lire(page, () => ({ g: S.ui.fgame, r: S.flash.round, my: G(S.ui.fgame).my }));
   const prevu = await lire(page, m => MoteurEclair.regler(GM[m.g], m.r, m.my), mise);
   // l'onglet est fermé ; il est rouvert trois manches plus tard
-  await page.goto('/css/main.css');                                                          // une autre page : le site n'est plus ouvert
+  await page.goto('/css/tokens.css');                                                          // une autre page : le site n'est plus ouvert
   await page.clock.runFor(3 * 45000);
   await page.goto('/index.html#eclair'); await pret(page);
   await page.clock.runFor(3000);

@@ -290,7 +290,7 @@ function vCopy(){
 function copyRefresh(){
  const root=$('[data-copyroot]');if(root){root.innerHTML=copyBodyH();fixText(root);}
  $$('[data-cpcard]').forEach(el=>{el.innerHTML=copyCardInner(el.dataset.cpcard);fixText(el);});
- if(S.ui.route==='profil')render(false);
+ if(S.ui.route==='profil'||S.ui.route==='portefeuille')render(false);
 }
 
 Object.assign(ACT,{

@@ -5,7 +5,7 @@
  *
  *   - sous-navigation commune des destinations « Communauté » et « Éclair » ;
  *   - écran « Portefeuille » (solde, déposer, retirer, positions, historique) ;
- *   - profil allégé : les positions et l'historique vivent dans le portefeuille ;
+ *   - onglets du profil : les positions et l'historique vivent dans le portefeuille ;
  *   - présentation de Wimoro pour un visiteur, en tête de l'accueil.
  */
 'use strict';
@@ -53,14 +53,6 @@ VIEWS.portefeuille=vWallet;PROTECTED.add('portefeuille');TITLES.portefeuille=_t(
 /* les onglets Positions et Historique vivent dans le portefeuille, les autres dans le profil */
 ACT.ptab=a=>{const v=a.dataset.v,ou=v==='positions'||v==='history'?'portefeuille':'profil';S.ui.ptab=v;if((S.ui.route||'')!==ou){location.hash='#'+ou;return;}render(false);};
 
-/* ===================== Profil ===================== */
-function vProfil(){const r=myRank(),st=stats(),pf=portfolio(),pg=progress(),t=['badges','settings','mine'].includes(S.ui.ptab)?S.ui.ptab:'badges';
- return `<div class="wrap prof"><section class="pn clip"><div class="pf-top"><div class="pf-id"><span class="av t-me${avClass('me')}" style="background:${S.me.color}">${avInner('me',88)}</span><div><h1>${esc(S.me.n)} ${tagH('me')}</h1>${S.me.bio?`<p class="pf-bio">${esc(S.me.bio)}</p>`:''}<div class="pf-meta"><a href="#rang">${rk(r.t,r.d)}</a><span>${_t("Membre depuis {0}",[esc(S.me.since||_t("aujourd’hui"))])}</span><span>${_t("{0} abonné{1}",[F.int(S.me.followers||0),(S.me.followers||0)>1?'s':''])}</span><span>${_t("{0} abonnements",[S.me.following.length])}</span>${visMetaH()}</div></div></div>
-  <div class="hbtns own"><a class="btn b-pri" href="#modifier">${_t("Modifier le profil")}</a><button class="btn b-ink" data-a="copylink" data-v="#profil">${ic('share',16)} <span>${_t("Partager")}</span></button></div></div>
-  <div class="pf-stats"><div><small>${_t("Profit total")}</small><b class="num ${plc(pf.profit)}" data-live="profit">${F.signed(pf.profit)}</b></div><div><small>${_t("Précision")}</small><b class="num">${F.pct(st.acc)}</b></div><div><small>${_t("Paris joués")}</small><b class="num">${F.int(S.me.played)}</b></div><div><small>${_t("Série en cours")}</small><b class="num">${_t("{0} jours",[S.me.streak])}</b></div></div></section>
- ${profRankH(pg)}${acctH()}
- <section class="pn clip"><div class="wal-tabs"><div class="tabs ptabs">${[['badges',_t("Badges")],['settings',_t("Paramètres")],['mine',`<span class="lg-only">${_t("Mes paris créés")}</span><span class="sm-only">${_t("Créés")}</span>${(S.me.props||[]).length?' ('+S.me.props.length+')':''}`]].map(([k,l])=>`<button class="${t===k?'on':''}" data-a="ptab" data-v="${k}">${l}</button>`).join('')}</div></div><div data-ptab-body>${ptabH(t)}</div></section></div>`;}
-VIEWS.profil=vProfil;
 
 /* ===================== Accueil : la colonne latérale ne garde que les grosses mises en direct ===================== */
 /* Le rang est dans Profil, le classement et le chat dans Communauté. Le fil [data-bigs] est alimenté par pushBig (auth.js). */
@@ -78,8 +70,7 @@ const REPLI={ouvert:new Set(),routes:{eclair:1,blitz:1,serie:1,duels:1,duel:1,co
  sel:'aside.col>section.pn:not(.chat):not(.ticket),.g-side>.col+.col>section.pn:not([data-flbet])'};
 function replier(){const view=$('#view');if(!view)return;const r=(S.ui.route||'accueil').split('-')[0];if(!REPLI.routes[r]||innerWidth>1100)return;
  view.querySelectorAll(REPLI.sel).forEach(sec=>{const tete=sec.firstElementChild;if(!tete||sec.classList.contains('repli'))return;const titre=tete.matches('.h2,h2,h3')?tete:tete.querySelector('.h2,h2,h3');if(!titre)return;
-  const cle=r+':'+titre.textContent.trim(),o=REPLI.ouvert.has(cle);sec.classList.add('repli');sec.classList.toggle('plie',!o);sec.dataset.repli=cle;tete.classList.add('repli-t');tete.setAttribute('role','button');tete.tabIndex=0;tete.setAttribute('aria-expanded',String(o));});}
-function repliBascule(tete){const sec=tete.parentElement,o=sec.classList.toggle('plie');tete.setAttribute('aria-expanded',String(!o));if(o)REPLI.ouvert.delete(sec.dataset.repli);else REPLI.ouvert.add(sec.dataset.repli);}
-document.addEventListener('click',e=>{const t=e.target.closest('.repli-t');if(t&&!e.target.closest('a,button,input,select,label'))repliBascule(t);});
-document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.classList&&e.target.classList.contains('repli-t')){e.preventDefault();repliBascule(e.target);}});
+  const cle=r+':'+titre.textContent.trim(),o=REPLI.ouvert.has(cle);sec.classList.add('repli');sec.classList.toggle('plie',!o);sec.dataset.repli=cle;tete.classList.add('repli-t');const b=document.createElement('button');b.type='button';b.className='repli-b';b.setAttribute('aria-expanded',String(o));b.setAttribute('aria-label',titre.textContent.trim());tete.appendChild(b);});}
+function repliBascule(tete){const sec=tete.parentElement,o=sec.classList.toggle('plie'),b=tete.querySelector('.repli-b');if(b)b.setAttribute('aria-expanded',String(!o));if(o)REPLI.ouvert.delete(sec.dataset.repli);else REPLI.ouvert.add(sec.dataset.repli);}
+document.addEventListener('click',e=>{const t=e.target.closest('.repli-t');if(t&&(e.target.closest('.repli-b')||!e.target.closest('a,button,input,select,label')))repliBascule(t);});
 {const r0=render;render=function(top){r0(top);replier();};}
