@@ -55,41 +55,7 @@ body:not(.out) .only-out{display:none!important}
 html.lock,html.lock body{overflow:hidden}
 html.lock body{padding-inline-end:var(--sbw,0px)}
 
-/* ---------- Utilitaires (remplacent les styles en ligne des gabarits) ---------- */
-.t-1{font-size:var(--fs-1)}
-.t-2{font-size:var(--fs-2)}
-.t-3{font-size:var(--fs-3)}
-.t-4{font-size:var(--fs-4)}
-.t-5{font-size:var(--fs-5)}
-.fw-5{font-weight:var(--fw-medium)}
-.fw-6{font-weight:var(--fw-bold)}
-.c-1{color:var(--text)}
-.c-2{color:var(--text-2)}
-.c-3{color:var(--text-3)}
-.c-no{color:var(--no)}
-.c-yes{color:var(--yes)}
-.c-accent{color:var(--accent)}
-.mt-1{margin-top:var(--sp-1)}
-.mt-2{margin-top:var(--sp-2)}
-.mt-3{margin-top:var(--sp-3)}
-.mt-4{margin-top:var(--sp-4)}
-.mt-5{margin-top:var(--sp-5)}
-.mt-6{margin-top:var(--sp-6)}
-.mb-1{margin-bottom:var(--sp-1)}
-.mb-2{margin-bottom:var(--sp-2)}
-.mb-3{margin-bottom:var(--sp-3)}
-.mb-4{margin-bottom:var(--sp-4)}
-.m-0{margin:0}
-.w-full{width:100%}
-.d-block{display:block}
-.ta-c{text-align:center}
-.ta-s{text-align:start}
-.lh-p{line-height:1.55}
-.clip{overflow:hidden}
-.row-c{display:flex;align-items:center;gap:var(--sp-2)}
-.grow{flex:1;min-width:0}
-.self-start{align-self:flex-start}
-.jc-c{justify-content:center}
+/* Les classes utilitaires (t-1, mt-2, w-full…) sont à la fin de screens.css : elles doivent l'emporter sur tout le reste. */
 
 /* ---------- Écrans larges ---------- */
 @media (min-width:761px){

@@ -16,10 +16,10 @@ puis `git log --oneline refonte-design`.** Le suivi de la réparation du back re
 | 0. Plugins vérifiés | fait |
 | 1. État des lieux (inventaire, captures « avant ») | fait |
 | 2. Plan (agents ECC `planner` et `architect`) | fait |
-| 3. Audit et direction (unslop) | à faire |
-| 4. Système de design (variables, composants, documentation) | à faire |
-| 5. Navigation et structure | à faire |
-| 6. Écrans, dans l'ordre du brief | à faire |
+| 3. Audit et direction (unslop) | fait |
+| 4. Système de design (variables, composants, documentation) | fait — voir [DESIGN-SYSTEM.md](DESIGN-SYSTEM.md) |
+| 5. Navigation et structure | fait |
+| 6. Écrans, dans l'ordre du brief | en cours |
 | 7. Nettoyage | à faire |
 | 8. Vérification et livraison | à faire |
 
@@ -185,6 +185,52 @@ Règles : aucune couleur écrite en dur ni sélecteur `[data-theme]` hors de `to
 4. Tests qui s'effilochent → on n'adapte que des sélecteurs, jamais une valeur attendue.
 5. Chantier à moitié fini → le site reste cohérent à chaque commit (tout passe par les variables).
 6. Poids → polices Google retirées ; total du CSS inférieur à l'ancien.
+
+## 3. Audit et direction (plugin unslop)
+
+Skill `unslop:unslop` invoqué sur l'ensemble des écrans, à partir des captures « avant » et du code. Sa méthode : relever
+les signes d'une interface « générée », fixer une direction en cinq lignes, puis corriger en neuf passes, dans l'ordre.
+Il prévoit d'attendre une validation de la direction : elle était accordée d'avance par le brief.
+
+### Ce que l'audit a relevé
+| Famille | Constat (avant) |
+|---|---|
+| Couleur | le bleu sert à la fois d'accent, de « Oui » et de hausse ; l'ambre sert de « Non », de baisse et d'avertissement ; pastilles teintées partout ; pastilles noires « ×1,59 » posées sur chaque bouton |
+| Typographie | une police d'affichage condensée pour tous les chiffres ; graisses 700 et 800 ; 44 tailles de texte différentes ; 13 libellés forcés en majuscules |
+| Icônes | tracés maison ; un emoji 🏆 dans le classement des clans ; flèches ↑ ↓ en texte |
+| Espacement | valeurs hors grille (5, 7, 9, 13, 14, 18, 22 px…) ; environ 400 styles écrits en ligne |
+| Textes | explications répétées à plusieurs endroits ; comparaison commerciale « Chez Polymarket… » dans le ticket |
+| Composants | badges de rang et pastilles d'XP sur presque chaque ligne ; accueil en 7 blocs et 4 encarts ; ticket de 9 lignes et 6 contrôles |
+| Animation | 5 animations en boucle (pulsation, flottement, reflet, rotation) ; rebonds |
+| Droite à gauche | déjà en propriétés logiques, quelques rustines `[dir=rtl]` |
+
+Verdict : une interface dessinée, mais surchargée. La direction étant fixée par le brief, le processus complet s'applique.
+
+### La direction, en cinq lignes
+- **Produit** : Wimoro fait parier par Oui ou par Non sur l'actualité, et toutes les 45 secondes sur un prix, entre
+  amis, avec de l'argent fictif.
+- **Caractère** : posé, précis, vif.
+- **Monde** : le tableau des cotes. Papier blanc, encre, chiffres alignés.
+- **Temps forts** : la chance d'un marché avec sa courbe ; le compte à rebours du pari Éclair. Ce sont les deux seuls
+  endroits où le texte passe à 40 px et où l'écran s'anime.
+- **Signature** : le couple Oui / Non, toujours côte à côte, en vert et en rouge, avec son prix en chiffres tabulaires.
+  On le retrouve à l'identique sur le marché phare, dans les listes, dans le ticket et dans les cartes de mise.
+
+### Les neuf passes
+| Passe | Ce qui a changé |
+|---|---|
+| 1. Espacement | grille de 4 px (`--sp-*`) ; les valeurs hors grille de l'ancien CSS ramenées à la grille ; styles en ligne remplacés par des classes |
+| 2. Couleur | une rampe de gris neutres, trois rôles de texte, un accent ; vert et rouge réservés au sens ; ni dégradé, ni halo, ni ombre colorée |
+| 3. Icônes | un seul jeu, Lucide ; les icônes prennent la couleur de leur texte |
+| 4. Textes | libellés courts ; une ligne d'explication par mode de jeu ; le détail du pari replié |
+| 5. Typographie | pile système, 5 tailles, graisses 400 à 600, plus de majuscules forcées, chiffres tabulaires |
+| 6. Mise en page | 5 destinations ; accueil recentré sur les marchés ; portefeuille et profil en une colonne |
+| 7. Détails | rayons emboîtés (8, 12, 16, 20) ; cartes sans bordure ni ombre ; pastilles discrètes ; focus visible |
+| 8. Visuels | aucun visuel généré ; les temps forts viennent du produit (courbes, compte à rebours) |
+| 9. Animation | 150 à 250 ms, une seule courbe ; boucles retirées ; « réduire les animations » respecté |
+
+Écart assumé avec unslop : il recommande une police dessinée pour l'hébreu ; le brief impose la pile système, qui
+l'emporte (les familles système qui dessinent bien l'hébreu passent en tête, voir `tokens.css`).
 
 ## Décisions prises sans consulter le propriétaire
 

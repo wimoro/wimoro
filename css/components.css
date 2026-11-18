@@ -308,3 +308,8 @@
   .subnav{gap:var(--sp-4)}
   .subnav a{font-size:var(--fs-2)}
 }
+
+/* ====================================================================== Cibles tactiles : zone d'appui élargie sans changer la mise en page */
+.link,.lk,.sw{position:relative}
+a.link::before,button.link::before,.lk::after,.sw::after{content:'';position:absolute;inset:-12px -4px}
+.repli-t{min-height:var(--tap)}

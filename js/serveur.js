@@ -1224,7 +1224,7 @@ function srvRecharger(hash,apres){try{if(apres)sessionStorage.setItem('wimoro-ap
 let srvPerdue=false;
 function srvSessionPerdue(){if(srvPerdue)return;srvPerdue=true;srvRecharger('#connexion','expire');}
 function ecranErreurServeur(e){
- $('#view').innerHTML=`<div class="wrap"><div class="pn pad" style="max-width:520px;margin:48px auto;text-align:center"><div class="h2">${_t("Connexion au serveur impossible")}</div><p class="sub" style="margin:10px 0 18px;font-size:15px;line-height:1.55">${_t("Ton compte est intact. Vérifie ta connexion, puis réessaie. Tu peux aussi explorer le mode démo en attendant.")}</p><div class="hbtns" style="justify-content:center"><button class="btn b-pri lg" data-a="srv-retry">${_t("Réessayer")}</button><button class="btn b-white lg" data-a="srv-demo">${_t("Passer en mode démo")}</button></div></div></div>`;
+ $('#view').innerHTML=`<div class="wrap"><div class="pn pad" style="max-width:520px;margin:48px auto;text-align:center"><div class="h2">${_t("Connexion au serveur impossible")}</div><p class="sub mt-3 mb-4 t-3 lh-p">${_t("Ton compte est intact. Vérifie ta connexion, puis réessaie. Tu peux aussi explorer le mode démo en attendant.")}</p><div class="hbtns jc-c"><button class="btn b-pri lg" data-a="srv-retry">${_t("Réessayer")}</button><button class="btn b-white lg" data-a="srv-demo">${_t("Passer en mode démo")}</button></div></div></div>`;
  document.body.classList.add('out');console.warn('[srv] démarrage impossible',e&&e.code);
 }
 

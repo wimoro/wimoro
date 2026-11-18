@@ -2288,3 +2288,78 @@ html.pro-lock,html.pro-lock body{overflow:hidden}
 /* ====================================================================== Reprise à la main : profil */
 .prof .pf-top>.hbtns.own{display:flex;gap:var(--sp-2)}
 .prof .pf-top>.hbtns.own>.btn{flex:1;grid-column:auto;order:0;min-width:0}
+
+/* ---------- Classes issues des anciens styles en ligne ---------- */
+.ai-base{align-items:baseline}
+.cur-def{cursor:default}
+.d-flex{display:flex}
+.flex-1{flex:1}
+.flex-wrap{flex-wrap:wrap}
+.g-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.gap-2{gap:var(--sp-2)}
+.gap-3{gap:var(--sp-3)}
+.gap-4{gap:var(--sp-4)}
+.lh-snug{line-height:var(--lh-snug)}
+.maxw-card{max-width:520px}
+.ms-auto{margin-inline-start:auto}
+.no-shadow{box-shadow:none}
+.nowrap{white-space:nowrap}
+.op-35{opacity:.35}
+.p-0-5-3{padding:0 var(--sp-5) var(--sp-3)}
+.p-1-3-2{padding:var(--sp-1) var(--sp-3) var(--sp-2)}
+.p-1-5-3{padding:var(--sp-1) var(--sp-5) var(--sp-3)}
+.p-2-3{padding:var(--sp-2) var(--sp-3)}
+.p-2-5-4{padding:var(--sp-2) var(--sp-5) var(--sp-4)}
+.p-4-0{padding:var(--sp-4) 0}
+.p-5{padding:var(--sp-5)}
+.p-5-0{padding:var(--sp-5) 0}
+.p-6-2{padding:var(--sp-6) var(--sp-2)}
+.pb-4{padding-bottom:var(--sp-4)}
+.pos-rel{position:relative}
+.pt-0{padding-top:0}
+.r-sm{border-radius:var(--r-sm)}
+.upper{text-transform:uppercase}
+.w-60{width:60%}
+
+/* ---------- Utilitaires (remplacent les styles en ligne des gabarits ; en dernier pour l'emporter) ---------- */
+.t-1{font-size:var(--fs-1)}
+.t-2{font-size:var(--fs-2)}
+.t-3{font-size:var(--fs-3)}
+.t-4{font-size:var(--fs-4)}
+.t-5{font-size:var(--fs-5)}
+.fw-5{font-weight:var(--fw-medium)}
+.fw-6{font-weight:var(--fw-bold)}
+.c-1{color:var(--text)}
+.c-2{color:var(--text-2)}
+.c-3{color:var(--text-3)}
+.c-no{color:var(--no)}
+.c-yes{color:var(--yes)}
+.c-accent{color:var(--accent)}
+.mt-1{margin-top:var(--sp-1)}
+.mt-2{margin-top:var(--sp-2)}
+.mt-3{margin-top:var(--sp-3)}
+.mt-4{margin-top:var(--sp-4)}
+.mt-5{margin-top:var(--sp-5)}
+.mt-6{margin-top:var(--sp-6)}
+.mb-1{margin-bottom:var(--sp-1)}
+.mb-2{margin-bottom:var(--sp-2)}
+.mb-3{margin-bottom:var(--sp-3)}
+.mb-4{margin-bottom:var(--sp-4)}
+.m-0{margin:0}
+.w-full{width:100%}
+.d-block{display:block}
+.ta-c{text-align:center}
+.ta-s{text-align:start}
+.lh-p{line-height:1.55}
+.clip{overflow:hidden}
+.row-c{display:flex;align-items:center;gap:var(--sp-2)}
+.grow{flex:1;min-width:0}
+.self-start{align-self:flex-start}
+.jc-c{justify-content:center}
+
+/* ====================================================================== Corrections de contraste (contrôle automatique) */
+/* marché à plusieurs issues : la couleur d'une issue reste sur sa pastille et sa courbe, le texte est à l'encre */
+.oem,.cp-p>.num{color:var(--text)!important}
+/* Éclair : texte blanc sur les fonds pleins vert et rouge ; le troisième choix (break even) hérite de son bouton */
+.fsd.oui,.fsd.non,.fsd.oui .num,.fsd.non .num,.fsd.oui span,.fsd.non span{color:var(--on-color)}
+.fsd.eq .num,.fsd.eq small,.flt .fbt .eqb .eqx{color:inherit}

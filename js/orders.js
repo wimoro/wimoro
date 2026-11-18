@@ -97,7 +97,7 @@ function ordersCheck(m){
    S.me.history.unshift({k:'sell',m:m.id,q:m.q,s:g.s,win:pnl>=0,pnl,at:now(),via:hitStop?'stop':'tp'});
    const old=m.p;applySell(m,q);addBet(m,{s:g.s==='oui'?0:1,a:Math.min(1,q.pro/300),me:1});updateMarket(m,old);
    const ttl=hitStop?_t("Stop loss déclenché"):_t("Take profit atteint");
-   toast({tone:pnl>=0?'green':'red',icon:'shield',title:ttl,text:`${_t("{0} parts {1} vendues à {2} sur {3} : {4}",[F.d1(q.sh),sideTxt(g.s),F.c1(q.avg),m.short,F.signed(pnl)])}`,href:'#profil',dur:6000});
+   toast({tone:pnl>=0?'green':'red',icon:'shield',title:ttl,text:`${_t("{0} parts {1} vendues à {2} sur {3} : {4}",[F.d1(q.sh),sideTxt(g.s),F.c1(q.avg),m.short,F.signed(pnl)])}`,href:'#portefeuille',dur:6000});
    notif('shield',`${_t("{0} sur {1} : {2} parts {3} vendues à {4}, {5}.",[ttl,m.short,F.d1(q.sh),sideTxt(g.s),F.c1(q.avg),F.signed(pnl)])}`,'#profil');
   }
  }finally{ORD_BUSY=false;}
@@ -129,7 +129,7 @@ function cancelOrder(id){const o=ordersAll().find(x=>x.id===id);if(!o||o.status!
 /* ---------- Protection d'une position ---------- */
 function dropGuard(m,s){const G=guardsAll(),i=G.findIndex(g=>g.m===m&&g.s===s);if(i>=0)G.splice(i,1);}
 function guardTagH(p){const g=guardOf(p.m,p.s);if(!g)return '';return ` <span class="gtag" title="${_t("Protection active")}">${ic('shield',10)} ${g.stop?`SL ${F.c(g.stop)}`:''}${g.stop&&g.tp?' · ':''}${g.tp?`TP ${F.c(g.tp)}`:''}</span>`;}
-function guardBtnH(mid){const L=S.me.positions.filter(p=>p.m===mid);if(!L.length)return '';const any=L.some(p=>guardOf(mid,p.s));return `<button class="btn b-white full" data-a="guard" data-m="${mid}" data-s="${L[0].s}" style="margin-top:8px">${ic('shield',16)} ${any?_t("Modifier la protection"):_t("Stop loss et take profit")}</button>`;}
+function guardBtnH(mid){const L=S.me.positions.filter(p=>p.m===mid);if(!L.length)return '';const any=L.some(p=>guardOf(mid,p.s));return `<button class="btn b-white full mt-2" data-a="guard" data-m="${mid}" data-s="${L[0].s}">${ic('shield',16)} ${any?_t("Modifier la protection"):_t("Stop loss et take profit")}</button>`;}
 function guardCalc(d){const m=MK[d.m],p=posOf(d.m,d.s),px=curPx(m,d.s),stop=d.stop===''?0:clamp(Math.round(numOf(d.stop)||0),1,99),tp=d.tp===''?0:clamp(Math.round(numOf(d.tp)||0),1,99);
  const pnlAt=x=>x?p.sh*(x-p.avg)/100:0;let err='';
  if(stop&&stop>=px)err=_t("Le stop loss doit être sous le prix actuel.");else if(tp&&tp<=px)err=_t("Le take profit doit être au-dessus du prix actuel.");else if(!stop&&!tp)err=_t("Indique au moins un seuil.");
@@ -166,7 +166,7 @@ function ordRowH(o,full){const m=MK[o.m];if(!m)return '';const pct=o.k==='buy'?(
  return `<div class="ord-row ${o.status}"><div class="ord-main">${full?`<a class="nm" href="#marche-${m.id}">${esc(m.short)}</a>`:''}<span class="sub">${what}</span><span class="ord-bar"><i style="width:${Math.round(pct)}%"></i></span><small>${st}${o.sh&&o.k==='buy'?`${_t(", {0} parts obtenues",[F.d1(o.sh)])}`:''}${o.k==='sell'&&o.pro?`${_t(", {0} encaissés",[F.usd(o.pro)])}`:''} · ${ago(o.at)}</small></div>${o.status==='open'?`<button class="btn b-ghost sm" data-a="ord-cancel" data-id="${o.id}">${_t("Annuler")}</button>`:''}</div>`;}
 function ordersBoxH(m){const L=ordersOpen(m.id);return `<section class="pn pad" data-ordbox="${m.id}"${L.length?'':' hidden'}><div class="h2">${_t("Tes ordres en attente")}</div><div class="sub">${_t("Réservé : {0}",[F.usd(L.filter(o=>o.k==='buy').reduce((a,o)=>a+o.cash,0))])}</div>${L.map(o=>ordRowH(o,false)).join('')}</section>`;}
 function ordersTableH(){const L=ordersOpen(),D=ordersDone().slice(0,6);if(!L.length&&!D.length)return '';
- return `<div class="ords"><div class="ph" style="padding:14px 20px 4px"><div><div class="h2" style="font-size:15px">${_t("Ordres limite")}</div><div class="sub">${L.length?`${_t("{0} en attente, {1} réservés sur ton solde",[L.length,F.usd(reservedCash())])}`:_t("Aucun ordre en attente")}</div></div></div><div style="padding:0 20px 12px">${L.map(o=>ordRowH(o,true)).join('')}${D.length?`<details class="ord-old"><summary>${_t("Ordres terminés ({0})",[D.length])}</summary>${D.map(o=>ordRowH(o,true)).join('')}</details>`:''}</div></div>`;}
+ return `<div class="ords"><div class="ph" style="padding:14px 20px 4px"><div><div class="h2 t-3">${_t("Ordres limite")}</div><div class="sub">${L.length?`${_t("{0} en attente, {1} réservés sur ton solde",[L.length,F.usd(reservedCash())])}`:_t("Aucun ordre en attente")}</div></div></div><div class="p-0-5-3">${L.map(o=>ordRowH(o,true)).join('')}${D.length?`<details class="ord-old"><summary>${_t("Ordres terminés ({0})",[D.length])}</summary>${D.map(o=>ordRowH(o,true)).join('')}</details>`:''}</div></div>`;}
 function ordersRefresh(){$$('[data-ordbox]').forEach(el=>{const m=MK[el.dataset.ordbox];if(!m)return;el.outerHTML=ordersBoxH(m);const n=$(`[data-ordbox="${m.id}"]`);if(n)fixText(n);});
  if(S.ui.route==='profil'&&S.ui.ptab==='positions'){const pt=$('[data-ptab-body]');if(pt){pt.innerHTML=ptabH('positions');fixText(pt);}}
  const pb=$('[data-posbox]');if(pb&&MK[pb.dataset.posbox]){pb.outerHTML=posBoxH(MK[pb.dataset.posbox]);const n=$('[data-posbox]');if(n)fixText(n);}}

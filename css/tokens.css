@@ -20,7 +20,7 @@
   --line-2:rgba(0,0,0,.18);     /* contour d'un contrôle (case, champ au repos sur fond blanc) */
   --text:#1D1D1F;               /* texte principal */
   --text-2:#48484C;             /* texte secondaire */
-  --text-3:#6B6B70;             /* légendes, méta (AA sur --bg, --surface et --fill) */
+  --text-3:#66666B;             /* légendes, méta (AA sur --bg, --surface, --fill et --fill-2) */
   --text-4:#A1A1A8;             /* désactivé et décor uniquement (jamais un texte à lire) */
   --veil:rgba(0,0,0,.36);       /* voile derrière une fenêtre */
   --bar:rgba(255,255,255,.86);  /* barres translucides (en-tête, onglets) */
