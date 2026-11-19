@@ -1392,8 +1392,8 @@ h1 .ctg{height:22px;font-size:var(--fs-2);padding:0 8px;vertical-align:middle}
 .cltr{display:grid;grid-template-columns:44px minmax(0,1fr) 80px 60px 80px;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:var(--fs-2)}
 .cltr.h{font-size:var(--fs-1);color:var(--text-3);font-weight:600}
 .cltr>span:nth-child(2){display:flex;align-items:center;gap:6px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cltr.up>span:first-child{color:var(--text-2);font-weight:600}
-.cltr.down>span:first-child{color:var(--no);font-weight:600}
+.cltr.cl-up>span:first-child{color:var(--yes);font-weight:600}   /* zone de montée (les 3 premiers) */
+.cltr.cl-down>span:first-child{color:var(--no);font-weight:600}   /* zone de descente */
 .cltr.mine{background:var(--accent-soft)}
 .clrules h3{font-size:var(--fs-3);margin:16px 0 4px}
 .clrules p{color:var(--text-2);font-size:var(--fs-2);line-height:1.5;margin:0}
@@ -2390,21 +2390,22 @@ html.pro-lock,html.pro-lock body{overflow:hidden}
    que garder le téléphone tel qu'il était (éléments ajoutés pour l'ordinateur masqués, styles en ligne devenus classes). */
 
 /* ---------- Page d'entrée : un carrefour (js/refonte.js, hubOrdiH) ----------
-   Ligne 1 : le salon Général en direct (8 colonnes) et le haut du classement (4). Ligne 2 : amis, clans, copy trading.
-   La hauteur de la ligne 1 est celle du classement (le chat ne pèse pas sur elle : contain:size, son fil défile seul) ;
-   le classement montre 5 joueurs, 8 à partir de 1 680 px, un de plus pour un visiteur (il n'a pas de ligne « Ta place »). */
+   À partir de 1 280 px : ligne 1, le salon Général en direct (8 colonnes) et le haut du classement (4) ; ligne 2, amis,
+   clans, copy trading (4 chacun). De 880 à 1 279 px : le chat sur toute la largeur, puis les quatre blocs deux par deux.
+   Une ligne a la hauteur de son bloc le plus haut ; le chat ne pèse pas sur elle (contain:size, son fil défile seul).
+   Le classement montre 5 joueurs, 8 à partir de 1 680 px, un de plus pour un visiteur (il n'a pas de ligne « Ta place »). */
 @media (min-width:880px){
   .wrap.hub.hubd{max-width:var(--page)}
   .hubd .pagehead{margin-bottom:var(--sp-6)}
   .hubg{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:var(--col-gap);align-items:stretch}
   .hub-b{display:flex;flex-direction:column;min-width:0;padding:var(--sp-4) var(--sp-6) var(--sp-6)}
-  .hub-chat{grid-column:span 7;min-height:400px;contain:size;padding:0;overflow:hidden}
-  .hub-lb{grid-column:span 5}
+  .hub-chat{grid-column:span 12;min-height:400px;contain:size;padding:0;overflow:hidden}
+  .hub-lb,.hub-fr,.hub-cl,.hub-cp{grid-column:span 6}
   .hub-lb .hub-r:nth-child(n+6){display:none}
   body.out .hub-lb .hub-r:nth-child(6){display:grid}
-  .hub-fr,.hub-cl,.hub-cp{grid-column:span 4}
-  /* tête d'un bloc : le titre est un lien vers la section (flèche qui avance au survol), la méta à droite */
-  .hub-h{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);min-height:var(--sp-10);margin-bottom:var(--sp-2)}
+  /* tête d'un bloc : le titre est un lien vers la section (flèche qui avance au survol), la méta à droite (dessous si la
+     place manque) */
+  .hub-h{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;column-gap:var(--sp-3);min-height:var(--sp-10);margin-bottom:var(--sp-2)}
   .hub-h .h2{min-width:0}
   .hub-t{display:inline-flex;align-items:center;gap:var(--sp-1);border-radius:var(--r-xs);color:var(--text);transition:color var(--dur-1) var(--ease)}
   .hub-t svg{color:var(--text-3);transition:color var(--dur-1) var(--ease),transform var(--dur-1) var(--ease)}
@@ -2461,7 +2462,7 @@ html.pro-lock,html.pro-lock body{overflow:hidden}
 }
 @media (min-width:1280px){
   .hub-chat{grid-column:span 8}
-  .hub-lb{grid-column:span 4}
+  .hub-lb,.hub-fr,.hub-cl,.hub-cp{grid-column:span 4}
 }
 @media (min-width:1680px){
   .hub-lb .hub-r:nth-child(-n+8){display:grid}
@@ -2494,8 +2495,9 @@ html.pro-lock,html.pro-lock body{overflow:hidden}
 @media (min-width:880px){
   .lbw .pagehead{margin-bottom:var(--sp-6)}
   .lbw .pagehead .plead{max-width:none}
+  .lbw aside .sub:has(+.ladder){display:none}   /* « Clique sur un rang… » : les tuiles se montrent cliquables au survol */
   .pn.lb{container-type:inline-size;overflow:clip}
-  .pn.lb .lh,.pn.lb .lr{grid-template-columns:var(--sp-10) minmax(0,1fr) 120px 112px;column-gap:var(--sp-4);padding:var(--sp-3) var(--sp-5)}
+  .pn.lb .lh,.pn.lb .lr{grid-template-columns:var(--sp-10) minmax(0,1fr) 104px 100px;column-gap:var(--sp-3);padding:var(--sp-3) var(--sp-5)}
   .pn.lb .lh{position:sticky;top:var(--bar-h);z-index:2;padding-block:var(--sp-3);background:var(--surface);box-shadow:inset 0 -1px 0 var(--line)}
   .pn.lb .lh+.lr{border-top:0}
   .pn.lb .lr>.c-rk,.pn.lb .lr>.c-acc,.pn.lb .lr>.c-bets,.pn.lb .lh>span:nth-child(3),.pn.lb .lh>span:nth-child(5),.pn.lb .lh>span:nth-child(6){display:none}
@@ -2507,7 +2509,7 @@ html.pro-lock,html.pro-lock body{overflow:hidden}
   .pn.lb .c-fol{justify-self:end}
   .pn.lb .c-fol .btn{min-width:96px}
   @container (min-width:680px){
-    .pn.lb .lh,.pn.lb .lr{grid-template-columns:var(--sp-10) minmax(0,1fr) 152px 120px 112px}
+    .pn.lb .lh,.pn.lb .lr{grid-template-columns:var(--sp-10) minmax(0,1fr) 152px 120px 112px;column-gap:var(--sp-4)}
     .pn.lb .lr>.c-rk,.pn.lb .lh>span:nth-child(3){display:block}
   }
   @container (min-width:820px){
@@ -2521,17 +2523,18 @@ html.pro-lock,html.pro-lock body{overflow:hidden}
 }
 
 /* ---------- Clans : l'annuaire en tableau, les onglets et les filtres sur une ligne (js/clans.js, vClans, clanTabH) ----------
-   Colonnes du tableau, selon sa largeur : # · clan · division · score, puis les membres (680 px), l'accès (720 px), les
-   langues (980 px) et les catégories (1 160 px). Le tag d'un clan ne se coupe jamais : c'est le nom qui se tronque.
+   Colonnes du tableau, selon sa largeur : # · clan · score, puis la division (560 px), les membres (680 px), l'accès
+   (800 px), les langues (1 040 px) et les catégories (1 220 px). Le tag d'un clan ne se coupe jamais : le nom se tronque.
    Onglets et filtres partagent une ligne quand la carte a la place (820 px), sinon les filtres passent dessous. */
 @media (min-width:880px){
   .clw .pagehead,.clpw .pagehead{margin-bottom:var(--sp-6)}
+  .clw .pagehead .plead{max-width:none}
   .clmain{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:stretch;container-type:inline-size}
   .clmain>*{grid-column:1/-1;min-width:0}
-  .clmain>.clfilters{flex-wrap:nowrap;align-items:center;gap:var(--sp-5)}
+  .clmain>.clfilters{align-items:center;column-gap:var(--sp-5)}
   @container (min-width:820px){
     .clmain>.utabs:has(+.clfilters){grid-column:1}
-    .clmain>.clfilters{grid-column:2;grid-row:1;margin-bottom:var(--sp-4);padding-inline-start:var(--sp-6);border-bottom:1px solid var(--line)}
+    .clmain>.clfilters{grid-column:2;grid-row:1;flex-wrap:nowrap;margin-bottom:var(--sp-4);padding-inline-start:var(--sp-6);border-bottom:1px solid var(--line)}
   }
   /* colonne latérale (300 px dès 880 px) : la ligne d'un clan se lit en entier, ses informations l'une sous l'autre */
   aside .cln small{white-space:normal;overflow:visible}
@@ -2543,7 +2546,7 @@ html.pro-lock,html.pro-lock body{overflow:hidden}
   .cltab{--clt-dv:132px;container-type:inline-size}
   .cltab.nodiv{--clt-dv:0px}
   .cltab.nodiv .clt-h .clt-dv{visibility:hidden}
-  .clt-h,.clt-r{display:grid;grid-template-columns:var(--sp-10) minmax(0,1fr) var(--clt-dv) 112px;column-gap:var(--sp-4);align-items:center;margin-inline:calc(-1*var(--sp-3));padding-inline:var(--sp-3)}
+  .clt-h,.clt-r{display:grid;grid-template-columns:var(--sp-10) minmax(0,1fr) 112px;column-gap:var(--sp-4);align-items:center;margin-inline:calc(-1*var(--sp-3));padding-inline:var(--sp-3)}
   .clt-h{min-height:var(--sp-10);font-size:var(--fs-1);color:var(--text-3);box-shadow:inset 0 -1px 0 var(--line)}
   .clt-r{position:relative;min-height:60px;padding-block:var(--sp-2);border-radius:var(--r-sm);font-size:var(--fs-2);color:var(--text);transition:background var(--dur-1) var(--ease)}
   .clt-r+.clt-r::before{content:'';position:absolute;top:0;inset-inline:var(--sp-3);height:1px;background:var(--line);transition:opacity var(--dur-1) var(--ease)}
@@ -2556,21 +2559,25 @@ html.pro-lock,html.pro-lock body{overflow:hidden}
   .clt-r small{display:block;font-size:var(--fs-1);color:var(--text-3)}
   .clt-r>.num:last-child{font-size:var(--fs-3)}
   .clt-x{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-2)}
-  .clt-h>:nth-child(4),.clt-h>:nth-child(5),.clt-h>:nth-child(6),.clt-h>:nth-child(7),
-  .clt-r>:nth-child(4),.clt-r>:nth-child(5),.clt-r>:nth-child(6),.clt-r>:nth-child(7){display:none}
+  .clt-h>:nth-child(3),.clt-h>:nth-child(4),.clt-h>:nth-child(5),.clt-h>:nth-child(6),.clt-h>:nth-child(7),
+  .clt-r>:nth-child(3),.clt-r>:nth-child(4),.clt-r>:nth-child(5),.clt-r>:nth-child(6),.clt-r>:nth-child(7){display:none}
+  @container (min-width:560px){
+    .clt-h,.clt-r{grid-template-columns:var(--sp-10) minmax(0,1fr) var(--clt-dv) 112px}
+    .clt-h>:nth-child(3),.clt-r>:nth-child(3){display:block}
+  }
   @container (min-width:680px){
     .clt-h,.clt-r{grid-template-columns:var(--sp-10) minmax(0,1fr) var(--clt-dv) 88px 112px}
     .clt-h>:nth-child(4),.clt-r>:nth-child(4){display:block}
   }
-  @container (min-width:720px){
+  @container (min-width:800px){
     .clt-h,.clt-r{grid-template-columns:var(--sp-10) minmax(0,1fr) var(--clt-dv) 88px 132px 112px}
     .clt-h>:nth-child(5),.clt-r>:nth-child(5){display:block}
   }
-  @container (min-width:980px){
+  @container (min-width:1040px){
     .clt-h,.clt-r{grid-template-columns:var(--sp-10) minmax(0,1fr) var(--clt-dv) 88px 132px 150px 112px}
     .clt-h>:nth-child(6),.clt-r>:nth-child(6){display:block}
   }
-  @container (min-width:1160px){
+  @container (min-width:1220px){
     .clt-h,.clt-r{grid-template-columns:var(--sp-10) minmax(0,1fr) var(--clt-dv) 88px 132px 150px 170px 112px}
     .clt-h>:nth-child(7),.clt-r>:nth-child(7){display:block}
   }
@@ -2606,10 +2613,18 @@ html.pro-lock,html.pro-lock body{overflow:hidden}
 @media (max-width:879px){.frx{display:none}}
 @media (min-width:880px){
   .frw .pagehead .plead{max-width:none}
+  .frw aside .sub:has(+.fsearch){display:none}   /* « Cherche un joueur par son pseudo » : le champ le dit déjà */
   .frw .frs.pn{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--carte-min),1fr));gap:var(--col-gap);padding:0;background:none}
   .frw .frs>:not(.frow){grid-column:1/-1;margin-bottom:0}
-  .frw .frs>.frow{position:relative;display:flex;flex-direction:column;align-items:stretch;gap:var(--sp-4);padding:var(--sp-5);border-top:0;border-radius:var(--r-lg);background:var(--surface)}
+  .frw .frs>.frow{position:relative;display:flex;flex-direction:column;align-items:stretch;gap:var(--sp-4);padding:var(--sp-5);border-top:0;border-radius:var(--r-lg);background:var(--surface);container-type:inline-size}
   .frw .frs .frl{padding-inline-end:var(--sp-16)}
+  /* carte étroite (contenu de moins de 240 px) : l'avatar au-dessus du nom, qui garde toute la largeur de la carte */
+  @container (max-width:240px){
+    .frw .frs .frl{flex-direction:column;align-items:flex-start;padding-inline-end:0}
+  }
+  /* colonne de droite étroite : le bouton « Ajouter en ami » passe sous le joueur plutôt que de le recouvrir */
+  .frw aside .frow{flex-wrap:wrap;row-gap:var(--sp-2)}
+  .frw aside .fra{margin-inline-start:auto}
   .frw .frs .frn b{display:flex;align-items:center;min-width:0;font-size:var(--fs-3);overflow:visible}
   .frw .frs .frn b>bdi{min-width:0;overflow:hidden;text-overflow:ellipsis}
   .frw .frs .frn .ctg{flex:none}
@@ -2634,6 +2649,7 @@ html.pro-lock,html.pro-lock body{overflow:hidden}
    1 680 px). Colonne de droite : tes copieurs. Sans copie en cours, la carte vide « Mes copies » s'efface : les boutons
    « Copier » des cartes disent déjà quoi faire. */
 .cpx-pick>.cp-pick:nth-child(n+8){display:none}
+[data-copyroot]>.cp-lockp{margin-bottom:0}   /* la carte « Se débloque au rang Or » est maintenant la première de la colonne */
 @media (max-width:879px){.cpk-go,.cpk-k{display:none}}
 @media (min-width:880px){
   .wrap.cptr{max-width:var(--page)}
@@ -2678,6 +2694,13 @@ html.pro-lock,html.pro-lock body{overflow:hidden}
   .jg>.jmsg{grid-area:msg}
   .jbet{align-items:center;padding-block:var(--sp-4)}
   .jbet .nm{font-size:var(--fs-3)}
+}
+
+/* ---------- Survol : tout ce qui se clique dans ces écrans répond à la souris ---------- */
+@media (min-width:880px) and (hover:hover){
+  a.hub-n:hover,.tri-m a.h2:hover,.cptr a.cp-who:hover b{text-decoration:underline}
+  :is(.lbw,.clw,.tribw) .seg>button:not(.on):hover{background:var(--fill);color:var(--text)}
+  .lbw a.pn:hover{box-shadow:inset 0 0 0 1px var(--line-2)}
 }
 
 /* (fin de la section communaute) */

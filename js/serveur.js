@@ -510,7 +510,7 @@ function srvChatAjouter(rid,m,mes){
  const moi=m.u===srvMoi()?'me':m.u;
  if(m.k==='evt'){const e=m.ev||{},k=MK[e.m],f=CK[e.foe];
   const t=e.code==='appel'&&k?_t("Appel de clan : {0}, côté {1}. Chacun suit avec sa mise, dans ses limites.",[k.short,e.s==='oui'?_t("Oui"):_t("Non")])
-   :e.code==='guerre'&&f?_t("Guerre de clans contre {0} [{1}] ! 48 h pour marquer des points. Buy-in {2}.",[f.name,f.tag,F.usd0(+e.k)]):'';
+   :e.code==='guerre'&&f?_t("Guerre de clans contre {0} [{1}] : 48 h pour marquer des points. Buy-in {2}.",[f.name,f.tag,F.usd0(+e.k)]):'';
   if(t)addMsg(rid,mkMsg({k:'evt',text:t,at:m.at,sid:m.id}));return;}
  if(m.k==='ana'){const a=m.ana||{},id=+a.ana;if(!id||!MK[a.m])return;                    /* analyse partagée : le message porte une référence, l'instantané se lit à part */
   addMsg(rid,mkMsg({u:moi,k:'ana',text:m.text||'',ana:SRV_ANA.get(id)||null,anaId:id,r:srvReactions(m.r),my:srvMiennes(mes,m.id),at:m.at,sid:m.id}));

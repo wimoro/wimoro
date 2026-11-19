@@ -35,6 +35,8 @@ I18N_ADD("en",{
 "S’il mise {0}, tu mises {1} : tes mises suivent les siennes à l’échelle de ton budget.":"If they bet {0}, you bet {1}: your bets follow theirs, scaled to your budget.",
 "{0} Copié par {1, plural, one{# joueur} other{# joueurs}}":"{0} Copied by {1, plural, one{# player} other{# players}}",
 "Les performances passées ne garantissent pas les résultats futurs.":"Past performance does not guarantee future results.",
+"{0} rejoint {1}.":"{0} joins {1}.",
+"Guerre de clans contre {0} [{1}] : 48 h pour marquer des points. Buy-in {2}.":"Clan war against {0} [{1}]: 48 h to score points. Buy-in {2}.",
 /* (fin communaute) */
 /* Partie A [marche] */
 /* (fin marche) */
@@ -68,6 +70,8 @@ I18N_ADD("he",{
 "S’il mise {0}, tu mises {1} : tes mises suivent les siennes à l’échelle de ton budget.":"אם הוא מהמר {0}, מהמרים {1}: ההימורים עוקבים אחרי שלו, בקנה המידה של התקציב שלכם.",
 "{0} Copié par {1, plural, one{# joueur} other{# joueurs}}":"{0} מועתק על ידי {1, plural, one{שחקן אחד} other{# שחקנים}}",
 "Les performances passées ne garantissent pas les résultats futurs.":"ביצועי עבר אינם מבטיחים תוצאות בעתיד.",
+"{0} rejoint {1}.":"{0} מצטרף ל-{1}.",
+"Guerre de clans contre {0} [{1}] : 48 h pour marquer des points. Buy-in {2}.":"מלחמת קלאנים מול {0} [{1}]: 48 שעות לצבור נקודות. דמי כניסה {2}.",
 /* (fin communaute) */
 /* Partie A [marche] */
 /* (fin marche) */

@@ -164,6 +164,20 @@ Exemple — un écran avec sa colonne latérale :
 </div>
 ```
 
+Quatre façons de composer, introduites par les écrans Communauté (section `[communaute]` de `screens.css`) :
+
+- **Tableau** (classement, annuaire des clans) : chaque ligne est une grille ; les colonnes s'ajoutent selon la largeur
+  *du tableau* (requête de conteneur `@container`, avec `container-type:inline-size` sur le tableau), pas selon la
+  fenêtre : le même tableau sert en pleine page comme dans une carte. Un nom se tronque, jamais un tag de clan ni un
+  chiffre. L'en-tête des colonnes reste sous la barre du site (`position:sticky`) ; le tableau rogne par
+  `overflow:clip`, qui ne crée pas de défilement (avec `overflow:hidden`, `sticky` ne colle plus).
+- **Pleine hauteur** (live chat, `.tribw`) : la page prend la hauteur de la fenêtre moins l'en-tête ; chaque colonne
+  défile seule et le champ du message reste en bas de l'écran.
+- **Carrefour** (entrée Communauté, `.hubg`) : des blocs sur 12 colonnes ; une ligne a la hauteur de son bloc au contenu
+  fixe (le classement), le bloc qui défile (le chat) ne pèse pas sur elle (`contain:size`).
+- **Cartes sur le fond de la page** (amis, copy trading) : la section devient une grille de cartes (`--carte-min`) et
+  ses lignes deviennent des cartes ; sur téléphone, la même section reste une liste.
+
 Les anciens noms (`--ink`, `--g2`, `--oui`, `--non`, `--panel`, `--sg`…) restent définis à la fin de `tokens.css` :
 le JavaScript des graphiques du Mode Pro et des images partagées les lit encore.
 
