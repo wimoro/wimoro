@@ -163,6 +163,10 @@ document.addEventListener('pointermove',trailTip,{passive:true});
 document.addEventListener('pointerleave',e=>{if(e.target&&e.target.classList&&e.target.classList.contains('trail'))$$('.tip',e.target).forEach(x=>x.remove());},true);
 /* Après chaque rendu d'écran (appelé par render, js/views.js). */
 function apresRendu(view){introVue(view);}
+/* Relecture des captures d'ordinateur [revue] : ces écrans ont une composition propre à l'ordinateur (bouton d'envoi dans la
+   colonne de droite, barre d'enregistrement sous l'aperçu…) ; passer le palier de 880 px les redessine. */
+const REVUE_ORDI=/^(creer|modifier|responsable|parrainage|combines)$/;
+try{matchMedia('(min-width:880px)').addEventListener('change',()=>{if(PRET&&REVUE_ORDI.test(S.ui.route||''))render(false);});}catch(e){}
 /* Passage téléphone ↔ ordinateur : l'accueil se recompose (la carte Éclair change de colonne). */
 try{matchMedia('(min-width:880px)').addEventListener('change',()=>{if(PRET&&(S.ui.route||'accueil')==='accueil')render(false);});}catch(e){}
 

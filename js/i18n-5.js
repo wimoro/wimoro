@@ -56,6 +56,9 @@ I18N_ADD("en",{
 /* (fin communaute) */
 /* Partie A [marche] */
 /* (fin marche) */
+/* Partie A [revue] */
+"Accepter {0} ({1})":"Accept {0} ({1})",
+/* (fin revue) */
 });
 I18N_ADD("he",{
 "Choisis un marché, réponds Oui ou Non, et gagne si tu as vu juste.":"בוחרים שוק, עונים כן או לא, ומרוויחים אם צדקתם.",
@@ -107,4 +110,7 @@ I18N_ADD("he",{
 /* (fin communaute) */
 /* Partie A [marche] */
 /* (fin marche) */
+/* Partie A [revue] */
+"Accepter {0} ({1})":"לקבל {0} ({1})",
+/* (fin revue) */
 });

@@ -2997,6 +2997,82 @@ body.out:has(.jx .b-pri) .top .signup{display:none}
 @media (min-width:1280px){.g-mkt{grid-template-rows:auto 1fr}}
 /* (fin de la section marche) */
 
+/* ====================================================================== Troisième passe : corrections de la relecture ordinateur [revue] */
+/* Relecture indépendante des captures d'ordinateur (19 nov. 2026) : défauts réels, puis les écrans jugés « téléphone
+   élargi » ou « en partie ». Toutes les règles partent de 880 px, sauf deux corrections de contraste du thème sombre
+   (pastille et avatar « noir ») : leur variable ne change que le thème sombre, à toutes les tailles. */
+
+/* ---------- Contraste, thème sombre : la couleur d'avatar « noir » se détache de la carte (tokens.css, --trait-av) ---------- */
+.ob-sw button{box-shadow:inset 0 0 0 1px var(--trait-av)}
+.ob-sw button.on{box-shadow:inset 0 0 0 1px var(--trait-av),0 0 0 3px var(--surface),0 0 0 5px var(--text)}
+.av:not(.av-img){box-shadow:inset 0 0 0 1px var(--anneau-av)}
+
+@media (min-width:880px){
+  /* ---------- Fils de discussion (fiche d'un marché, Communauté, live chat, Blitz) ----------
+     Le fil est collé en bas (derniers messages) : le premier message visible était coupé net sous l'en-tête. Un fondu de
+     24 px en haut de la zone qui défile ; le fil commence 24 px plus bas, si bien que tout en haut rien n'est atténué. */
+  .pn>.feed{padding-top:var(--sp-6);-webkit-mask-image:linear-gradient(to bottom,transparent,var(--text) var(--sp-6));mask-image:linear-gradient(to bottom,transparent,var(--text) var(--sp-6))}
+  /* live chat : la colonne de droite défile ; un fondu en bas montre qu'elle continue, une marge garde la dernière carte entière */
+  .tribw .t-right{padding-bottom:var(--sp-8);-webkit-mask-image:linear-gradient(to top,transparent,var(--text) var(--sp-6));mask-image:linear-gradient(to top,transparent,var(--text) var(--sp-6))}
+
+  /* ---------- Contraste ----------
+     Bouton désactivé (« Retirer » sans adresse, « Envoyer ma proposition »…) : un gris neutre et un texte lisible (4,5:1
+     au moins) plutôt que le bouton bleu à 40 % d'opacité (2:1). Rangs passés : la tuile n'est plus atténuée, seul son
+     emblème l'est (les « 0 XP », « 300 XP » passaient sous 4,5:1). */
+  .btn[disabled],.btn[aria-disabled="true"]{opacity:1;background:var(--btn-off-bg);color:var(--btn-off-text);box-shadow:none}
+  .tier.past{opacity:1}
+  .tier.past .emb{opacity:.75}
+
+  /* ---------- Portefeuille : la question d'un marché garde son icône de partage à côté d'elle, jamais seule sur une ligne ----------
+     La colonne « Côté » prend la largeur de sa pastille ; le marché récupère la place. */
+  .wal-o .pos-t .ph2,.wal-o .pos-t .pr2{grid-template-columns:minmax(0,1fr) 48px 64px 80px 80px 96px 104px;column-gap:var(--sp-3)}
+  .wal-o .pos-t .q2{display:flex;align-items:center;gap:var(--sp-2);text-wrap:balance}
+  .wal-o .pos-t .q2>.ibtn{flex:none;margin-inline-start:auto}
+
+  /* ---------- Éclair : les paris passent à la ligne au lieu de défiler sous une flèche (« Si… » était coupé) ---------- */
+  .jx-eclair .fl-tabs{flex-wrap:wrap;column-gap:var(--sp-5);row-gap:0;overflow:visible;-webkit-mask-image:none;mask-image:none}
+  .jx-eclair .fl-tabs .tarr{display:none}
+
+  /* ---------- Duels (js/duels.js, duelsOrdiH) ----------
+     Plus d'en-tête à côté de la sous-navigation : elle garde la hauteur des trois autres pages des jeux (la règle
+     .jx-duels>.pagehead de la section [jeux] ne sert plus sur ordinateur). Les boutons passent en tête de la carte
+     « En cours » ; les duels terminés suivent ; les cartes remplissent la largeur (auto-fit). */
+  .jx-duels{display:block}
+  .jx-duels .dl-main+.dl-main{margin-top:0}
+  .dl-tete{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--sp-3) var(--sp-4);padding:var(--sp-5) var(--sp-6) 0}
+  .dl-tete .h2{display:flex;align-items:baseline;gap:var(--sp-2)}
+  .dl-n{font-size:var(--fs-3);font-weight:var(--fw-regular);color:var(--text-3)}
+  .jx-duels .dl-list{grid-template-columns:repeat(auto-fit,minmax(min(100%,calc(var(--carte-min) + var(--sp-12))),1fr))}
+  .dc-acts{display:flex;gap:var(--sp-2);margin-top:var(--sp-4)}
+  .dc-acts .btn:first-child{flex:1;min-width:0}
+  .dl-regle{border-top:0}
+  .dl-regle summary{font-size:var(--fs-4);font-weight:var(--fw-bold);color:var(--text);letter-spacing:var(--track-title)}
+  .dl-regle .steps{margin-top:var(--sp-3)}
+  @media (hover:hover){.dl-regle summary:hover{color:var(--accent)}}
+
+  /* ---------- Modifier le profil ----------
+     La barre d'enregistrement est sous l'aperçu (js/auth.js, vEditProfile), dans la colonne de droite qui reste visible.
+     À partir de 1 280 px, l'identité passe en deux colonnes (plus bas). */
+  .pe-side .pe-prev{position:static}
+  .pe-side .savebar{position:static;box-shadow:none}
+
+  /* ---------- Créer un pari : le bouton d'envoi dans la colonne de droite (js/auth.js, vCreate) ---------- */
+  .cr-side [data-crsubmit]{margin-top:var(--sp-5)}
+}
+@media (min-width:1280px){
+  /* Modifier le profil : l'identité en deux colonnes. La photo, la galerie (16 avatars sur deux rangées) et la couleur à
+     gauche ; le pseudo et la bio à droite. */
+  form[data-form="profile"]>section:first-child{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:'h h' 'ph n' 'ph b' 'co b';column-gap:var(--sp-8);row-gap:var(--sp-5);align-items:start}
+  form[data-form="profile"]>section:first-child>.step-h{grid-area:h}
+  form[data-form="profile"]>section:first-child>[data-pephoto]{grid-area:ph}
+  form[data-form="profile"]>section:first-child>.pe-av{grid-area:co}
+  form[data-form="profile"]>section:first-child>.field:has(#pen){grid-area:n}
+  form[data-form="profile"]>section:first-child>.field:has(#peb){grid-area:b}
+  form[data-form="profile"]>section:first-child>*{margin:0}
+  form[data-form="profile"] .avgrid{grid-template-columns:repeat(8,minmax(0,1fr));gap:var(--sp-2)}
+}
+/* (fin de la section revue) */
+
 /* ---------- Utilitaires (remplacent les styles en ligne des gabarits ; en dernier pour l'emporter) ---------- */
 .t-1{font-size:var(--fs-1)}
 .t-2{font-size:var(--fs-2)}
