@@ -1,0 +1,39 @@
+[
+ {
+  "matchID": 83242,
+  "matchDateTimeUTC": "2026-11-21T14:30:00Z",
+  "matchIsFinished": true,
+  "team1": {
+   "teamId": 87,
+   "teamName": "Borussia Mönchengladbach"
+  },
+  "team2": {
+   "teamId": 7,
+   "teamName": "Borussia Dortmund"
+  },
+  "matchResults": [
+   {
+    "resultTypeID": 1,
+    "pointsTeam1": 0,
+    "pointsTeam2": 1
+   },
+   {
+    "resultTypeID": 2,
+    "pointsTeam1": 1,
+    "pointsTeam2": 3
+   }
+  ],
+  "goals": [
+   {
+    "scoreTeam1": 0,
+    "scoreTeam2": 1,
+    "matchMinute": 22
+   },
+   {
+    "scoreTeam1": 1,
+    "scoreTeam2": 3,
+    "matchMinute": 84
+   }
+  ]
+ }
+]

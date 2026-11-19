@@ -1,0 +1,28 @@
+{
+ "data": [
+  {
+   "id": 18447001,
+   "date": "2026-11-22",
+   "datetime": "2026-11-22T23:00:00.000Z",
+   "season": 2026,
+   "status": "Final",
+   "period": 4,
+   "time": "Final",
+   "home_team": {
+    "id": 16,
+    "abbreviation": "MIA",
+    "full_name": "Miami Heat"
+   },
+   "visitor_team": {
+    "id": 21,
+    "abbreviation": "OKC",
+    "full_name": "Oklahoma City Thunder"
+   },
+   "home_team_score": 104,
+   "visitor_team_score": 117
+  }
+ ],
+ "meta": {
+  "per_page": 25
+ }
+}
