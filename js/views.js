@@ -2,12 +2,13 @@
 
 'use strict';
 /* ===================== Emblèmes de rang (dessin original) ===================== */
-let EMB=0;
-const GW='stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"';
-const GLYPH=['<circle cx="24" cy="23.5" r="4.5" fill="#fff" opacity=".92"/>',`<path d="M17 27l7-6 7 6" ${GW}/>`,`<path d="M17 23l7-6 7 6M17 30l7-6 7 6" ${GW}/>`,`<path d="M17 19l7-6 7 6M17 25.5l7-6 7 6M17 32l7-6 7 6" ${GW}/>`,'<path d="M24 12.5l7.5 10.5L24 33.5l-7.5-10.5Z" fill="#fff" opacity=".95"/>','<path d="M19 14l5.2 8.5L19 31l-5.2-8.5ZM29 14l5.2 8.5L29 31l-5.2-8.5Z" fill="#fff" opacity=".95"/>','<path d="M24 12l8.5 9.5H27V33h-6V21.5h-5.5Z" fill="#fff" opacity=".95"/>','<path d="M14.5 31l2.2-14.5 4.8 7.2L24 13.5l2.5 10.2 4.8-7.2L33.5 31Z" fill="#fff" opacity=".95"/>','<path d="M24 11.5l3.4 7 7.6 1.1-5.5 5.4 1.3 7.6L24 29l-6.8 3.6 1.3-7.6-5.5-5.4 7.6-1.1Z" fill="#fff"/>'];
-function emb(t,d=0,cls=''){const T=TIERS[t],u='eg'+(++EMB);const pips=t===8?'':[0,1,2].map(i=>`<rect x="${12.5+i*8.5}" y="48" width="6" height="4" rx="2" ${i<=d?`fill="${T.c[1]}"`:'style="fill:var(--fill-2)"'}/>`).join('');
- const rays=t===8?Array.from({length:12},(_,i)=>{const a=i*Math.PI/6+Math.PI/12;return `<path d="M${(24+17*Math.cos(a)).toFixed(1)} ${(23+17*Math.sin(a)).toFixed(1)}L${(24+23.5*Math.cos(a)).toFixed(1)} ${(23+23.5*Math.sin(a)).toFixed(1)}" stroke="${T.c[1]}" stroke-width="2.4" stroke-linecap="round"/>`;}).join(''):'';
- return `<svg class="emb ${cls}" viewBox="0 0 48 54" aria-hidden="true"><defs><linearGradient id="${u}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${T.c[0]}"/><stop offset="1" stop-color="${T.c[1]}"/></linearGradient></defs>${rays}<path d="M24 2 43 13v20L24 44 5 33V13Z" fill="url(#${u})"/><path d="M24 2 43 13 24 23 5 13Z" fill="#fff" opacity=".2"/>${GLYPH[t]}${pips}</svg>`;}
+/* Emblèmes plats (troisième passe, partie B) : un ton plein par rang (--rank-0 à --rank-8, css/tokens.css, tirés des
+   couleurs des TIERS), le signe du rang en blanc, sans dégradé ni reflet. Les trois points disent la division. */
+const GW='style="stroke:var(--on-color)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"',GF='style="fill:var(--on-color)"';
+const GLYPH=[`<circle cx="24" cy="23.5" r="4.5" ${GF}/>`,`<path d="M17 27l7-6 7 6" ${GW}/>`,`<path d="M17 23l7-6 7 6M17 30l7-6 7 6" ${GW}/>`,`<path d="M17 19l7-6 7 6M17 25.5l7-6 7 6M17 32l7-6 7 6" ${GW}/>`,`<path d="M24 12.5l7.5 10.5L24 33.5l-7.5-10.5Z" ${GF}/>`,`<path d="M19 14l5.2 8.5L19 31l-5.2-8.5ZM29 14l5.2 8.5L29 31l-5.2-8.5Z" ${GF}/>`,`<path d="M24 12l8.5 9.5H27V33h-6V21.5h-5.5Z" ${GF}/>`,`<path d="M14.5 31l2.2-14.5 4.8 7.2L24 13.5l2.5 10.2 4.8-7.2L33.5 31Z" ${GF}/>`,`<path d="M24 11.5l3.4 7 7.6 1.1-5.5 5.4 1.3 7.6L24 29l-6.8 3.6 1.3-7.6-5.5-5.4 7.6-1.1Z" ${GF}/>`];
+function emb(t,d=0,cls=''){const ton=`var(--rank-${t})`;const pips=t===8?'':[0,1,2].map(i=>`<rect x="${12.5+i*8.5}" y="48" width="6" height="4" rx="2" style="fill:${i<=d?ton:'var(--fill-2)'}"/>`).join('');
+ const rays=t===8?Array.from({length:12},(_,i)=>{const a=i*Math.PI/6+Math.PI/12;return `<path d="M${(24+17*Math.cos(a)).toFixed(1)} ${(23+17*Math.sin(a)).toFixed(1)}L${(24+23.5*Math.cos(a)).toFixed(1)} ${(23+23.5*Math.sin(a)).toFixed(1)}" style="stroke:${ton}" stroke-width="2.4" stroke-linecap="round"/>`;}).join(''):'';
+ return `<svg class="emb ${cls}" viewBox="0 0 48 54" aria-hidden="true">${rays}<path d="M24 2 43 13v20L24 44 5 33V13Z" style="fill:${ton}"/>${GLYPH[t]}${pips}</svg>`;}
 const rk=(t,d)=>`<span class="rk${t===8?' r8':''}">${emb(t,d)}${rankName(t,d)}</span>`;
 
 /* ===================== Petits composants ===================== */

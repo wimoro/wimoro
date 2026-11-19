@@ -108,22 +108,22 @@ function duelStackTick(){for(const d of stacksAll()){if(d.status!=='active')cont
  save();}
 
 /* ---------- Carte en image (1080 × 1350) ---------- */
-function duelCanvas(d){const c=document.createElement('canvas'),W=1080,H=1350;c.width=W;c.height=H;const ctx=c.getContext('2d');const sg=plain(cssVar('--sg')),font=(w,s)=>`${w} ${s}px ${sg}`;
- const bg=ctx.createLinearGradient(0,0,W,H);bg.addColorStop(0,'#0F1115');bg.addColorStop(1,'#1B2140');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+function duelCanvas(d){const c=document.createElement('canvas'),W=1080,H=1350;c.width=W;c.height=H;const ctx=c.getContext('2d');const P=imgPal(),sg=plain(cssVar('--sg')),font=(w,s)=>`${w} ${s}px ${sg}`;
+ ctx.fillStyle=P.bg;ctx.fillRect(0,0,W,H);
  ctx.direction=RTL?'rtl':'ltr';const X=RTL?W-80:80;ctx.textAlign=RTL?'right':'left';const txt=s=>plain(String(s));
- ctx.font=font(800,54);ctx.fillStyle='#fff';ctx.fillText('wimoro',X+(RTL?-70:70),130);ctx.fillStyle='#2448FF';ctx.beginPath();ctx.roundRect(RTL?W-80-56:80,84,56,56,16);ctx.fill();ctx.font=font(800,34);ctx.fillStyle='#fff';ctx.fillText('W',RTL?W-80-40:96,125);
+ ctx.font=font(600,54);ctx.fillStyle=P.text;ctx.fillText('wimoro',X+(RTL?-70:70),130);drawLogo(ctx,RTL?W-80-56:80,84,56);
  const me=duelUserN(d.by),opp=duelOppOf(d)?duelUserN(duelOppOf(d)):'?';const done=['won','lost','void'].includes(d.status);
- ctx.font=font(600,34);ctx.fillStyle='rgba(255,255,255,.6)';ctx.fillText(txt(done?_t("Résultat du duel"):d.status==='active'?_t("Duel en cours"):`${_t("{0} te défie",[me])}`),X,230);
- ctx.font=font(700,56);ctx.fillStyle='#fff';const lines=wrapLines(ctx,txt(duelQ(d)),W-160);let y=300;for(const l of lines.slice(0,3)){ctx.fillText(l,X,y);y+=68;}
+ ctx.font=font(600,34);ctx.fillStyle=P.text3;ctx.fillText(txt(done?_t("Résultat du duel"):d.status==='active'?_t("Duel en cours"):`${_t("{0} te défie",[me])}`),X,230);
+ ctx.font=font(600,56);ctx.fillStyle=P.text;const lines=wrapLines(ctx,txt(duelQ(d)),W-160);let y=300;for(const l of lines.slice(0,3)){ctx.fillText(l,X,y);y+=68;}
  y+=40;const col=[[me,duelSideTxt(d,d.side),d.by==='me'||d.opp?F.usd0(d.stake):F.usd0(d.stake)],[opp,duelSideTxt(d,duelOpp(d.side)),d.oppStake?F.usd0(d.oppStake):'…']];
- col.forEach(([n,s,amt],i)=>{const x=RTL?X-i*(W-160)/2:X+i*(W-160)/2;ctx.font=font(500,30);ctx.fillStyle='rgba(255,255,255,.6)';ctx.fillText(txt(n),x,y);ctx.font=font(700,60);ctx.fillStyle=i===0?'#8FA3FF':'#FFC46B';ctx.fillText(txt(s),x,y+72);ctx.font=font(700,44);ctx.fillStyle='#fff';ctx.direction='ltr';ctx.fillText(txt(amt),x,y+134);ctx.direction=RTL?'rtl':'ltr';});
- y+=210;ctx.font=font(500,30);ctx.fillStyle='rgba(255,255,255,.6)';ctx.fillText(txt(d.pot?`${_t("Cagnotte {0} · cote du marché à l’acceptation : {1}",[plain(F.usd0(d.pot)),plain(F.c(d.price))])}`:`${_t("Cote actuelle : {0} pour {1}",[plain(F.c(d.price0||50)),duelSideTxt(d,d.side)])}`),X,y);
- if(done){y+=90;ctx.font=font(800,64);ctx.fillStyle=d.status==='void'?'#fff':(d.winSide===d.side)?'#8FA3FF':'#FFC46B';ctx.fillText(txt(d.status==='void'?_t("Égalité, mises rendues"):`${_t("{0} remporte {1}",[duelUserN(d.winSide===d.side?d.by:duelOppOf(d)),plain(F.usd0(d.pot))])}`),X,y);
-  y+=70;ctx.font=font(500,30);ctx.fillStyle='rgba(255,255,255,.75)';for(const l of wrapLines(ctx,txt(_t("Preuve : ")+(d.proof?d.proof.txt:'')),W-160).slice(0,3)){ctx.fillText(l,X,y);y+=40;}}
- y=H-250;ctx.strokeStyle='rgba(255,255,255,.14)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(80,y-40);ctx.lineTo(W-80,y-40);ctx.stroke();
- ctx.font=font(600,34);ctx.fillStyle='#fff';ctx.fillText(txt(`${_t("Résolution automatique par Wimoro, mises sous séquestre.")}`),X,y+10);
- ctx.font=font(500,28);ctx.fillStyle='rgba(255,255,255,.7)';ctx.fillText(txt(`${_t("Source : {0}{1}",[duelSource(d).slice(0,70),duelSource(d).length>70?'…':''])}`),X,y+62);
- ctx.font=font(700,30);ctx.fillStyle='#8FA3FF';ctx.fillText('wimoro.com',X,y+118);return c;}
+ col.forEach(([n,s,amt],i)=>{const x=RTL?X-i*(W-160)/2:X+i*(W-160)/2;ctx.font=font(500,30);ctx.fillStyle=P.text3;ctx.fillText(txt(n),x,y);ctx.font=font(600,60);ctx.fillStyle=(i===0?d.side:duelOpp(d.side))==='oui'?P.yes:P.no;ctx.fillText(txt(s),x,y+72);ctx.font=font(600,44);ctx.fillStyle=P.text;ctx.direction='ltr';ctx.fillText(txt(amt),x,y+134);ctx.direction=RTL?'rtl':'ltr';});
+ y+=210;ctx.font=font(500,30);ctx.fillStyle=P.text3;ctx.fillText(txt(d.pot?`${_t("Cagnotte {0} · cote du marché à l’acceptation : {1}",[plain(F.usd0(d.pot)),plain(F.c(d.price))])}`:`${_t("Cote actuelle : {0} pour {1}",[plain(F.c(d.price0||50)),duelSideTxt(d,d.side)])}`),X,y);
+ if(done){y+=90;ctx.font=font(600,64);ctx.fillStyle=d.status==='void'?P.text:d.winSide==='oui'?P.yes:P.no;ctx.fillText(txt(d.status==='void'?_t("Égalité, mises rendues"):`${_t("{0} remporte {1}",[duelUserN(d.winSide===d.side?d.by:duelOppOf(d)),plain(F.usd0(d.pot))])}`),X,y);
+  y+=70;ctx.font=font(500,30);ctx.fillStyle=P.text2;for(const l of wrapLines(ctx,txt(_t("Preuve : ")+(d.proof?d.proof.txt:'')),W-160).slice(0,3)){ctx.fillText(l,X,y);y+=40;}}
+ y=H-250;ctx.strokeStyle=P.line;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(80,y-40);ctx.lineTo(W-80,y-40);ctx.stroke();
+ ctx.font=font(600,34);ctx.fillStyle=P.text;ctx.fillText(txt(`${_t("Résolution automatique par Wimoro, mises sous séquestre.")}`),X,y+10);
+ ctx.font=font(500,28);ctx.fillStyle=P.text3;ctx.fillText(proWrap(ctx,txt(`${_t("Source : {0}{1}",[duelSource(d),''])}`),W-160,1)[0],X,y+62);
+ ctx.font=font(600,30);ctx.fillStyle=P.accent;ctx.fillText('wimoro.com',X,y+118);return c;}
 /* lien d'invitation : le duel voyage dans l'adresse */
 function duelLink(d){const pay={c:d.code,m:d.m,s:d.side,k:d.stake,n:S.me.n,t:d.at,r:d.round||0};return REF.LINK()+'?d='+btoa(unescape(encodeURIComponent(JSON.stringify(pay)))).replace(/=+$/,'');}
 function duelFromLink(){try{const q=new URLSearchParams(location.search).get('d');if(!q)return null;const pay=JSON.parse(decodeURIComponent(escape(atob(q))));if(!pay||!pay.m||!pay.s||!pay.k)return null;return pay;}catch(e){return null;}}

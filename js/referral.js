@@ -22,30 +22,31 @@ const pendingRef=()=>LS.g('wimoro-ref')||'';
 
 /* ---------- Image d'un pari ---------- */
 const cssVar=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim()||'#2448FF';
+/* Images à partager (duel, série, clan, parrainage, analyse) : les couleurs du système, lues dans les variables du thème en
+   cours (css/tokens.css) ; un fond uni, l'encre, l'accent ; le vert et le rouge pour Oui / Non et pour un gain / une perte. */
+function imgPal(){const v=cssVar;return {bg:v('--bg'),surface:v('--surface'),fill:v('--fill'),line:v('--line-2'),text:v('--text'),text2:v('--text-2'),text3:v('--text-3'),accent:v('--accent'),accentBg:v('--accent-bg'),on:v('--on-color'),yes:v('--yes'),no:v('--no'),yesBg:v('--yes-bg'),noBg:v('--no-bg')};}
 function wrapLines(ctx,text,maxW,maxLines){const words=String(text).split(/\s+/),lines=[];let cur='';for(const w of words){const tst=cur?cur+' '+w:w;if(ctx.measureText(tst).width>maxW&&cur){lines.push(cur);cur=w;}else cur=tst;}if(cur)lines.push(cur);if(lines.length>maxLines){const L=lines.slice(0,maxLines);let last=L[maxLines-1];while(ctx.measureText(last+'…').width>maxW&&last.length>3)last=last.slice(0,-1).trim();L[maxLines-1]=last+'…';return L;}return lines;}
 function rrect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
 function drawLogo(ctx,x,y,s){rrect(ctx,x,y,s,s,s*.29);ctx.fillStyle='#2448FF';ctx.fill();ctx.save();ctx.translate(x,y);ctx.scale(s/28,s/28);ctx.strokeStyle='#fff';ctx.lineWidth=2.7;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(5,9);ctx.lineTo(9.5,20);ctx.lineTo(14,11.5);ctx.lineTo(18.5,20);ctx.lineTo(23,9);ctx.stroke();ctx.beginPath();ctx.arc(23,9,2.8,0,Math.PI*2);ctx.fillStyle='#F59A0B';ctx.fill();ctx.strokeStyle='#2448FF';ctx.lineWidth=1.5;ctx.stroke();ctx.restore();}
 /* d = {kind:'bet'|'win', q, s, price, amt, gain, mult, pnl} */
 function shareCanvas(d){
  const W=1080,H=1350,c=document.createElement('canvas');c.width=W;c.height=H;const ctx=c.getContext('2d');
- const sg=plain(cssVar('--sg')),font=(w,px)=>`${w} ${px}px ${sg}`,oui=d.s==='oui',accent=oui?'#2448FF':'#F59A0B',txt=s=>plain(String(s));
- ctx.fillStyle='#14161B';ctx.fillRect(0,0,W,H);
- const g=ctx.createRadialGradient(W*.85,H*.1,40,W*.85,H*.1,900);g.addColorStop(0,oui?'rgba(36,72,255,.55)':'rgba(245,154,11,.45)');g.addColorStop(1,'rgba(20,22,27,0)');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
- const g2=ctx.createRadialGradient(W*.1,H*.95,40,W*.1,H*.95,700);g2.addColorStop(0,'rgba(36,72,255,.35)');g2.addColorStop(1,'rgba(20,22,27,0)');ctx.fillStyle=g2;ctx.fillRect(0,0,W,H);
+ const P=imgPal(),sg=plain(cssVar('--sg')),font=(w,px)=>`${w} ${px}px ${sg}`,oui=d.s==='oui',accent=oui?P.yesBg:P.noBg,txt=s=>plain(String(s));
+ ctx.fillStyle=P.bg;ctx.fillRect(0,0,W,H);
  ctx.direction=RTL?'rtl':'ltr';const X=RTL?W-80:80;ctx.textAlign=RTL?'right':'left';
- drawLogo(ctx,RTL?W-80-64:80,80,64);ctx.fillStyle='#fff';ctx.font=font(700,52);ctx.textBaseline='middle';ctx.fillText('wimoro',RTL?W-80-64-18:80+64+18,112);
- ctx.font=font(500,30);ctx.fillStyle='rgba(255,255,255,.72)';ctx.textBaseline='alphabetic';ctx.fillText(txt(d.kind==='win'?_t('J’ai gagné sur Wimoro'):_t('Mon pari sur Wimoro')),X,215);
+ drawLogo(ctx,RTL?W-80-64:80,80,64);ctx.fillStyle=P.text;ctx.font=font(600,52);ctx.textBaseline='middle';ctx.fillText('wimoro',RTL?W-80-64-18:80+64+18,112);
+ ctx.font=font(500,30);ctx.fillStyle=P.text3;ctx.textBaseline='alphabetic';ctx.fillText(txt(d.kind==='win'?_t('J’ai gagné sur Wimoro'):_t('Mon pari sur Wimoro')),X,215);
  /* taille de la question selon sa longueur (2 lignes : 84 px, 3 : 74, davantage : 62), puis bloc centré entre le titre et le pied */
- let qf=62,lines;for(const [z,mx] of [[84,2],[74,3],[62,4]]){ctx.font=font(700,z);lines=wrapLines(ctx,txt(d.q),W-160,4);qf=z;if(lines.length<=mx)break;}
+ let qf=62,lines;for(const [z,mx] of [[84,2],[74,3],[62,4]]){ctx.font=font(600,z);lines=wrapLines(ctx,txt(d.q),W-160,4);qf=z;if(lines.length<=mx)break;}
  const lh=Math.round(qf*1.2),big=lines.length<=3,vf=big?72:56,G1=44,G2=96,blockH=lines.length*lh+G1+90+G2+36+vf+20,top=250,bot=H-290;
- ctx.font=font(700,qf);ctx.fillStyle='#fff';let y=top+Math.max(0,Math.round((bot-top-blockH)/2))+qf;for(const l of lines){ctx.fillText(l,X,y);y+=lh;}
- y+=G1-lh+qf*.2+52;ctx.font=font(700,44);const chipW=ctx.measureText(txt(oui?_t('Oui'):_t('Non'))).width+76;rrect(ctx,RTL?X-chipW:X,y-56,chipW,90,24);ctx.fillStyle=accent;ctx.fill();ctx.fillStyle=oui?'#fff':'#14161B';ctx.fillText(txt(oui?_t('Oui'):_t('Non')),RTL?X-38:X+38,y+4);
- y+=34+G2+36;const cols=d.kind==='win'?[[_t('Résultat'),F.signed(d.pnl),'#4ADE80'],[_t('Côté'),oui?_t('Oui'):_t('Non'),'#fff']]:[[_t('Prix d’entrée'),F.c(d.price),'#fff'],[_t('Mise'),F.usd0(d.amt),'#fff'],[_t('Gain possible'),F.signed(d.gain)+(d.mult?` (×${F.d1(d.mult)})`:''),'#4ADE80']];
- const wts=cols.length>2?[1,1,1.8]:[1,1],wsum=wts.reduce((a,b)=>a+b,0),cws=wts.map(w=>(W-160)*w/wsum);let vz=cols.length>2?(big?58:48):vf;ctx.font=font(700,vz);while(vz>34&&cols.some((c,i)=>ctx.measureText(plain(c[1])).width>cws[i]-28)){vz-=2;ctx.font=font(700,vz);}cols.forEach(([k,v,col],i)=>{const off=cws.slice(0,i).reduce((a,b)=>a+b,0),cx=RTL?X-off:X+off;ctx.font=font(500,big?32:28);ctx.fillStyle='rgba(255,255,255,.6)';ctx.fillText(txt(k),cx,y);ctx.font=font(700,vz);ctx.fillStyle=col;const num=/\d/.test(v);if(num)ctx.direction='ltr';ctx.fillText(num?plain(v):txt(v),cx,y+(big?84:66));if(num)ctx.direction=RTL?'rtl':'ltr';});
- y=H-250;ctx.strokeStyle='rgba(255,255,255,.14)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(80,y-40);ctx.lineTo(W-80,y-40);ctx.stroke();
- const r=myRank();ctx.font=font(600,34);ctx.fillStyle='#fff';ctx.fillText(txt(`‎@${S.me.n} · ${rankName(r.t,r.d)}`),X,y+10);
- ctx.font=font(500,28);ctx.fillStyle='rgba(255,255,255,.7)';ctx.fillText(txt(_t('Rejoins-moi avec le code {0} : {1} offerts.',[refCode(),F.usd0(REF.BONUS)])),X,y+62);
- ctx.font=font(700,30);ctx.fillStyle='#8FA3FF';ctx.fillText('wimoro.com',X,y+118);
+ ctx.font=font(600,qf);ctx.fillStyle=P.text;let y=top+Math.max(0,Math.round((bot-top-blockH)/2))+qf;for(const l of lines){ctx.fillText(l,X,y);y+=lh;}
+ y+=G1-lh+qf*.2+52;ctx.font=font(600,44);const chipW=ctx.measureText(txt(oui?_t('Oui'):_t('Non'))).width+76;rrect(ctx,RTL?X-chipW:X,y-56,chipW,90,24);ctx.fillStyle=accent;ctx.fill();ctx.fillStyle=P.on;ctx.fillText(txt(oui?_t('Oui'):_t('Non')),RTL?X-38:X+38,y+4);
+ y+=34+G2+36;const cols=d.kind==='win'?[[_t('Résultat'),F.signed(d.pnl),P.yes],[_t('Côté'),oui?_t('Oui'):_t('Non'),P.text]]:[[_t('Prix d’entrée'),F.c(d.price),P.text],[_t('Mise'),F.usd0(d.amt),P.text],[_t('Gain possible'),F.signed(d.gain)+(d.mult?` (×${F.d1(d.mult)})`:''),P.yes]];
+ const wts=cols.length>2?[1,1,1.8]:[1,1],wsum=wts.reduce((a,b)=>a+b,0),cws=wts.map(w=>(W-160)*w/wsum);let vz=cols.length>2?(big?58:48):vf;ctx.font=font(600,vz);while(vz>34&&cols.some((c,i)=>ctx.measureText(plain(c[1])).width>cws[i]-28)){vz-=2;ctx.font=font(600,vz);}cols.forEach(([k,v,col],i)=>{const off=cws.slice(0,i).reduce((a,b)=>a+b,0),cx=RTL?X-off:X+off;ctx.font=font(500,big?32:28);ctx.fillStyle=P.text3;ctx.fillText(txt(k),cx,y);ctx.font=font(600,vz);ctx.fillStyle=col;const num=/\d/.test(v);if(num)ctx.direction='ltr';ctx.fillText(num?plain(v):txt(v),cx,y+(big?84:66));if(num)ctx.direction=RTL?'rtl':'ltr';});
+ y=H-250;ctx.strokeStyle=P.line;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(80,y-40);ctx.lineTo(W-80,y-40);ctx.stroke();
+ const r=myRank();ctx.font=font(600,34);ctx.fillStyle=P.text;ctx.fillText(txt(`\u200e@${S.me.n} · ${rankName(r.t,r.d)}`),X,y+10);
+ ctx.font=font(500,28);ctx.fillStyle=P.text3;ctx.fillText(txt(_t('Rejoins-moi avec le code {0} : {1} offerts.',[refCode(),F.usd0(REF.BONUS)])),X,y+62);
+ ctx.font=font(600,30);ctx.fillStyle=P.accent;ctx.fillText('wimoro.com',X,y+118);
  return c;
 }
 function shareData(kind,o){const m=MK[o.m];if(kind==='win')return {kind:'win',q:o.q,s:o.s,pnl:o.pnl};const p=posOf(o.m,o.s),cost=p.sh*p.avg/100,gain=p.sh-cost;return {kind:'bet',q:m?m.q:o.q,s:o.s,price:p.avg,amt:cost,gain,mult:p.avg>0?100/p.avg:0};}

@@ -453,7 +453,7 @@ hr{border:0;height:1px;background:var(--line);margin:16px 0}
 @keyframes pop{40%{transform:scale(1.25)}}
 .pulse{animation:pop .5s}
 .rankup{position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:var(--veil);animation:fade .3s;overflow:hidden;padding:24px}
-.rankup .rays{position:absolute;left:50%;top:42%;width:900px;height:900px;margin:-450px 0 0 -450px;background:repeating-conic-gradient(rgba(255,255,255,.07) 0 8deg,transparent 8deg 20deg);border-radius:50%;mask:radial-gradient(circle,#000 20%,transparent 65%);-webkit-mask:radial-gradient(circle,#000 20%,transparent 65%)}
+.rankup .rays{display:none}   /* partie B : plus de rayons derrière l'emblème, devenu plat (un ton plein par rang) */
 @keyframes spin{to{transform:rotate(360deg)}}
 .rankup .rc{position:relative;text-align:center;color:var(--on-color);display:flex;flex-direction:column;align-items:center;gap:10px;max-width:420px}
 .rankup .emb{width:170px;height:191px;animation:embin var(--dur-3) var(--ease) both}

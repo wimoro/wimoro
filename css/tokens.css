@@ -54,6 +54,19 @@
   --side-bg:var(--ink-bg);
   --on-side:var(--on-ink);
 
+  /* Emblèmes de rang : un ton plein par rang (couleurs des rangs, js/core.js TIERS), le signe du rang en blanc par-dessus
+     (3:1 au moins). Fer, Bronze, Argent, Or, Platine, Diamant, Ascendant, Immortel, Radiant. Mêmes tons dans les deux thèmes :
+     l'emblème est un objet, comme une médaille. */
+  --rank-0:#5B6068;
+  --rank-1:#8A5530;
+  --rank-2:#7E8896;
+  --rank-3:#C08A12;
+  --rank-4:#1A8584;
+  --rank-5:#7350E3;
+  --rank-6:#13804F;
+  --rank-7:#AE2139;
+  --rank-8:#CC8400;
+
   /* Typographie : une seule famille, la pile système. Cinq tailles, trois graisses. */
   --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue","Noto Sans",Arial,"Noto Sans Hebrew","Arial Hebrew",sans-serif;
   --fs-1:12px;                  /* micro : onglets du bas, axes, pastilles */
