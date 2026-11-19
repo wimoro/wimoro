@@ -250,8 +250,8 @@ Object.assign(VIEWS,{modifier:vEditProfile});
 
 /* Bouton « Vendre des parts » : un bouton gris ; seul le chiffre dit si la position gagne (vert) ou perd (rouge) */
 function posTot(mid){return S.me.positions.filter(x=>x.m===mid).reduce((s,x)=>s+liqPnl(x),0);}
-function sellBtnH(mid){const t=posTot(mid);return `<button class="btn b-white full sellbtn" data-a="tmode" data-v="sell" data-psell="${mid}"><span>${_t("Vendre des parts")}</span><b class="num${t>0.004?' up':t<-0.004?' dn':''}">${F.signed(t)}</b></button>`;}
-function syncSellBtns(){$$('[data-psell]').forEach(b=>{const t=posTot(b.dataset.psell);const v=b.querySelector('b');if(v){v.textContent=F.signed(t);v.classList.toggle('up',t>0.004);v.classList.toggle('dn',t<-0.004);}});}
+function sellBtnH(mid){const t=posTot(mid);return `<button class="btn b-white full sellbtn" data-a="tmode" data-v="sell" data-psell="${mid}"><span>${_t("Vendre des parts")}</span><b class="num${t>=0.005?' up':t<=-0.005?' dn':''}">${F.signed(t)}</b></button>`;}
+function syncSellBtns(){$$('[data-psell]').forEach(b=>{const t=posTot(b.dataset.psell);const v=b.querySelector('b');if(v){v.textContent=F.signed(t);v.classList.toggle('up',t>=0.005);v.classList.toggle('dn',t<=-0.005);}});}
 
 /* ===================== Retrouver ses paris créés ===================== */
 function homeTabs(){const base=S.me.interests.length?['Pour toi',...CATS]:CATS.slice();if((S.me.props||[]).length){const i=base.indexOf('Tout');base.splice(i+1,0,'Mes paris créés');}else if(S.ui.cat==='Mes paris créés')S.ui.cat='Tout';return base;}

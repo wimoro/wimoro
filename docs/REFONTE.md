@@ -32,12 +32,12 @@ fonction ajoutée ni retirée, rien sur `main`, tout d'une traite, réponses en 
 ### A. Défauts signalés par le propriétaire
 | N° | Défaut | État |
 |---|---|---|
-| 1 | En-tête : le HTML de départ contient un solde fictif (« 248,50 $ »), un avatar (« D ») et les boutons de connexion en même temps. Attendu : état neutre (squelette) avant le chargement, puis connecté OU déconnecté, sans clignotement | à faire |
-| 2 | Libellés doublés « Se connecter » / « Connexion », « Créer un compte » / « S'inscrire ». Un seul libellé par action, partout, à toutes les tailles | à faire |
-| 3 | Montants : un seul format par langue, par une fonction unique (soldes, mises, gains, cotes, pourcentages) | à faire |
-| 4 | Langue : la langue par défaut du code est l'anglais (`js/i18n.js`) ; le HTML de départ (lang, titre, description, textes visibles avant JavaScript) doit la respecter ; aucun texte dans une seule langue | à faire |
-| 5 | Métadonnées et message sans JavaScript : ils parlent de « démo ». Dire où, proposer une formulation produit, lister les changements | à faire |
-| 6 | Onglet Communauté : il ouvre le chat. En faire une page d'entrée : chat, clans, amis, classement, copy trading en un geste | à faire |
+| 1 | En-tête : le HTML de départ contient un solde fictif (« 248,50 $ »), un avatar (« D ») et les boutons de connexion en même temps. Attendu : état neutre (squelette) avant le chargement, puis connecté OU déconnecté, sans clignotement | fait |
+| 2 | Libellés doublés « Se connecter » / « Connexion », « Créer un compte » / « S'inscrire ». Un seul libellé par action, partout, à toutes les tailles | fait |
+| 3 | Montants : un seul format par langue, par une fonction unique (soldes, mises, gains, cotes, pourcentages) | fait |
+| 4 | Langue : la langue par défaut du code est l'anglais (`js/i18n.js`) ; le HTML de départ (lang, titre, description, textes visibles avant JavaScript) doit la respecter ; aucun texte dans une seule langue | fait |
+| 5 | Métadonnées et message sans JavaScript : ils parlent de « démo ». Dire où, proposer une formulation produit, lister les changements | fait |
+| 6 | Onglet Communauté : il ouvre le chat. En faire une page d'entrée : chat, clans, amis, classement, copy trading en un geste | fait |
 
 ### B. Travail demandé ensuite
 1. **Revue critique écran par écran** (ordre : Profil, Accueil, fiche marché et ticket, Éclair, Portefeuille, puis le
@@ -75,7 +75,7 @@ cible tactile sous 44 px, cibles superposées, zone d'appui échappée, bloc mas
    joueurs en dollars entiers ; volumes en abrégé. Les catalogues anglais et hébreu ont été contrôlés (aucun montant au
    format français).
 4. *Langue* : la langue par défaut du code est l'anglais ; `index.html` est écrit en anglais, chaque texte porte sa clé
-   française (`data-t`, `data-t-<attribut>`), traduite dès que les catalogues sont chargés (`i18nStatic`). Dans une autre
+   française (`data-i18n`, `data-i18n-<attribut>`), traduite dès que les catalogues sont chargés (`i18nStatic`). Dans une autre
    langue, les libellés restent invisibles (place gardée) jusqu'à leur traduction : pas de clignotement.
 5. *Métadonnées* : la description et le message sans JavaScript ne parlent plus de « démo » (texte avant / après dans le
    bilan). Le message sans JavaScript est écrit dans les trois langues.
@@ -102,15 +102,84 @@ cible tactile sous 44 px, cibles superposées, zone d'appui échappée, bloc mas
 - Sur téléphone, le texte courant, les messages du chat et les champs sont en 16 px.
 - Accueil sur téléphone : « Créer un pari » passe sous la liste des marchés.
 
-**Reste à faire** : balayage de toutes les largeurs ; revue visuelle écran par écran (captures 390 et 1440, clair et
-sombre, connecté et visiteur) ; second tour de revue avec un regard neuf ; tests de parcours ; revues `code-reviewer` et
-`security-reviewer` ; tableau de non-régression ; captures et bilan.
+**Suite** : voir la section D (bilan de la seconde passe).
+
+### D. Bilan de la seconde passe
+
+**Comment la revue a été faite.** Six relecteurs, un par groupe d'écrans (Profil et compte ; Accueil et Marché ; Éclair et
+jeux ; Portefeuille et comptes ; Communauté ; anglais et hébreu), ont chacun chargé le skill `unslop:unslop` et appliqué sa
+grille (`references/signs.md`, et `references/rtl.md` pour l'hébreu) à des captures 390 et 1440 px, en clair et en sombre,
+connecté, visiteur et compte neuf, fenêtres ouvertes. L'agent `ecc:a11y-architect` a relu le système (contrastes, focus,
+états, cibles tactiles, ARIA). Les corrections retenues ont été appliquées par lots (lot 1 : profil ; lot 2 : Communauté,
+Accueil et Marché, Portefeuille et comptes ; lot 3 : jeux ; lot 4 : langues), chacun suivi des tests, de la mesure
+automatique et de captures. Listes complètes des points, avec ce qui a été fait ou écarté et pourquoi : notes de travail
+`lot-communaute-marche.md`, `lot-jeux.md`, `lot-langues.md` (dossier temporaire de la session), résumées ici.
+
+**Ce qui a été trouvé, par groupe d'écrans** ([G] gênant, [P] perfectible ; les [D] corrigés quand c'était sans risque)
+
+| Groupe | [G] | [P] | Principaux défauts gênants corrigés |
+|---|---:|---:|---|
+| Les six défauts signalés | 6 | — | voir A et C : en-tête de départ, libellés, montants, langue, « démo », Communauté |
+| Défauts de la première passe | 4 | — | boutons Oui / Non du ticket à 35 % d'opacité ; filtres de l'accueil et en-tête qui débordaient ; zone d'appui fantôme sur « Mode Pro » |
+| Profil, rang, bienvenue, parrainage, jeu responsable | 2 | 13 | chiffres du profil coupés à 1440 ; carte de bienvenue étirée de bord à bord |
+| Communauté | 3 | 14 | colonne « Joueur » du classement réduite à 0 px à 1440 ; bas du chat sous la barre d'onglets ; « 38 901e sur 38 900 joueurs » |
+| Accueil et Marché | 3 | 19 | « Non » choisi illisible (2,8:1) ; question d'un marché en 6 lignes à 1440 ; courbe verte à côté d'une baisse |
+| Portefeuille, dépôt, retrait, connexion | 3 | 18 | QR code invisible en sombre ; titre du panneau de connexion invisible en sombre ; côté Oui / Non d'une position absent sur téléphone |
+| Éclair, Blitz, Série, Duels, Combinés | 4 | 19 | survol de Break even illisible ; boutons du Blitz en manche sous la barre d'onglets ; « $ » seul en fin de ligne |
+| Anglais et hébreu | 3 | 19 | champ mot de passe cassé en hébreu ; « a » français dans une phrase traduite ; flèche du résultat Éclair à l'envers |
+| Accessibilité | — | 12 | fenêtres sans nom, focus invisible dans les listes, onglet actif distingué par la seule couleur, contrastes de 4 éléments |
+
+**Captures** (`docs/refonte/captures/passe2/`, à retirer avant la mise en ligne avec le reste du dossier) :
+- `defauts/` : 18 défauts, chacun en `-avant` (version livrée à la première passe) et `-apres` ;
+- `grille/` : une planche par écran aux largeurs 320, 390, 768 et 1440 px (tous les écrans en clair ; visiteur, sombre et
+  hébreu pour les écrans principaux).
+
+**Vérification finale** (format du skill `ecc:verification-loop`)
+
+| Contrôle | Résultat |
+|---|---|
+| Construction | `node --check` passe sur les 30 fichiers JavaScript ; `node tools/version.mjs --verifier` passe |
+| Tests | **396 passent**, 1 ignoré (test « téléphone » dans le projet ordinateur) ; dont 30 nouveaux (`tests/refonte/parcours.spec.mjs`, `tests/refonte/responsive.spec.mjs`) ; 5 tests adaptés à des changements voulus (Quitter le clan dans l'onglet Infos ×2, en-tête lu hors de l'accueil, gain du parrainage au centime, langue dans « Mon compte ») |
+| Parcours critiques | connexion, pari classique, pari Éclair, dépôt, retrait, chat, langue, thème : rejoués par les tests, sans erreur de console |
+| Mesure automatique | 29 écrans × 10 largeurs (320 → 1920 et paysage) en démo, visiteur, compte neuf, anglais et hébreu ; balayage de 320 à 1920 px tous les 10 à 24 px : aucun défilement horizontal, aucun texte coupé, aucune cible tactile sous 44 px ; restent deux étiquettes de clan rognées à 320 px |
+| Revue de code (`ecc:code-reviewer`) | 1 élevé : la place par défaut d'un nouveau compte avait été modifiée (logique de rang) → remise à 38 901, l'incohérence est corrigée à l'affichage ; 1 moyen (signe d'un montant nul, voulu) ; 5 faibles : seuils de couleur alignés, commentaire corrigé, identifiant de fenêtre unique ; 2 laissés (courbe dans un bloc replié, durée héritée de 0,6 s) |
+| Revue de sécurité (`ecc:security-reviewer`) | aucun constat critique, élevé ni moyen ; 1 faible (attribut `data-t` partagé avec les boutons de rang) → l'attribut de traduction de la page de départ s'appelle désormais `data-i18n` |
+| Contrôle Semgrep | caractères d'isolement invisibles dans deux traductions hébraïques → écrits sous forme visible (`⁦`, `⁩`) ; alerte générique sur l'insertion HTML du rendu : les données des joueurs y sont échappées (`esc()`), vérifié par la revue de sécurité |
+| Cible | NON APPLICABLE : aucun déploiement, wimoro.com intact |
+
+**Plugins réellement utilisés dans la seconde passe**
+- unslop : skill `unslop:unslop` chargé par moi au début de la revue, puis par chacun des six relecteurs (grille `signs.md`) ; `rtl.md` pour l'hébreu. Mode « polish » (direction de la première passe gardée). Ni image générée, ni vidéo.
+- ECC, agents : `a11y-architect` (accessibilité du système), `e2e-runner` (30 tests), `code-reviewer` et `security-reviewer` (diff final).
+- ECC, skill : `verification-loop` (vérification finale ci-dessus).
+- Les six relecteurs et l'agent qui a appliqué les lots 2 à 4 sont des agents généralistes (sans équivalent ECC pour une relecture visuelle) ; ils ont travaillé avec le skill unslop et les règles de `docs/DESIGN-SYSTEM.md`.
+- Garde-fou ECC « Fact-Forcing Gate » : il a refusé une quinzaine de premières écritures de fichiers et redemandé les faits ; ils ont été donnés à chaque fois, le garde-fou n'a pas été désactivé.
+
+**Détails restants, non traités** (choix assumés ou hors périmètre)
+- Étiquettes de clan rognées à 320 px dans les Duels et le Classement (le pseudo passe d'abord).
+- Points d'exclamation dans quelques notifications et légendes de chat terminées par un point (textes à retraduire).
+- « +12 pts » en hébreu : le nombre et l'unité restent dans un seul isolant ; registre de l'hébreu à harmoniser (masculin
+  singulier dans les anciens textes, pluriel impersonnel dans les nouveaux).
+- Emblèmes de rang en dégradé avec reflet ; images à partager (duel, série, clan, analyse) avec leur palette d'origine.
+- Espacements de 10 px hors de la grille de 4 px et icônes de tailles diverses dans les écrans anciens.
+- Montant par défaut de 25 $ dans la feuille et 50 $ sur la fiche ; « comme sur Polymarket » dans une aide ; vocabulaire
+  anglais pour un public francophone (« Break even », « Stop loss », « Copy trading »).
+- Accessibilité : le focus ne va pas au titre quand on change d'écran ; le menu du compte et la cloche n'annoncent pas
+  leur état ouvert / fermé ; le curseur « Cote de départ » n'a plus de partie remplie dans Chrome.
+- Un vrai compte reçoit sa place au classement (38 901) du serveur : à corriger côté serveur, hors périmètre.
+
+**Ce qui n'a pas pu être vérifié**
+- Un vrai téléphone, Safari et Firefox : tout a été vu dans Chrome, en émulation (tailles, toucher, paysage).
+- Le clavier ouvert : simulé en réduisant la hauteur de la fenêtre (390 × 480), pas avec un vrai clavier virtuel.
+- Un lecteur d'écran (VoiceOver, TalkBack).
+- Le vrai back-end : la suite `E2E=1` n'a pas été lancée (elle crée des comptes en production) ; tout le mode Compte a été
+  vérifié sur le faux serveur des tests.
 
 ## Reprise (mis à jour à chaque étape)
 
-**Où j'en suis** : la refonte est livrée dans une pull request, non fusionnée. Rien n'est en ligne. Les étapes 0 à 8
-sont faites ; la liste « Reste à faire » ci-dessous est gardée comme trace de l'ordre suivi. Avant la mise en ligne :
-supprimer `docs/refonte/captures/`.
+**Où j'en suis** : première et seconde passes livrées dans la pull request n° 29 (branche `refonte-design`), non
+fusionnée. Rien n'est en ligne. Les étapes 0 à 8 de la première passe et toute la seconde passe (section « Seconde
+passe » en tête de ce fichier) sont faites ; la liste « Reste à faire » ci-dessous est gardée comme trace de l'ordre
+suivi. Avant la mise en ligne : supprimer `docs/refonte/captures/` (première passe, 9,6 Mo ; seconde passe, 5,4 Mo).
 
 **Ce qui est fait dans le code**
 - `css/main.css` n'est plus chargé (supprimé à l'étape 7). Le site charge `tokens.css`, `base.css`, `components.css`,

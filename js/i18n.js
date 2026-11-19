@@ -71,14 +71,14 @@ function icuOpts(src){const o={};let i=0;while(i<src.length){while(i<src.length&
 
 /* ---------- Textes statiques de la page (en-tête, barre d'onglets, description) ----------
    Le HTML de départ est écrit dans la langue par défaut (anglais). Chaque texte y porte sa clé française :
-   data-t pour le contenu d'un élément, data-t-<attribut> pour un attribut (aria-label, title, placeholder, content).
+   data-i18n pour le contenu d'un élément, data-i18n-<attribut> pour un attribut (aria-label, title, placeholder, content).
    Appelée dès que les catalogues sont chargés (index.html), puis au démarrage : le résultat est le même à chaque appel.
    La classe « tr » posée sur <html> lève le masquage des libellés pour les langues autres que l'anglais (css/base.css). */
 const I18N_ATTRS=['placeholder','aria-label','title','alt','content'];
 function i18nStatic(root){
  if(!root)return;
- for(const el of root.querySelectorAll('[data-t]'))el.textContent=_t(el.getAttribute('data-t'));
- for(const at of I18N_ATTRS)for(const el of root.querySelectorAll('[data-t-'+at+']'))el.setAttribute(at,plain(_t(el.getAttribute('data-t-'+at))));
+ for(const el of root.querySelectorAll('[data-i18n]'))el.textContent=_t(el.getAttribute('data-i18n'));
+ for(const at of I18N_ATTRS)for(const el of root.querySelectorAll('[data-i18n-'+at+']'))el.setAttribute(at,plain(_t(el.getAttribute('data-i18n-'+at))));
  document.documentElement.classList.add('tr');
 }
 /* Les nombres restent lisibles de gauche à droite dans un texte hébreu. */

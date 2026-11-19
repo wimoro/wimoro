@@ -62,7 +62,7 @@ Les quatre feuilles se chargent dans cet ordre dans `index.html`. Après toute m
     entiers pour les seuils, les mises rapides et les montants des autres joueurs ; en abrégé pour les volumes
     (`F.usd`, `F.usd0`, `F.compact`). Aucun montant fabriqué à la main dans un gabarit.
 18. **La page de départ ne contient aucune valeur fictive.** `index.html` est écrit dans la langue par défaut (anglais) ;
-    chaque texte y porte sa clé française (`data-t` pour le contenu, `data-t-<attribut>` pour un attribut), traduite par
+    chaque texte y porte sa clé française (`data-i18n` pour le contenu, `data-i18n-<attribut>` pour un attribut), traduite par
     `i18nStatic` dès que les catalogues sont chargés. Tant que le site démarre, `<body>` n'a ni la classe `in` ni la classe
     `out` : les éléments réservés à un état (`only-in`, `only-out`) restent cachés et un bloc neutre tient leur place.
 
@@ -174,6 +174,10 @@ Ils remplacent les styles en ligne ; un gabarit ne doit plus contenir de `style=
 
 ## 6. Contrôles
 
-- `npx playwright test` : 336 scénarios (back, écrans sur ordinateur et téléphone), lancés sur chaque pull request.
-- Contrôle automatique des écrans (contraste AA de chaque texte, débordement horizontal, tailles de texte hors échelle,
-  cibles tactiles) : script décrit dans `docs/REFONTE.md`, à relancer après un changement de couleur.
+- `npx playwright test` : 397 scénarios (back, écrans sur ordinateur et téléphone), lancés sur chaque pull request.
+  Dont `tests/refonte/parcours.spec.mjs` (parcours de la navigation, de l'en-tête de départ, des libellés, de la langue,
+  des montants) et `tests/refonte/responsive.spec.mjs` (12 écrans, de 320 à 1920 px et en paysage : pas de défilement
+  horizontal, en-tête et barre d'onglets entiers, champs en 16 px sur téléphone).
+- Contrôle automatique des écrans (contraste AA de chaque texte, débordement, texte coupé, tailles de texte, cibles
+  tactiles de 44 px, éléments masqués par une barre fixe) : principe décrit dans `docs/REFONTE.md` (sections 8 et
+  « Seconde passe »), à relancer après un changement de couleur ou de mise en page.

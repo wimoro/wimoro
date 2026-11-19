@@ -58,7 +58,7 @@ body:not(.out) .only-out{display:none!important}
 .sk{display:none;inline-size:112px;block-size:32px;border-radius:var(--r-pill);background:var(--fill)}
 body:not(.in):not(.out) .sk{display:block}
 /* Les libellés de départ sont en anglais : dans une autre langue, ils restent invisibles (place gardée) jusqu'à leur traduction. */
-html:not([lang=en]):not(.tr) [data-t]{visibility:hidden}
+html:not([lang=en]):not(.tr) [data-i18n]{visibility:hidden}
 .sm-only{display:none}
 html.lock,html.lock body{overflow:hidden}
 html.lock body{padding-inline-end:var(--sbw,0px)}
