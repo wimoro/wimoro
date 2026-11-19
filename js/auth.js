@@ -269,7 +269,9 @@ function voteTick(){for(const pr of S.me.props||[]){if(pr.status!=='vote')contin
 
 /* ===================== Accueil sur ordinateur : rang, grosses mises, top de la semaine (pas de chat) ===================== */
 S.bigs=[];
-function bigsH(){return S.bigs.map(b=>{const m=MK[b.m];if(!m)return '';return `<a class="bigbet" href="#marche-${m.id}">${avH(b.u,30,'span')}<span class="bt"><span>${_t("<b>{0}{1}</b> a misé",[esc(userOf(b.u).n),tagH(b.u,1)])} <b class="num">${F.usd0(b.amt)}</b> ${_t("sur")} <span class="sidechip ${b.s}">${b.s==='oui'?_t("Oui"):_t("Non")}</span></span><small>${esc(m.short)}, ${ago(b.at)}</small></span></a>`;}).join('');}
+/* Grosses mises : 5 au plus, une ligne chacune (joueur, montant, côté, marché en clair), sans étiquette de clan.
+   L'heure de la mise reste lisible au survol et par les lecteurs d'écran. */
+function bigsH(){return S.bigs.slice(0,5).map(b=>{const m=MK[b.m];if(!m)return '';const U=userOf(b.u),cote=b.s==='oui'?_t("Oui"):_t("Non");return `<a class="bigbet" href="#marche-${m.id}" title="${esc(ago(b.at))}">${avH(b.u,24,'span')}<span class="bt"><b class="bn">${esc(U.n)}</b><b class="num">${F.usd0(b.amt)}</b><span class="sidechip ${b.s}">${cote}</span><span class="bm">${esc(m.short)}</span></span><span class="vhid">${esc(ago(b.at))}</span></a>`;}).join('');}
 function pushBig(seed){const u=pickUser(),m=pick(MARKETS),s=R()<m.p/100?'oui':'non',amt=Math.round((300+Math.pow(R(),2)*6200)/10)*10;S.bigs.unshift({u,m:m.id,s,amt,at:seed?now()-Math.round(R()*9e5):now()});if(seed)S.bigs.sort((a,b)=>b.at-a.at);S.bigs=S.bigs.slice(0,6);
  if(!seed){const el=$('[data-bigs]');if(el){el.innerHTML=bigsH();fixText(el);const f=el.firstElementChild;if(f)f.classList.add('new');}}}
 /* carte « rang » d'un visiteur : même emplacement, mais une invitation à entrer */

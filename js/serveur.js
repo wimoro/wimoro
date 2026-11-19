@@ -313,7 +313,7 @@ async function srvMarches(){
   const m=MK[id];if(!m)continue;m.st=x.st||'open';
   if(m.srv&&x.def){const d=x.def;Object.assign(m,{q:d.q,short:d.short,cat:d.cat,rules:d.rules||''},closeOf(d.date,d.time));}   /* modifié depuis le panel */
   m.p=+x.p;m.anchor=m.p;if(x.d0!=null)m.d0=+x.d0;m.vol=+x.vol;m.people=x.people|0;if(x.liq!=null)m.liq=+x.liq;m.hotUntil=x.hot||0;
-  if(Array.isArray(x.ph)&&x.ph.length>1){m.ph=x.ph.slice(-160).map(Number);m.ph[m.ph.length-1]=m.p;}}
+  if(Array.isArray(x.ph)&&x.ph.length>1){m.ph=x.ph.slice(-160).map(Number);m.ph[m.ph.length-1]=m.p;m.pht=null;}}   /* heures des points : recalculées sur 24 h (phT, js/refonte.js) */
 }
 /* map : identifiant du marché → [prix, volume, participants, profondeur]. Le serveur a déjà recalculé les issues sœurs :
    updateMarket reçoit donc noGroup=true, pour ne pas rééquilibrer une seconde fois dans le navigateur (B16). */

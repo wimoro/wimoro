@@ -49,7 +49,13 @@ Les quatre feuilles se chargent dans cet ordre dans `index.html`. Après toute m
 13. **Un seul palier de navigation : 879 / 880 px.** Jusqu'à 879 px (téléphones, tablettes en portrait), les cinq
     destinations sont dans la barre d'onglets du bas ; à partir de 880 px, dans l'en-tête. Le reste se plie tout seul :
     grilles et `flex` qui passent à la ligne, `clamp()` pour les marges (`--gutter`), jamais de largeur fixe. Un écran doit
-    tenir sans défilement horizontal de 320 à 1920 px, et en paysage sur téléphone (844 × 390).
+    tenir sans défilement horizontal de 320 à 1920 px, et en paysage sur téléphone (844 × 390). Sur ordinateur, chaque
+    écran est **composé** sur la grille des grands écrans (§ 3 « La grille ») : la largeur sert à montrer plus de
+    contenu, jamais à creuser des marges.
+19. **Sur ordinateur** : tout ce qui se clique a un état de survol ; toute courbe a une info-bulle (valeur et date) ;
+    le focus clavier est visible ; la touche Échap ferme les fenêtres et les panneaux ; aucun texte utile sous 13 px
+    (`--fs-1` passe à 13 px à partir de 880 px) ; les titres de page grandissent (`--fs-titre`) ; à 1 440 × 900, l'action
+    principale de chaque écran est visible sans défiler ; un seul bouton bleu (`b-pri`) à l'écran à la fois.
 14. **Tout ce qui se pose en bas de l'écran part de `--bas`** (barre d'achat d'un marché, zone de pari Éclair, combiné
     en cours, barre d'enregistrement) : `--bas` vaut la zone sûre seule, ou la barre d'onglets plus la zone sûre. Aucun
     décalage en pixels écrit en dur.
@@ -105,6 +111,8 @@ Une seule famille : la pile système (`--font`). Chiffres tabulaires par la clas
 | `--fs-4` | 20 px | titre de section, chiffre de carte |
 | `--fs-5` | 28 px | titre de page, grand chiffre |
 | `--fs-display` | 40 px | chance d'un marché, pari Éclair |
+| `--fs-titre` | 28 px (téléphone), 32 px (S), 36 px (M, L) | titre de page (`.ptitle`) |
+| `--fs-hero` | 36 à 56 px selon le palier | titre de la présentation de l'accueil pour un visiteur, et lui seul |
 
 Graisses : 400, 500, 600 (`b` et `strong` valent 600). Les titres (20 px et plus) sont resserrés par `--track-title`
 (sauf en hébreu, où il vaut 0).
@@ -116,9 +124,45 @@ Graisses : 400, 500, 600 (`b` et `strong` valent 600). Les titres (20 px et plus
   `--r-xl` 20 (fenêtres) · `--r-pill`.
 - Ombres : `--shadow-1` (poignée d'un interrupteur), `--shadow-2` (menu, notification), `--shadow-3` (fenêtre).
 - Durées : `--dur-1` 150 ms (survol, appui) · `--dur-2` 200 ms (menus, onglets) · `--dur-3` 250 ms (feuilles, fenêtres).
-- Mise en page : `--page`, largeur utile maximale, de 1 200 px à 1 360 px selon la largeur de la fenêtre (`clamp`) ; `--gutter`, marge de page fluide (de 16 à 24 px jusqu'à 879 px, puis
-  24 et 32 px) ; `--bar-h` et `--tab-h` 56 px ; `--bas`, la place prise en bas de l'écran (règle 14) ; `--mbar-h`, la hauteur
-  de la barre d'achat fixe d'un marché ; `--tap` 44 px.
+- Mise en page : `--page`, largeur maximale de la page, marges comprises (1 840 px) ; `--gutter`, marge de page ;
+  `--col-gap`, gouttière ; `--rail`, colonne latérale ; `--carte-min`, largeur minimale d'une carte (voir « La grille »
+  ci-dessous) ; `--bar-h` et `--tab-h` 56 px ; `--bas`, la place prise en bas de l'écran (règle 14) ; `--mbar-h`, la
+  hauteur de la barre d'achat fixe d'un marché ; `--tap` 44 px.
+
+### La grille des grands écrans
+
+Une seule grille pour tous les écrans de l'ordinateur, avec trois paliers. Les valeurs sont dans `css/tokens.css` (fin du
+fichier) ; les mises en page qui s'en servent, dans `css/base.css` (« La grille des grands écrans »).
+
+| Palier | Largeur de fenêtre | Marge (`--gutter`) | Gouttière (`--col-gap`) | Colonne latérale (`--rail`) | Carte (`--carte-min`) | Titre de page (`--fs-titre`) | Titre de présentation (`--fs-hero`) |
+|---|---|---|---|---|---|---|---|
+| Téléphone | jusqu'à 879 px | 16 à 24 px (fluide) | 16 px | sous le contenu | une par ligne | 28 px | 36 px |
+| S | 880 à 1 279 px | 24 px | 20 px | 300 px | 240 px | 32 px | 44 px |
+| M | 1 280 à 1 679 px | 32 px | 24 px | 400 px | 240 px | 36 px | 52 px |
+| L | 1 680 px et plus | 40 px | 32 px | 440 px | 280 px | 36 px | 56 px |
+
+La page s'arrête à 1 840 px, marges comprises (1 760 px de contenu sur un écran de 1 920 px). Sur ordinateur, `--fs-1`
+vaut 13 px : aucun texte utile n'est plus petit.
+
+Trois mises en page, toutes empilées sur une colonne sur téléphone :
+
+| Classe | Rôle | Exemple |
+|---|---|---|
+| `.lay-rail` (et les grilles d'écran `.g-home`, `.g-side`, `.g-mkt`, `.g-dep`) | contenu fluide + colonne latérale de largeur `--rail` | accueil : marchés + Éclair et grosses mises ; fiche d'un marché : graphique + ticket |
+| `.rail-fixe` | la colonne latérale reste visible au défilement (collée sous l'en-tête, défile seule si elle dépasse) | colonne de l'accueil |
+| `.cartes` (et `.board` de l'accueil) | grille de cartes qui ajoute une colonne dès qu'il y a la place d'une carte de `--carte-min` | marchés : 2 colonnes à 1 024 px, 3 à 1 440 px, 4 à 1 920 px |
+| `.grille12` + `.s3` à `.s9` | 12 colonnes pour un tableau de bord ; `.sN` occupe N colonnes au palier M et L (au palier S : `.s3` = 4, `.s4` à `.s8` = 6) | portefeuille, profil |
+
+Exemple — un écran avec sa colonne latérale :
+
+```html
+<div class="wrap">
+  <div class="lay-rail">
+    <div class="col">…contenu principal…</div>
+    <aside class="col rail-fixe">…colonne latérale…</aside>
+  </div>
+</div>
+```
 
 Les anciens noms (`--ink`, `--g2`, `--oui`, `--non`, `--panel`, `--sg`…) restent définis à la fin de `tokens.css` :
 le JavaScript des graphiques du Mode Pro et des images partagées les lit encore.

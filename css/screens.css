@@ -12,17 +12,23 @@ svg{flex:none}
 
 /* ---------- Barre d’onglets mobile ---------- */
 
-/* ---------- Mise en page ---------- */
-.g-home{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:24px;align-items:start}
-.g-side{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:24px;align-items:start}
-.g-mkt{display:grid;grid-template-columns:minmax(0,1fr) 420px;grid-template-areas:'chart side' 'chat side' 'rules side';gap:24px;align-items:start}
+/* ---------- Mise en page : chaque écran pose sa colonne latérale sur la grille commune ----------
+   (largeurs dans tokens.css, trois paliers ; principe dans docs/DESIGN-SYSTEM.md, § 3 « La grille »).
+   Sur téléphone, tout s'empile ; à partir de 880 px, contenu fluide + colonne latérale de largeur --rail. */
+.g-home,.g-side,.g-dep,.g-trib{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--sp-4);align-items:start}
+.g-mkt{display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:'chart' 'side' 'chat' 'rules';gap:var(--sp-4);align-items:start}
 .g-mkt .a-chart{grid-area:chart}
 .g-mkt .a-chat{grid-area:chat}
 .g-mkt .a-rules{grid-area:rules}
-.g-mkt .a-side{grid-area:side;position:sticky;top:88px}
-.g-dep{display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:24px;align-items:start}
-.g-trib{display:grid;grid-template-columns:260px minmax(0,1fr) 336px;gap:24px;align-items:start}
-.sticky{position:sticky;top:88px}
+.g-mkt .a-side{grid-area:side}
+@media (min-width:880px){
+  .g-home,.g-side,.g-dep{grid-template-columns:minmax(0,1fr) var(--rail);gap:var(--col-gap)}
+  .g-mkt{grid-template-columns:minmax(0,1fr) var(--rail);grid-template-areas:'chart side' 'chat side' 'rules side';gap:var(--col-gap)}
+  .g-mkt .a-side,.sticky{position:sticky;top:calc(var(--bar-h) + var(--sp-6))}
+  .g-trib{grid-template-columns:240px minmax(0,1fr);gap:var(--col-gap)}
+}
+@media (min-width:880px) and (max-width:1279px){.g-trib .t-right{display:none}}
+@media (min-width:1280px){.g-trib{grid-template-columns:260px minmax(0,1fr) var(--rail)}}
 hr{border:0;height:1px;background:var(--line);margin:16px 0}
 
 /* ---------- Boutons ---------- */
@@ -89,7 +95,6 @@ hr{border:0;height:1px;background:var(--line);margin:16px 0}
 .hp .num{font-size:var(--fs-display);font-weight:600;color:var(--text);line-height:.9;padding:0 4px;letter-spacing:var(--track-title)}
 .hp .delta{font-size:var(--fs-2);font-weight:600;margin-top:6px}
 .tlegend{display:flex;justify-content:space-between;gap:16px;font-size:var(--fs-1);color:var(--text-3);margin-top:-8px}
-.tlegend span:nth-child(2){color:var(--text-3);text-align:center}
 .hfoot{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
 
 /* ---------- Accueil : éclair ---------- */
@@ -462,9 +467,9 @@ hr{border:0;height:1px;background:var(--line);margin:16px 0}
 @keyframes cf{0%{opacity:1;transform:translate(0,0) rotate(0)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) rotate(var(--r))}}
 
 /* ---------- Responsive ---------- */
-@media (max-width:1280px){.ladder{grid-template-columns:repeat(5,minmax(0,1fr))}.g-trib{grid-template-columns:240px minmax(0,1fr)}.g-trib .t-right{display:none}}
-@media (max-width:1100px){.g-home,.g-side,.g-dep{grid-template-columns:minmax(0,1fr)}.g-mkt{grid-template-columns:minmax(0,1fr);grid-template-areas:'chart' 'side' 'chat' 'rules'}.g-mkt .a-side{position:static}.chat.home{height:560px;min-height:0}.sticky{position:static}}
-@media (max-width:879px){.g-home,.g-side,.g-mkt,.g-dep{gap:16px}.hmain{flex-direction:column;align-items:flex-start;gap:12px}.hq{font-size:var(--fs-5)}.hp{text-align:start}.hp .num{font-size:var(--fs-display)}.tlegend span:nth-child(2){display:none}.flt{grid-template-columns:1fr;gap:16px}.flt .fr{justify-content:space-between}.flt .fbt{flex-direction:row;flex:1}.flt .fbt .btn{flex:1}.filters{margin-bottom:-4px}.board .hd{display:none}.board .row{grid-template-columns:auto minmax(0,1fr);grid-template-areas:'q q' 'pv tr' 'vol acts';gap:12px 16px;padding:16px}.row .qcell{grid-area:q}.row .pv{grid-area:pv}.row .tr{grid-area:tr}.row .vol{grid-area:vol}.row .acts{grid-area:acts}.row .acts .btn{min-width:0;flex:1}.row .acts{justify-content:stretch}.propose{flex-direction:column;align-items:flex-start}.chat.home{height:520px}.chat.mkt{height:540px}.reacts .add{opacity:1}.mtop{flex-direction:column;align-items:flex-start;gap:16px;margin-bottom:16px}.mact{flex-wrap:wrap;max-width:100%}.mq{font-size:var(--fs-5)}.mmeta{gap:6px 16px;font-size:var(--fs-2)}.cp-p .num{font-size:var(--fs-5)}.chart{height:190px;margin-inline-end:40px}.chart .ylab{inset-inline-end:-40px}.xax{margin-inline-end:40px}.mbar{display:grid;grid-template-columns:1fr 1fr;gap:10px;position:fixed;inset-inline-start:0;inset-inline-end:0;bottom:var(--bas);z-index:39;padding:10px 16px;background:var(--bar);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line)}.mbar .btn{height:46px}body.pg-mbar main{padding-bottom:var(--mbar-h)}.fl-h h1{font-size:var(--fs-4)}.fl-h .ring{width:64px;height:64px}.fl-h .ring svg{width:64px;height:64px}.fl-h .ring b{font-size:var(--fs-4)}.fl-price .num{font-size:var(--fs-5)}.fl-chart{height:150px}.fsd{height:72px;padding:0 16px;font-size:var(--fs-3)}.fsd .num{font-size:var(--fs-4)}.g-trib{grid-template-columns:minmax(0,1fr);gap:12px}.g-trib .t-rooms{display:none}.mobrooms{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:0 16px}.mobrooms::-webkit-scrollbar{display:none}.mobrooms button{flex:none;height:34px;padding:0 12px;border-radius:var(--r-lg);background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);font-size:var(--fs-2);font-weight:600;color:var(--text-2);display:inline-flex;align-items:center;gap:6px}.mobrooms button.on{background:var(--accent-soft);color:var(--accent);box-shadow:none}.chat.trib{height:calc(100vh - var(--bar-h) - var(--bas) - 156px);min-height:460px}.rk-hero{grid-template-columns:1fr;justify-items:start;gap:16px}.rk-hero .emb.xxl{width:110px;height:124px}.rk-hero h1{font-size:var(--fs-5)}.ladder{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:104px;overflow-x:auto;padding-top:12px;margin:0 -20px;padding-inline-start:20px;padding-inline-end:20px;scrollbar-width:none}.ladder::-webkit-scrollbar{display:none}.earn{grid-template-columns:minmax(0,1fr) auto}.earn .btn{grid-column:1/-1}.lb .lh{display:none}.lb .lr{grid-template-columns:52px minmax(0,1fr) auto;grid-template-areas:'pos pl pr' 'pos rkc fol';gap:4px 12px;padding:12px 16px}.lb .lr>.c-pos{grid-area:pos}.lb .lr>.c-pl{grid-area:pl}.lb .lr>.c-rk{grid-area:rkc}.lb .lr>.c-pr{grid-area:pr}.lb .lr>.c-fol{grid-area:fol;justify-self:end}.lb .lr>.c-acc,.lb .lr>.c-bets{display:none}.pf-top{padding:20px}.pf-id .av{width:64px;height:64px;font-size:var(--fs-5)}.pf-id h1{font-size:var(--fs-5)}.pf-stats{grid-template-columns:repeat(2,minmax(0,1fr));padding:20px}.pf-stats .num{font-size:var(--fs-4)}.pos-t .ph2{display:none}.pos-t .pr2{grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;padding:16px 16px}.pos-t .pr2>.c-x{display:none}.coins{grid-template-columns:repeat(3,minmax(0,1fr))}.addr-w{grid-template-columns:1fr}.qr{justify-self:center}.conds4{grid-template-columns:repeat(2,minmax(0,1fr))}@keyframes sheet{from{transform:translateY(100%)}}.rankup h2{font-size:var(--fs-display)}}
+@media (max-width:1280px){.ladder{grid-template-columns:repeat(5,minmax(0,1fr))}}
+@media (max-width:1100px){.chat.home{height:560px;min-height:0}}
+@media (max-width:879px){.g-home,.g-side,.g-mkt,.g-dep{gap:16px}.hmain{flex-direction:column;align-items:flex-start;gap:12px}.hq{font-size:var(--fs-5)}.hp{text-align:start}.hp .num{font-size:var(--fs-display)}.flt{grid-template-columns:1fr;gap:16px}.flt .fr{justify-content:space-between}.flt .fbt{flex-direction:row;flex:1}.flt .fbt .btn{flex:1}.filters{margin-bottom:-4px}.board .hd{display:none}.board .row{grid-template-columns:auto minmax(0,1fr);grid-template-areas:'q q' 'pv tr' 'vol acts';gap:12px 16px;padding:16px}.row .qcell{grid-area:q}.row .pv{grid-area:pv}.row .tr{grid-area:tr}.row .vol{grid-area:vol}.row .acts{grid-area:acts}.row .acts .btn{min-width:0;flex:1}.row .acts{justify-content:stretch}.propose{flex-direction:column;align-items:flex-start}.chat.home{height:520px}.chat.mkt{height:540px}.reacts .add{opacity:1}.mtop{flex-direction:column;align-items:flex-start;gap:16px;margin-bottom:16px}.mact{flex-wrap:wrap;max-width:100%}.mq{font-size:var(--fs-5)}.mmeta{gap:6px 16px;font-size:var(--fs-2)}.cp-p .num{font-size:var(--fs-5)}.chart{height:190px;margin-inline-end:40px}.chart .ylab{inset-inline-end:-40px}.xax{margin-inline-end:40px}.mbar{display:grid;grid-template-columns:1fr 1fr;gap:10px;position:fixed;inset-inline-start:0;inset-inline-end:0;bottom:var(--bas);z-index:39;padding:10px 16px;background:var(--bar);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line)}.mbar .btn{height:46px}body.pg-mbar main{padding-bottom:var(--mbar-h)}.fl-h h1{font-size:var(--fs-4)}.fl-h .ring{width:64px;height:64px}.fl-h .ring svg{width:64px;height:64px}.fl-h .ring b{font-size:var(--fs-4)}.fl-price .num{font-size:var(--fs-5)}.fl-chart{height:150px}.fsd{height:72px;padding:0 16px;font-size:var(--fs-3)}.fsd .num{font-size:var(--fs-4)}.g-trib{grid-template-columns:minmax(0,1fr);gap:12px}.g-trib .t-rooms{display:none}.mobrooms{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:0 16px}.mobrooms::-webkit-scrollbar{display:none}.mobrooms button{flex:none;height:34px;padding:0 12px;border-radius:var(--r-lg);background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);font-size:var(--fs-2);font-weight:600;color:var(--text-2);display:inline-flex;align-items:center;gap:6px}.mobrooms button.on{background:var(--accent-soft);color:var(--accent);box-shadow:none}.chat.trib{height:calc(100vh - var(--bar-h) - var(--bas) - 156px);min-height:460px}.rk-hero{grid-template-columns:1fr;justify-items:start;gap:16px}.rk-hero .emb.xxl{width:110px;height:124px}.rk-hero h1{font-size:var(--fs-5)}.ladder{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:104px;overflow-x:auto;padding-top:12px;margin:0 -20px;padding-inline-start:20px;padding-inline-end:20px;scrollbar-width:none}.ladder::-webkit-scrollbar{display:none}.earn{grid-template-columns:minmax(0,1fr) auto}.earn .btn{grid-column:1/-1}.lb .lh{display:none}.lb .lr{grid-template-columns:52px minmax(0,1fr) auto;grid-template-areas:'pos pl pr' 'pos rkc fol';gap:4px 12px;padding:12px 16px}.lb .lr>.c-pos{grid-area:pos}.lb .lr>.c-pl{grid-area:pl}.lb .lr>.c-rk{grid-area:rkc}.lb .lr>.c-pr{grid-area:pr}.lb .lr>.c-fol{grid-area:fol;justify-self:end}.lb .lr>.c-acc,.lb .lr>.c-bets{display:none}.pf-top{padding:20px}.pf-id .av{width:64px;height:64px;font-size:var(--fs-5)}.pf-id h1{font-size:var(--fs-5)}.pf-stats{grid-template-columns:repeat(2,minmax(0,1fr));padding:20px}.pf-stats .num{font-size:var(--fs-4)}.pos-t .ph2{display:none}.pos-t .pr2{grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;padding:16px 16px}.pos-t .pr2>.c-x{display:none}.coins{grid-template-columns:repeat(3,minmax(0,1fr))}.addr-w{grid-template-columns:1fr}.qr{justify-self:center}.conds4{grid-template-columns:repeat(2,minmax(0,1fr))}@keyframes sheet{from{transform:translateY(100%)}}.rankup h2{font-size:var(--fs-display)}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 .unr{display:inline-grid;place-items:center;min-width:18px;height:18px;border-radius:var(--r-sm);background:var(--accent-bg);color:var(--on-color);font-size:var(--fs-1);font-weight:600;padding:0 4px;margin-inline-start:6px}
 .prow.pl,a.prow{color:inherit}
@@ -716,7 +721,7 @@ main{overflow-x:clip}
 .bigbet.new .bt{position:relative}
 
 .row2>.field,.field{min-width:0}
-@media (max-width:1100px){.home-side{display:none}}
+@media (max-width:879px){.home-side{display:none}}
 .field input,.field textarea,.search input,.cin input,.pw input,select{font-size:var(--fs-3)}   /* champs en 16 px à toutes les largeurs */
 @media (max-width:879px){.chat.trib{height:calc(100dvh - var(--bar-h) - var(--bas) - 156px)}.vrow .acts .btn{flex:1}}
 .emb.e44{width:44px;height:50px}
@@ -1852,10 +1857,8 @@ body.tk-vis .mbar{transform:translateY(130%);opacity:0;pointer-events:none}
 @media (max-width:879px){body.tk-vis.pg-mbar .slipbar{bottom:calc(var(--bas) + 12px)}}
 
 /* RSP3 : tablette, la carte du pari éclair de l'accueil tient sur deux lignes (le texte, puis le prix et les boutons) */
-@media (min-width:880px) and (max-width:1000px){.flt{grid-template-columns:minmax(0,1fr) auto;gap:16px 24px}.flt>:first-child{grid-column:1/-1}}
 
-/* RSP5 : ordinateur (1101 px et plus), liste des marchés. La question prend toute la largeur de la ligne, les chiffres passent dessous. */
-@media (min-width:1101px){.board .hd{grid-template-columns:88px 200px 92px minmax(0,1fr)}.board .hd>span:first-child{display:none}.board .row:not(.grow){grid-template-columns:88px 200px 92px minmax(0,1fr);grid-template-areas:'q q q q' 'pv tr vol acts';row-gap:10px}.board .row:not(.grow)>.qcell{grid-area:q}.board .row:not(.grow)>.pv{grid-area:pv}.board .row:not(.grow)>.tr{grid-area:tr}.board .row:not(.grow)>.vol{grid-area:vol}.board .row:not(.grow)>.acts{grid-area:acts;justify-self:end}}
+/* RSP5 (liste des marchés en tableau à partir de 1 101 px) : remplacé par les cartes de la troisième passe. */
 
 /* RSP2 : téléphone en paysage. Onglets réduits aux icônes, barres de pari dans la page. */
 /* téléphone en paysage : barres du bas plus basses, boutons toujours à 44 px */
@@ -2222,7 +2225,6 @@ html.pro-lock,html.pro-lock body{overflow:hidden}
 /* le multiplicateur devient une mention discrète dans le bouton (plus de pastille noire posée dessus) */
 .mx{position:static;order:2;height:auto;line-height:inherit;padding:0;border-radius:0;background:none;box-shadow:none;color:inherit;font-size:var(--fs-1);font-weight:var(--fw-regular);font-style:normal}
 .row .acts .mx,.orow .acts .mx,.mbar .mx,.sd .mx,.fsd .mx{display:none}
-.g-home{grid-template-columns:minmax(0,1fr) 340px;gap:var(--sp-6)}
 .hero{gap:var(--sp-4)}
 .hero .kick{font-size:var(--fs-2);color:var(--text-3);font-weight:var(--fw-regular)}
 .hero .ppl{font-size:var(--fs-2);color:var(--text-3)}
@@ -2236,7 +2238,7 @@ html.pro-lock,html.pro-lock body{overflow:hidden}
 .row .q{font-size:var(--fs-3);font-weight:var(--fw-medium);line-height:var(--lh-snug)}
 .row .cat{font-size:var(--fs-1);color:var(--text-3)}
 .row .pv .num{font-size:var(--fs-4)}
-@media (max-width:1100px){.g-home{grid-template-columns:minmax(0,1fr)}}
+/* (ancienne règle : accueil sur une colonne jusqu’à 1 100 px ; remplacée par la grille commune, colonne latérale dès 880 px) */
 @media (max-width:879px){
   .hero .hbtns{max-width:none;width:100%}
   .top .me-av{display:none}
@@ -2277,6 +2279,115 @@ html.pro-lock,html.pro-lock body{overflow:hidden}
 .r-sm{border-radius:var(--r-sm)}
 .upper{text-transform:uppercase}
 .w-60{width:60%}
+
+/* ====================================================================== Troisième passe : accueil sur ordinateur
+   Grille commune (tokens.css, base.css) : contenu fluide + colonne latérale (--rail) qui reste visible au défilement.
+   Les marchés passent en cartes (--carte-min) : 2 colonnes vers 1 024 px, 3 à 1 440 px, 4 à 1 920 px. */
+
+/* Image d'un marché : carrée, coins arrondis, même taille dans un même contexte ; à défaut, l'icône de sa catégorie */
+.mimg{flex:none;display:grid;place-items:center;width:40px;height:40px;border-radius:var(--r-sm);background:var(--fill);color:var(--text-3);overflow:hidden}
+.mimg img{width:100%;height:100%;object-fit:cover;display:block}
+
+/* Présentation d'un visiteur : titre affirmé, une phrase, un seul bouton bleu ; le marché phare à côté (ordinateur) */
+.intro-t{font-size:var(--fs-hero);font-weight:var(--fw-bold);letter-spacing:-.02em;line-height:1.06;text-wrap:balance}
+[lang=he] .intro-t{letter-spacing:0;line-height:1.15}
+.intro-txt{display:flex;flex-direction:column;gap:var(--sp-2)}
+.intro-txt .plead{font-size:var(--fs-3)}
+.intro>.hero{margin-top:var(--sp-6)}
+@media (min-width:880px){
+  .intro{padding-block:0}
+  .intro-txt .plead{font-size:var(--fs-4);line-height:var(--lh-snug);color:var(--text-2)}
+}
+@media (min-width:1280px){
+  .intro{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr);gap:var(--col-gap);align-items:center}
+  .intro>.hero{margin-top:0}
+}
+
+/* Les marchés en cartes (ordinateur). Sur téléphone, la liste reste une liste. */
+.gopts{display:none}
+@media (min-width:880px){
+  .board{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--carte-min),1fr));gap:var(--col-gap);background:none;border-radius:0;overflow:visible}
+  .board .hd,.board .bd-cap{display:none}
+  .board .row,.board .row.grow{grid-template-columns:40px minmax(0,1fr) auto;grid-template-areas:'img q q' 'pv pv tr' 'acts acts acts' 'vol vol vol';align-content:start;gap:var(--sp-3);padding:var(--sp-4);border-top:0;border-radius:var(--r-lg);background:var(--surface)}
+  .board .row .mimg{grid-area:img;align-self:start}
+  .board .row .qcell{grid-area:q;align-self:center}
+  .board .row .q{margin-top:0}
+  .board .row .pv{grid-area:pv;display:flex;align-items:baseline;gap:var(--sp-2)}
+  .board .row .tr{grid-area:tr;width:120px}
+  .board .row .acts{grid-area:acts;justify-content:stretch}
+  .board .row .acts .btn{flex:1 1 0;min-width:0}
+  .board .row .vol{grid-area:vol;display:flex;flex-wrap:wrap;gap:var(--sp-1) var(--sp-3);font-size:var(--fs-2);color:var(--text-3)}
+  .board .row .vol .v{font-weight:var(--fw-regular);color:var(--text-3)}
+  .board .row .vol .c{font-size:var(--fs-2)}
+  .board .row.grow{grid-template-areas:'img q q' 'opts opts opts' 'vol vol acts'}
+  .board .row.grow .gchips{display:none}
+  .board .row.grow .gopts{grid-area:opts;display:flex;flex-direction:column;gap:var(--sp-1)}
+  .board .row.grow .acts{grid-area:acts}
+  .board .row.grow .acts .btn{flex:none;width:auto}
+  .board .row .empty{grid-column:1/-1}
+  @media (hover:hover){.board .row:hover{background:var(--surface);box-shadow:inset 0 0 0 1px var(--line-2)}}
+}
+/* une issue d'un marché à plusieurs issues : pastille de couleur, nom, chance, bouton « Oui » (pari en un clic) */
+.gopt{display:grid;grid-template-columns:10px minmax(0,1fr) auto auto;align-items:center;gap:var(--sp-2);min-height:36px}
+.gdot{width:10px;height:10px;border-radius:50%}
+.gon{font-size:var(--fs-2);color:var(--text);overflow-wrap:anywhere}
+@media (hover:hover){.gon:hover{text-decoration:underline}}
+.gopt .num{font-size:var(--fs-2)}
+.gopt .btn{min-width:72px}
+/* téléphone : l'image du marché à gauche de la question, plus petite ; le reste de la ligne ne bouge pas */
+@media (max-width:879px){
+  .board .row{grid-template-columns:32px auto minmax(0,1fr);grid-template-areas:'img q q' 'pv pv tr' 'vol vol acts'}
+  .board .row.grow{grid-template-columns:32px auto minmax(0,1fr);grid-template-areas:'img q q' 'chips chips chips' 'vol vol acts'}
+  .board .row .mimg{grid-area:img;width:32px;height:32px;align-self:start}
+}
+
+/* Colonne latérale de l'accueil : la carte Éclair puis les grosses mises, visibles au défilement */
+.home-side{gap:var(--col-gap)}
+.flt{display:flex;flex-direction:column;align-items:stretch;gap:var(--sp-3)}
+.flt-h{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3)}
+.flt h3{margin-top:0;font-size:var(--fs-4);line-height:var(--lh-snug)}
+.flt .fp{display:flex;flex-direction:row;align-items:baseline;flex-wrap:wrap;gap:var(--sp-1) var(--sp-3)}
+.flt .fp .num{font-size:var(--fs-4)}
+.flt .spark,.flt .fp .spark{height:96px;width:100%;margin-top:0}
+.flt .spark svg{display:block;width:100%;height:100%}
+.flt-st .ps{display:none}
+.flt .fbt{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-2)}
+.flt .fbt .btn{width:100%;justify-content:center}
+.flt .btn:disabled{opacity:1;background:var(--fill);color:var(--text-3);cursor:not-allowed}
+.flt-st{display:flex;align-items:center;gap:var(--sp-2);min-height:24px;font-size:var(--fs-2);color:var(--text-2)}
+.flt-st svg{color:var(--text-3)}
+.flt-f{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);flex-wrap:wrap}
+.flt .ring{width:44px;height:44px}
+.flt .ring svg{width:44px;height:44px}
+.flt .ring b{font-size:var(--fs-2)}
+.flt .rph{display:none}
+/* marché phare dans la présentation, écran moyen : le multiplicateur quitte les boutons pour qu'ils respirent */
+@media (min-width:1280px) and (max-width:1679px){.intro .hero .mx{display:none}}
+/* info-bulle de la courbe du marché phare (js/refonte.js, trailTip) : un trait vertical et « 63 % 14:05 » */
+.trail.big{position:relative}
+.trail .tip{position:absolute;top:0;bottom:0;width:0;pointer-events:none;z-index:2}
+.trail .tip i{position:absolute;top:0;bottom:0;inset-inline-start:0;border-inline-start:1px dashed var(--text-4)}
+.trail .tip span{position:absolute;top:calc(-1 * var(--sp-2));inset-inline-start:0;transform:translate(-50%,-100%);white-space:nowrap;padding:var(--sp-1) var(--sp-2);border-radius:var(--r-sm);background:var(--ink-bg);color:var(--on-ink);font-size:var(--fs-1);font-variant-numeric:tabular-nums;box-shadow:var(--shadow-2)}
+[dir=rtl] .trail .tip span{transform:translate(50%,-100%)}
+/* grosses mises : une ligne par mise (joueur, montant, côté, marché) */
+.bigbet{gap:var(--sp-3);padding:var(--sp-2) 0}
+.bigbet .bt{flex-direction:row;flex-wrap:wrap;align-items:center;column-gap:var(--sp-2);row-gap:0;font-size:var(--fs-2);color:var(--text-2)}
+.bigbet .bt .bn{color:var(--text);font-weight:var(--fw-bold)}
+.bigbet .bt .num{color:var(--text);font-size:var(--fs-2)}
+.bigbet .bm{color:var(--text-3)}
+@media (hover:hover){.bigbet:hover .bm{color:var(--text)}}
+
+/* ====================================================================== Troisième passe : jeux sur ordinateur (Éclair, Blitz, Série, Duels) [jeux] */
+/* (fin de la section jeux) */
+
+/* ====================================================================== Troisième passe : portefeuille, dépôt, retrait, profil, rang, connexion et inscription [argent] */
+/* (fin de la section argent) */
+
+/* ====================================================================== Troisième passe : Communauté sur ordinateur (entrée, chat, clans, classement, amis, copy trading) [communaute] */
+/* (fin de la section communaute) */
+
+/* ====================================================================== Troisième passe : fiche d’un marché et ticket [marche] */
+/* (fin de la section marche) */
 
 /* ---------- Utilitaires (remplacent les styles en ligne des gabarits ; en dernier pour l'emporter) ---------- */
 .t-1{font-size:var(--fs-1)}
@@ -2447,10 +2558,8 @@ html.pro-lock,html.pro-lock body{overflow:hidden}
 .tx .mlink{max-width:100%;white-space:normal}
 
 /* ---------- Accueil et marché ---------- */
-/* accueil d'un visiteur : un seul « S'inscrire » à l'écran, celui de la présentation */
-body:has(.intro) .top .signup{display:none}
-/* accueil, ordinateur : la colonne des grosses mises suit le défilement */
-.home-side{position:sticky;top:calc(var(--bar-h) + var(--sp-8));align-self:start}
+/* accueil d'un visiteur : un seul « S'inscrire » à l'écran ; celui de l'en-tête revient quand la présentation sort de l'écran (js/refonte.js, introVue) */
+body.intro-vue .top .signup{display:none}
 /* titres : « dépassera-t-il » ne se coupe pas au trait d'union */
 .nw{white-space:nowrap}
 /* fiche marché : les informations du marché sur la grille de 4 px */

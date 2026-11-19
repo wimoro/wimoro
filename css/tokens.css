@@ -61,6 +61,7 @@
   --fs-3:16px;                  /* courant : texte, champs, boutons */
   --fs-4:20px;                  /* titre de section, chiffre de carte */
   --fs-5:28px;                  /* titre de page, grand chiffre */
+  --fs-titre:var(--fs-5);     /* titre de page : 28 px sur téléphone, 32 puis 36 px sur ordinateur (paliers en bas du fichier) */
   --fs-display:40px;            /* réservé aux deux temps forts : la chance d'un marché, le pari Éclair */
   --fw-regular:400;
   --fw-medium:500;
@@ -101,9 +102,14 @@
   --dur-3:250ms;                /* feuilles, fenêtres, entrée d'écran */
   --ease:cubic-bezier(.2,.8,.2,1);
 
-  /* Mise en page */
-  --page:clamp(1200px,70vw,1360px); /* largeur utile maximale : 1 200 px, puis jusqu’à 1 360 px sur très grand écran (sans palier) */
-  --gutter:clamp(16px,4vw,24px);  /* marge latérale de page : fluide sur téléphone et tablette, 24 puis 32 px sur écran large (base.css) */
+  /* Mise en page — grille des grands écrans : voir docs/DESIGN-SYSTEM.md, § 3 « La grille ». Les valeurs ci-dessous sont
+     celles du téléphone ; les trois paliers de l'ordinateur (880, 1280 et 1680 px) sont en bas de ce fichier. */
+  --page:1840px;                /* largeur maximale de la page, marges comprises : 1 760 px de contenu sur un écran de 1 920 px */
+  --gutter:clamp(16px,4vw,24px);  /* marge latérale de page : fluide sur téléphone et tablette, puis 24, 32 et 40 px */
+  --col-gap:var(--sp-4);        /* gouttière entre colonnes et entre cartes */
+  --rail:100%;                  /* largeur de la colonne latérale (sur téléphone, elle passe sous le contenu) */
+  --carte-min:100%;             /* largeur minimale d'une carte dans une grille de cartes (une par ligne sur téléphone) */
+  --fs-hero:36px;               /* titre de la présentation de l'accueil pour un visiteur (seul titre plus grand qu'un titre de page) */
   --bar-h:56px;                 /* hauteur de l'en-tête */
   --tab-h:56px;                 /* hauteur de la barre d'onglets du bas */
   --tap:44px;                   /* cible tactile minimale */
@@ -186,6 +192,18 @@
    en bas de l'écran (barre d'achat, zone de pari Éclair, combiné en cours, barre d'enregistrement) part de --bas. */
 @media (max-width:879px){
   :root{--bas:calc(var(--tab-h) + var(--safe-b))}
+}
+
+/* La grille des grands écrans : trois paliers. La largeur sert à montrer plus de contenu (plus de colonnes, plus de
+   cartes), jamais à creuser des marges. Sur ordinateur, aucun texte utile sous 13 px ; titres de page plus grands. */
+@media (min-width:880px){      /* palier S : 880 à 1 279 px */
+  :root{--gutter:24px;--col-gap:20px;--rail:300px;--carte-min:240px;--fs-1:13px;--fs-titre:32px;--fs-hero:44px}
+}
+@media (min-width:1280px){     /* palier M : 1 280 à 1 679 px */
+  :root{--gutter:32px;--col-gap:24px;--rail:400px;--carte-min:240px;--fs-titre:36px;--fs-hero:52px}
+}
+@media (min-width:1680px){     /* palier L : 1 680 px et plus (la page s'arrête à --page, 1 840 px) */
+  :root{--gutter:40px;--col-gap:32px;--rail:440px;--carte-min:280px;--fs-hero:56px}
 }
 
 /* « Réduire les animations » : tout devient instantané, sans rien cacher. */

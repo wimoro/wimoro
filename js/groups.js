@@ -30,8 +30,12 @@ updateMarket=function(m,old,noGroup){updateMarket0(m,old);if(!noGroup&&m.parent&
 
 /* ---------- Ligne de liste : question, puces des issues en tête, volume, bouton ---------- */
 function groupRowH(g){const L=gSorted(g),top=L.slice(0,4),rest=L.length-top.length,vol=gVol(g);
- return `<div class="row grow" data-href="#marche-${g.id}" data-row="${g.id}"><div class="qcell"><div class="cat">${_t(g.cat)}<span class="ctag multi">${_t("{0} issues",[g.outcomes.length])}</span></div><a class="q" href="#marche-${g.id}">${qNw(g.q)}</a></div>
+ /* Sur ordinateur, la carte montre les trois premières issues avec un bouton « Oui » chacune (pari en un clic) ;
+    sur téléphone, les pastilles compactes restent (une ligne de marché se lit d'un coup d'œil). */
+ const opts=L.slice(0,3).map(o=>`<div class="gopt"><span class="gdot" style="background:${gColor(g,o)}"></span><a class="gon" href="#marche-${o.id}">${esc(o.label)}</a><b class="num" data-mp="${o.id}">${F.pct(o.p)}</b><button class="btn b-yes-soft sm" data-a="bet" data-m="${o.id}" data-s="oui" aria-label="${esc(_t("Acheter Oui sur {0}",[o.label]))}">${_t("Oui")} <span data-mc="${o.id}">${F.c(o.p)}</span></button></div>`).join('');
+ return `<div class="row grow" data-href="#marche-${g.id}" data-row="${g.id}">${mImgH(g)}<div class="qcell"><div class="cat">${_t(g.cat)}<span class="ctag multi">${_t("{0} issues",[g.outcomes.length])}</span></div><a class="q" href="#marche-${g.id}">${qNw(g.q)}</a></div>
  <div class="gchips">${top.map(o=>`<a class="gchip" href="#marche-${o.id}"><i style="background:${gColor(g,o)}"></i><span>${esc(o.label)}</span><b class="num" data-mp="${o.id}">${F.pct(o.p)}</b></a>`).join('')}${rest>0?`<a class="gchip more" href="#marche-${g.id}">${bidi('+'+rest)}</a>`:''}</div>
+ <div class="gopts">${opts}</div>
  <div class="vol"><div class="v">${F.compact(vol)}</div><div class="c">${g.close}</div></div>
  <div class="acts"><a class="btn b-white sm full" href="#marche-${g.id}">${_t("Voir les {0} issues",[g.outcomes.length])}</a></div></div>`;}
 /* couleur stable d'une issue : son rang à l'ouverture (ne change pas quand les prix bougent) */

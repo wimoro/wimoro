@@ -26,7 +26,7 @@ b,strong{font-weight:var(--fw-bold)}   /* une seule graisse forte (sinon « bold
 .h2{font-size:var(--fs-4);font-weight:var(--fw-bold);letter-spacing:var(--track-title);line-height:var(--lh-snug)}
 .sub{font-size:var(--fs-2);color:var(--text-3);margin-top:var(--sp-1);max-width:72ch}   /* une ligne de texte ne dépasse pas 72 caractères, même sur très grand écran */
 .sub:empty{display:none}
-.ptitle{font-size:var(--fs-5);font-weight:var(--fw-bold);letter-spacing:var(--track-title);line-height:var(--lh-tight)}
+.ptitle{font-size:var(--fs-titre);font-weight:var(--fw-bold);letter-spacing:var(--track-title);line-height:var(--lh-tight)}
 .plead{font-size:var(--fs-3);color:var(--text-2);margin-top:var(--sp-2);max-width:60ch}
 .link{color:var(--accent);font-weight:var(--fw-medium)}
 @media (hover:hover){.link:hover{text-decoration:underline}}
@@ -65,15 +65,28 @@ html.lock body{padding-inline-end:var(--sbw,0px)}
 
 /* Les classes utilitaires (t-1, mt-2, w-full…) sont à la fin de screens.css : elles doivent l'emporter sur tout le reste. */
 
-/* ---------- Écrans larges ---------- */
+/* ---------- La grille des grands écrans (docs/DESIGN-SYSTEM.md, § 3 « La grille ») ----------
+   Les largeurs viennent de tokens.css et changent aux trois paliers (880, 1 280, 1 680 px). Trois mises en page :
+   - .lay-rail  : contenu fluide + colonne latérale (--rail) qui reste visible au défilement (.rail-fixe) ;
+   - .cartes    : grille de cartes qui ajoute des colonnes quand la place le permet (largeur minimale --carte-min) ;
+   - .grille12  : 12 colonnes, pour les écrans de tableau de bord (enfants .s3 à .s12 : nombre de colonnes occupées).
+   Sur téléphone, les trois s'empilent sur une colonne. */
+.lay-rail,.grille12{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--sp-4);align-items:start}
+.cartes{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(var(--carte-min),100%),1fr));gap:var(--col-gap)}
 @media (min-width:880px){
-  :root{--gutter:24px}
   .wrap{padding-block:var(--sp-8) var(--sp-16)}
   .col{gap:var(--sp-6)}
   .pagehead{flex-direction:row;align-items:flex-end;justify-content:space-between;gap:var(--sp-6);margin-bottom:var(--sp-8)}
+  .lay-rail{grid-template-columns:minmax(0,1fr) var(--rail);gap:var(--col-gap)}
+  .rail-fixe{position:sticky;top:calc(var(--bar-h) + var(--sp-6));max-height:calc(100vh - var(--bar-h) - var(--sp-12));overflow:auto;overscroll-behavior:contain;scrollbar-width:thin}
+  .grille12{grid-template-columns:repeat(12,minmax(0,1fr));gap:var(--col-gap)}
+  .grille12>*{grid-column:span 12;min-width:0}
+  .grille12>.s3{grid-column:span 4}.grille12>.s4{grid-column:span 6}.grille12>.s5{grid-column:span 6}
+  .grille12>.s6{grid-column:span 6}.grille12>.s7{grid-column:span 6}.grille12>.s8{grid-column:span 6}.grille12>.s9{grid-column:span 12}
 }
-@media (min-width:1101px){
-  :root{--gutter:32px}
+@media (min-width:1280px){
+  .grille12>.s3{grid-column:span 3}.grille12>.s4{grid-column:span 4}.grille12>.s5{grid-column:span 5}
+  .grille12>.s7{grid-column:span 7}.grille12>.s8{grid-column:span 8}.grille12>.s9{grid-column:span 9}
 }
 
 /* ---------- Téléphone ---------- */

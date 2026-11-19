@@ -68,8 +68,28 @@ ACT.ptab=a=>{const v=a.dataset.v,ou=v==='positions'||v==='history'?'portefeuille
 function bigsBlocH(){return `<section class="pn pad"><div class="ph"><div><div class="h2">${_t("Grosses mises en direct")}</div><div class="sub">${_t("Les plus gros paris de la dernière heure")}</div></div></div><div class="bigs" data-bigs>${bigsH()}</div></section>`;}
 
 /* ===================== Accueil : Wimoro en une phrase, pour un visiteur ===================== */
-function introH(){return `<section class="intro"><h2 class="ptitle">${_t("Parie sur ce qui va arriver")}</h2><p class="plead">${_t("Choisis un marché, réponds Oui ou Non, et gagne si tu as vu juste.")}</p><div class="hbtns"><a class="btn b-pri lg" href="#inscription">${_t("S’inscrire")}</a><button class="btn b-ink lg" data-a="demo-login">${_t("Explorer avec le compte démo")}</button></div></section>`;}
-{const v=VIEWS.accueil;VIEWS.accueil=a=>{const h=v(a);return S.me.logged?h:enTete(h,introH());};}
+/* Sur ordinateur, le texte et le marché phare (vedette) sont côte à côte ; sur téléphone, l'un sous l'autre.
+   Le bouton « S'inscrire » de l'en-tête se cache tant que celui de la présentation est à l'écran (un seul bouton bleu). */
+function introH(vedette){return `<section class="intro"><div class="intro-txt"><h2 class="intro-t">${_t("Parie sur ce qui va arriver")}</h2><p class="plead">${_t("Crypto, sport, politique, tech : réponds Oui ou Non et gagne si tu as vu juste.")}</p><div class="hbtns"><a class="btn b-pri lg" href="#inscription" data-cta>${_t("S’inscrire")}</a><button class="btn b-ink lg" data-a="demo-login">${_t("Explorer avec le compte démo")}</button></div></div>${vedette||''}</section>`;}
+let introObs=null;
+function introVue(view){if(introObs){introObs.disconnect();introObs=null;}document.body.classList.remove('intro-vue');const b=view.querySelector('.intro [data-cta]');if(!b)return;
+ document.body.classList.add('intro-vue');if(typeof IntersectionObserver!=='function')return;
+ introObs=new IntersectionObserver(L=>{for(const e of L)document.body.classList.toggle('intro-vue',e.isIntersecting);},{rootMargin:'-56px 0px 0px 0px'});introObs.observe(b);}
+/* Info-bulle sur la courbe du marché phare (souris ou doigt) : la chance et l'heure du point le plus proche. Les points
+   de départ couvrent les 24 dernières heures (le marché phare affiche sa variation sur 24 h) ; chaque nouveau prix porte
+   son heure réelle (updateMarket, js/views.js). La courbe d'une fiche de marché a déjà son réticule (js/auth.js). */
+function phT(m){if(!m.pht||m.pht.length!==m.ph.length){const n=m.ph.length,t=now();m.pht=m.ph.map((_,i)=>t-DAYMS*(1-i/Math.max(1,n-1)));}return m.pht;}
+const quandPt=t=>new Date(t).toDateString()===new Date().toDateString()?hhmm(t):_t('hier {0}',[hhmm(t)]);
+function trailTip(e){const el=e.target&&e.target.closest?e.target.closest('.trail.big.tl'):null;$$('.trail .tip').forEach(x=>{if(x.parentElement!==el)x.remove();});if(!el)return;
+ const m=MK[el.dataset.trail];if(!m||!m.ph||m.ph.length<2)return;const N=Math.min(120,m.ph.length),off=m.ph.length-N,r=el.getBoundingClientRect(),k=Math.round(clamp((e.clientX-r.left)/r.width,0,1)*(N-1));
+ let o=el.querySelector('.tip');if(!o){o=document.createElement('div');o.className='tip';o.setAttribute('aria-hidden','true');el.appendChild(o);}
+ o.style.left=(k/(N-1)*100).toFixed(2)+'%';o.innerHTML=`<i></i><span><b>${F.pct(m.ph[off+k])}</b> ${esc(quandPt(phT(m)[off+k]))}</span>`;}
+document.addEventListener('pointermove',trailTip,{passive:true});
+document.addEventListener('pointerleave',e=>{if(e.target&&e.target.classList&&e.target.classList.contains('trail'))$$('.tip',e.target).forEach(x=>x.remove());},true);
+/* Après chaque rendu d'écran (appelé par render, js/views.js). */
+function apresRendu(view){introVue(view);}
+/* Passage téléphone ↔ ordinateur : l'accueil se recompose (la carte Éclair change de colonne). */
+try{matchMedia('(min-width:880px)').addEventListener('change',()=>{if(PRET&&(S.ui.route||'accueil')==='accueil')render(false);});}catch(e){}
 
 /* ===================== Sections repliables : l'essentiel d'abord, le détail à la demande =====================
    Sur téléphone et tablette (colonnes empilées, 1100 px et moins), les blocs de la colonne secondaire des écrans listés
