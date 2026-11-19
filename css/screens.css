@@ -3350,7 +3350,7 @@ body:has(.auth) .top .signup,body:has(.auth) .top .login{display:none}
      les barres des issues ont toutes la même longueur */
   .gsvg path[fill-opacity]{fill-opacity:0}
   .gchart+.xax{margin-inline-end:0;padding-inline:var(--sp-4)}
-  .orow{grid-template-columns:36px minmax(0,1fr) minmax(var(--sp-16),auto)}
+  .orow{grid-template-columns:36px minmax(0,1fr) minmax(var(--sp-12),auto)}
   /* Éclair : « Mise 10 $ » ne répète plus la pastille active ; la ligne de manche commence par une majuscule */
   .flash-card .fl-stk .lbl b{display:none}
   .flash-card .fl-stk .lbl{min-width:0}

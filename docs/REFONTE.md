@@ -84,7 +84,63 @@ Skills chargés : `unslop:unslop` (mode « polish », `rtl.md` pour l'hébreu) e
 
 **2. Lignes de marché** : lisibles à 320, 360, 390 et 430 px, en clair, en sombre et en hébreu. Une case vide
 (`data-mlive`) attend le cours en direct de la partie D, à côté de la chance ; une quatrième colonne prend sa largeur à
-la courbe, jamais aux boutons Oui / Non, et la ligne ne grandit pas (vérifié avec un cours d'essai).
+la courbe, jamais aux boutons Oui / Non, et la ligne ne grandit pas (vérifié avec un cours d'essai). D'une ligne à
+l'autre, les paires Oui / Non et les courbes partent du même bord.
+
+**3. Revue de chaque écran à 390 × 844, en clair et en sombre (unslop, mode « polish »)** — trois relectures (marchés et
+jeux ; argent et compte ; communauté), essais à 320 px et en hébreu. Appliqué (téléphone seulement, sauf mention) :
+| Écran | Ce qui a été retiré, replié ou clarifié |
+|---|---|
+| Accueil | paires Oui / Non alignées d'une ligne à l'autre ; nombre d'issues dit une fois ; « Mises fermées, résultat… » sans double espace |
+| Fiche d'un marché | la courbe passe avant les réglages et tient au premier écran ; bulles du chat discrètes en sombre ; vignette alignée en haut |
+| Marché à issues | plus d'aplat lavande sous la courbe ; axe du temps complet ; barres de même longueur |
+| Ticket | rien à corriger |
+| Éclair | « Mise » ne répète plus la pastille active ; ligne de manche avec majuscule ; « sera-t-il » insécable ; barre des mises posée sur la barre des paris ; libellé de manche fermée en double (défaut de la partie A) corrigé |
+| Blitz, Série | libellé de manche fermée en double corrigé (même règle) |
+| Duels | liste dans la carte au lieu de cartes à filet dans une carte ; tags jamais rognés ; « Clôture : … » sans point |
+| Créer un pari | curseur rempli ; pastilles de rang à leur largeur |
+| Portefeuille | chaque position dit ce qu'est son chiffre, titre en 16 px, prix du côté en direct, partage au bout ; ligne « Faire le KYC » ; libellés en 14 px |
+| Dépôt, retrait | barre KYC compacte ; QR à côté de l'adresse (« Copier l'adresse » remonte de 266 px) ; repères moins forts |
+| Profil | un vrai compte ne voit plus « Démo » (aussi sur ordinateur, règle du brief) et voit son e-mail ; « Modifier le profil » tient à 320 px ; badges sans point |
+| Rang | emblème plat à côté du titre ; coche lisible (6:1) ; ligne d'XP qui ne coupe plus un nombre |
+| Connexion, inscription | titre à la place des autres écrans ; plus de « 8 caractères minimum » trompeur (connexion) ou redondant (inscription) |
+| Notifications, menu du compte | voile derrière la feuille ; état ouvert / fermé annoncé ; le menu du compte n'existe pas au doigt, tout son contenu est dans Profil › Mon compte |
+| Communauté | ligne Live chat à la hauteur des autres ; sous-navigation entière dès 370 px, onglet actif centré en dessous |
+| Live chat | plus de titre « # Général » redondant (56 px rendus au fil) ; « En ligne » et « Règles du chat » repliés sous le fil |
+| Clans | filtres sur deux colonnes à 320 px ; « Score » dit une fois ; « Mon clan » sur fond neutre ; paragraphe effacé quand on a un clan ; icône d'emblème lisible |
+| Classement | pastilles à la largeur de leur libellé ; positions alignées sur les unités ; pseudos lisibles à 320 px |
+| Amis | « Retirer » discret ; pseudos en 16 px ; phrase redondante effacée |
+| Copy trading | « Activer » à sa taille ; la liste avant « Tes copieurs » |
+| Fiche d'un joueur | « Copier » remonte au premier écran ; tuile « Rang » redondante et icône décorative effacées |
+
+**Laissé, et pourquoi** (« à discuter » : un texte à écrire, un changement de gabarit ou un effet sur l'ordinateur) —
+accueil : « ×1,59 » du marché phare, deux issues au plus par groupe à 320 px ; marché : méta réduite (participants,
+messages), « Ce que font les Radiants » et « Comment ça marche » repliés, lettres des issues remplacées par une pastille
+de couleur, style en ligne de la note des issues (`js/groups.js`) ; Éclair : cartes repliées en liste ; vocabulaire
+anglais (« Buy-in », « stack », « all-in », « Break even ») ; Série : un seul dessin pour le choix de l'actif ; duels :
+« Répondre au défi » sur un défi reçu ; créer : raison du bouton désactivé, texte d'exemple coupé à 390 px, action en gris ;
+portefeuille : couleur des compteurs, solde redit sous l'en-tête ; dépôt : description des réseaux non choisis, étapes
+résumées, « Recommandé » en accent ; retrait : frais en dollars et montant en USDC (touche l'ordinateur) ; profil :
+« Mon compte » et Paramètres se répètent, rang dit trois fois ; rang : échelle sans signe de défilement, même ratio écrit
+de deux façons ; connexion : « Content de te revoir. » ; communauté : titres de page qui répètent l'onglet (ils portent
+le focus), compteurs bleus, légendes du chat avec point, « +12 pts » sans référence, 20 clans au lieu de 40, légende du
+code d'invitation, barre d'XP animée en largeur, chevron et tag dans le copy trading, « Suivre » à deux sens. Sur
+ordinateur (hors périmètre de la partie B) : la coche d'une condition remplie (2,8:1) et l'icône d'un emblème de clan
+ont le même défaut de contraste qu'au téléphone.
+
+**Vérification de la partie B**
+| Contrôle | Avant (`5cd1f9c`) | Après |
+|---|---|---|
+| Mesure responsive (29 écrans, 320, 360, 390, 430, 768 px, 844 × 390), défauts distincts | démo FR 8, visiteur 2, compte 3, hébreu 10, anglais 7 | démo FR 3, visiteur 2, compte 1, hébreu 4, anglais 2 ; plus aucun tag rogné, texte coupé ni commande rognée |
+| Restent (assumés) | — | lien du pseudo « lea » étroit dans le classement (la ligne entière ouvre la fiche) ; lien d'invitation tronqué par des points de suspension (un bouton le copie) ; deux liens à 28 px l'un de l'autre dans le chat ; en hébreu, un chevauchement apparent de deux mots d'une même ligne coupée en deux (artefact de la mesure) |
+| Balayage de 320 à 879 px tous les 16 px (29 écrans) | aucun défaut | aucun défaut |
+| Ordinateur (styles calculés, 28 écrans à 1 024 et 1 440 px) | — | inchangé, hors le tag de clan des duels (voulu) et le contenu vivant |
+| Tests | 396 + 1 ignoré | 402 + 1 ignoré, dont 6 nouveaux (`tests/refonte/telephone.spec.mjs`, 5 échouent sur `5cd1f9c`) ; 7 tests adaptés (point final d'un message de refus du serveur affiché en notification) ; un test SQL de l'Éclair (`be_plein`, dépend de l'heure) a échoué une fois sur huit passages, vert seul et aux autres passages |
+| Caractères bidirectionnels écrits tels quels | 42 lignes dans `js/i18n-2.js`, 2 dans ce fichier | aucun dans les fichiers touchés |
+
+Captures (dossier temporaire de la session, `captures/b-telephone/`) : `avant/` et `apres/` (`clair/390x844`,
+`clair/320x700`, `sombre/390x844`, `visiteur/`, `he/`), `apres/images/` (images à partager), `apres/lignes/` (lignes de
+marché avec un cours d'essai), `revue-jeux/`, `revue-argent/`, `revue-communaute/` (relectures, essais avant / après).
 
 ## SECONDE PASSE (demandée le 19 nov. 2026)
 
