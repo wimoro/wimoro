@@ -263,7 +263,8 @@
   .tab5{display:flex}
   .tab5>a{flex:1 1 auto}
   .tabbar a{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:var(--tab-h);padding-inline:2px;font-size:var(--fs-1);font-weight:var(--fw-medium);color:var(--text-3);white-space:nowrap;transition:color var(--dur-1) var(--ease)}
-  .tabbar a.on{color:var(--accent)}
+  .tabbar a.on{color:var(--accent);font-weight:var(--fw-bold)}
+  .tabbar a.on svg{stroke-width:2.5}
   .tabbar a .dotn{position:absolute;top:8px;inset-inline-start:calc(50% + 6px);width:8px;height:8px;border-radius:50%;background:var(--accent-bg);box-shadow:0 0 0 2px var(--surface)}
   .tabs{gap:var(--sp-5)}
   .md{--mdp:20px}

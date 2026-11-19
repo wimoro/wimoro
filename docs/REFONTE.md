@@ -321,15 +321,17 @@ l'emporte (les familles système qui dessinent bien l'hébreu passent en tête, 
 ### Comparaison automatique avant / après
 Outil du dépôt (`tools/audit/inventaire.mjs`) et comparaison des gabarits du commit `8b4489f` avec ceux de la branche :
 
-| Mesure | Avant | Après | Disparu |
+| Mesure | Avant (`8b4489f`) | Après la seconde passe | Disparu, et pourquoi |
 |---|---:|---:|---|
 | Actions (`ACT`) | 244 | 244 | aucune |
 | Actions ayant un déclencheur `data-a` dans les gabarits | 244 | 244 | aucune |
 | Formulaires (`FORMS`) | 14 | 14 | aucun |
-| Écrans (`VIEWS`) | 26 | 27 | aucun (ajout : `portefeuille`) |
-| Attributs `data-*` posés par les gabarits | 180 | 179 | `data-rankchip` (la puce de rang de l'en-tête ; le rang est dans Profil) |
+| Formulaires écrits en clair (`data-form="…"`) | 15 | 14 | `general` : le mini-chat de l'accueil (première passe). Le salon général s'ouvre dans Communauté → Live chat, dont le formulaire porte un nom calculé |
+| Écrans (`VIEWS`) | 26 | 28 | aucun (ajouts : `portefeuille`, `communaute`) |
+| Attributs `data-*` posés par les gabarits | 180 | 181 | `data-rankchip` (puce de rang de l'en-tête), `data-clhome` (carte de clan de l'accueil), `data-hcmini` (mini-chat de l'accueil) : trois blocs retirés de l'écran à la première passe, leurs fonctions sont dans Profil et Communauté |
 | Identifiants | 71 | 71 | aucun |
-| Tests Playwright | 336 | 336 + parcours | un test adapté (voir journal) |
+| Liens écrits en clair (`href="#…"`) | 23 | 23 | `#chat` et `#copie` ne sont plus écrits en clair : la page Communauté et la sous-navigation les construisent (`ligneH`, `sousNavH`) |
+| Tests Playwright | 336 | 396 (+ 1 ignoré) | aucun retiré ; 2 adaptés à la nouvelle navigation (voir journal) |
 
 ### Où se trouve chaque fonction
 | Fonction | Où elle se trouve maintenant | Comment c'est vérifié |
@@ -353,20 +355,20 @@ Outil du dépôt (`tools/audit/inventaire.mjs`) et comparaison des gabarits du c
 | Déposer : crypto, carte, virement, PayPal, dépôt simulé | Portefeuille → Déposer (`#depot`) | `compte/argent`, parcours 6 |
 | Retirer | Portefeuille → Retirer (`#retrait`) | `compte/argent`, parcours 7 |
 | KYC | Portefeuille, Profil (« Faire le KYC »), page de dépôt | `compte/argent`, `compte/comptes` |
-| Chat : général, marchés, VIP, clan, messages privés, réactions, partager une mise, citer | Communauté (`#chat`) | `compte/chat`, `prive`, `reactions`, `salon-vip`, `mises`, parcours 8 |
-| Clans : annuaire, fiche, créer, rejoindre, guerres, appels, outils du chef | Communauté → Clans | `compte/clans`, `clans-chefs`, `clans-guerres`, `clan-chat` |
-| Classement, fiche d'un joueur, suivre un joueur | Communauté → Classement | `compte/suivre`, parcours 9 |
-| Amis : demandes, recherche, invitation | Communauté → Amis | `compte/amis`, parcours 9 |
-| Copy trading | Communauté → Copies ; fiche d'un joueur | `compte/copies` |
+| Chat : général, marchés, VIP, clan, messages privés, réactions, partager une mise, citer | Communauté (`#communaute`) → Live chat (`#chat`) | `compte/chat`, `prive`, `reactions`, `salon-vip`, `mises`, parcours 8 et 21 |
+| Clans : annuaire, fiche, créer, rejoindre, guerres, appels, outils du chef | Communauté → Clans | `compte/clans`, `clans-chefs`, `clans-guerres`, `clan-chat`, parcours 13 et 21 |
+| Classement, fiche d'un joueur, suivre un joueur | Communauté → Classement | `compte/suivre`, parcours 9, 13 et 21 |
+| Amis : demandes, recherche, invitation | Communauté → Amis | `compte/amis`, parcours 9, 13 et 21 |
+| Copy trading | Communauté → Copy trading ; fiche d'un joueur | `compte/copies`, parcours 13 et 21 |
 | Profil : identité, statistiques, badges, paris créés | Profil (`#profil`) | captures |
 | Rang, missions, avantages | Profil → Mon rang (`#rang`) | `compte/etat`, parcours 13 |
 | Modifier le profil : photo, couleur, bio, confidentialité, mot de passe | Profil → Modifier le profil | `compte/comptes` |
 | Notifications : panneau, effacer, réglage des pop-up | cloche de l'en-tête ; Profil | capture « notifications » |
-| Langue | Profil ; en-tête pour un visiteur ; pied de la connexion | `i18n`, parcours 10 |
-| Thème clair ou sombre | bouton de l'en-tête (ordinateur, visiteur) ; Profil | parcours 11 |
+| Langue (anglais par défaut, français, hébreu) | Profil ; en-tête pour un visiteur ; pied de la connexion | `i18n`, parcours 10, 17 et 18 |
+| Thème clair ou sombre | bouton de l'en-tête (ordinateur ; visiteur sur téléphone) ; Profil | parcours 11 |
 | Parrainage | Profil → Parrainage | `compte/parrainage` |
 | Jeu responsable : limites, pause, auto-exclusion, export, aide | Profil et Portefeuille → Jeu responsable | `compte/argent`, `compte/comptes` |
-| Inscription, connexion (e-mail, pseudo, portefeuille, compte démo), mot de passe oublié, onboarding | onglet Profil ou boutons de l'en-tête pour un visiteur ; présentation en tête de l'accueil | `compte/comptes`, `demo/parcours` |
+| Inscription, connexion (e-mail, pseudo, portefeuille, compte démo), mot de passe oublié, onboarding | visiteur : « S’inscrire » dans l'en-tête, « Se connecter » dans l'en-tête (ordinateur) ou cinquième onglet (téléphone) ; présentation en tête de l'accueil | `compte/comptes`, `demo/parcours`, parcours 14, 16 et 22 |
 | Déconnexion | Profil (« Mon compte ») et menu du compte | `demo/parcours`, parcours 12 |
 | Outils de démonstration : changer de rang, réinitialiser | Profil | `compte/analyses` |
 | États du mode Compte : serveur injoignable, session expirée, compte suspendu, « Bientôt disponible » | inchangés | `compte/garde`, `compte/comptes`, `compte/chargement` |

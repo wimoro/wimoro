@@ -1050,7 +1050,7 @@ html,body{max-width:100%;overflow-x:hidden}
 .vc:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .vc .vh{display:flex;align-items:center;gap:8px}
 .vc .vh b{flex:1;min-width:0;font-size:var(--fs-3);font-weight:600}
-.vc .vr{flex:none;width:18px;height:18px;border-radius:var(--r-sm);box-shadow:inset 0 0 0 1.5px var(--text-4)}
+.vc .vr{flex:none;width:18px;height:18px;border-radius:var(--r-sm);box-shadow:inset 0 0 0 1.5px var(--text-3)}
 .vc.on .vr{box-shadow:inset 0 0 0 5px var(--accent)}
 .vc small{font-size:var(--fs-2);line-height:1.4;color:var(--text-2)}
 .tgl.dis{opacity:.45;cursor:not-allowed}
@@ -1258,7 +1258,7 @@ html,body{max-width:100%;overflow-x:hidden}
 .gsvg{width:100%;height:200px;display:block;overflow:visible}
 .cp-p>b.num{white-space:nowrap;flex:none}
 .gg{stroke:var(--line);stroke-width:1}
-.gt{fill:var(--text-4);font-size:var(--fs-1);text-anchor:start;paint-order:stroke;stroke:var(--surface);stroke-width:4px;stroke-linejoin:round}
+.gt{fill:var(--text-3);font-size:var(--fs-1);text-anchor:start;paint-order:stroke;stroke:var(--surface);stroke-width:4px;stroke-linejoin:round}
 .glegend{display:flex;gap:6px;flex-wrap:wrap;padding:12px 20px 0;font-size:var(--fs-1);color:var(--text-2)}
 .glegend span{display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 8px;border-radius:var(--r-pill);background:var(--fill)}
 .glegend i{width:8px;height:8px;border-radius:50%;display:inline-block}
@@ -1692,7 +1692,7 @@ body.has-slip #view{padding-bottom:76px}
 .cin .cc:empty{display:none}
 
 /* C22 : étape KYC — deux choix sélectionnables */
-.kopt .krad{flex:none;width:18px;height:18px;border-radius:50%;box-shadow:inset 0 0 0 2px var(--text-4);transition:box-shadow var(--dur-1)}
+.kopt .krad{flex:none;width:18px;height:18px;border-radius:50%;box-shadow:inset 0 0 0 2px var(--text-3);transition:box-shadow var(--dur-1)}
 .kopt.on{box-shadow:inset 0 0 0 2px var(--accent);background:var(--accent-soft)}
 .kopt.on .krad{box-shadow:inset 0 0 0 5px var(--accent)}
 .ob-acts .btn[data-a="ob-next"]{height:auto;min-height:48px;padding-block:6px;white-space:normal;line-height:1.2;text-wrap:balance}
@@ -2167,7 +2167,7 @@ html.pro-lock,html.pro-lock body{overflow:hidden}
 .psh-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .psh-t b{font-size:var(--fs-2)}
 .psh-t small{font-size:var(--fs-1);color:var(--text-3);overflow:hidden;text-overflow:ellipsis}
-.psh-ck{width:22px;height:22px;border-radius:var(--r-sm);box-shadow:inset 0 0 0 1.5px var(--text-4);display:grid;place-items:center;flex:none}
+.psh-ck{width:22px;height:22px;border-radius:var(--r-sm);box-shadow:inset 0 0 0 1.5px var(--text-3);display:grid;place-items:center;flex:none}
 .psh-ck svg{opacity:0}
 .psh-o.on .psh-ck{background:var(--accent-bg);box-shadow:none}
 .psh-o.on .psh-ck svg{opacity:1}
@@ -2220,7 +2220,7 @@ html.pro-lock,html.pro-lock body{overflow:hidden}
 
 /* ====================================================================== Reprise à la main : accueil et liste des marchés */
 /* le multiplicateur devient une mention discrète dans le bouton (plus de pastille noire posée dessus) */
-.mx{position:static;order:2;height:auto;line-height:inherit;padding:0;border-radius:0;background:none;box-shadow:none;color:inherit;opacity:.8;font-size:var(--fs-1);font-weight:var(--fw-medium);font-style:normal}
+.mx{position:static;order:2;height:auto;line-height:inherit;padding:0;border-radius:0;background:none;box-shadow:none;color:inherit;font-size:var(--fs-1);font-weight:var(--fw-regular);font-style:normal}
 .row .acts .mx,.orow .acts .mx,.mbar .mx,.sd .mx,.fsd .mx{display:none}
 .g-home{grid-template-columns:minmax(0,1fr) 340px;gap:var(--sp-6)}
 .hero{gap:var(--sp-4)}
