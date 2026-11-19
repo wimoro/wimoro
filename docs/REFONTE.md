@@ -59,7 +59,52 @@ fonction ajoutée ni retirée, rien sur `main`, tout d'une traite, réponses en 
    1440 px, (3) détails restants, (4) non vérifié, (5) skills, agents et commandes réellement utilisés.
 
 ### C. Journal de la seconde passe
-- (à remplir au fil de l'eau : ce qui est fait, les défauts trouvés par écran, les décisions)
+
+**Outils (hors dépôt, dossier temporaire de la session)** : `passe2.mjs` — `mesure` (29 écrans × 10 largeurs : défilement
+horizontal, commande hors écran ou rognée, texte coupé, texte sous 12 px, champ ou phrase sous 16 px sur téléphone,
+cible tactile sous 44 px, cibles superposées, zone d'appui échappée, bloc masqué par une barre fixe, fenêtre hors écran),
+`balaye` (toutes les largeurs de 320 à 1920 px), `capture`, `planche` (320, 390, 768, 1440 côte à côte) ; `sonde.mjs`
+(évalue une expression dans un écran à une largeur donnée).
+
+**Fait (commit `392718d`)**
+1. *En-tête de départ* : plus aucune valeur fictive dans `index.html`. Avant le démarrage, `<body>` n'a ni la classe
+   `in` ni la classe `out` : un bloc neutre (`.sk`) tient la place ; `render()` pose ensuite `in` ou `out`, jamais les deux.
+2. *Libellés* : « Se connecter » et « S'inscrire », partout et à toutes les tailles (titres de page, boutons, liens).
+3. *Montants* : tout passe par `money()` (`js/core.js`) ; le solde garde ses centimes à toutes les tailles (l'en-tête mobile
+   les retirait). Règle : mon argent (solde, mise, gain) avec centimes ; seuils, mises rapides et montants des autres
+   joueurs en dollars entiers ; volumes en abrégé. Les catalogues anglais et hébreu ont été contrôlés (aucun montant au
+   format français).
+4. *Langue* : la langue par défaut du code est l'anglais ; `index.html` est écrit en anglais, chaque texte porte sa clé
+   française (`data-t`, `data-t-<attribut>`), traduite dès que les catalogues sont chargés (`i18nStatic`). Dans une autre
+   langue, les libellés restent invisibles (place gardée) jusqu'à leur traduction : pas de clignotement.
+5. *Métadonnées* : la description et le message sans JavaScript ne parlent plus de « démo » (texte avant / après dans le
+   bilan). Le message sans JavaScript est écrit dans les trois langues.
+6. *Communauté* : nouvelle page d'entrée `#communaute` (`vCommunaute`, `js/refonte.js`) : Live chat, Clans, Amis,
+   Classement, Copy trading, chacun avec une ligne d'explication.
+
+**Défauts de la première passe trouvés et corrigés**
+- Ticket de pari : les boutons Oui / Non étaient à 35 % d'opacité pour tout le monde (style prévu pour un bouton désactivé,
+  devenu permanent lors du remplacement des styles en ligne). Seul cas de ce genre, vérifié sur le code d'origine.
+- Accueil sur téléphone : la ligne de filtres débordait des deux côtés (« Créer un pari » coupé).
+- En-tête : débordait à 320 px (connecté) et jusqu'à 390 px (visiteur, bouton d'inscription coupé).
+- Mode Pro : une zone d'appui invisible recouvrait le bouton « Mode Pro » sur téléphone.
+
+**Décisions de structure**
+- La barre d'onglets du bas sert jusqu'à 879 px (téléphones, tablettes en portrait) ; le menu du haut à partir de 880 px,
+  là où cinq liens et les boutons tiennent sans rien couper. Palier unique 879 / 880 (au lieu de 760 / 761).
+- `--bas` (`css/tokens.css`) : place prise en bas de l'écran (zone sûre seule, ou barre d'onglets + zone sûre). Tout ce
+  qui se pose en bas en part ; les anciens décalages en dur (62, 76, 142 px…) et la variable `--tabh` ont disparu.
+- Le nom « wimoro » s'efface de lui-même quand la place manque (sans palier) ; la barre d'onglets partage sa largeur en
+  cinq parts égales, sauf si un libellé est plus long que sa part.
+- Sur téléphone, visiteur : recherche, langue, thème et « S'inscrire » dans l'en-tête ; « Se connecter » est le cinquième
+  onglet du bas. Sur ordinateur : les deux boutons dans l'en-tête.
+- Écrans tactiles : une seule règle (fin de `css/components.css`) donne 44 px à chaque commande.
+- Sur téléphone, le texte courant, les messages du chat et les champs sont en 16 px.
+- Accueil sur téléphone : « Créer un pari » passe sous la liste des marchés.
+
+**Reste à faire** : balayage de toutes les largeurs ; revue visuelle écran par écran (captures 390 et 1440, clair et
+sombre, connecté et visiteur) ; second tour de revue avec un regard neuf ; tests de parcours ; revues `code-reviewer` et
+`security-reviewer` ; tableau de non-régression ; captures et bilan.
 
 ## Reprise (mis à jour à chaque étape)
 

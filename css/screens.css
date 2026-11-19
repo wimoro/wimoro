@@ -2368,3 +2368,21 @@ html.pro-lock,html.pro-lock body{overflow:hidden}
 
 /* ---------- Mode Pro, écran bas (téléphone en paysage) : les boutons d'achat montent dans la barre du haut, s'il y a la place ---------- */
 @media (max-height:480px) and (min-width:560px){.pro-foot{display:none}.pro-buy.top{display:flex}}
+
+/* ---------- Profil ---------- */
+/* badges : une icône, le nom et sa condition (qui passe à la ligne), « Obtenu » en simple mention */
+.bdg{align-items:center;gap:var(--sp-3)}
+.bdg-i{flex:none;display:grid;place-items:center;width:40px;height:40px;border-radius:var(--r-md);background:var(--fill);color:var(--text-4)}
+.bdg-i.on{background:var(--accent-soft);color:var(--accent)}
+.bdg-t{flex:1;min-width:0}
+.bdg-t b{display:block;font-size:var(--fs-3);font-weight:var(--fw-medium)}
+.bdg-t small{display:block;margin-top:2px;font-size:var(--fs-2);line-height:1.4;white-space:normal}
+.bdg-ok{flex:none;font-size:var(--fs-1);color:var(--text-3)}
+/* « Mon compte » (téléphone) : une liste, comme dans le portefeuille et la page Communauté, à la place des tuiles */
+@media (max-width:879px){
+  .acct-l{display:block;margin-top:var(--sp-2)}
+  .acct-l .ui{width:100%;flex-wrap:nowrap;gap:var(--sp-3);min-height:52px;padding:0;border-radius:0;background:none;font-size:var(--fs-3);font-weight:var(--fw-regular)}
+  .acct-l .ui+.ui{border-top:1px solid var(--line)}
+  .acct-l .ui svg{width:20px;height:20px;color:var(--text-3)}
+  .acct-l .ui.out svg{color:inherit}
+}
