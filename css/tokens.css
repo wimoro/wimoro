@@ -53,6 +53,28 @@
   /* Panneau latéral de la connexion et de l'inscription : fond sombre en clair, gris foncé en sombre */
   --side-bg:var(--ink-bg);
   --on-side:var(--on-ink);
+  /* Pastilles de couleur et avatars à initiale : leur contour. En sombre, il s'éclaircit pour que la couleur « noir »
+     (#14161B, choisie par le joueur) se détache d'une carte (relecture ordinateur) ; en clair, rien ne change. */
+  --trait-av:var(--line-2);
+  --anneau-av:transparent;
+  /* Bouton désactivé (ordinateur) : gris neutre, texte lisible (4,5:1 au moins dans les deux thèmes) */
+  --btn-off-bg:var(--fill);
+  --btn-off-text:var(--text-3);
+
+  /* Emblèmes de rang : un ton plein par rang (couleurs des rangs, js/core.js TIERS), le signe du rang en blanc par-dessus
+     (3:1 au moins). Fer, Bronze, Argent, Or, Platine, Diamant, Ascendant, Immortel, Radiant. Mêmes tons dans les deux thèmes :
+     l'emblème est un objet, comme une médaille. */
+  --rank-0:#5B6068;
+  --rank-1:#8A5530;
+  --rank-2:#7E8896;
+  --rank-3:#C08A12;
+  --rank-4:#1A8584;
+  --rank-5:#7350E3;
+  --rank-6:#13804F;
+  --rank-7:#AE2139;
+  --rank-8:#CC8400;
+  /* Texte ou icône posé sur une couleur vive et claire choisie par un joueur (emblème de clan ambre) : l'encre, 7,6:1 */
+  --on-vif:#1D1D1F;
 
   /* Typographie : une seule famille, la pile système. Cinq tailles, trois graisses. */
   --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue","Noto Sans",Arial,"Noto Sans Hebrew","Arial Hebrew",sans-serif;
@@ -82,6 +104,12 @@
   --sp-10:40px;
   --sp-12:48px;
   --sp-16:64px;
+  /* Espacements hérités des anciens écrans (3, 6 et 10 px), écrits avec ces trois jetons dans les règles communes : sur
+     téléphone, ils valent la grille (4, 8, 12 px) ; sur ordinateur, l'ancienne valeur, pour ne pas toucher la composition
+     de la partie A (palier S, plus bas). Pour aligner aussi l'ordinateur sur la grille : retirer ces trois lignes du palier S. */
+  --sp-h3:4px;
+  --sp-h6:8px;
+  --sp-h10:12px;
 
   /* Rayons */
   --r-xs:4px;                   /* barres, coches */
@@ -115,7 +143,7 @@
   --tap:44px;                   /* cible tactile minimale */
   --safe-b:env(safe-area-inset-bottom,0px);
   --bas:var(--safe-b);          /* place prise en bas de l'écran : la zone sûre seule, ou la barre d'onglets + la zone sûre (880 px et moins) */
-  --mbar-h:67px;                /* hauteur de la barre d'achat fixe d'un marché, sur téléphone */
+  --mbar-h:71px;                /* hauteur de la barre d’achat fixe d’un marché, sur téléphone (bouton de 46 px, 12 px de marge, filet) */
 
   /* Anciens noms, encore lus par le JavaScript (graphiques du Mode Pro, images générées, styles en ligne). */
   --w:var(--surface);
@@ -176,6 +204,8 @@
   --seg-on:#3A3A40;
   --side-bg:var(--fill);
   --on-side:var(--text);
+  --trait-av:rgba(255,255,255,.42);
+  --anneau-av:rgba(255,255,255,.42);
 
   --shadow-1:0 1px 2px rgba(0,0,0,.5);
   --shadow-2:0 0 0 1px var(--line),0 10px 32px rgba(0,0,0,.55);
@@ -197,7 +227,8 @@
 /* La grille des grands écrans : trois paliers. La largeur sert à montrer plus de contenu (plus de colonnes, plus de
    cartes), jamais à creuser des marges. Sur ordinateur, aucun texte utile sous 13 px ; titres de page plus grands. */
 @media (min-width:880px){      /* palier S : 880 à 1 279 px */
-  :root{--gutter:24px;--col-gap:20px;--rail:300px;--carte-min:240px;--fs-1:13px;--fs-titre:32px;--fs-hero:44px}
+  :root{--gutter:24px;--col-gap:20px;--rail:300px;--carte-min:240px;--fs-1:13px;--fs-titre:32px;--fs-hero:44px;
+    --sp-h3:3px;--sp-h6:6px;--sp-h10:10px}
 }
 @media (min-width:1280px){     /* palier M : 1 280 à 1 679 px */
   :root{--gutter:32px;--col-gap:24px;--rail:400px;--carte-min:240px;--fs-titre:36px;--fs-hero:52px}

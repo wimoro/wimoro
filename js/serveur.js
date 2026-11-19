@@ -524,7 +524,7 @@ function srvChatAjouter(rid,m,mes){
  const moi=m.u===srvMoi()?'me':m.u;
  if(m.k==='evt'){const e=m.ev||{},k=MK[e.m],f=CK[e.foe];
   const t=e.code==='appel'&&k?_t("Appel de clan : {0}, côté {1}. Chacun suit avec sa mise, dans ses limites.",[k.short,e.s==='oui'?_t("Oui"):_t("Non")])
-   :e.code==='guerre'&&f?_t("Guerre de clans contre {0} [{1}] ! 48 h pour marquer des points. Buy-in {2}.",[f.name,f.tag,F.usd0(+e.k)]):'';
+   :e.code==='guerre'&&f?_t("Guerre de clans contre {0} [{1}] : 48 h pour marquer des points. Buy-in {2}.",[f.name,f.tag,F.usd0(+e.k)]):'';
   if(t)addMsg(rid,mkMsg({k:'evt',text:t,at:m.at,sid:m.id}));return;}
  if(m.k==='ana'){const a=m.ana||{},id=+a.ana;if(!id||!MK[a.m])return;                    /* analyse partagée : le message porte une référence, l'instantané se lit à part */
   addMsg(rid,mkMsg({u:moi,k:'ana',text:m.text||'',ana:SRV_ANA.get(id)||null,anaId:id,r:srvReactions(m.r),my:srvMiennes(mes,m.id),at:m.at,sid:m.id}));
@@ -559,14 +559,14 @@ function srvSalons(){
  for(const r of vus)if(!SRV_SALONS.has(r)){SRV_SALONS.add(r);srvSalonOuvrir(r);}
  for(const r of Array.from(SRV_SALONS))if(!vus.has(r)){SRV_SALONS.delete(r);if(!srvPrive(r))API.unsubscribe(srvSujet(r));}
  if((S.ui.route||'')==='chat'&&!srvDmListeVue){srvDmListeVue=true;srvDmListe();}
- if((S.ui.route||'')==='classement')srvClassement();
+ if((S.ui.route||'')==='classement'||((S.ui.route||'')==='communaute'&&GRAND()))srvClassement();   /* la page d'entrée Communauté (ordinateur) montre le haut du classement */
  if((S.ui.route||'')==='duels')srvStacksRelire();
 }
 /* classement : les 50 meilleures fiches viennent du serveur et remplissent l'annuaire (relues au plus une fois par minute) */
 let srvClassementVu=0;
 async function srvClassement(){
  if(Date.now()-srvClassementVu<60000)return;srvClassementVu=Date.now();
- try{const r=await API.call('api_leaderboard');srvFiches(r.users);if((S.ui.route||'')==='classement')render(false);}
+ try{const r=await API.call('api_leaderboard');srvFiches(r.users);if(['classement','communaute'].includes(S.ui.route||''))render(false);}
  catch(e){srvClassementVu=0;console.warn('[srv] classement indisponible',e.code);}
 }
 /* les conversations privées du joueur, pour la colonne des salons */
@@ -666,7 +666,7 @@ async function srvSerieAppel(action,corps,ev){
 }
 /* les annonces d'une manche réglée ou d'un encaissement : mêmes messages qu'en mode Démo */
 function srvSerieAnnonce(x){const d=GM[x.gid]||{name:x.gid};
- if(x.r==='gagnee')toast({tone:'green',icon:'bolt',flash:true,title:`${_t("Manche {0} gagnée : stack {1}",[x.step,F.usd(+x.stack)])}`,text:`${_t("{0} Encaisse ou continue dans les {1} secondes.",[x.out==='be'?_t("Break even !"):x.out==='oui'?_t("Haut."):_t("Bas."),SERIE.CHOICE_MS/1000])}`,href:'#serie'});
+ if(x.r==='gagnee')toast({tone:'green',icon:'bolt',flash:true,title:`${_t("Manche {0} gagnée : stack {1}",[x.step,F.usd(+x.stack)])}`,text:`${_t("{0} Encaisse ou continue dans les {1} secondes.",[x.out==='be'?_t("Break even."):x.out==='oui'?_t("Haut."):_t("Bas."),SERIE.CHOICE_MS/1000])}`,href:'#serie'});
  else if(x.r==='perdue')toast({tone:'red',icon:'bolt',flash:true,title:`${_t("Série perdue à la manche {0}",[x.step])}`,text:`${_t("C’était {0}. Mise perdue : {1}.",[x.out==='be'?'break even':x.out==='oui'?_t("Haut"):_t("Bas"),F.usd(+x.stake)])}`,href:'#serie'});
  else if(x.r==='rendue'){if(x.out)toast({tone:'amber',icon:'wallet',force:true,title:_t("Série annulée"),text:_t("Aucun choix dans les 30 secondes : ta mise t’est rendue."),href:'#serie'});}
  else{const tot=+x.stack/+x.stake;
@@ -1402,7 +1402,7 @@ async function srvDeconnexion(){clearTimeout(srvT);srvEnvoyer();await API.signOu
 /* message affiché après le rechargement qui suit un changement de mode */
 function srvApres(){let k='';try{k=sessionStorage.getItem('wimoro-apres')||'';sessionStorage.removeItem('wimoro-apres');}catch(e){}
  if(k==='connexion'&&SRV())toast({tone:'blue',icon:'check',title:_t("Content de te revoir, {0}",[S.me.n]),text:_t("{0}, solde {1}",[rankName(myRank().t,myRank().d),F.usd(S.me.balance)])});
- else if(k==='inscription'&&SRV())toast({tone:'blue',icon:'check',title:_t("Compte créé, bienvenue {0} !",[S.me.n]),text:_t("Encore 5 petites étapes.")});
+ else if(k==='inscription'&&SRV())toast({tone:'blue',icon:'check',title:_t("Compte créé, bienvenue {0}",[S.me.n]),text:_t("Encore 5 petites étapes.")});
  else if(k==='deconnexion')toast({icon:'out',title:_t("Tu es déconnecté"),text:_t("À bientôt sur Wimoro.")});
  else if(k==='expire')toast({tone:'amber',icon:'lock',force:true,title:_t("Ta session a expiré. Reconnecte-toi.")});
  else if(k==='deco')toast({tone:'amber',icon:'lock',force:true,dur:9000,title:_t("Tu as été déconnecté"),text:_t("L’équipe Wimoro a fermé ta session sur tous tes appareils. Reconnecte-toi pour continuer.")});

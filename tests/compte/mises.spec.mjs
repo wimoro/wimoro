@@ -25,7 +25,7 @@ test('partager une mise : carte posée par le serveur, +5 XP ; un joueur la suit
   expect(await lire(page, () => S.me.notifs[0].text)).toBe('karim followed your bet');
   await page.locator('[data-a="share"]').first().click();                                         // la même position, une seconde fois
   await page.locator('[data-a="share-pick"][data-i="0"]').click();
-  await expect(toast(page, 'You already shared this bet today.')).toBeVisible();
+  await expect(toast(page, 'You already shared this bet today')).toBeVisible();
   expect((await cartes(page, 'general')).length).toBe(1);
   await page.reload(); await expect(page.locator('#view > *').first()).toBeAttached();            // la carte et son compteur viennent du serveur
   await expect.poll(async () => (await cartes(page, 'general')).map(x => x.suivis)).toEqual([1]);

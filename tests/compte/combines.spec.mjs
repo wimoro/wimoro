@@ -61,7 +61,7 @@ test('résolution des marchés : le combiné gagné arrive par la notification d
   await page.evaluate(() => { window.__FAKE_SB__.rpc = { api_combo_place: { error: { message: 'marche_ferme', code: 'P0001' } } }; });
   const solde = await lire(page, () => S.me.balance);
   await clic(page, 'cb-open'); await page.locator('[data-a="cb-place"]').click();
-  await expect(toast(page, 'This market is closed.')).toBeVisible();
+  await expect(toast(page, 'This market is closed')).toBeVisible();
   expect(await lire(page, () => ({ solde: S.me.balance, n: S.me.combos.length, slip: slip().legs.length }))).toEqual({ solde, n: 1, slip: 2 });
   expect(erreurs).toEqual([]);
 });

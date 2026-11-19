@@ -160,8 +160,8 @@ test('maintenance : écran pour les joueurs, bandeau pour l’équipe ; la fin r
 test('ajustement de l’équipe : il apparaît dans l’historique du joueur, et l’écran relit son état quand l’équipe le change', async ({ page }) => {
   const at = Date.now() - 3600e3;
   const { erreurs } = await ouvrir(page, { mode: 'compte', hash: '#portefeuille', faux: { etat: { notifs: [{ id: 'n9', ic: 'wallet', code: 'admin_solde', p: { delta: 25 }, href: '#profil', at, read: true }] } } });
-  await page.locator('[data-a="ptab"][data-v="history"]').click();
-  const ligne = page.locator('.act', { hasText: 'Admin adjustment' });
+  // ordinateur (refonte, partie A) : l'historique a sa propre colonne dans le portefeuille, sans onglet à ouvrir
+  const ligne = page.locator('.wal-side .act', { hasText: 'Admin adjustment' });
   await expect(ligne).toContainText('Adjustment by the Wimoro team');
   await expect(ligne).toContainText('+$25.00');
   await expect(ligne.locator('.sidechip')).toHaveCount(0);

@@ -22,30 +22,31 @@ const pendingRef=()=>LS.g('wimoro-ref')||'';
 
 /* ---------- Image d'un pari ---------- */
 const cssVar=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim()||'#2448FF';
+/* Images à partager (duel, série, clan, parrainage, analyse) : les couleurs du système, lues dans les variables du thème en
+   cours (css/tokens.css) ; un fond uni, l'encre, l'accent ; le vert et le rouge pour Oui / Non et pour un gain / une perte. */
+function imgPal(){const v=cssVar;return {bg:v('--bg'),surface:v('--surface'),fill:v('--fill'),line:v('--line-2'),text:v('--text'),text2:v('--text-2'),text3:v('--text-3'),accent:v('--accent'),accentBg:v('--accent-bg'),on:v('--on-color'),yes:v('--yes'),no:v('--no'),yesBg:v('--yes-bg'),noBg:v('--no-bg')};}
 function wrapLines(ctx,text,maxW,maxLines){const words=String(text).split(/\s+/),lines=[];let cur='';for(const w of words){const tst=cur?cur+' '+w:w;if(ctx.measureText(tst).width>maxW&&cur){lines.push(cur);cur=w;}else cur=tst;}if(cur)lines.push(cur);if(lines.length>maxLines){const L=lines.slice(0,maxLines);let last=L[maxLines-1];while(ctx.measureText(last+'…').width>maxW&&last.length>3)last=last.slice(0,-1).trim();L[maxLines-1]=last+'…';return L;}return lines;}
 function rrect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
 function drawLogo(ctx,x,y,s){rrect(ctx,x,y,s,s,s*.29);ctx.fillStyle='#2448FF';ctx.fill();ctx.save();ctx.translate(x,y);ctx.scale(s/28,s/28);ctx.strokeStyle='#fff';ctx.lineWidth=2.7;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(5,9);ctx.lineTo(9.5,20);ctx.lineTo(14,11.5);ctx.lineTo(18.5,20);ctx.lineTo(23,9);ctx.stroke();ctx.beginPath();ctx.arc(23,9,2.8,0,Math.PI*2);ctx.fillStyle='#F59A0B';ctx.fill();ctx.strokeStyle='#2448FF';ctx.lineWidth=1.5;ctx.stroke();ctx.restore();}
 /* d = {kind:'bet'|'win', q, s, price, amt, gain, mult, pnl} */
 function shareCanvas(d){
  const W=1080,H=1350,c=document.createElement('canvas');c.width=W;c.height=H;const ctx=c.getContext('2d');
- const sg=plain(cssVar('--sg')),font=(w,px)=>`${w} ${px}px ${sg}`,oui=d.s==='oui',accent=oui?'#2448FF':'#F59A0B',txt=s=>plain(String(s));
- ctx.fillStyle='#14161B';ctx.fillRect(0,0,W,H);
- const g=ctx.createRadialGradient(W*.85,H*.1,40,W*.85,H*.1,900);g.addColorStop(0,oui?'rgba(36,72,255,.55)':'rgba(245,154,11,.45)');g.addColorStop(1,'rgba(20,22,27,0)');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
- const g2=ctx.createRadialGradient(W*.1,H*.95,40,W*.1,H*.95,700);g2.addColorStop(0,'rgba(36,72,255,.35)');g2.addColorStop(1,'rgba(20,22,27,0)');ctx.fillStyle=g2;ctx.fillRect(0,0,W,H);
+ const P=imgPal(),sg=plain(cssVar('--sg')),font=(w,px)=>`${w} ${px}px ${sg}`,oui=d.s==='oui',accent=oui?P.yesBg:P.noBg,txt=s=>plain(String(s));
+ ctx.fillStyle=P.bg;ctx.fillRect(0,0,W,H);
  ctx.direction=RTL?'rtl':'ltr';const X=RTL?W-80:80;ctx.textAlign=RTL?'right':'left';
- drawLogo(ctx,RTL?W-80-64:80,80,64);ctx.fillStyle='#fff';ctx.font=font(700,52);ctx.textBaseline='middle';ctx.fillText('wimoro',RTL?W-80-64-18:80+64+18,112);
- ctx.font=font(500,30);ctx.fillStyle='rgba(255,255,255,.72)';ctx.textBaseline='alphabetic';ctx.fillText(txt(d.kind==='win'?_t('J’ai gagné sur Wimoro'):_t('Mon pari sur Wimoro')),X,215);
+ drawLogo(ctx,RTL?W-80-64:80,80,64);ctx.fillStyle=P.text;ctx.font=font(600,52);ctx.textBaseline='middle';ctx.fillText('wimoro',RTL?W-80-64-18:80+64+18,112);
+ ctx.font=font(500,30);ctx.fillStyle=P.text3;ctx.textBaseline='alphabetic';ctx.fillText(txt(d.kind==='win'?_t('J’ai gagné sur Wimoro'):_t('Mon pari sur Wimoro')),X,215);
  /* taille de la question selon sa longueur (2 lignes : 84 px, 3 : 74, davantage : 62), puis bloc centré entre le titre et le pied */
- let qf=62,lines;for(const [z,mx] of [[84,2],[74,3],[62,4]]){ctx.font=font(700,z);lines=wrapLines(ctx,txt(d.q),W-160,4);qf=z;if(lines.length<=mx)break;}
+ let qf=62,lines;for(const [z,mx] of [[84,2],[74,3],[62,4]]){ctx.font=font(600,z);lines=wrapLines(ctx,txt(d.q),W-160,4);qf=z;if(lines.length<=mx)break;}
  const lh=Math.round(qf*1.2),big=lines.length<=3,vf=big?72:56,G1=44,G2=96,blockH=lines.length*lh+G1+90+G2+36+vf+20,top=250,bot=H-290;
- ctx.font=font(700,qf);ctx.fillStyle='#fff';let y=top+Math.max(0,Math.round((bot-top-blockH)/2))+qf;for(const l of lines){ctx.fillText(l,X,y);y+=lh;}
- y+=G1-lh+qf*.2+52;ctx.font=font(700,44);const chipW=ctx.measureText(txt(oui?_t('Oui'):_t('Non'))).width+76;rrect(ctx,RTL?X-chipW:X,y-56,chipW,90,24);ctx.fillStyle=accent;ctx.fill();ctx.fillStyle=oui?'#fff':'#14161B';ctx.fillText(txt(oui?_t('Oui'):_t('Non')),RTL?X-38:X+38,y+4);
- y+=34+G2+36;const cols=d.kind==='win'?[[_t('Résultat'),F.signed(d.pnl),'#4ADE80'],[_t('Côté'),oui?_t('Oui'):_t('Non'),'#fff']]:[[_t('Prix d’entrée'),F.c(d.price),'#fff'],[_t('Mise'),F.usd0(d.amt),'#fff'],[_t('Gain possible'),F.signed(d.gain)+(d.mult?` (×${F.d1(d.mult)})`:''),'#4ADE80']];
- const wts=cols.length>2?[1,1,1.8]:[1,1],wsum=wts.reduce((a,b)=>a+b,0),cws=wts.map(w=>(W-160)*w/wsum);let vz=cols.length>2?(big?58:48):vf;ctx.font=font(700,vz);while(vz>34&&cols.some((c,i)=>ctx.measureText(plain(c[1])).width>cws[i]-28)){vz-=2;ctx.font=font(700,vz);}cols.forEach(([k,v,col],i)=>{const off=cws.slice(0,i).reduce((a,b)=>a+b,0),cx=RTL?X-off:X+off;ctx.font=font(500,big?32:28);ctx.fillStyle='rgba(255,255,255,.6)';ctx.fillText(txt(k),cx,y);ctx.font=font(700,vz);ctx.fillStyle=col;const num=/\d/.test(v);if(num)ctx.direction='ltr';ctx.fillText(num?plain(v):txt(v),cx,y+(big?84:66));if(num)ctx.direction=RTL?'rtl':'ltr';});
- y=H-250;ctx.strokeStyle='rgba(255,255,255,.14)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(80,y-40);ctx.lineTo(W-80,y-40);ctx.stroke();
- const r=myRank();ctx.font=font(600,34);ctx.fillStyle='#fff';ctx.fillText(txt(`‎@${S.me.n} · ${rankName(r.t,r.d)}`),X,y+10);
- ctx.font=font(500,28);ctx.fillStyle='rgba(255,255,255,.7)';ctx.fillText(txt(_t('Rejoins-moi avec le code {0} : {1} offerts.',[refCode(),F.usd0(REF.BONUS)])),X,y+62);
- ctx.font=font(700,30);ctx.fillStyle='#8FA3FF';ctx.fillText('wimoro.com',X,y+118);
+ ctx.font=font(600,qf);ctx.fillStyle=P.text;let y=top+Math.max(0,Math.round((bot-top-blockH)/2))+qf;for(const l of lines){ctx.fillText(l,X,y);y+=lh;}
+ y+=G1-lh+qf*.2+52;ctx.font=font(600,44);const chipW=ctx.measureText(txt(oui?_t('Oui'):_t('Non'))).width+76;rrect(ctx,RTL?X-chipW:X,y-56,chipW,90,24);ctx.fillStyle=accent;ctx.fill();ctx.fillStyle=P.on;ctx.fillText(txt(oui?_t('Oui'):_t('Non')),RTL?X-38:X+38,y+4);
+ y+=34+G2+36;const cols=d.kind==='win'?[[_t('Résultat'),F.signed(d.pnl),P.yes],[_t('Côté'),oui?_t('Oui'):_t('Non'),P.text]]:[[_t('Prix d’entrée'),F.c(d.price),P.text],[_t('Mise'),F.usd0(d.amt),P.text],[_t('Gain possible'),F.signed(d.gain)+(d.mult?` (×${F.d1(d.mult)})`:''),P.yes]];
+ const wts=cols.length>2?[1,1,1.8]:[1,1],wsum=wts.reduce((a,b)=>a+b,0),cws=wts.map(w=>(W-160)*w/wsum);let vz=cols.length>2?(big?58:48):vf;ctx.font=font(600,vz);while(vz>34&&cols.some((c,i)=>ctx.measureText(plain(c[1])).width>cws[i]-28)){vz-=2;ctx.font=font(600,vz);}cols.forEach(([k,v,col],i)=>{const off=cws.slice(0,i).reduce((a,b)=>a+b,0),cx=RTL?X-off:X+off;ctx.font=font(500,big?32:28);ctx.fillStyle=P.text3;ctx.fillText(txt(k),cx,y);ctx.font=font(600,vz);ctx.fillStyle=col;const num=/\d/.test(v);if(num)ctx.direction='ltr';ctx.fillText(num?plain(v):txt(v),cx,y+(big?84:66));if(num)ctx.direction=RTL?'rtl':'ltr';});
+ y=H-250;ctx.strokeStyle=P.line;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(80,y-40);ctx.lineTo(W-80,y-40);ctx.stroke();
+ const r=myRank();ctx.font=font(600,34);ctx.fillStyle=P.text;ctx.fillText(txt(`\u200e@${S.me.n} · ${rankName(r.t,r.d)}`),X,y+10);
+ ctx.font=font(500,28);ctx.fillStyle=P.text3;ctx.fillText(txt(_t('Rejoins-moi avec le code {0} : {1} offerts.',[refCode(),F.usd0(REF.BONUS)])),X,y+62);
+ ctx.font=font(600,30);ctx.fillStyle=P.accent;ctx.fillText('wimoro.com',X,y+118);
  return c;
 }
 function shareData(kind,o){const m=MK[o.m];if(kind==='win')return {kind:'win',q:o.q,s:o.s,pnl:o.pnl};const p=posOf(o.m,o.s),cost=p.sh*p.avg/100,gain=p.sh-cost;return {kind:'bet',q:m?m.q:o.q,s:o.s,price:p.avg,amt:cost,gain,mult:p.avg>0?100/p.avg:0};}
@@ -80,7 +81,25 @@ function botReferral(){if(!S.me.logged||!S.me.refShared)return;const L=refsAll()
   toast({tone:'green',icon:'gift',title:`${_t("{0} a placé son premier pari",[pend.n])}`,text:`${_t("{0} de parrainage crédités sur ton solde.",[F.usd0(REF.BONUS)])}`,href:'#parrainage'});notif('gift',`${_t("Parrainage : {0} a placé son premier pari, {1} pour toi.",[pend.n,F.usd0(REF.BONUS)])}`,'#parrainage');save();return;}
  if(L.length>=12||R()>.3)return;const n=pick(REF_NAMES.filter(x=>!L.some(r=>r.n===x)))||('ami'+Math.floor(R()*900+100));L.unshift({n,at:now(),st:'pending',paid:0});
  toast({icon:'users',title:`${_t("{0} a rejoint Wimoro avec ton code",[n])}`,text:`${_t("Tu recevras {0} dès son premier pari.",[F.usd0(REF.BONUS)])}`,href:'#parrainage'});notif('users',`${_t("{0} s’est inscrit avec ton code de parrainage.",[n])}`,'#parrainage');save();}
+/* Les trois étapes (téléphone : carte « Comment ça marche » ; ordinateur : à côté du code) */
+const refEtapesH=()=>`<div class="refsteps">${[['share',_t("Partage ton lien ou ton code"),_t("Par message, dans une story, ou avec l’image d’un de tes paris.")],['userplus',`${_t("Ton ami s’inscrit : {0} pour lui",[F.usd0(REF.BONUS)])}`,_t("Le bonus arrive sur son solde dès la création de son compte.")],['gift',`${_t("Il place son premier pari : {0} pour toi",[F.usd0(REF.BONUS)])}`,_t("Crédités automatiquement, sans rien faire.")]].map(([i,t2,s2],k)=>`<div class="refstep"><span class="rs-n">${k+1}</span><span class="rs-i">${ic(i,18)}</span><div><b>${t2}</b><small>${s2}</small></div></div>`).join('')}</div>`;
+const refKpisH=(L,done)=>`<div class="cp-kpis"><div><small>${_t("Filleuls")}</small><b class="num">${F.int(L.length)}</b></div><div><small>${_t("Premier pari placé")}</small><b class="num">${F.int(done)}</b></div><div><small>${_t("Gagné")}</small><b class="num ${refEarned()>0?'pl-up':''}">${F.usd(refEarned())}</b></div></div>`;
+const refListeH=L=>L.length?L.map(r=>`<div class="act"><span><b class="c-1">${esc(r.n)}</b><small class="d-block mt-1">${r.st==='done'?`${_t("Premier pari placé, {0}",[ago(r.doneAt)])}`:`${_t("Inscrit {0}, en attente de son premier pari",[ago(r.at)])}`}</small></span><b class="num ${r.st==='done'?'pl-up':''}">${r.st==='done'?F.signed(r.paid):'—'}</b></div>`).join(''):`<p class="sub">${_t("Personne pour l’instant. Partage ton lien pour commencer.")}</p>`;
+/* Ordinateur (relecture) : une carte « inviter » composée pour le grand écran. À gauche, le code (son bouton « copier »
+   à côté), le lien (le sien dans le champ) et un seul bouton bleu à la largeur de son texte ; à droite, les trois étapes.
+   Colonne de droite : une seule carte « Tes filleuls », les trois chiffres en tête et la liste dessous. Mêmes actions
+   (ref-share, ref-copy) ; le bouton « copier le code » reste le dernier ref-copy de la page. */
+function refOrdiH(L,done,code,link){
+ return `<div class="wrap refw"><nav class="crumbs"><a href="#profil">${_t("Ton profil")}</a><span>/</span><span>${_t("Parrainage")}</span></nav><div class="pagehead mt-3"><div><h1 class="ptitle">${_t("Invite tes amis")}</h1><p class="plead">${_t("Ton ami reçoit {0} à son inscription avec ton code. Tu reçois {0} dès qu’il place son premier pari. Sans limite.",[F.usd0(REF.BONUS)])}</p></div></div>
+ <div class="g-side"><div class="col"><section class="pn pad refcard refo"><div class="refo-code"><div class="sub">${_t("Ton code de parrainage")}</div><div class="refcode num">${esc(code)}</div>
+  <div class="reflink"><span>${esc(link)}</span><button class="ibtn" data-a="ref-copy" data-v="${esc(link)}" aria-label="${_t("Copier le lien")}" title="${_t("Copier le lien")}">${ic('copy',16)}</button></div>
+  <button class="btn b-pri lg refo-go" data-a="ref-share">${_t("{0} Partager mon lien",[ic('share',16)])}</button>
+  <button class="ibtn refo-cc" data-a="ref-copy" data-v="${esc(code)}" aria-label="${_t("Copier le code")}" title="${_t("Copier le code")}">${ic('copy',16)}</button></div>
+  <div class="refo-how"><div class="h2 mb-4">${_t("Comment ça marche")}</div>${refEtapesH()}</div></section></div>
+ <aside class="col"><section class="pn pad refo-fil"><div class="h2 mb-4">${_t("Tes filleuls")}</div>${refKpisH(L,done)}<div class="refo-l">${refListeH(L)}</div></section>
+ ${S.me.refBy?`<section class="pn pad"><div class="sub">${_t("Tu as été parrainé avec le code <b>{0}</b> : {1} offerts à ton inscription.",[esc(S.me.refBy),F.usd0(REF.BONUS)])}</div></section>`:''}</aside></div></div>`;}
 function vReferral(){const L=refsAll(),done=L.filter(r=>r.st==='done').length,code=refCode(),link=refLink();
+ if(GRAND())return refOrdiH(L,done,code,link);
  return `<div class="wrap"><nav class="crumbs"><a href="#profil">${_t("Ton profil")}</a><span>/</span><span>${_t("Parrainage")}</span></nav><div class="pagehead mt-3"><div><h1 class="ptitle">${_t("Invite tes amis")}</h1><p class="plead">${_t("Ton ami reçoit {0} à son inscription avec ton code. Tu reçois {0} dès qu’il place son premier pari. Sans limite.",[F.usd0(REF.BONUS)])}</p></div></div>
  <div class="g-side"><div class="col">
  <section class="pn pad refcard"><div class="sub">${_t("Ton code de parrainage")}</div><div class="refcode num">${esc(code)}</div><div class="reflink"><span>${esc(link)}</span></div><div class="hbtns"><button class="btn b-pri" data-a="ref-share">${_t("{0} Partager mon lien",[ic('share',16,'#fff')])}</button><button class="btn b-white" data-a="ref-copy" data-v="${esc(link)}">${_t("{0} Copier le lien",[ic('copy',16)])}</button><button class="btn b-white" data-a="ref-copy" data-v="${esc(code)}">${_t("Copier le code")}</button></div></section>
