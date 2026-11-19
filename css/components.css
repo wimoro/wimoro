@@ -212,7 +212,7 @@
 .umenu .uh div{display:flex;flex-direction:column;min-width:0}
 .umenu .uh small{color:var(--text-3);font-size:var(--fs-1)}
 .umenu .ui{display:flex;align-items:center;gap:var(--sp-3);width:100%;min-height:40px;padding-inline:var(--sp-3);border-radius:var(--r-sm);font-size:var(--fs-2);font-weight:var(--fw-medium)}
-.umenu .ui.out{color:var(--no)}
+.umenu .ui.out{color:var(--text)}
 @media (hover:hover){.umenu .ui:hover{background:var(--fill)}}
 
 /* ====================================================================== Notifications éphémères */

@@ -55,7 +55,7 @@ const beMax=(g,d)=>Math.floor(beRoom(g)/beMult(d));
 function flashPrices(g){const d=GM[g.gid]||GAMES[0],t=flashPool(g),e=Math.max(2,Math.min(20,Math.round(100/beMult(d)))),so=g.pool.o/(g.pool.o+g.pool.n);let o=Math.round((100-e)*so);o=clamp(o,2,98-e);return {o,e,n:100-e-o};}
 function flashOdds(g){return flashPrices(g||G('btc')).o;}
 const multTxt=p=>'×'+(100/p>=10?Math.round(100/p):F.d1(100/p));
-const pctFx=v=>bidi((v>=0?'+':'−')+NB(nf2.format(Math.abs(v)))+(SYMB?'%':' %'));
+const pctFx=v=>bidi((v>=0?'+':'−')+NB(nf2.format(Math.abs(v)))+(SYMB?'%':' %'));
 /* ----- Horloge commune : les manches sont calées sur l'heure réelle -----
    Une manche commence à un multiple de 45 s ; son numéro, les prix, les cagnottes de départ, l'activité des autres joueurs
    et les résultats se déduisent de l'heure. Tout le monde voit donc la même manche au même moment, même après un

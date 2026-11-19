@@ -23,7 +23,7 @@ h1,h2,h3,h4{font-size:inherit;font-weight:var(--fw-bold);line-height:var(--lh-sn
 .up{color:var(--yes)}
 .dn{color:var(--no)}
 .h2{font-size:var(--fs-4);font-weight:var(--fw-bold);letter-spacing:var(--track-title);line-height:var(--lh-snug)}
-.sub{font-size:var(--fs-2);color:var(--text-3);margin-top:var(--sp-1)}
+.sub{font-size:var(--fs-2);color:var(--text-3);margin-top:var(--sp-1);max-width:72ch}   /* une ligne de texte ne dépasse pas 72 caractères, même sur très grand écran */
 .sub:empty{display:none}
 .ptitle{font-size:var(--fs-5);font-weight:var(--fw-bold);letter-spacing:var(--track-title);line-height:var(--lh-tight)}
 .plead{font-size:var(--fs-3);color:var(--text-2);margin-top:var(--sp-2);max-width:60ch}

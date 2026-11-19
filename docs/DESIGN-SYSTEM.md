@@ -106,7 +106,7 @@ Graisses : 400, 500, 600. Les titres (20 px et plus) sont resserrés par `--trac
   `--r-xl` 20 (fenêtres) · `--r-pill`.
 - Ombres : `--shadow-1` (poignée d'un interrupteur), `--shadow-2` (menu, notification), `--shadow-3` (fenêtre).
 - Durées : `--dur-1` 150 ms (survol, appui) · `--dur-2` 200 ms (menus, onglets) · `--dur-3` 250 ms (feuilles, fenêtres).
-- Mise en page : `--page` 1200 px de large au plus ; `--gutter`, marge de page fluide (de 16 à 24 px jusqu'à 879 px, puis
+- Mise en page : `--page`, largeur utile maximale, de 1 200 px à 1 360 px selon la largeur de la fenêtre (`clamp`) ; `--gutter`, marge de page fluide (de 16 à 24 px jusqu'à 879 px, puis
   24 et 32 px) ; `--bar-h` et `--tab-h` 56 px ; `--bas`, la place prise en bas de l'écran (règle 14) ; `--mbar-h`, la hauteur
   de la barre d'achat fixe d'un marché ; `--tap` 44 px.
 

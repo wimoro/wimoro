@@ -15,8 +15,9 @@ const NB=s=>String(s).replace(/[  ]/g,' ');
 const nf0=new Intl.NumberFormat(LOC,{maximumFractionDigits:0}),nf1=new Intl.NumberFormat(LOC,{minimumFractionDigits:1,maximumFractionDigits:1}),nf2=new Intl.NumberFormat(LOC,{minimumFractionDigits:2,maximumFractionDigits:2});
 /* Formats : « 1 000,00 $ » en français ; « $1,000.00 » en anglais et en hébreu (isolé pour rester lisible de droite à gauche). */
 const SYMB=LANG!=='fr';
-const money=s=>bidi(SYMB?'$'+s:s+' $');
-const unit=(s,u)=>bidi(SYMB?s+u:s+' '+u);
+/* espace insécable ( ) entre le nombre et son symbole : « 949,01 $ » ou « 63 % » ne se coupent jamais en fin de ligne */
+const money=s=>bidi(SYMB?'$'+s:s+' $');
+const unit=(s,u)=>bidi(SYMB?s+u:s+' '+u);
 const F={
  int:v=>bidi(NB(nf0.format(Math.round(v)))),
  d1:v=>bidi(NB(nf1.format(v))),
@@ -33,9 +34,9 @@ const F={
  pct1:r=>unit(NB(nf1.format(r*100)),'%'),
  /* C17 : un impact inférieur au centième de point est dit tel quel, plutôt que « +0,00 pt » */
  imp:d=>d===0?bidi('0 '+_t('pt')):Math.abs(d)<0.005?_t('{0} (négligeable)',[bidi('< '+NB(nf2.format(0.01))+' '+_t('pt'))]):bidi((d>=-0.004?'+':'−')+NB(nf2.format(Math.abs(d)))+' '+_t('pt')),
- compact:v=>bidi(SYMB?(v>=1e6?'$'+NB(nf1.format(v/1e6))+'M':v>=1e3?'$'+NB(nf0.format(v/1e3))+'K':'$'+NB(nf0.format(v))):(v>=1e6?NB(nf1.format(v/1e6))+' M$':v>=1e3?NB(nf0.format(v/1e3))+' k$':NB(nf0.format(v))+' $')),
+ compact:v=>bidi(SYMB?(v>=1e6?'$'+NB(nf1.format(v/1e6))+'M':v>=1e3?'$'+NB(nf0.format(v/1e3))+'K':'$'+NB(nf0.format(v))):(v>=1e6?NB(nf1.format(v/1e6))+' M$':v>=1e3?NB(nf0.format(v/1e3))+' k$':NB(nf0.format(v))+' $')),
  pts:d=>{const r=Math.round(d),a=Math.abs(r);return bidi((r>=0?'+':'−')+_t('{0, plural, one{# pt} other{# pts}}',[a]));},
- xp:v=>bidi(NB(nf0.format(Math.round(v)))+' XP'),
+ xp:v=>bidi(NB(nf0.format(Math.round(v)))+' XP'),
  parse:s=>{const n=numOf(s);return isNaN(n)?0:n;},
  inp:n=>LANG==='fr'?String(n).replace('.',','):String(n),
  /* pourcentage signé (« −10 % », « +20% »), rang (« 1 284e », « 1,284th ») et « libellé : valeur » selon la langue */

@@ -76,7 +76,7 @@ function introH(){return `<section class="intro"><h2 class="ptitle">${_t("Parie 
    Sur téléphone et tablette (colonnes empilées, 1100 px et moins), les blocs de la colonne secondaire des écrans listés
    ci-dessous arrivent repliés : seul leur titre s'affiche, un appui les déplie. Rien n'est retiré du document : les
    mises à jour en direct (data-fx, data-bz…) continuent d'écrire dedans. Le choix est gardé le temps de la visite. */
-const REPLI={ouvert:new Set(),routes:{eclair:1,blitz:1,serie:1,duels:1,duel:1,combines:1,clan:1,classement:1,joueur:1},
+const REPLI={ouvert:new Set(),routes:{eclair:1,blitz:1,serie:1,duels:1,duel:1,combines:1,clan:1,classement:1,joueur:1,rang:1},
  sel:'aside.col>section.pn:not(.chat):not(.ticket),.g-side>.col+.col>section.pn:not([data-flbet])'};
 function replier(){const view=$('#view');if(!view)return;const r=(S.ui.route||'accueil').split('-')[0];if(!REPLI.routes[r]||innerWidth>1100)return;
  view.querySelectorAll(REPLI.sel).forEach(sec=>{const tete=sec.firstElementChild;if(!tete||sec.classList.contains('repli'))return;const titre=tete.matches('.h2,h2,h3')?tete:tete.querySelector('.h2,h2,h3');if(!titre)return;

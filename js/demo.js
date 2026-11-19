@@ -210,6 +210,6 @@ const DEMO_RK_SUB=()=>_t('Un clic sur un rang et ton compte démo y passe tout d
 function demoRankH(){if(!isDemoAcc())return '';return `<section class="pn pad demo-rk"><div class="h2">${demoB()} ${_t('Changer de rang')}</div><div class="sub">${DEMO_RK_SUB()}</div>${demoRankListH()}</section>`;}
 function demoRankModal(){if(!isDemoAcc())return;openModal(`<div class="md demo-rk"><div class="md-h"><div><h3>${_t('Changer de rang')}</h3><p>${DEMO_RK_SUB()}</p></div><button class="x" data-a="close" aria-label="${esc(_t('Fermer'))}">${ic('x')}</button></div>${demoRankListH()}</div>`,'wide');}
 /* entrée du menu du compte et de « Mon compte » (compte démo seulement) */
-const demoRankItemH=()=>isDemoAcc()?`<button class="ui" data-a="demo-rank-open">${ic('trophy',16)} ${_t('Changer de rang')}${demoB()}</button>`:'';
+const demoRankItemH=()=>isDemoAcc()?`<button class="ui" data-a="demo-rank-open">${ic('layers',16)} ${_t('Changer de rang')}${demoB()}</button>`:'';
 Object.assign(ACT,{'demo-rank':a=>demoRankSet(+a.dataset.t),'demo-rank-reset':()=>demoRankReset(),'demo-rank-open':()=>{const u=$('#umenu');if(u)u.remove();demoRankModal();}});
 
