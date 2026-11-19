@@ -19,8 +19,9 @@ Le navigateur n'écrit **jamais** directement dans une table. Il appelle des fon
   propriétaire (`SECURITY DEFINER`), avec `search_path` vide, et vérifient toujours l'identité de l'appelant
   (`wm.uid()`) ;
 - **`wm.droits()`** distribue les droits d'appel, à la fin de chaque migration : toute fonction `api_x` est ouverte aux
-  joueurs connectés (avec la fonction `wm.x` qu'elle appelle) ; seules `api_markets` et `api_pseudo_libre` sont ouvertes
-  aux visiteurs ; tout le reste de `wm` est fermé. Test : `tests/sql/missions.spec.mjs`.
+  joueurs connectés (avec la fonction `wm.x` qu'elle appelle) ; seules `api_markets`, `api_pseudo_libre` et `api_site`
+  sont ouvertes aux visiteurs (la liste se complète par la table `wm.droits_liste`, sans réécrire `wm.droits`) ; tout le
+  reste de `wm` est fermé. Test : `tests/sql/missions.spec.mjs`.
 
 Une fonction qui modifie quelque chose renvoie `{ me, ev, … }` : `me` est le profil et les compteurs à jour, `ev` la liste
 de ce que l'écran doit montrer (`xp`, `notif`, `badge`, `mission`, `dep`, `wd`). Une erreur métier est un **code**
@@ -76,7 +77,10 @@ avec la même clé, l'opération n'est appliquée qu'une fois et renvoie le mêm
 | (organisation) `wm.etat_blocs`, `wm.suites_blocs` | interne | blocs de `api_state` et étapes exécutées après la résolution d'un marché : un lot enregistre sa fonction dans la table au lieu de réécrire `wm.state()` ou `wm.marche_suites()` |
 | (pas de fonction dédiée : `api_state` → `ref`) | joueur | parrainage : code du joueur, code qui l'a parrainé, filleuls. Le code saisi à l'inscription est lu par le déclencheur de création du compte (`wm.ref_appliquer`) ; le bonus du parrain part au premier pari du filleul (déclencheur `ref_premier_pari` sur `user_stats`, rattrapage par `wm.ref_regler` au chargement). Tables `wm.ref_codes`, `wm.parrainages` |
 | `api_combo_place(p)`, `api_combo_cash(id)`, `api_combos()` | joueur | paris combinés : prix bloqués à la validation, encaissement à la valeur du moment, règlement à la résolution des marchés (`wm.combos`) |
-| `api_admin(action, paramètres)` | administrateur | la seule porte du panel d'administration : `moi`, `chiffres`, `joueurs`, `joueur`, `solde`, `xp`, `rang`, `kyc`, `suspendre`, `marches`, `marche`, `marche_etat`, `resoudre`, `chat`, `masquer`, `bots`, `journal`. Refusée (`interdit`) à tout compte absent de `public.admin_users` ; chaque modification est écrite dans `wm.admin_journal` |
+| `api_admin(action, paramètres)` | administrateur | la porte de l'ancien panel d'administration (`admin.html`) : `moi`, `chiffres`, `joueurs`, `joueur`, `solde`, `xp`, `rang`, `kyc`, `suspendre`, `marches`, `marche`, `marche_etat`, `resoudre`, `chat`, `masquer`, `bots`, `journal`. Refusée (`interdit`) à tout compte absent de `public.admin_users`, ou présent mais retiré de l'équipe (ou devenu modérateur) ; `mfa_requise` si le compte a un code de double authentification et que la session n'est pas `aal2`. Chaque modification est écrite dans `wm.admin_journal`, et recopiée dans `wm.journal` (§ 9) |
+| `api_equipe(action, paramètres)` | équipe (administrateur, modérateur) | la porte du nouveau panneau : rôle vérifié à chaque appel, registre des actions, double authentification, motif, journal en ajout seul. Détail au § 9 |
+| `api_site()` | visiteur | ce que l'écran doit savoir du site : réglages publics (`v`), révision (`rev`), annonce en cours, maintenance (`{actif, message}`). Ne réveille pas les bots |
+| `api_mes_blocages()` | joueur | ses blocages en cours : `[{id, acces, salon, fin}]` (`fin` en millisecondes, -1 : sans fin). Pour griser un bouton ; le serveur refuse de toute façon |
 | `api_test_end()` | compte de test | un compte `wimoro-e2e-…@example.com` se supprime lui-même à la fin des tests ; refusée à tout autre compte |
 
 Les **anciennes fonctions** (`place_bet`, `demo_deposit`, `get_markets`, `send_chat_message`…) existent toujours dans
@@ -96,6 +100,11 @@ lecture n'est rendu. Retour arrière : `supabase/livraison/retour_ancienne_api.s
   limite une mise (pas de plafond lié au rang).
 - Marchés à plusieurs issues : `wm.group_rebalance` garde le total à exactement 100 %.
 - Prix à 6 décimales : un petit ordre fait bouger le prix ; un ordre découpé paie le même impact.
+- Les frais (`wm.fee_rate` : taux de la catégorie × multiplicateur × remise du rang Diamant) et les bornes des mises
+  lisent les réglages (`wm.reglages`, § 9) ; `wm.fee_rate` et `wm.quote_buy` sont `STABLE` depuis le 19 nov. 2026. Avec
+  les valeurs par défaut, le résultat est exactement celui d'avant (`tests/sql/reglages-frais.spec.mjs`). **Attention** :
+  l'aperçu du ticket est calculé par `js/engine.js` avec ses propres constantes ; si un administrateur change un frais,
+  l'aperçu restera faux tant que l'écran ne lit pas `api_site()` (lot de l'interface).
 
 ## 4. Bots teneurs de marché
 
@@ -132,7 +141,8 @@ déduisent de l'heure. Le calcul vit dans `js/moteur-eclair.js`, module pur ; l'
 
 Tout est nommé « démo » dans le code et la base (`api_demo_…`, `wm.demo_…`, écritures `demo_deposit` et `demo_withdraw`
 du journal `balance_ledger`). Les barèmes (monnaies, réseaux, minimums, frais) sont dans `wm.argent()`, copie de ceux du
-front. Un dépôt naît « en attente » avec une échéance (`due_at` = nombre de confirmations × 650 ms) ; `wm.demo_regler`
+front ; depuis le 19 nov. 2026, chaque valeur réglable y est remplacée par son réglage (`wm.argent_regle`), et deux
+plafonds du site s'ajoutent, vides par défaut : `depots.max_jour` (`limite_depot`) et `retraits.max` (`retrait_max`). Un dépôt naît « en attente » avec une échéance (`due_at` = nombre de confirmations × 650 ms) ; `wm.demo_regler`
 le crédite quand elle est passée, avec ses effets (mission, 100 XP au premier dépôt du jour, rang, badge).
 
 Jeu responsable (`wm.rg`) : plafonds de dépôt (une baisse est immédiate, une hausse attend 48 heures), pause (ni pari ni
@@ -151,16 +161,18 @@ dépôt, retrait possible, impossible à écourter), auto-exclusion (`wm.uid()` 
 | Sujet | Accès | Contenu |
 |---|---|---|
 | `marches` | public | un message par tick des bots et par achat ou vente : marchés modifiés, mises, signal de foule |
-| `salon:general`, `salon:m:<marché>` | public | messages du chat du salon (`msg`), message retiré (`del`), nouveau nombre de suivis d'une mise partagée (`fc`), nouveaux compteurs de réactions d'un message (`re`, sans dire qui a réagi) |
-| `clan:<identifiant>` | **privé** : la règle `wm_membre_lit_son_clan` n'y admet que les membres actuels de ce clan (`wm.clan_sujet()`) | tout ce qui se passe dans le salon du clan : `msg`, `del`, `fc`, `re` (mêmes événements que les salons publics, choisis par `wm.chat_diffuser`) |
-| `joueur:<identifiant>` | **privé** : la règle `wm_joueur_lit_son_sujet` sur `realtime.messages` n'y admet que ce joueur | ses messages privés reçus (`dm`), ses notifications (`notif`), une réaction de l'autre participant dans une conversation privée (`re`), un bot qui a réagi à l'un de ses messages (`reac`, +1 XP) |
+| `site` | public | ce que l'équipe change pour tout le monde (déclencheurs de la migration `diffusion_temps_reel`) : un réglage public (`cfg` : `{cle, v, rev}`), l'annonce (`annonce` : `{annonce, rev}`, `null` si retirée), la maintenance (`maint` : `{actif, message, rev}`), le titre d'un marché corrigé (`marche` : `{id, q, short}`). Un seul événement par réglage et par transaction, avec la valeur finale ; `rev` est celle d'`api_site()` |
+| `salon:general`, `salon:blitz`, `salon:m:<marché>` | public | messages du chat du salon (`msg`), message retiré (`del`), nouveau nombre de suivis d'une mise partagée (`fc`), nouveaux compteurs de réactions d'un message (`re`, sans dire qui a réagi), règles du salon changées par l'équipe (`regle` : `{salon, lent, ferme}`) |
+| `clan:<identifiant>`, `vip` | **privé** : la règle `wm_membre_lit_son_clan` n'admet que les membres actuels du clan (`wm.clan_sujet()`), `wm_vip_lit_son_salon` les joueurs du rang Ascendant | tout ce qui se passe dans le salon : `msg`, `del`, `fc`, `re`, `regle` (mêmes événements que les salons publics, choisis par `wm.chat_diffuser`) |
+| `joueur:<identifiant>` | **privé** : la règle `wm_joueur_lit_son_sujet` sur `realtime.messages` n'y admet que ce joueur | ses messages privés reçus (`dm`), ses notifications (`notif`), une réaction de l'autre participant dans une conversation privée (`re`), un bot qui a réagi à l'un de ses messages (`reac`, +1 XP) ; et de l'équipe : son état à relire (`etat` : solde, rang ou KYC changés), un blocage posé (`bloc` : `{id, acces, salon, fin}`, comme `api_mes_blocages`) ou levé (`debloc` : `{id, acces, salon}`), une déconnexion forcée (`deco` : `{at}`) |
 
 ## 7. Tests du back
 
 `tests/sql/` charge une vraie base Postgres embarquée (PGlite) avec la photo du schéma puis toutes les migrations du
-dépôt, en moins d'une seconde, et exécute les fonctions « en tant que » un visiteur ou un joueur. 74 tests : sécurité,
-comptes, moteur, bots, argent fictif, jeu responsable, missions, chat, pari éclair, amis, messages privés, invariants (solde jamais négatif, opérations
-simultanées, rejeu d'une clé).
+dépôt, en moins d'une seconde, et exécute les fonctions « en tant que » un visiteur ou un joueur. 220 tests au 19 nov.
+2026 : sécurité, comptes, moteur, bots, argent fictif, jeu responsable, missions, chat, pari éclair, amis, messages privés,
+invariants (solde jamais négatif, opérations simultanées, rejeu d'une clé), et le panneau d'administration (§ 9 :
+`sauvegarde-20261119`, `equipe`, `blocages`, `gardes`, `reglages-frais`, `diffusion`).
 
 ## 8. Ajouter une fonction
 
@@ -170,3 +182,103 @@ simultanées, rejeu d'une clé).
 3. L'appliquer comme migration (jamais de SQL à la main), renommer le fichier avec le numéro de version attribué, et
    vérifier l'empreinte avec `tools/verifier-migrations.mjs`.
 4. Brancher le front (`API.call('api_ma_fonction', …)`), le faux serveur des tests, et les tests d'écran.
+
+Pour **ajouter un contrôle à une fonction existante** (blocage, réglage) sans rien changer d'autre :
+`tools/garde-fonctions.mjs` part de sa définition en vigueur et n'ajoute que des lignes marquées `-- [ajout]` ou ne remplace
+qu'un littéral par `wm.reglage_num('<clé>', <le même littéral>)` (`-- [réglage]`) ; `tests/sql/gardes.spec.mjs` vérifie
+qu'aucune autre fonction n'a bougé, qu'aucune autre ligne n'a changé, et rejoue un scénario de référence avant et après.
+
+## 9. Panneau d'administration : équipe, réglages, blocages, journal (19 nov. 2026)
+
+Côté serveur seulement ; l'écran du nouveau panneau viendra dans un autre lot (l'ancien `admin.html` et `api_admin`
+marchent comme avant). Migrations : `sauvegarde_20261119` (lot 0), `equipe_reglages_journal` et `journal_ajout_seul`
+(lot 1), `blocages_actions` et `blocages_controles_…` (lot 2), `reglages_frais_…` (lot 3), `diffusion_temps_reel` (lot 5).
+Mode d'emploi (ajouter un membre, double authentification, retour arrière) : `docs/EXPLOITATION.md`, § 8.
+
+### La porte : `api_equipe(action, paramètres)`
+
+Relais de `wm.equipe`, qui, à **chaque** appel :
+
+1. `moi` répond à tout compte connecté : rôle, permissions, niveau `aal` de la session, nombre de codes enrôlés,
+   `mfa_requise`, accès à l'ancien panneau ;
+2. lit le rôle (`wm.role_equipe` : la ligne de `wm.equipe_membres`, sinon `administrateur` pour un compte de
+   `public.admin_users` qui n'y figure pas, comme `WimoroAdmin`). Sans rôle : `interdit`, quelle que soit l'action ;
+3. cherche l'action dans le registre `wm.equipe_actions` (`action_inconnue`) et vérifie que le rôle y a droit (`interdit`) ;
+4. exige une session `aal2` (`mfa_requise`) si le membre a un code de double authentification vérifié
+   (`auth.mfa_factors`), ou pour tous si le réglage `equipe.mfa_obligatoire` est vrai ;
+5. pour une écriture : motif d'au moins 3 caractères quand le registre l'exige (`motif_requis`), 120 écritures par minute
+   au plus (`trop_vite`) ;
+6. appelle `wm.eq_<action>(membre, paramètres)` ; toute écriture ajoute une entrée au journal (`wm.journal`).
+
+Les fonctions `wm.eq_…` ne sont appelables par aucun client. Un joueur ordinaire est refusé pour chaque action, un
+visiteur n'a pas accès à la porte, et nul ne peut se donner un rôle (`tests/sql/equipe.spec.mjs`).
+
+| Famille | Actions — A : administrateur, M : modérateur ; (m) motif obligatoire ; (a) annulable depuis le journal |
+|---|---|
+| tableau | `tableau` (A) : chiffres du site, équipe, blocages en cours, maintenance, tête du journal |
+| réglages | `reglages_lire` (A) ; `reglage_modifier` (A, m, a) : `{cle, valeur}`, type et bornes contrôlés (`reglage_invalide`, `reglage_inchange`, `reglage_incoherent`, `reglage_dedie`, `reglage_inactif`) |
+| équipe | `equipe_liste` (A) ; `equipe_ajouter` (A, m, a) : `{email ou id, role}`, refusé pour un bot, un compte de test ou une adresse non confirmée (`compte_refuse`) ; `equipe_role` (A, m, a) ; `equipe_retirer` (A, m, a) : jamais le dernier administrateur (`dernier_administrateur`) ; rien n'est supprimé (`retire_at`) |
+| journal | `journal_lire` (A, M : ses propres décisions, ou celles qui visent un joueur donné) ; `journal_csv` (A) ; `journal_verifier` (A) ; `journal_annuler` (A, M, m) |
+| joueurs | `joueurs_chercher` (pseudo, e-mail ou identifiant), `joueur_fiche`, `joueur_activite` (connexions, argent, dépôts, retraits, messages hors privés, rangs, KYC, décisions de l'équipe ; pages par date) ; `joueur_solde` (m, a) : opération `ajustement_admin` dans `balance_ledger`, jamais en dessous de zéro, modérateur plafonné par `equipe.moderateur_solde_max` (`plafond_moderateur`) ; `joueur_rang` (m) ; `joueur_kyc` (a) ; `joueur_bloquer` (m, a) ; `joueur_debloquer` (m, a) ; `joueur_deconnecter`. Toutes (A, M) ; un modérateur n'agit pas sur un membre de l'équipe, personne sur soi-même ni ne bloque un administrateur (`interdit`) |
+| chat | `chat_messages` ; `chat_supprimer`, `chat_restaurer` (a) : le message est masqué (`source = 'masque'`), jamais effacé ; `salon_regler` (a) : mode lent de 0 à 300 secondes, salon fermé ; `mots_interdits` (a) ; `clan_renommer` (a) ; `clan_dissoudre` (m) : les membres sortent, candidatures annulées, salon fermé, le clan reste en base. Toutes (A, M) |
+| site | `annonce_publier`, `annonce_retirer`, `maintenance`, `activite_simulee` (bots : la clé `bots` de `wm.config`, comme l'ancien panneau). Toutes (A, a) |
+
+### Les réglages : `wm.reglages`
+
+Une ligne par constante du jeu : clé, catégorie, libellé et phrase d'explication en français, type (`nombre`, `entier`,
+`booleen`, `liste`, `json`), valeur, **valeur par défaut = la constante d'avant**, bornes, `facultatif` (vide : « aucun
+plafond »), `public` (lu par `api_site`), `applique` (faux : le serveur ne l'applique pas encore, `reglage_modifier` le
+refuse), `dedie` (écrit par une action dédiée : annonce, maintenance, salons, mots interdits), auteur et date du dernier
+changement. Lecture par `wm.reglage_num`, `wm.reglage_bool`, `wm.reglage_json`, `wm.reglage_liste` : jamais d'erreur ; une
+clé absente ou d'un autre type rend la constante d'avant. Écriture par `wm.reglage_ecrire` seulement (révision dans
+`wm.revisions`). Les fonctions qui les lisent sont `STABLE` : un changement vaut dès l'appel suivant.
+
+- **Appliqués (72 sur 82)** : frais des paris par catégorie, multiplicateur et remise Diamant (`wm.fee_rate`), barème
+  d'argent (`wm.argent`), bonus de parrainage (`wm.ref_bonus`), bornes des paris, de la mise éclair, des duels, des
+  combinés (frais, gain maximal, décote d'encaissement), des stacks (commission), des copies (part du copié), mises de La
+  Série, frais de création d'un clan, mise et commission des guerres, plafonds du site (`paris.mise_max` → `montant_max`,
+  `depots.max_jour` → `limite_depot`, `retraits.max` → `retrait_max`, vides par défaut).
+- **Pas encore appliqués** : prix du Blitz (`blitz.buyin`, `blitz.buyin_prime`, `blitz.rachat`), Bet Exact
+  (`eclair.be_…`), frais du pari éclair (`frais.eclair.k`), facteur de La Série, commission du Blitz : l'Edge Function
+  `eclair` les calcule avec ses propres constantes ; à brancher avec elle.
+- `api_site()` les donne à l'écran : `{rev, v: {clé: valeur} des réglages publics, annonce, maintenance}`.
+
+### Blocages, déconnexion forcée, maintenance, règles du chat
+
+- `wm.blocages` : un accès d'un joueur — `site`, `chat` (tous les salons, ou un seul : `general`, `vip`, `blitz`, `dm`,
+  `m:<marché>`, `clan:<identifiant>`), `paris`, `depots`, `retraits`, `creation` (propositions de marché), `clans` — pour
+  1 h, 24 h, 7 j, 30 j ou sans fin. Levé (`leve_at`), jamais effacé.
+- Le contrôle est **ajouté** aux fonctions existantes (lignes `-- [ajout]`), sans effet pour un joueur non concerné :
+  `wm.garde(joueur, accès)` lève `bloque` (détail JSON `{acces, salon, fin}`) dans `wm.buy`, `wm.duel_create`,
+  `wm.duel_accepter`, `wm.combo_place`, `wm.stack_create`, `wm.copy_start`, `srv_eclair_miser`, `srv_serie_start`,
+  `srv_blitz_join`, `srv_blitz_rebuy`, `srv_duel_eclair_creer` (paris), `wm.demo_deposit` (dépôts), `wm.demo_withdraw`
+  (retraits), `wm.proposal_create` (création), les fonctions de clan (adhésion, candidature, création, chef, guerre) et
+  du chat (`chat_send`, `chat_share`, `chat_react`, `ana_share`, `dm_send`). Une copie d'un joueur bloqué ne s'exécute
+  pas (`wm.copie_executer`, sans erreur). Vendre et quitter un clan restent toujours possibles.
+- `wm.uid()` (donc aussi les Edge Functions, par `wm.agir_pour`) refuse : une session ouverte avant une déconnexion forcée
+  (`session` ; table `wm.deconnexions`, rien n'est supprimé de `auth`), un blocage du site (`suspendu`, détail : fin en
+  millisecondes ou -1), la maintenance pour qui n'est pas de l'équipe (`maintenance`).
+- Règles du chat (`wm.chat_regles`) : salon fermé (`salon_ferme`), mode lent (`mode_lent`, détail : secondes restantes),
+  mot interdit (`mot_interdit` ; dans les messages privés seulement si `chat.mots_prives`). L'équipe n'y est pas soumise.
+  Plus personne n'entre dans un clan dissous (adhésion, candidature : `clan_indisponible`).
+
+### Le journal : `wm.journal`, en ajout seul
+
+Qui (membre et rôle), quand, d'où (`panneau`, `ancien_panneau`, `migration`), quoi, sur quoi, avant, après, motif, et
+l'action qui l'annulerait. Les décisions de l'ancien panneau (`wm.admin_journal`) y sont recopiées. Chaque entrée porte
+l'empreinte SHA-256 de son contenu et de l'entrée précédente : `journal_verifier` (ou `select wm.journal_verifier();`)
+refait la chaîne et rend `{n, ok, tete, rompue}`, `rompue` étant la première entrée altérée. Modifier, effacer ou vider `wm.journal` ou
+`wm.admin_journal` est refusé à tous, y compris au propriétaire de la base (déclencheurs `ENABLE ALWAYS`,
+`journal_immuable`). Annuler (`journal_annuler {id, motif}`) applique l'inverse par la même porte et l'écrit à son tour
+(une seule fois, `deja_annule` ; refusé si la valeur a changé depuis, `deja_modifie`). L'export CSV (`journal_csv`, 10 000
+lignes au plus) est fait par le serveur : UTF-8 avec BOM, champs entre guillemets, formules neutralisées.
+
+### Sauvegarde du 19 nov. 2026 : schéma `backup_20261119`
+
+Avant tout changement : copie des données des tables touchées (`public.admin_users`, `markets`, `users`, `user_stats`,
+`balance_ledger`, `notifications`, `chat_messages`, `wm.admin_journal`, `config`, `clans_joueurs`, `clan_membres`, `rg`),
+leur définition (`backup_20261119.tables` : colonnes, contraintes, index, déclencheurs, règles, droits), et la définition
+des 385 fonctions de `public` et `wm` (`backup_20261119.fonctions`). 40 d'entre elles ont changé depuis : lignes de
+contrôle ajoutées, littéraux remplacés par leur réglage, et `wm.fee_rate`, `wm.argent`, `wm.ref_bonus` réécrites pour lire
+les réglages.
+`backup_20261119.restaurer('<signature>')` remet une fonction telle qu'elle était. Aucun client n'a accès à ce schéma.

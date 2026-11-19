@@ -286,3 +286,18 @@ test('journal en ajout seul : ni modification, ni suppression, ni vidage, même 
   await q(db, `alter table wm.journal enable always trigger journal_ajout_seul`);
   expect(await eq(chef, 'journal_verifier')).toMatchObject({ ok: false, rompue: 2 });
 });
+
+// La marche à suivre de docs/EXPLOITATION.md (§ 8), tant que l'écran du panneau n'existe pas : une migration de deux lignes.
+test('par une migration (sans session) : ajouter puis retirer un modérateur, journalisé « migration »', async () => {
+  const carol = await creerJoueur(db, 'carol', 0);
+  const migration = sql => db.transaction(async tx => { await tx.query(`select set_config('wm.journal_origine', 'migration', true)`); await tx.query(sql); });
+  await migration(`select wm.eq_equipe_ajouter(null, '{"email": "carol@test.dev", "role": "moderateur", "motif": "premier modérateur"}'::jsonb)`);
+  expect((await eq(carol, 'moi')).role).toBe('moderateur');
+  expect((await eq(carol, 'joueurs_chercher', { q: 'alice' })).joueurs.map(j => j.n)).toEqual(['alice']);
+  await migration(`select wm.eq_equipe_retirer(null, jsonb_build_object('id', (select id from public.users where username = 'carol'), 'motif', 'fin de la mission'))`);
+  expect((await eq(carol, 'moi')).role).toBeNull();
+  const j = await q(db, `select admin_id, role, origine, action, cible, motif from wm.journal where cible = $1 order by id`, [carol]);
+  expect(j).toEqual([
+    { admin_id: null, role: null, origine: 'migration', action: 'equipe_ajouter', cible: carol, motif: 'premier modérateur' },
+    { admin_id: null, role: null, origine: 'migration', action: 'equipe_retirer', cible: carol, motif: 'fin de la mission' }]);
+});

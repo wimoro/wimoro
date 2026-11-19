@@ -511,6 +511,17 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 - [ ] Limite : le parcours d'un vrai administrateur n'a pas été joué contre la vraie base (je n'ai pas le mot de passe du
       compte `WimoroAdmin`, et je n'ai pas voulu créer de marché d'essai en production). Il est prouvé dans la base
       embarquée et avec le faux serveur.
+- [x] Nouveau panneau, **côté serveur** (19 nov. 2026, branche `marches-et-admin`), détail dans `docs/BACKEND.md`, § 9 :
+      sauvegarde avant tout (lot 0) ; réglages, équipe à deux rôles (administrateur, modérateur), journal en ajout seul à
+      empreintes chaînées, porte unique `api_equipe` avec double authentification (lot 1) ; blocages par accès,
+      déconnexion forcée, maintenance, actions sur les joueurs, le chat, les clans et le site (lot 2) ; frais et limites
+      lus dans les réglages (lot 3) ; diffusion en direct sur les sujets `site`, des salons et `joueur:<id>` (lot 5).
+      _Tests_ `tests/sql/sauvegarde-20261119`, `equipe`, `blocages`, `gardes`, `reglages-frais`, `diffusion`.
+- [ ] Écran du nouveau panneau, enrôlement du code de double authentification, lecture d'`api_site()` par le site
+      (annonce, maintenance, frais à jour dans l'aperçu du ticket) et des nouveaux codes d'erreur : lot de l'interface.
+- [ ] Prix du Blitz, Bet Exact, frais du pari éclair et de La Série : réglages créés mais « pas encore appliqués »,
+      à brancher avec l'Edge Function `eclair`. Résolution et annulation de marchés par la nouvelle porte : lot du cycle de
+      vie des marchés (l'ancien panel les fait toujours).
 
 ## Phase 7 — Sécurité
 - [x] Aucune écriture directe du client sur solde, positions, statistiques, dépôts, marchés (migration `securite_urgence_droits`,
@@ -618,6 +629,19 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 | Suivre une mise partagée | Refusé si l'on n'a pas accès au salon où elle a été publiée. | Sinon un joueur hors d'un clan pouvait suivre, par son numéro, une mise partagée dans le chat de ce clan. |
 | Mise partagée en privé | Poussée au seul ami ; pas de suivi par des joueurs simulés ; compteur envoyé aux deux participants seulement. | Une conversation privée ne doit rien laisser passer par un sujet public. |
 | Chat du Blitz | Salon public ; les bots y disent les phrases du Blitz de la démo ; les lignes d'événement de manche ne sont pas reprises. | Le déroulé d'un Blitz est calculé par l'écran (moteur partagé) : le chat ne porte que la conversation. |
+| Rôles de l'équipe (19 nov. 2026) | Nouvelle table `wm.equipe_membres` ; les comptes de `public.admin_users` sont administrateurs ; la table et sa contrainte ne changent pas. | Règle : ne pas modifier une contrainte existante. L'ancien panel et `WimoroAdmin` marchent sans changement. |
+| Journal en ajout seul | Déclencheurs actifs en toutes circonstances (`ENABLE ALWAYS`) et empreintes SHA-256 chaînées ; l'ancien journal y est recopié. | « Personne, pas même un admin, ne peut le modifier ou l'effacer » ; et si quelqu'un coupait un jour les déclencheurs, la chaîne le montrerait. |
+| Double authentification | Exigée dès qu'un membre a un code vérifié ; l'obligation pour tous est un réglage, désactivé. | L'écran d'enrôlement n'existe pas encore : l'imposer à tous aujourd'hui bloquerait `WimoroAdmin`. |
+| Blocages | Vendre une position et quitter un clan restent toujours possibles ; un blocage du site répond `suspendu`, comme une suspension. | Un joueur bloqué ne doit jamais avoir d'argent piégé ; l'écran sait déjà expliquer une suspension. |
+| Déconnexion forcée | Rien n'est supprimé dans l'authentification : le serveur refuse toute session ouverte avant la décision. | Règle : ne pas toucher à l'inscription ni à la connexion ; le joueur se reconnecte normalement. |
+| Chat | Un message est masqué, jamais effacé ; l'équipe ne lit jamais les messages privés ; le mode lent et les mots interdits ne visent pas l'équipe. | Pouvoir revenir sur une erreur (restaurer) ; respect des conversations privées. |
+| Dissolution d'un clan | Les membres sortent (le délai de 7 jours avant un autre clan s'applique), les candidatures sont annulées, le salon est fermé, le clan reste en base ; refusée pendant une guerre. | Aucune donnée supprimée ; la mise d'une guerre en cours ne doit pas se perdre. |
+| Modérateur | Ajustement de solde plafonné à 1 000 $ (réglage), jamais sur un membre de l'équipe ; il ne lit au journal que ses décisions, ou celles qui visent un joueur. | « Joueurs et chat seulement » : le reste est l'affaire d'un administrateur. |
+| Frais et limites | Un changement vaut dès le pari suivant ; les positions ouvertes ne sont pas recalculées. Trois plafonds nouveaux (mise, dépôts par jour, retrait), vides par défaut. | Les valeurs par défaut sont les constantes d'avant : rien ne change tant qu'on ne touche à rien. |
+| Prix du Blitz, Bet Exact, frais éclair et Série | Réglages créés mais marqués « pas encore appliqués » (le serveur refuse de les changer). | L'Edge Function `eclair` envoie ses propres montants : les changer d'un seul côté bloquerait le jeu. À brancher avec elle. |
+| Marchés | Résoudre ou annuler un marché ne passe pas encore par la nouvelle porte. | C'est le lot du cycle de vie des marchés ; l'ancien panel le fait toujours, journalisé. |
+| Ajouter un membre avant l'écran | Par une migration de deux lignes, écrite au journal avec l'origine « migration » (`docs/EXPLOITATION.md`, § 8). | Le journal dit toujours d'où vient une décision ; pas de mot de passe d'administrateur à me confier. |
+| Diffusion en direct | Les réglages partent à la fin de la transaction, une fois chacun ; un blocage arrivé à sa fin n'envoie rien. | La maintenance écrit deux réglages : un seul message, juste. L'écran connaît la fin d'un blocage. |
 
 ## À faire par l'humain
 
@@ -679,3 +703,8 @@ Rien d'obligatoire. Le détail et les constats sont dans `docs/EXPLOITATION.md`,
 | 16 nov. 2026 | Chat du Blitz ; cases du plan remises à jour. | migration `chat_blitz` (empreinte identique) ; 333 tests (177 SQL) ; 24 scénarios de bout en bout contre le vrai back, dont le chat du Blitz ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
 | 16 nov. 2026 | Mise partagée dans une conversation privée. | migration `mise_privee` (empreinte identique) ; 336 tests (179 SQL) ; 25 scénarios de bout en bout contre le vrai back ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test |
 | 16 nov. 2026 | Vérification finale sur le site en ligne ; branche des ordres limites remise à niveau. | sur <https://wimoro.com> : 157 tests d'écran (mode Démo, visiteur, mode Compte avec le faux serveur, trois langues, ordinateur et téléphone) et 25 scénarios avec de vrais comptes, tous verts ; base après la suite : 20 comptes, 10 000 bots, aucun compte de test, aucune tâche planifiée en échec ; branche `lot/ordres-limites` : 345 tests verts en local, migration toujours en attente |
+| 19 nov. 2026 | Nouveau panneau, lot 0 : sauvegarde (385 fonctions, 12 tables, données et définitions) avant toute modification. | migration `sauvegarde_20261119` (empreinte identique) ; commit `f1026d7` ; 398 tests |
+| 19 nov. 2026 | Lot 1 : réglages (82, valeurs par défaut = constantes d'avant), équipe à deux rôles, journal en ajout seul, porte `api_equipe`, `api_site`. | migrations `equipe_reglages_journal`, `journal_ajout_seul` (empreintes identiques) ; commit `8d39196` ; 407 tests |
+| 19 nov. 2026 | Lot 2 : blocages par accès, déconnexion forcée, maintenance, règles du chat ; actions sur les joueurs, le chat, les clans, le site. 30 fonctions existantes reçoivent une ligne de contrôle. | 5 migrations `blocages_…` (empreintes identiques) ; commit `cb2416e` ; 422 tests, dont la preuve « rien d'autre n'a changé » (`gardes.spec.mjs`) |
+| 19 nov. 2026 | Lot 3 : frais et limites lus dans les réglages (72 appliqués), un changement vaut dès le pari suivant. | 4 migrations `reglages_frais_…` (empreintes identiques ; 24 définitions de production égales à celles testées) ; commit `5a6b9c3` ; 428 tests |
+| 19 nov. 2026 | Lot 5 : diffusion en direct (`site`, salons, `joueur:<id>`). Documentation (`BACKEND.md` § 9, `EXPLOITATION.md` § 8) ; retour arrière complet testé. | migration `diffusion_temps_reel` (empreinte identique) ; commit `9a0f877` ; 437 tests en local (220 sur la base) |

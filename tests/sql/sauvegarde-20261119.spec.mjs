@@ -89,3 +89,26 @@ test('retour arrière : une définition sauvegardée se remet en place par une s
   expect(await q(db, `select backup_20261119.restaurer('wm.inconnue()') as r`).catch(e => e.message)).toMatch(/fonction_absente/);
   await db.close();
 });
+
+// La requête de docs/EXPLOITATION.md, § 8 : tout remettre comme le 19 nov. 2026 au matin, d'un coup.
+test('retour arrière complet : une requête remet les 40 fonctions modifiées ; les blocages cessent de s’appliquer, rien n’est perdu', async () => {
+  const db = await creerBase(); await semer(db);
+  const CHANGEES = `select f.signature from backup_20261119.fonctions f where md5(f.definition) <> md5(pg_get_functiondef(f.signature::regprocedure))`;
+  const ACHAT = `select public.api_buy('btc150k', 'oui', 10, gen_random_uuid())`;
+  expect((await q(db, CHANGEES)).length).toBe(40);
+  const chef = await creerJoueur(db, 'chef', 0), alice = await creerJoueur(db, 'alice', 1000);
+  await q(db, `insert into public.admin_users (user_id, role) values ($1, 'super_admin')`, [chef]);
+  await enTantQue(db, chef, s => s(`select public.api_equipe('joueur_bloquer', $1::jsonb)`, [JSON.stringify({ id: alice, acces: 'paris', duree: '24h', motif: 'essai du retour arrière' })]));
+  expect(await refus(db, alice, ACHAT)).toMatch(/bloque/);
+  const r = await q(db, `select backup_20261119.restaurer(f.signature) as r from backup_20261119.fonctions f
+    where md5(f.definition) <> md5(pg_get_functiondef(f.signature::regprocedure))`);
+  expect(r.length).toBe(40);
+  expect(await q(db, CHANGEES)).toEqual([]);
+  await enTantQue(db, alice, s => s(ACHAT));                                                     // l'ancien comportement : plus de contrôle
+  expect((await q(db, `select provolatile from pg_proc where oid = 'wm.fee_rate(text,boolean)'::regprocedure`))[0].provolatile).toBe('i');
+  // rien n'est perdu : le blocage, le journal et sa chaîne restent ; les nouvelles fonctions aussi
+  expect(Number((await q(db, `select count(*) as n from wm.blocages where user_id = $1`, [alice]))[0].n)).toBe(1);
+  expect((await q(db, `select wm.journal_verifier() as v`))[0].v).toMatchObject({ ok: true, rompue: null });
+  expect(Number((await q(db, `select count(*) as n from wm.journal`))[0].n)).toBeGreaterThan(0);
+  await db.close();
+});
