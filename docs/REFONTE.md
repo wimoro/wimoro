@@ -44,9 +44,9 @@ adresse du compte à passer administrateur) → (3) C, A, B sur `refonte-design`
 | Étape | État |
 |---|---|
 | 1. Lecture des documents, accès Supabase (projet `brmwvxncyeypefsgiepf`, sain, droits complets), plugins (unslop, ECC, frontend-design présents) | fait |
-| 2. D1 : recherche des sources (6 recherches parallèles, notes de travail dans le dossier temporaire `d1/`) | en cours |
-| 3. Message au propriétaire (comptes, adresse admin) | à faire |
-| 4. Partie C | en cours |
+| 2. D1 : recherche des sources (6 recherches parallèles, ~1 000 appels ; test depuis les serveurs Supabase dans 3 régions) | fait : [docs/DONNEES.md](DONNEES.md) § 1, notes détaillées dans `docs/donnees/` |
+| 3. Message au propriétaire (comptes gratuits à créer, adresse du compte à passer administrateur) | fait (19 nov., 15 h 40) ; correctif envoyé : API-Sports indispensable (ESPN refuse les robots), AcesAPI conseillé (tennis) |
+| 4. Partie C | fait (commit `b52824f`) |
 | 5. Partie A (ordinateur) | à faire |
 | 6. Partie B (téléphone) | à faire |
 | 7. Partie D (branche `marches-et-admin`) | à faire |

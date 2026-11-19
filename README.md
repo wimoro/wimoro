@@ -56,7 +56,7 @@ node tools/version.mjs        # met à jour l'empreinte anti-cache des fichiers 
 | `supabase/functions/` | Edge Functions : connexion par pseudo ; pari éclair (avec une copie conforme de `js/moteur-eclair.js`) |
 | `tests/` | `sql/` (back), `demo/` et `compte/` (écrans), `e2e/` (vrai back), `refonte/` (parcours de navigation) |
 | `tools/` | serveur local, anti-cache, audit, vérification des migrations |
-| `docs/` | [audit](docs/AUDIT.md), [plan et avancement](docs/PLAN.md), [architecture](docs/ARCHITECTURE.md), [back](docs/BACKEND.md), [exploitation](docs/EXPLOITATION.md), [suivi de la refonte du design](docs/REFONTE.md), [système de design](docs/DESIGN-SYSTEM.md) |
+| `docs/` | [audit](docs/AUDIT.md), [plan et avancement](docs/PLAN.md), [architecture](docs/ARCHITECTURE.md), [back](docs/BACKEND.md), [exploitation](docs/EXPLOITATION.md), [suivi de la refonte du design](docs/REFONTE.md), [système de design](docs/DESIGN-SYSTEM.md), [données réelles : sources, quotas, architecture](docs/DONNEES.md) |
 
 ## État
 
