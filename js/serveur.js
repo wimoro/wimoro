@@ -120,7 +120,8 @@ const ERR_TXT={
  trop_de_demandes:()=>_t("Trop de demandes d’ami d’un coup. Réessaie dans une heure."),
  mises_fermees:()=>_t("La prochaine manche arrive dans quelques secondes."),
  deja_mise:()=>_t("Une mise par pari et par manche. Tu peux jouer les autres paris éclair."),
- be_plein:()=>_t("La cagnotte de cette manche ne peut plus couvrir de break even.")
+ be_plein:()=>_t("La cagnotte de cette manche ne peut plus couvrir de break even."),
+ jeu_en_pause:()=>_t("Pas de cours en direct pour ce jeu en ce moment. Les jeux ouverts 24 h sur 24 restent jouables.")
 };
 const errTxt=e=>{const c=e&&e.code||'';return ERR_TXT[c]?ERR_TXT[c](e):_t("Une erreur est survenue. Réessaie.");};
 /* maintenance : l'écran de maintenance ; blocage posé par l'équipe : noté (le message s'affiche à l'endroit bloqué) et annoncé */
@@ -203,6 +204,7 @@ const NOTIF_T={
  fr_acceptee:p=>_t("{0} a accepté ta demande d’ami.",[p.n||'']),
  flash_gagne:p=>_t("Éclair {0}, manche {1} : gagné, +{2}.",[GM[p.g]?GM[p.g].name:p.g,F.int(+p.r),F.usd(+p.pay)]),
  flash_perdu:p=>_t("Éclair {0}, manche {1} : perdu, −{2}.",[GM[p.g]?GM[p.g].name:p.g,F.int(+p.r),F.usd(+p.amt)]),
+ flash_rembourse:p=>_t("Éclair {0}, manche {1} : annulée, ta mise de {2} t’est rendue.",[GM[p.g]?GM[p.g].name:p.g,F.int(+p.r),F.usd(+p.amt)]),
  rg_limite:p=>_t("Ta limite de dépôt {0} est maintenant {1}.",[winTxt(p.k),+p.v?F.usd0(+p.v):_t("retirée")])
 };
 const notifDe=n=>{let text=n.text||'';if(n.code&&NOTIF_T[n.code]){try{text=NOTIF_T[n.code](n.p||{});}catch(e){console.warn('[srv] notification illisible',n.code);}}return {id:n.id,ic:n.ic||'info',text,href:n.href||'',at:n.at,read:!!n.read};};
@@ -448,13 +450,15 @@ async function srvKyc(p,fini,echec){
    Miser : l'heure du serveur décide de la manche et du tick ; la réponse rend la mise telle qu'elle a été enregistrée.
    Régler : à la fin d'une manche (ou au chargement s'il reste des manches à régler), le serveur rejoue la manche et crédite. */
 let SRV_ECLAIR_DU=0,srvEclairOccupe=false,srvEclairRegle=false;
-function srvEclairPoser(d,g,m){const my=miseDe(m),e=MoteurEclair.etat(d,S.flash.round,g.tk,my);g.pool=e.pool;g.players=e.players;g.my=my;
- const b={s:SIDEV[my.s],a:Math.min(1,my.amt/60),me:1};g.bets.push(b);if(d.id===S.ui.fgame)trailPush('flash',b);
+/* Partie D : sur une manche jouée à cours réels (g.reel), la cagnotte est celle du moteur v2 sur les fixations */
+function srvEclairPoser(d,g,m){const my=miseDe(m);if(g.reel){my.reel=1;g.my=my;reelRefaire(g,d);}else{const e=MoteurEclair.etat(d,S.flash.round,g.tk,my);g.pool=e.pool;g.players=e.players;g.my=my;
+ const b={s:SIDEV[my.s],a:Math.min(1,my.amt/60),me:1};g.bets.push(b);if(d.id===S.ui.fgame)trailPush('flash',b);}
  if(!S.me.fmy||S.me.fmy.r!==S.flash.round)S.me.fmy={r:S.flash.round,b:{}};S.me.fmy.b[d.id]=my;}
 async function srvEclairMiser(d,g,side,amt,ev){
  if(srvEclairOccupe)return;srvEclairOccupe=true;
  try{
-  const r=await API.fn('eclair',{action:'bet',gid:d.id,side,amt,key:cleOp()});
+  /* Partie D : une manche que l'écran joue sur les vrais cours part avec la marque « reel » (le serveur la règle sur les fixations) */
+  const r=await API.fn('eclair',Object.assign({action:'bet',gid:d.id,side,amt,key:cleOp()},g.reel&&g.mode==='r'?{reel:true}:{}));
   if(typeof r.now==='number')FSKEW=r.now-Date.now();
   if(r.mise&&r.mise.r===S.flash.round&&!g.my)srvEclairPoser(d,g,r.mise);
   srvAppliquer(r,ev);updateFlash(true);
@@ -462,6 +466,7 @@ async function srvEclairMiser(d,g,side,amt,ev){
   if(e.code==='mises_fermees')toast({tone:'amber',icon:'lock',title:_t("Mises fermées"),text:errTxt(e)});
   else if(e.code==='deja_mise')toast({icon:'info',title:_t("Tu as déjà misé sur ce pari"),text:errTxt(e)});
   else if(e.code==='be_plein')toast({tone:'amber',icon:'info',title:_t("Mise trop grosse pour le break even"),text:errTxt(e)});
+  else if(e.code==='jeu_en_pause'){toast({tone:'amber',icon:'lock',title:_t("Ce jeu est en pause pour cette manche"),text:errTxt(e)});if(typeof directFix==='function')directFix(d.id);}
   else srvErreur(e);
  }finally{srvEclairOccupe=false;}
 }
@@ -474,7 +479,9 @@ async function srvEclairRegler(attendus,essai){
   if(typeof r.now==='number')FSKEW=r.now-Date.now();
   srvEtat(r);
   for(const h of r.hist||[])S.me.history.unshift(histDe(h));
-  for(const x of r.regles||[]){const d=GM[x.g];if(d)flashAnnonce(d,+x.r,{s:x.s,amt:+x.amt},!!x.win,+x.pay,!!x.tard);}
+  for(const x of r.regles||[]){const d=GM[x.g];if(d)flashAnnonce(d,+x.r,{s:x.s,amt:+x.amt},!!x.win,+x.pay,!!x.tard);if(S.reel&&S.reel[x.g]){S.reel[x.g].mes[+x.r]={win:!!x.win,pnl:+x.pnl};S.reel[x.g].hs=null;}}
+  /* Partie D : manche à cours réels annulée (cours de fin absent après le délai de grâce) : la mise est rendue */
+  for(const x of r.rembourses||[]){const d=GM[x.g];if(d)toast({tone:'amber',icon:'bolt',flash:true,title:_t("Manche annulée : mise rendue"),text:_t("{0}, manche {1} : {2} t’est rendu.",[d.name,F.int(+x.r),F.usd(+x.amt)]),href:'#eclair'});}
   srvEvenements(r);SRV_ECLAIR_DU=r.eclair?(r.eclair.du|0):0;
   encore=(attendus|0)-(r.regles||[]).length;
  }catch(e){if(e.code==='session'||e.code==='exclu'||e.code==='suspendu')srvErreur(e);else console.warn('[srv] règlement éclair remis à plus tard',e.code);}

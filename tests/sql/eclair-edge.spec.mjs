@@ -12,6 +12,7 @@ import { creerBase, creerJoueur, enTantQue, q, semer } from './base.mjs';
 
 globalThis.fetch = async url => { throw new Error('appel réseau interdit dans les tests : ' + url); };
 vm.runInThisContext(fs.readFileSync('supabase/functions/eclair/moteur-eclair.js', 'utf8'));
+vm.runInThisContext(fs.readFileSync('supabase/functions/eclair/moteur-reel.js', 'utf8'));    // partie D (v6) : cours réels par client
 const ME = globalThis.MoteurEclair;
 test.describe.configure({ mode: 'serial' });
 

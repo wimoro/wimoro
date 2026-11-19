@@ -3814,3 +3814,29 @@ body:has(.auth) .top .signup,body:has(.auth) .top .login{display:none}
   .tier.past{opacity:1}
   .tier.past .emb{opacity:.75}
 }
+
+/* ====================================================================== Partie D : pari éclair à cours réels [eclair]
+   Pastilles à côté du prix (« simulé », « retardée », « via le fonds QQQ »), jeu en pause (bourse fermée, dernière clôture,
+   jeux ouverts 24 h sur 24), résultat en cours de vérification et manche annulée. Couleurs : jetons seulement. */
+.fl-srcs{display:inline-flex;align-items:center;gap:var(--sp-1);flex-wrap:wrap;min-width:0}
+.fl-srcs:empty{display:none}
+.fl-src{display:inline-flex;align-items:center;font-size:var(--fs-1);font-weight:var(--fw-medium);line-height:1.4;color:var(--text-3);background:var(--fill);border-radius:var(--r-xs);padding:0 var(--sp-2);white-space:nowrap}
+.fl-price .fl-srcs,.fl-price .fl-src{font-size:var(--fs-1);font-weight:var(--fw-medium)}
+button.fl-src{border:0;cursor:help;transition:background var(--dur-1) var(--ease),color var(--dur-1) var(--ease)}
+button.fl-src:hover{background:var(--fill-2);color:var(--text-2)}
+button.fl-src:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.flt .fp-l{display:flex;align-items:center;gap:var(--sp-2);flex-wrap:wrap;min-width:0}
+.fl-my.pause{display:block;padding:var(--sp-3) var(--sp-4);border-radius:var(--r-md);background:var(--fill);color:var(--text-2)}
+.fl-pause{display:flex;flex-direction:column;gap:var(--sp-2);font-size:var(--fs-2);line-height:var(--lh-snug)}
+.fl-pause .fp1{display:flex;align-items:center;gap:var(--sp-2);flex-wrap:wrap;color:var(--text)}
+.fl-pause .fp1 svg{flex:none}
+.fl-pause .fp3{display:flex;align-items:center;gap:var(--sp-2);flex-wrap:wrap;margin-top:var(--sp-1)}
+.fl-pause .fp3>span{color:var(--text-3)}
+.fl-res b.verif{color:var(--text-2)}
+.flres.verif{background:var(--surface);color:var(--text);border:1px solid var(--line);border-inline-start:4px solid var(--text-3)}
+.flres.verif .big{color:var(--text-2)!important;display:inline-flex}
+@media (max-width:879px){.flt .fp-l{gap:var(--sp-1) var(--sp-2)}.fl-my.pause{padding:var(--sp-3)}}
+.fl-chart .fl-vide{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--sp-2);text-align:center;color:var(--text-3);font-size:var(--fs-2);padding:var(--sp-4)}
+.fl-chart .fl-vide b{color:var(--text);font-size:var(--fs-3)}
+.fl-sides.pause .fsd{background:var(--btn-off-bg);color:var(--btn-off-text);box-shadow:none;pointer-events:none}
+.fl-sides.pause .fsd :is(span,b,small,i){color:var(--btn-off-text)}

@@ -50,9 +50,11 @@ const beP=d=>d.kind==='event'?d.bep:beProb(d.be,d.kind==='vol'?GM.btc.k:d.k,FDUR
 /* cote break even du jeu (bloquée à la mise), et texte « ×24 » */
 const beMult=d=>beMultFair(beP(d));
 const beTxt=d=>bidi('×'+(beMult(d)>=10?Math.round(beMult(d)):F.d1(beMult(d))));
-/* mise maximale acceptée sur le break even : la cagnotte Oui + Non doit couvrir la promesse */
-const beMax=(g,d)=>Math.floor(beRoom(g)/beMult(d));
-function flashPrices(g){const d=GM[g.gid]||GAMES[0],t=flashPool(g),e=Math.max(2,Math.min(20,Math.round(100/beMult(d)))),so=g.pool.o/(g.pool.o+g.pool.n);let o=Math.round((100-e)*so);o=clamp(o,2,98-e);return {o,e,n:100-e-o};}
+/* mise maximale acceptée sur le break even : la cagnotte Oui + Non doit couvrir la promesse (manche à cours réels : moteur v2) */
+const beMax=(g,d)=>g&&g.ctx?MoteurEclair.beMaxReel(g,d,g.ctx.P):Math.floor(beRoom(g)/beMult(d));
+/* cote du break even bloquée à la mise : celle de la manche (cours réels : paramètres de la manche, moteur v2) */
+const beMultG=(d,g)=>g&&g.ctx?MoteurEclair.beMultReel(d,g.ctx.P):beMult(d);
+function flashPrices(g){const d=GM[g.gid]||GAMES[0];if(g.ctx)return MoteurEclair.prixReel(d,g,g.ctx.P);const t=flashPool(g),e=Math.max(2,Math.min(20,Math.round(100/beMult(d)))),so=g.pool.o/(g.pool.o+g.pool.n);let o=Math.round((100-e)*so);o=clamp(o,2,98-e);return {o,e,n:100-e-o};}
 function flashOdds(g){return flashPrices(g||G('btc')).o;}
 const multTxt=p=>'×'+(100/p>=10?Math.round(100/p):F.d1(100/p));
 const pctFx=v=>bidi((v>=0?'+':'−')+NB(nf2.format(Math.abs(v)))+(SYMB?'%':' %'));
@@ -80,7 +82,8 @@ function fHistEntry(d,r){const out=fOutcome(d,r);let ch,path;
  return {o:out===2?'e':out===1?'u':'d',ch,r,at:fT0(r+1),path,my:null,code:d.code,name:d.name};}
 /* met un pari au début de la manche r : trajectoire, cagnotte de départ et tableau de score semés par la manche */
 const FPRE=40;/* ticks de la manche précédente rappelés au début du graphique (10 secondes) */
-function fTail(d){const g=G(d.id);if(!g.tail){const P=fPlan(d,S.flash.round-1);g.tail=Array.from(P.slice(FK-FPRE,FK));}return g.tail;}
+function fTail(d){const x=GA(d.id);if(x.reel)return x.tail||[];   /* manche à cours réels : les 10 dernières secondes relevées (js/direct.js) */
+ const g=G(d.id);if(!g.tail){const P=fPlan(d,S.flash.round-1);g.tail=Array.from(P.slice(FK-FPRE,FK));}return g.tail;}
 function fRoundInit(g,d,r){const dep=MoteurEclair.depart(d,r);FRND=dep.alea;g.pool=dep.pool;g.players=dep.players;g.my=null;g.bets=[];g.tk=0;g.tail=null;
  if(d.kind==='dir'){g.plan=fPlan(d,r);g.start=g.price=g.plan[0];g.path=[g.start];}
  if(d.mk){const b=d.mk();g.board=b.board;g.sub=b.sub;}
@@ -104,8 +107,12 @@ Object.defineProperty(S_FLASH,'hist',{enumerable:true,get(){return S_FLASH.hs||(
 S.flash=S_FLASH;S.games={};
 GAMES.forEach(d=>{S.games[d.id]=mkGame(d,S.flash.round);});
 const G=id=>S.games[id]||S.games.btc;
+/* Partie D : l'état AFFICHÉ d'un jeu éclair. Pour un jeu à vraie source que ce navigateur joue sur les vrais cours, celui de
+   sa manche réelle ou en pause (S.reel, js/direct.js) ; sinon l'état simulé d'avant (G), dont La Série, le Blitz et les
+   duels continuent de se servir. */
+const GA=id=>{const x=S.reel&&S.reel[id];return x&&x.r===S.flash.round&&(x.mode==='r'||x.mode==='p')?x:G(id);};
 const AG=()=>GM[S.ui.fgame]||GAMES[0];
-const src=d=>d.kind==='vol'?G('btc'):G(d.id);
+const src=d=>{const x=GA(d.id);return x.reel?x:d.kind==='vol'?G('btc'):G(d.id);};
 function gOut(d){if(d.kind==='event')return -1;const s=src(d),m=Math.abs(s.price/s.start-1);if(m<=d.be)return 2;return d.kind==='vol'?(m>FVOL?1:0):(s.price>s.start?1:0);}
 function beBand(d){const s=src(d);return [s.start*(1-d.be),s.start*(1+d.be)];}
 function bedTxt(d){if(d.kind==='dir'){const [lo,hi]=beBand(d);return `${_t("reste entre {0} et {1}",[d.fp(lo),d.fp(hi)])}`;}return d.bed;}
@@ -114,28 +121,39 @@ function sideLabel(d,s){return s==='oui'?d.a:s==='non'?d.b:d.e;}
 const fcat=()=>FCATS.includes(S.me.fcat)?S.me.fcat:'Tout';
 const inCat=d=>fcat()==='Tout'||d.cat===fcat();
 const fmode=()=>S.me.fmode==='rot'?'rot':'free';
-/* pari vedette de la manche r : rotation dans la catégorie choisie, déduite du numéro de manche */
-function fSpot(r){const L=[];GAMES.forEach((d,i)=>{if(inCat(d))L.push(i);});const n=L.length||GAMES.length,j=((r%n)+n)%n;return L.length?L[j]:j;}
+/* pari vedette de la manche r : rotation dans la catégorie choisie, déduite du numéro de manche.
+   Partie D : un jeu en pause (bourse fermée…) ou retiré n'est pas proposé ; à sa place, les jeux ouverts 24 h sur 24. */
+function fSpot(r){const ouv=d=>typeof jeuOuvert!=='function'||jeuOuvert(d.id,r),L=[];let pause=false;GAMES.forEach((d,i)=>{if(!inCat(d))return;if(ouv(d))L.push(i);else pause=true;});
+ if(pause&&typeof MoteurReel==='object')for(const id of MoteurReel.H24){const d=GM[id];if(d&&ouv(d)&&!L.includes(d.i))L.push(d.i);}
+ const n=L.length||GAMES.length,j=((r%n)+n)%n;return L.length?L[j]:j;}
 function nthSpot(n){return fSpot(S.flash.round+n);}
 const SPOT=()=>GAMES[fSpot(S.flash.round)];
 /* historique des paris vedettes : pour chaque manche passée, le résultat du pari qui était à l'affiche */
-function fSpotHist(){const r=S.flash.round,L=[];for(let i=1;i<=12;i++){const d=GAMES[fSpot(r-i)],g=G(d.id),h=g.hs?g.hs.find(x=>x.r===r-i):null;L.push(h||fHistEntry(d,r-i));}return L;}
+function fSpotHist(){const r=S.flash.round,L=[];for(let i=1;i<=12;i++){const d=GAMES[fSpot(r-i)];
+  /* Partie D : une manche jouée à cours réels vient des fixations (inconnue : pas d'entrée) */
+  if(typeof modeJeu==='function'&&modeJeu(d.id,r-i).m==='r'){const h=reelHistEntree(d,r-i);if(h)L.push(h);continue;}
+  const g=G(d.id),h=g.hs?g.hs.find(x=>x.r===r-i):null;L.push(h||fHistEntry(d,r-i));}return L;}
 function flashPhase(){const f=S.flash,t=fNow()-f.t0;return {t,left:Math.max(0,f.dur-t),open:t<f.open,openLeft:Math.max(0,f.open-t)};}
 /* ----- Moteur ----- */
 function flashTick(){if(document.hidden)return;/* E1 : rattrapé au retour (les ticks manqués sont rejoués à partir de l'heure) */const f=S.flash,t=fNow(),r=fRound(t);
  if(r!==f.round){for(const d of GAMES)fAdvance(d,G(d.id),f.round,FK,false);resolveFlash();}
  const k=Math.min(FK,Math.floor((t-f.t0)/FTICK));
- for(const d of GAMES)fAdvance(d,G(d.id),f.round,k,true);
+ for(const d of GAMES)fAdvance(d,G(d.id),f.round,k,!GA(d.id).reel);
+ if(typeof reelAvance==='function')reelAvance(k);            /* Partie D : les manches à cours réels (foule simulée, courbe relevée) */
  S.ethPrice=G('eth').price;S.solPrice=G('sol').price;
  updateFlash();}
-function flashBet(side,ev,gid){const d=GM[gid||S.ui.fgame]||GAMES[0],g=G(d.id),ph=flashPhase();if(!S.me.logged||!(side in SIDEV))return;if(typeof rgBlocked==='function'&&rgBlocked('bet'))return;if(!ph.open){toast({tone:'amber',icon:'lock',title:_t("Mises fermées"),text:_t("La prochaine manche arrive dans quelques secondes.")});return;}
+function flashBet(side,ev,gid){const d=GM[gid||S.ui.fgame]||GAMES[0],g=GA(d.id),ph=flashPhase();if(!S.me.logged||!(side in SIDEV))return;if(typeof rgBlocked==='function'&&rgBlocked('bet'))return;if(!ph.open){toast({tone:'amber',icon:'lock',title:_t("Mises fermées"),text:_t("La prochaine manche arrive dans quelques secondes.")});return;}
+ /* Partie D : un jeu en pause (bourse fermée, cours indisponibles) ne prend pas de mise */
+ if(g.reel&&g.mode==='p'){toast({tone:'amber',icon:'lock',title:pauseTxt(d),text:_t("Les paris sur {0} reprennent avec le marché. Les jeux ouverts 24 h sur 24 restent jouables.",[d.name])});return;}
  if(g.my){toast({icon:'info',title:_t("Tu as déjà misé sur ce pari"),text:_t("Une mise par pari et par manche. Tu peux jouer les autres paris éclair.")});return;}
  const amt=S.ui.flashAmt;if(amt>S.me.balance){toast({tone:'amber',icon:'wallet',title:_t("Solde insuffisant"),text:_t("Dépose des fonds pour continuer."),href:'#depot'});return;}
  const pr=flashPrices(g),price=side==='oui'?pr.o:side==='non'?pr.n:pr.e;const fee=flashFee(d.cat,g,side,amt,myRank().t>=5),net=amt-fee;
  if(side==='be'){const mx=beMax(g,d);if(amt>mx){toast({tone:'amber',icon:'info',title:_t("Mise trop grosse pour le break even"),text:mx>=1?`${_t("La cagnotte de cette manche couvre au plus {0} sur le break even à {1}.",[F.usd0(mx),beTxt(d)])}`:_t("La cagnotte de cette manche ne peut plus couvrir de break even.")});return;}}
+ /* la manche garde le mode dans lequel la mise est faite (cours réels ou simulation) */
+ if(typeof modeFiger==='function'&&MoteurReel.ACTIF[d.id])modeFiger(d.id,S.flash.round,g.reel?undefined:{m:'s',raison:modeJeu(d.id,S.flash.round).raison});
  /* écriture : en mode serveur, l'Edge Function « eclair » enregistre la mise avec son horloge et son calcul des frais */
  if(SRV()){srvEclairMiser(d,g,side,amt,ev);return;}
- S.me.balance-=amt;S.me.played++;flashPoser(d,g,{s:side,amt,fee,net,price,mult:side==='be'?beMult(d):0,tk:g.tk});
+ S.me.balance-=amt;S.me.played++;flashPoser(d,g,Object.assign({s:side,amt,fee,net,price,mult:side==='be'?beMultG(d,g):0,tk:g.tk},g.reel?{reel:1}:{}));
  updateHeader();gainXP(10,ev);mission('flashbet');updateFlash(true);save();}
 /* la mise entre dans la cagnotte du pari et dans la mémoire de la manche (commun aux deux modes) */
 function flashPoser(d,g,my){g.my=my;g.pool[poolKey(my.s)]+=my.net;if(my.s==='be')g.pool.eProm=(g.pool.eProm||0)+my.net*my.mult;const b={s:SIDEV[my.s],a:Math.min(1,my.amt/60),me:1};g.bets.push(b);if(d.id===S.ui.fgame)trailPush('flash',b);
@@ -159,7 +177,11 @@ function flashAnnonce(d,round,my,win,pay,quiet){
  else toast({tone:'red',icon:'bolt',flash:true,title:`${_t("Perdu : −{0}",[F.usd(my.amt)])}`,text:`${_t("{0}. La prochaine manche est déjà ouverte.",[d.name])}`,href:'#eclair'});
 }
 function resolveFlash(){const f=S.flash,spotId=SPOT().id,rn=fRound(fNow());let aRegler=0;
- for(const d of GAMES){const g=G(d.id),out=d.kind==='event'?fOutcome(d,f.round):gOut(d);
+ /* Partie D : un jeu joué à cours réels attend sa fixation de fin (« Résultat en cours de vérification », js/direct.js) ;
+    un jeu en pause n'a pas de résultat */
+ const reels=typeof reelFin==='function'?reelFin(f.round):{};
+ for(const d of GAMES){if(reels[d.id]){if(reels[d.id].my)aRegler++;continue;}{const x=S.reel&&S.reel[d.id];if(x&&x.r===f.round&&x.mode==='p')continue;}
+  const g=G(d.id),out=d.kind==='event'?fOutcome(d,f.round):gOut(d);
   const h=g.hs||g.my?fHistEntry(d,f.round):null;
   const key=out===2?'e':out===1?'o':'n',tot=g.pool.o+g.pool.n+g.pool.e,right=Math.round(g.pool[key]/tot*100);let res=null;
   if(g.my){res=fSettle(d,g,out,f.round,h,false);aRegler++;}
@@ -170,6 +192,7 @@ function resolveFlash(){const f=S.flash,spotId=SPOT().id,rn=fRound(fNow());let a
  if(S.me.fmy){delete S.me.fmy;save();}
  f.lastSpot=spotId;f.round=rn;f.t0=fT0(rn);
  for(const d of GAMES)fRoundInit(G(d.id),d,rn);
+ if(typeof reelManche==='function')reelManche(rn);          /* Partie D : le mode de la nouvelle manche, jeu par jeu */
  f.spot=fSpot(rn);f.hist=null;
  if(fmode()==='rot')S.ui.fgame=SPOT().id;
  $$('[data-trail="flash"]').forEach(el=>{el.innerHTML='';});
@@ -182,13 +205,21 @@ function resolveFlash(){const f=S.flash,spotId=SPOT().id,rn=fRound(fNow());let a
    historique : le montant net est connu, pas la mise d'origine, d'où « Ton résultat ». */
 function fResMine(d,r){if(!S.me.logged)return null;const at=fT0(r+1),L=(S.me.history||[]).filter(h=>h.k==='flash'&&h.at===at);if(!L.length)return null;const M=L.filter(h=>String(h.q).includes(d.name));return M.length===1?{win:!!M[0].win,pnl:M[0].pnl,late:true}:{unk:true};}
 function fResBoot(){const f=S.flash,r=f.round-1;if(!f.lastSpot)f.lastSpot=GAMES[fSpot(r)].id;
- for(const d of GAMES){const g=G(d.id);if(g.result&&g.result.round===r)continue;const out=fOutcome(d,r);let p0,p1;if(d.kind!=='event'){const P=fPlan(d.kind==='vol'?GM.btc:d,r);p0=P[0];p1=P[FK];}
+ for(const d of GAMES){if(typeof modeJeu==='function'&&modeJeu(d.id,r).m==='r'){reelResBoot(d,r);continue;}   /* Partie D : sur les fixations */
+  const g=G(d.id);if(g.result&&g.result.round===r)continue;const out=fOutcome(d,r);let p0,p1;if(d.kind!=='event'){const P=fPlan(d.kind==='vol'?GM.btc:d,r);p0=P[0];p1=P[FK];}
   g.result={out,res:fResMine(d,r),round:r,at:fT0(r+1),p0,p1};}}
 function flashBoot(){const f=S.flash,t=fNow(),k=Math.min(FK,Math.floor((t-f.t0)/FTICK));
  for(const d of GAMES)fAdvance(d,G(d.id),f.round,k,false);
+ if(typeof reelManche==='function'){reelBoot();reelManche(f.round);}         /* Partie D : le mode de la manche en cours, jeu par jeu */
  f.spot=fSpot(f.round);f.hist=null;fResBoot();
  const fm=S.me.logged&&S.me.fmy;if(!fm)return;
  for(const id in fm.b){const d=GM[id],my=fm.b[id];if(!d||!my)continue;
+  /* Partie D : une mise sur une manche à cours réels se replace sur sa manche réelle (ou attend ses fixations) */
+  const x=typeof reelEtat==='function'&&MoteurReel.ACTIF[id]?S.reel[id]:null,reelle=!!(x&&x.r===fm.r&&x.mode==='r');
+  if(x&&(my.reel||(SRV()&&reelle))){
+   if(fm.r===f.round&&reelle){my.reel=1;x.my=my;reelRefaire(x,d);modeFiger(id,fm.r);continue;}
+   DIR.attente[id+':'+fm.r]={gid:id,r:fm.r,my:Object.assign({reel:1},my)};if(!SRV())(S.me.freel=S.me.freel||[]).push({g:id,r:fm.r,my});continue;}
+  if(fm.r===f.round&&x&&x.r===fm.r&&x.mode!=='s'){modeFiger(id,fm.r,{m:'s',raison:'mise_simulee'});x.mode='s';}   /* mise simulée : la manche le reste */
   if(fm.r===f.round){const g=G(id);g.my=my;g.pool[poolKey(my.s)]+=my.net;if(my.s==='be')g.pool.eProm=(g.pool.eProm||0)+my.net*my.mult;g.bets.push({s:SIDEV[my.s],a:Math.min(1,my.amt/60),me:1});}
   else if(fm.r<f.round){const g={gid:id,hist:[]};fRoundInit(g,d,fm.r);if(d.kind==='vol'&&!G('btc').plan)continue;const keep=d.kind==='vol'?G('btc').plan:null;if(keep)G('btc').plan=fPlan(GM.btc,fm.r);fAdvance(d,g,fm.r,FK,false);if(keep)G('btc').plan=keep;
    g.my=my;g.pool[poolKey(my.s)]+=my.net;if(my.s==='be')g.pool.eProm=(g.pool.eProm||0)+my.net*my.mult;const h=G(id).hist.find(x=>x.r===fm.r);const rs=fSettle(d,g,fOutcome(d,fm.r),fm.r,h||null,true);if(fm.r===f.round-1&&G(id).result)G(id).result.res=rs;}}
@@ -204,7 +235,8 @@ function flashAlert(){const d=SPOT();if(S.me.fmute)return;const al=S.me.falerts|
    - Zone break even d'au moins 6 px de haut ; les étiquettes « Départ » et « Zone break even » sont posées au-dessus du graphique (CSS). */
 let FCPX=0,FCPXT=0;
 function fChartPx(){const t=Date.now();if(t-FCPXT>1500){FCPXT=t;const e=$('.fl-chart:not(.spark) svg'),h=e?e.getBoundingClientRect().height:0;FCPX=h>20?h:(innerWidth<=879?112:200);}return FCPX;}
-function flashChart(sp,d,ov){const f=ov||src(d),a=f.path,st=f.start,DUR=ov&&ov.dur||FDUR,W=600,H=sp?44:200,NT=DUR/250,ev=d.kind==='event',sd=ev?null:(d.kind==='vol'?GM.btc:d);
+function flashChart(sp,d,ov){if(!ov&&GA(d.id).reel&&GA(d.id).mode==='p')return sp?`<svg viewBox="0 0 600 44" preserveAspectRatio="none" aria-hidden="true"></svg>`:`<div class="fl-vide">${ic('lock',18)}<b>${esc(pauseTxt(d))}</b><span>${GA(d.id).raison==='ferme'?esc(rouvreTxt(d.id)):_t("Cours en direct indisponibles pour le moment.")}</span></div>`;   /* jeu en pause : pas de manche */
+ const f=ov||src(d),a=f.path,st=f.start,DUR=ov&&ov.dur||FDUR,W=600,H=sp?44:200,NT=DUR/250,ev=d.kind==='event',sd=ev?null:(d.kind==='vol'?GM.btc:d);
  const pre=!ov&&!sp&&sd?fTail(sd):[],NP=pre.length,bd=d.kind==='vol'?[st*(1+FVOL),st*(1-FVOL)]:[];let mn,mx;
  if(ev){mn=Math.min(st,...a);mx=Math.max(st,...a);const pad=(mx-mn)*.12||1;mn-=pad;mx+=pad;}
  else{let half=1.6*sd.k*Math.sqrt(NT/12)*st;for(const q of a)half=Math.max(half,Math.abs(q-st));for(const q of pre)half=Math.max(half,Math.abs(q-st));if(bd.length)half=Math.max(half,FVOL*st*1.1);half*=1.14;mn=st-half;mx=st+half;}
@@ -212,7 +244,7 @@ function flashChart(sp,d,ov){const f=ov||src(d),a=f.path,st=f.start,DUR=ov&&ov.d
  let band='',lab2='';if(!ev&&!sp){const [lo,up]=ov?[st*(1-d.be),st*(1+d.be)]:beBand(d),y1=y(up),y2=y(lo),hh=Math.max(6.5*H/fChartPx(),y2-y1),yc=(y1+y2)/2;band=`<rect class="beband" x="${x(0).toFixed(1)}" width="${(W-x(0)).toFixed(1)}" y="${(yc-hh/2).toFixed(1)}" height="${hh.toFixed(1)}"/>`;lab2=`<span class="lab2">${_t("Zone break even")}</span>`;}
  /* échelle du tracé, lue par l'info-bulle de la courbe (ftipDraw) */
  const dat=sp?'':` data-mn="${mn}" data-mx="${mx}" data-np="${NP}" data-nx="${NX}"`;
- const base=band+`<line class="base" x1="${x(0).toFixed(1)}" x2="${W}" y1="${y(st).toFixed(1)}" y2="${y(st).toFixed(1)}"/>`+bd.map(q=>`<line class="base" x1="${x(0).toFixed(1)}" x2="${W}" y1="${y(q).toFixed(1)}" y2="${y(q).toFixed(1)}"/>`).join('')+(NP?`<line class="t0" x1="${x(0).toFixed(1)}" x2="${x(0).toFixed(1)}" y1="0" y2="${H}"/>`:''),lab=sp?'':`<span class="lab">${_t("Départ : {0}",[d.fp(st)])}</span>${lab2}`;
+ const base=band+`<line class="base" x1="${x(0).toFixed(1)}" x2="${W}" y1="${y(st).toFixed(1)}" y2="${y(st).toFixed(1)}"/>`+bd.map(q=>`<line class="base" x1="${x(0).toFixed(1)}" x2="${W}" y1="${y(q).toFixed(1)}" y2="${y(q).toFixed(1)}"/>`).join('')+(NP?`<line class="t0" x1="${x(0).toFixed(1)}" x2="${x(0).toFixed(1)}" y1="0" y2="${H}"/>`:''),lab=sp?'':`<span class="lab">${!ov&&typeof departEnCours==='function'&&departEnCours(d)?_t("Départ en cours de fixation"):_t("Départ : {0}",[d.fp(st)])}</span>${lab2}`;
  const sm=L=>L.map((v,i)=>i===L.length-1?v:(L[Math.max(0,i-1)]+v+L[i+1])/3),pth=(L,i0)=>L.map((q,i)=>(i?'L':'M')+x(i+i0).toFixed(1)+' '+y(q).toFixed(1)).join('');
  const preP=NP?`<path class="ln pre" d="${pth(sm(pre.concat([st])),-NP)}"/>`:'';
  if(!sp&&typeof ctype==='function'&&ctype()==='bougies'&&!ev){const per=8,N=Math.ceil(NT/per),sw=(W-x(0))/N,bw=sw*.56;let body='';for(let k=0;k*per<a.length&&k<N;k++){const seg=a.slice(k*per,(k+1)*per),o2=k?a[k*per-1]:st,c=seg[seg.length-1],h=Math.max(o2,...seg),l=Math.min(o2,...seg),cl=c>=o2?'up':'dn',cx=x(0)+sw*(k+.5),yt=y(Math.max(o2,c)),yb=y(Math.min(o2,c));body+=`<line class="wk ${cl}" x1="${cx.toFixed(1)}" x2="${cx.toFixed(1)}" y1="${y(h).toFixed(1)}" y2="${y(l).toFixed(1)}"/><rect class="bd ${cl}" x="${(cx-bw/2).toFixed(1)}" y="${yt.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(1.6,yb-yt).toFixed(1)}"/>`;}
@@ -227,15 +259,15 @@ function histH(list,d){const L=list.slice(0,12);if(!L.length)return `<p class="s
  <div class="beads" role="list">${L.map((h,i)=>`<span role="listitem" class="bead ${h.o}${i===0?' last':''}${h.my?' me':''}" title="${_t("{0}, manche {1} : {2}{3}",[esc(h.name),F.int(h.r),esc(lab(h)),h.my?(h.my.win?_t(", tu as gagné"):_t(", tu as perdu")):''])}">${h.o==='e'?ARE:h.o==='u'?ARU:ARD}</span>`).join('')}</div>
  <div class="blab"><span>${_t("Plus récente")}</span><span>${cap(ago(L[L.length-1].at))}</span></div>
  <div class="rrows">${L.slice(0,4).map((h,i)=>{const dd=GAMES.find(x=>x.code===h.code)||d,evh=dd&&dd.kind==='event';return `<div class="rrow${i===0?' fresh':''}"><span class="fxa">${esc(h.code)}</span><span class="hn"><b>${esc(h.name)}</b><small>${cap(ago(h.at))}</small></span>${sparkH(h.path,h.o==='u')}<span class="hv"><b class="${h.o==='e'?'eqv':h.o==='u'?'dir-u':'dir-d'}">${h.o==='e'?ARE:h.o==='u'?ARU:ARD}${evh?esc(lab(h)):bidi(plain(pctFx(h.ch)).slice(1))}</b>${h.my?`<small class="${h.my.win?'pl-up':'pl-dn'}">${(h.my.win?_t("Gagné "):_t("Perdu "))+F.signed(h.my.pnl)}</small>`:(h.o==='e'?`<small class="eqv">${_t("Break even")}</small>`:`<small>${_t("Pas joué")}</small>`)}</span></div>`;}).join('')}</div>`;}
-function fcatsH(){const c=fcat();return `<div class="fpills" role="tablist" aria-label="${_t("Catégories du pari éclair")}">${FCATS.map(k=>`<button class="fpill${c===k?' on':''}${k!=='Tout'&&GAMES.some(x=>x.cat===k&&G(x.id).my)?' has':''}" data-a="fcat" data-v="${k}" role="tab" aria-selected="${c===k}">${_t(FCL[k]||k)}</button>`).join('')}</div>`;}
-function ftabsH(d){const L=GAMES.filter(inCat);if(fmode()==='rot')return '';return `<div class="tabs fl-tabs" role="tablist" aria-label="${_t("Choisir un pari éclair")}">${L.map(x=>`<button class="${x.id===d.id?'on':''}${G(x.id).my?' has':''}" data-a="fgame" data-v="${x.id}" data-fgtab="${x.id}" role="tab" aria-selected="${x.id===d.id}">${esc(x.tab)}</button>`).join('')}</div>`;}
+function fcatsH(){const c=fcat();return `<div class="fpills" role="tablist" aria-label="${_t("Catégories du pari éclair")}">${FCATS.map(k=>`<button class="fpill${c===k?' on':''}${k!=='Tout'&&GAMES.some(x=>x.cat===k&&GA(x.id).my)?' has':''}" data-a="fcat" data-v="${k}" role="tab" aria-selected="${c===k}">${_t(FCL[k]||k)}</button>`).join('')}</div>`;}
+function ftabsH(d){const L=GAMES.filter(inCat);if(fmode()==='rot')return '';return `<div class="tabs fl-tabs" role="tablist" aria-label="${_t("Choisir un pari éclair")}">${L.map(x=>`<button class="${x.id===d.id?'on':''}${GA(x.id).my?' has':''}" data-a="fgame" data-v="${x.id}" data-fgtab="${x.id}" role="tab" aria-selected="${x.id===d.id}">${esc(x.tab)}</button>`).join('')}</div>`;}
 /* LG6 : cote estimée nette de frais (les frais sont proportionnels à la mise : la cote nette ne dépend pas du montant) */
 const fMx=(d,g,side)=>{const amt=S.ui.flashAmt||10,net=amt-flashFee(d.cat,g,side,amt,myRank().t>=5),T=flashPool(g),W=g.pool[poolKey(side)];return F.mult(100*amt/Math.max(.01,net*(T+net)/(W+net)));};
 /* UX1 : où sont rendus la mise et les boutons (colonne latérale à partir de 880 px, GRAND) ; un passage de seuil redessine la page */
 let FLSIDE=null;
 addEventListener('resize',()=>{if(FLSIDE!==null&&$('[data-flashcard]')&&GRAND()!==FLSIDE)render(false);});
 /* UX3 : sur mobile, les catégories tiennent dans une liste déroulante, sur la rangée du mode de jeu */
-function fcatSelH(){const c=fcat();return `<label class="fcat-sel"><select data-fcatsel aria-label="${_t('Catégories du pari éclair')}">${FCATS.map(k=>`<option value="${k}"${c===k?' selected':''}>${_t(FCL[k]||k)}${k!=='Tout'&&GAMES.some(x=>x.cat===k&&G(x.id).my)?' •':''}</option>`).join('')}</select></label>`;}
+function fcatSelH(){const c=fcat();return `<label class="fcat-sel"><select data-fcatsel aria-label="${_t('Catégories du pari éclair')}">${FCATS.map(k=>`<option value="${k}"${c===k?' selected':''}>${_t(FCL[k]||k)}${k!=='Tout'&&GAMES.some(x=>x.cat===k&&GA(x.id).my)?' •':''}</option>`).join('')}</select></label>`;}
 /* la phrase d'explication du mode reste affichée tant que le joueur n'a jamais joué de pari éclair ; ensuite elle s'ouvre avec « ? » */
 const flashKnown=()=>S.me.logged&&(S.me.flashWins>0||S.me.flashBest>0||!!S.me.fmy||(S.me.history||[]).some(h=>h.k==='flash'));
 const fhelpOpen=()=>S.ui.fmh===undefined?!flashKnown():!!S.ui.fmh;
@@ -255,11 +287,11 @@ function ringH(){return `<div class="ringw"><div class="ring" data-fx="ring"><sv
 /* Carte Éclair de l'accueil (colonne latérale sur ordinateur, sous le marché phare sur téléphone). Un état clair à chaque
    instant, sur une seule ligne (data-fx="phase") : mises ouvertes avec le temps restant, ou fermées avec le temps avant le
    résultat, ou ta mise déjà placée. Pour un visiteur, les boutons restent actifs et mènent à l'inscription. */
-function flashTeaserH(){const d=SPOT(),g=G(d.id),pr=flashPrices(g),s=src(d),vis=!S.me.logged;
+function flashTeaserH(){const d=SPOT(),g=GA(d.id),pr=flashPrices(g),s=src(d),vis=!S.me.logged;
  const bouton=(v,cls,lab,prix)=>vis?`<a class="btn ${cls}" href="#inscription" data-fgv="${v}">${esc(lab)} ${prix}</a>`:`<button class="btn ${cls}" data-a="flash-bet" data-fg="${d.id}" data-v="${v}">${esc(lab)} ${prix}</button>`;
  return `<section class="pn pad flt" data-flt><div class="flt-h"><span class="kick"><span class="bolt">${ic('bolt',13,'#fff',2.2)}</span>${_t("Éclair")} <span class="fxa" data-fx="asset">${d.code}</span></span>${ringH()}</div>
  <h3 data-fx="q">${qNw(d.q)}</h3>
- <div class="fp"><b class="num" data-fx="price">${d.kind==='event'?esc(g.board):d.fp(s.price)}</b><span class="delta" data-fx="chg"></span></div>
+ <div class="fp"><span class="fp-l"><b class="num" data-fx="price">${d.kind==='event'?esc(g.board):d.fp(s.price)}</b><span class="fl-srcs" data-fx="src">${typeof srcH==='function'?srcH(d):''}</span></span><span class="delta" data-fx="chg"></span></div>
  <div class="fl-chart spark" data-fx="spark"></div>
  <div class="fbt">${bouton('oui','b-yes',d.a,`<span data-fx="po">${pr.o} ¢</span>`)}${bouton('non','b-no',d.b,`<span data-fx="pn">${pr.n} ¢</span>`)}</div>
  <p class="flt-st" data-fx="phase" aria-live="polite"></p>
@@ -273,18 +305,18 @@ function flashTeaserH(){const d=SPOT(),g=G(d.id),pr=flashPrices(g),s=src(d),vis=
    - colonne principale : la carte du pari (question, prix, courbe et ses outils, cagnottes, volume), puis les blocs
      secondaires sur deux colonnes (dernières manches et règle à gauche, tes manches, amis et notifications à droite).
    Visiteur : les boutons restent actifs et mènent à l'inscription, comme sur la carte Éclair de l'accueil. */
-function vFlash(){if(fmode()==='rot')S.ui.fgame=SPOT().id;const d=AG(),g=G(d.id),s=src(d),f=S.flash,pr=flashPrices(g),me=S.me,rot=fmode()==='rot',vis=!me.logged;
+function vFlash(){if(fmode()==='rot')S.ui.fgame=SPOT().id;const d=AG(),g=GA(d.id),s=src(d),f=S.flash,pr=flashPrices(g),me=S.me,rot=fmode()==='rot',vis=!me.logged;
  const side=FLSIDE=GRAND(),help=fhelpOpen();
  const stkH=`<div class="fl-stk"><span class="lbl">${_t("Mise")} <b data-fa>${F.usd0(S.ui.flashAmt)}</b></span>${[5,10,25,50,100].map(q=>`<button class="btn b-ghost sm${S.ui.flashAmt===q?' on':''}" data-a="flash-amt" data-v="${q}">${F.usd0(q)}</button>`).join('')}</div>`;
  const fsdH=(cls,v,inner)=>vis?`<a class="fsd ${cls}" href="#inscription" data-fvis="${v}">${inner}</a>`:`<button class="fsd ${cls}" data-a="flash-bet" data-v="${v}">${inner}</button>`;
- const sidesH=`<div class="fl-sides">${fsdH('oui','oui',`<i class="mx" data-fx="mxo">${_t('{0} estimé',[fMx(d,g,'oui',pr.o)])}</i><span>${esc(d.a)}</span><b class="num" data-fx="po">${pr.o} ¢</b>`)}${fsdH('non','non',`<i class="mx" data-fx="mxn">${_t('{0} estimé',[fMx(d,g,'non',pr.n)])}</i><span>${esc(d.b)}</span><b class="num" data-fx="pn">${pr.n} ¢</b>`)}
+ const sidesH=`<div class="fl-sides" data-fx="sides">${fsdH('oui','oui',`<i class="mx" data-fx="mxo">${_t('{0} estimé',[fMx(d,g,'oui',pr.o)])}</i><span>${esc(d.a)}</span><b class="num" data-fx="po">${pr.o} ¢</b>`)}${fsdH('non','non',`<i class="mx" data-fx="mxn">${_t('{0} estimé',[fMx(d,g,'non',pr.n)])}</i><span>${esc(d.b)}</span><b class="num" data-fx="pn">${pr.n} ¢</b>`)}
  ${fsdH('eq','be',`<span class="eqt"><b>${esc(d.e)}</b><small data-fx="bed">${esc(bedTxt(d))}</small></span><span class="eqr"><b class="num" data-fx="mult">${beTxt(d)}</b><small data-fx="pe">${_t("{0} ¢ · {1} de chances",[pr.e,F.pct(Math.round(beP(d)*100))])}</small></span>`)}</div>`;
  const duelH=d.kind==='dir'?`<button class="btn b-white sm fl-duel" data-a="duel-open" data-m="flash:${d.id}">${_t("{0} Défier un ami",[ic('swords',14)])}</button>`:'';
  const outilsH=d.kind==='event'?'':`<div class="chtools fl">${ctypeSeg()}<span class="cdur" data-cdur="flash">${cdurH('flash')}</span>${side?duelH:''}</div>`;
  const phaseH='<div class="fl-phase" data-fx="phase"></div>',myH='<div class="fl-my" data-fx="my"></div>';
  const carteH=`<section class="pn pad flash-card" data-flashcard><div class="fl-top">${fcatsH()}${fcatSelH()}<div class="fmode-w">${fmodeH()}<button class="fhelp${help?' on':''}" data-a="fhelp" aria-expanded="${help}" aria-controls="fmode-h" aria-label="${_t('Expliquer les modes Rotation et Libre')}">${ic('info',16)}</button></div><p class="fmode-h" id="fmode-h"${help?'':' hidden'}>${rot?_t('Rotation : la page suit le pari vedette, qui change à chaque manche.'):_t('Libre : tu choisis ton pari et tu peux en jouer plusieurs par manche.')}</p></div>${ftabsH(d)}
  <div class="fl-h"><div><div class="kick"><i class="live"></i><span class="kt"><span class="kx">${_t("Pari éclair,")} </span>${_t("manche")} <b data-fx="round">${F.int(f.round)}</b>, <span data-fx="players">${F.int(g.players)}</span> ${_t("joueurs")}</span><span class="fxa" data-fx="asset">${d.code}</span>${rot?`<span class="xpc">${_t('Vedette')}</span>`:''}</div><h1 class="ptitle" data-fx="q">${qNw(d.q)}</h1></div>${ringH()}</div>
- <div class="fl-price${d.kind==='event'?' ev':''}"><b class="num" data-fx="price">${d.kind==='event'?esc(g.board):d.fp(s.price)}</b><span data-fx="chg"></span></div><div class="fl-chart" data-fx="chart"></div>${outilsH}${side?'':`${phaseH}
+ <div class="fl-price${d.kind==='event'?' ev':''}"><b class="num" data-fx="price">${d.kind==='event'?esc(g.board):d.fp(s.price)}</b><span class="fl-srcs" data-fx="src">${typeof srcH==='function'?srcH(d):''}</span><span data-fx="chg"></span></div><div class="fl-chart" data-fx="chart"></div>${outilsH}${side?'':`${phaseH}
  <div class="fl-amts">${stkH}${duelH}</div>
  ${sidesH}
  ${myH}`}<div class="fl-pool"><div class="pl2"><span class="up" data-fx="poolo"></span><span class="eqp" data-fx="poole"></span><span class="dn" data-fx="pooln"></span></div><div class="split"><i data-fx="split"></i></div></div>
@@ -293,7 +325,7 @@ function vFlash(){if(fmode()==='rot')S.ui.fgame=SPOT().id;const d=AG(),g=G(d.id)
  const nextC=`<section class="pn pad"><div class="ph mb-2"><div><div class="h2">${_t("Prochains paris vedettes")}</div><div class="sub" data-fx="nextsub">${nextSubH()}</div></div></div><div data-fx="next">${nextH()}</div>${rot||side?'':`<p class="sub mt-3">${_t("En mode Libre, tous les paris tournent en même temps : la vedette ne sert qu’aux alertes et à l’accueil.")}</p>`}</section>`;
  const mesC=`<section class="pn pad"><div class="h2">${_t("Tes manches")}</div><div class="pf-stats" style="grid-template-columns:repeat(2,minmax(0,1fr));padding:16px 0 0;border:0"><div><small>${_t("Victoires")}</small><b class="num" data-fx="wins">${me.flashWins}</b></div><div><small>${_t("Série en cours")}</small><b class="num" data-fx="streak">${me.flashStreak}</b></div><div><small>${_t("Meilleure série")}</small><b class="num" data-fx="best">${me.flashBest}</b></div><div><small>${_t("Gains éclair")}</small><b class="num ${plc(me.flashProfit)}" data-fx="fprofit">${F.signed(me.flashProfit)}</b></div></div>${flashGoalH()}</section>`;
  const histC=`<section class="pn pad"><div class="ph mb-4"><div><div class="h2">${_t("Dernières manches{0}",[rot?'':', '+esc(d.tab)])}</div><div class="sub">${rot?_t("Les 12 derniers paris vedettes"):_t("Les 12 dernières manches de ce pari")}</div></div></div><div class="rounds" data-fx="hist">${histH(rot?f.hist:g.hist,rot?null:d)}</div></section>`;
- const howC=`<section class="pn pad"><div class="h2 mb-4">${_t("Comment ça marche")}</div><ol class="steps"><li>${_t("Une manche de {0} secondes, {1} paris en parallèle. En mode Rotation, la page suit le pari vedette qui change à chaque manche ; en mode Libre, tu choisis ton pari et tu peux en jouer plusieurs par manche.",[FDUR/1000,GAMES.length])}</li><li>${_t("Choisis ta mise, puis ton camp ou le break even pendant les {0} premières secondes. Les mises se ferment pendant les {1} dernières.",[FOPEN/1000,(FDUR-FOPEN)/1000])}</li><li>${esc(d.how)}</li><li>${_t("Les gagnants se partagent les mises des perdants : plus il y a d’argent de ton côté, plus ta cote baisse. Les frais dépendent du pari et de la cote.")}</li></ol>${demoHint(_t('Les prix, les scores et les résultats sont simulés.'))}</section>`;
+ const howC=`<section class="pn pad"><div class="h2 mb-4">${_t("Comment ça marche")}</div><ol class="steps"><li>${_t("Une manche de {0} secondes, {1} paris en parallèle. En mode Rotation, la page suit le pari vedette qui change à chaque manche ; en mode Libre, tu choisis ton pari et tu peux en jouer plusieurs par manche.",[FDUR/1000,GAMES.length])}</li><li>${_t("Choisis ta mise, puis ton camp ou le break even pendant les {0} premières secondes. Les mises se ferment pendant les {1} dernières.",[FOPEN/1000,(FDUR-FOPEN)/1000])}</li><li>${esc(d.how)}</li><li>${_t("Les gagnants se partagent les mises des perdants : plus il y a d’argent de ton côté, plus ta cote baisse. Les frais dépendent du pari et de la cote.")}</li></ol>${demoHint(typeof coursReelsTxt==='function'&&coursReelsTxt()||_t('Les prix, les scores et les résultats sont simulés.'))}</section>`;
  const tete=`<div class="wrap jx jx-eclair">${bzModesH('eclair')}${typeof clanWarBarH==='function'?clanWarBarH():''}`;
  if(!side)return `${tete}<div class="g-side"><div class="col">${carteH}</div>
  <div class="col">${nextC}${me.logged?`<div data-ffr>${friendsFlashH()}</div>${alertsCardH()}
@@ -311,23 +343,30 @@ const fxH=(e,h)=>{if(e._h!==h){e._h=h;e.innerHTML=h;}};
 /* FL2 : graphique de la manche. Tant que l'échelle, la zone break even et les repères ne changent pas, seul le tracé est mis à jour. */
 function fxChart(e,h){if(e._h===h)return;const k=h.lastIndexOf('<path class="ln" d="'),m=k<0?null:/^<path class="ln" d="([^"]*)" style="stroke:([^"]*)"\/><\/svg>/.exec(h.slice(k)),key=m?h.slice(0,k)+'|'+h.slice(k+m[0].length):null;
  const p=key!==null&&e._k===key?e.querySelector('svg>path.ln:last-of-type'):null;if(p){p.setAttribute('d',m[1]);p.style.stroke=m[2];}else{e.innerHTML=h;e._k=key;}e._h=h;}
-function updateFlash(force){if(!FXEL||force)fxCache();const f=S.flash,ph=flashPhase(),onPage=!!$('[data-flashcard]'),d=onPage?AG():SPOT(),g=G(d.id),s=src(d),pr=flashPrices(g),secs=Math.ceil(ph.left/1000),ch=s.price-s.start,ev=d.kind==='event';const set=(k,fn)=>{const L=FXEL[k];if(L)for(const e of L)fn(e);},slow=force||Math.floor(ph.left/250)%2===0,setS=(k,fn)=>{if(slow)set(k,fn);};
+function updateFlash(force){if(!FXEL||force)fxCache();const f=S.flash,ph=flashPhase(),onPage=!!$('[data-flashcard]'),d=onPage?AG():SPOT(),g=GA(d.id),s=src(d),pr=flashPrices(g),secs=Math.ceil(ph.left/1000),ch=s.price-s.start,ev=d.kind==='event';const set=(k,fn)=>{const L=FXEL[k];if(L)for(const e of L)fn(e);},slow=force||Math.floor(ph.left/250)%2===0,setS=(k,fn)=>{if(slow)set(k,fn);};
+ /* Partie D : jeu en pause (bourse fermée…), manche à cours réels dont le départ n'est pas encore fixé */
+ const pause=!!(g.reel&&g.mode==='p'),sansDepart=typeof departEnCours==='function'&&departEnCours(d),pauseG=x=>!!(x&&x.reel&&x.mode==='p');
  setS('price',e=>{const t=ev?g.board:d.fp(s.price);if(e._t!==t){e._t=t;if(!ev&&(d.fp===fU3||d.fp===fYen3))e.innerHTML=esc(t).replace(/(\d)(\D*)$/,'<i class="d3">$1</i>$2');else e.textContent=t;}const p=e.parentElement;if(p&&p.classList.contains('fl-price'))p.classList.toggle('ev',ev);});
- setS('chg',e=>{let t,c;if(ev){t=g.sub;c='delta';}else if(d.kind==='vol'){const pc=Math.abs(s.price/s.start-1)*100,big=gOut(d)===1;t=`${_t("Mouvement : {0} % (seuil {1} %)",[F.d2(pc),F.d2(FVOL*100)])}`;c='delta '+(big?'up':'dn');}else if(!/[1-9]/.test(plain(d.fc(Math.abs(ch))))){t=_t('Stable depuis le départ');c='delta';}else{t=`${_t("{0} depuis le départ",[bidi((ch>=0?'+':'−')+plain(d.fc(Math.abs(ch))))])}`;c='delta '+(ch>=0?'up':'dn');}if(e._v!==t){e._v=t;e.textContent=t;}if(e.className!==c)e.className=c;});
+ setS('src',e=>fxH(e,typeof srcH==='function'?srcH(d):''));
+ setS('chg',e=>{let t,c;if(pause){t=placeFermee(d.id)?_t('Dernière clôture'):_t('Dernier cours');c='delta';}else if(sansDepart){t=_t('Départ en cours de fixation');c='delta';}else if(ev){t=g.sub;c='delta';}else if(d.kind==='vol'){const pc=Math.abs(s.price/s.start-1)*100,big=gOut(d)===1;t=`${_t("Mouvement : {0} % (seuil {1} %)",[F.d2(pc),F.d2(FVOL*100)])}`;c='delta '+(big?'up':'dn');}else if(!/[1-9]/.test(plain(d.fc(Math.abs(ch))))){t=_t('Stable depuis le départ');c='delta';}else{t=`${_t("{0} depuis le départ",[bidi((ch>=0?'+':'−')+plain(d.fc(Math.abs(ch))))])}`;c='delta '+(ch>=0?'up':'dn');}if(e._v!==t){e._v=t;e.textContent=t;}if(e.className!==c)e.className=c;});
  const pl=ph.open?ph.openLeft:ph.left,ptot=ph.open?f.open:f.dur-f.open,pname=ph.open?_t('Mises'):_t('Résultat');
  set('secs',e=>fxT(e,Math.ceil(pl/1000)));set('ring',e=>{e.classList.toggle('lockd',!ph.open);const c=e.querySelector('.fgc');if(c)c.style.strokeDashoffset=(163.4*(1-pl/ptot)).toFixed(1);});set('rph',e=>{if(e.textContent!==pname)e.textContent=pname;});
  set('round',e=>fxT(e,F.int(f.round)));setS('players',e=>fxT(e,F.int(g.players)));setS('po',e=>fxT(e,F.c(pr.o)));setS('pn',e=>fxT(e,F.c(pr.n)));setS('mxo',e=>fxT(e,_t('{0} estimé',[fMx(d,g,'oui',pr.o)])));setS('mxn',e=>fxT(e,_t('{0} estimé',[fMx(d,g,'non',pr.n)])));setS('pe',e=>fxT(e,_t('{0} ¢ · {1} de chances',[pr.e,F.pct(Math.round(beP(d)*100))])));set('mult',e=>fxT(e,beTxt(d)));set('bed',e=>fxT(e,bedTxt(d)));
- set('phase',e=>{const gm=e.closest('[data-flt]')?G(SPOT().id):g;fxH(e,!S.me.logged&&!ph.open?`${ic('rotate',16)} ${_t("Prochaine manche dans {0} s",[secs])}`:gm.my?`${ic('check',16)} ${_t("Ta mise est placée, résultat dans {0} s",[secs])}`:ph.open?`<i class="live"></i>${_t("Mises ouvertes encore {0} s",[Math.ceil(ph.openLeft/1000)])}`:`${ic('lock',16)} <span class="pl">${_t("Mises fermées,")}</span><span class="ps">${_t("Fermé,")}</span> ${_t("résultat dans {0} s",[secs])}`);});
- for(const b of FXEL._bets)b.disabled=!ph.open||!!G(b.dataset.fg||d.id).my;
- for(const b of FXEL._tabs)b.classList.toggle('has',!!G(b.dataset.fgtab).my);
+ set('phase',e=>{const hd=e.closest('[data-flt]'),gm=hd?GA(SPOT().id):g,dm=hd?SPOT():d;fxH(e,pauseG(gm)?`${ic('lock',16)} ${esc(pauseTxt(dm))}${gm.raison==='ferme'&&rouvreTxt(dm.id)?' · '+esc(rouvreTxt(dm.id)):''}`:!S.me.logged&&!ph.open?`${ic('rotate',16)} ${_t("Prochaine manche dans {0} s",[secs])}`:gm.my?`${ic('check',16)} ${_t("Ta mise est placée, résultat dans {0} s",[secs])}`:ph.open?`<i class="live"></i>${_t("Mises ouvertes encore {0} s",[Math.ceil(ph.openLeft/1000)])}`:`${ic('lock',16)} <span class="pl">${_t("Mises fermées,")}</span><span class="ps">${_t("Fermé,")}</span> ${_t("résultat dans {0} s",[secs])}`);});
+ for(const b of FXEL._bets){const x=GA(b.dataset.fg||d.id);b.disabled=!ph.open||!!x.my||pauseG(x);}
+ for(const b of FXEL._tabs)b.classList.toggle('has',!!GA(b.dataset.fgtab).my);
  const tot=g.pool.o+g.pool.n;set('split',e=>{const w=(g.pool.o/tot*100).toFixed(1)+'%';if(e._v!==w){e._v=w;e.style.width=w;}});setS('poolo',e=>fxH(e,`<small>${esc(d.a)}</small><b>${F.usd0(g.pool.o)}</b>`));setS('pooln',e=>fxH(e,`<small>${esc(d.b)}</small><b>${F.usd0(g.pool.n)}</b>`));setS('poole',e=>fxH(e,`<small>${esc(d.e)}</small><b>${F.usd0(g.pool.e)}</b>`));
- set('my',e=>{let cls,h,fx=false;if(g.my){cls='fl-my has';const lab=sideLabel(d,g.my.s);const est=flashPayout(g,g.my),l1=`<span>${_t("Ta mise : <b>{0}</b> sur {1}, frais {2}",[F.usd(g.my.amt),esc(lab),F.usd(g.my.fee)])}</span>`,cl=typeof clanFlashH==='function'?clanFlashH(d.id):'';
+ set('sides',e=>e.classList.toggle('pause',pause));
+ set('my',e=>{let cls,h,fx=false;if(pause){cls='fl-my res pause';h=pauseH(d);fx=true;}else if(g.my){cls='fl-my has';const lab=sideLabel(d,g.my.s);const est=flashPayout(g,g.my),l1=`<span>${_t("Ta mise : <b>{0}</b> sur {1}, frais {2}",[F.usd(g.my.amt),esc(lab),F.usd(g.my.fee)])}</span>`,cl=typeof clanFlashH==='function'?clanFlashH(d.id):'';
    if(ev){h=l1+`<span>${F.kv('<b>'+_t('Gain estimé si tu gagnes')+'</b>',F.usd(est))}</span>`+cl;}
    else{const w=SIDEV[g.my.s]===gOut(d);h=l1+`<span class="${w?'pl-up':'pl-dn'}">${w?_t('Pour l’instant : {0} · gain estimé : {1}',['<b>'+_t('gagnant')+'</b>',F.usd(est)]):_t('Pour l’instant : {0} · gain si ça se retourne : {1}',['<b>'+_t('perdant')+'</b>',F.usd(est)])}</span>`+cl;}}
   else{/* résultat de la manche qui vient de finir, affiché jusqu'à la suivante */
-   const rd=onPage&&fmode()==='rot'?(GM[f.lastSpot]||d):d,rr=G(rd.id).result,res=rr&&rr.round===f.round-1?rr:null;
+   const rd=onPage&&fmode()==='rot'?(GM[f.lastSpot]||d):d,rr=GA(rd.id).result,res=rr&&rr.round===f.round-1?rr:null;
    const kn=flashKnown(),hint=(kn?'':`<span class="fh-t"><span class="${ph.open?'on':''}">${_t("Choisis ta mise, puis {0}, {1} ou {2}.",[esc(d.a),esc(d.b),esc(d.e)])}</span><span class="${ph.open?'':'on'}">${_t("Mises fermées pour cette manche. La suivante arrive.")}</span></span>`)+`<span class="xpc"${ph.open?'':' aria-hidden="true" style="visibility:hidden"'}>${_t("+10 XP par mise, +40 XP si tu gagnes")}</span>`;
-   if(res){cls='fl-my res'+(kn?' kn':'');fx=true;const out=res.out===2?rd.e:res.out===1?rd.a:rd.b,oc=res.out===2?'eqv':res.out===1?'dir-u':'dir-d';
+   /* Partie D : manche à cours réels dont la fin n'est pas encore fixée, ou annulée (mise rendue) */
+   if(res&&(res.attente||res.annule)){cls='fl-my res'+(kn?' kn':'');fx=true;const p0=res.p0!=null?` · ${bidi(plain(rd.fp(res.p0))+(res.p1!=null?' → '+plain(rd.fp(res.p1)):''))}`:'',mine=res.res;
+    h=`<div class="fl-res"><span class="fr1"><b>${_t('{0}, manche {1}',[esc(rd.name),F.int(res.round)])}</b>${p0} · <b class="${res.annule?'':'verif'}">${res.attente?_t("Résultat en cours de vérification"):_t("Manche annulée")}</b></span><span class="fr2">${res.attente?(mine?_t("Ta mise de {0} attend le cours de fin.",[F.usd(mine.amt)]):_t("Le cours de fin arrive dans quelques secondes.")):(mine?_t("Ta mise de {0} t’est rendue.",[F.usd(mine.amt)]):_t("Les mises de cette manche sont rendues : {0}.",[motifTxt(res.motif)]))}</span></div><div class="fl-hint">${hint}</div>`;}
+   else if(res){cls='fl-my res'+(kn?' kn':'');fx=true;const out=res.out===2?rd.e:res.out===1?rd.a:rd.b,oc=res.out===2?'eqv':res.out===1?'dir-u':'dir-d';
     h=`<div class="fl-res"><span class="fr1"><b>${_t('{0}, manche {1}',[esc(rd.name),F.int(res.round)])}</b>${rd.kind==='event'||res.p0===undefined?'':` · ${bidi(plain(rd.fp(res.p0))+' → '+plain(rd.fp(res.p1)))}`} · <b class="${oc}">${esc(out)}</b></span>${res.res&&res.res.unk?'':`<span class="fr2 ${res.res?(res.res.win?'pl-up':'pl-dn'):''}">${res.res?(res.res.late?_t('Ton résultat : {0}',[F.signed(res.res.pnl)]):res.res.win?_t('Gagné : {0}',[bidi('+'+plain(F.usd(res.res.pay)))]):_t('Perdu : {0}',[bidi('−'+plain(F.usd(res.res.amt)))]))+' · '+_t('Série de victoires : {0}',[S.me.flashStreak]):_t('Tu n’as pas joué cette manche.')}</span>`}</div><div class="fl-hint">${hint}</div>`;}
    else{cls='fl-my'+(kn?' kn':'');h=hint;}}
   if(e._h===h&&e.className===cls)return;e._h=h;e.className=cls;e.innerHTML=h;if(fx)fixText(e);});
@@ -362,12 +401,17 @@ document.addEventListener('pointerdown',e=>{if(e.pointerType!=='mouse')ftipAt(e)
 document.addEventListener('mouseout',e=>{if(!e.relatedTarget&&FTIP)ftipClear();});
 /* Échap referme l'explication des modes Rotation et Libre (si aucune fenêtre n'est ouverte) ; le focus revient sur « ? » */
 document.addEventListener('keydown',e=>{if(e.key!=='Escape'||(S.ui.route||'')!=='eclair'||$('#ov')||!fhelpOpen())return;S.ui.fmh=false;render(false);const b=$('[data-a="fhelp"]');if(b)b.focus();});
-function updateFlashStatic(){const d=SPOT(),g=G(d.id),pr=flashPrices(g);$$('[data-fx="q"]').forEach(e=>{e.innerHTML=qNw(d.q);fixText(e);swapIn(e);});   /* « sera-t-il » ne se coupe pas au trait d'union (qNw) */$$('[data-fx="asset"]').forEach(e=>{e.textContent=d.code;swapIn(e);});$$('[data-fx="nextmini"]').forEach(e=>e.textContent=_t("Ensuite : ")+GAMES[nthSpot(1)].name);$$('[data-fx="next"]').forEach(e=>{e.innerHTML=nextH();fixText(e);});$$('[data-a="flash-bet"][data-fg]').forEach(b=>{b.dataset.fg=d.id;const t=b.dataset.v;b.firstChild.textContent=(t==='oui'?d.a:t==='non'?d.b:d.e)+' ';});$$('[data-fgv]').forEach(b=>{const t=b.dataset.fgv;b.firstChild.textContent=(t==='oui'?d.a:t==='non'?d.b:d.e)+' ';});fxCache();}
+function updateFlashStatic(){const d=SPOT(),g=GA(d.id),pr=flashPrices(g);$$('[data-fx="q"]').forEach(e=>{e.innerHTML=qNw(d.q);fixText(e);swapIn(e);});   /* « sera-t-il » ne se coupe pas au trait d'union (qNw) */$$('[data-fx="asset"]').forEach(e=>{e.textContent=d.code;swapIn(e);});$$('[data-fx="nextmini"]').forEach(e=>e.textContent=_t("Ensuite : ")+GAMES[nthSpot(1)].name);$$('[data-fx="next"]').forEach(e=>{e.innerHTML=nextH();fixText(e);});$$('[data-a="flash-bet"][data-fg]').forEach(b=>{b.dataset.fg=d.id;const t=b.dataset.v;b.firstChild.textContent=(t==='oui'?d.a:t==='non'?d.b:d.e)+' ';});$$('[data-fgv]').forEach(b=>{const t=b.dataset.fgv;b.firstChild.textContent=(t==='oui'?d.a:t==='non'?d.b:d.e)+' ';});fxCache();}
 function swapIn(e){e.classList.remove('swap');void e.offsetWidth;e.classList.add('swap');}
-function showFlashResult(){const d=fmode()==='rot'?(GM[S.flash.lastSpot]||AG()):AG(),r=G(d.id).result;set2();const card=$('[data-flashcard]');if(!card||!r)return;const me=r.res,o=document.createElement('div');o.className='flres '+(me?(me.win?'win':'lose'):(r.out===2?'eq':''));const lab=[d.b,d.a,d.e][r.out];
+function showFlashResult(){const d=fmode()==='rot'?(GM[S.flash.lastSpot]||AG()):AG(),r=GA(d.id).result;set2();const card=$('[data-flashcard]');if(!card||!r)return;
+ /* Partie D : manche à cours réels pas encore vérifiée, ou annulée : un bandeau plus sobre, sans montant gagné */
+ if(r.attente||r.annule){$$('.flres',card).forEach(x=>x.remove());const o=document.createElement('div');o.className='flres verif';o.setAttribute('role','status');const m=r.res;
+  o.innerHTML=`<div class="flr-in"><div class="flr-t"><div class="kick">${_t("{0}, manche {1} terminée",[esc(d.name),F.int(r.round)])}</div><p class="muted">${r.attente?_t("Résultat en cours de vérification : le cours de fin arrive dans quelques secondes."):(m?_t("Manche annulée : ta mise de {0} t’est rendue.",[F.usd(m.amt)]):_t("Manche annulée : les mises sont rendues."))}</p></div><div class="big">${r.attente?ic('refresh',22):m?'+'+F.usd(m.amt):'—'}</div><button class="x" data-a="flres-close" aria-label="${_t('Fermer')}">${ic('x',16)}</button></div>`;card.appendChild(o);fixText(o);setTimeout(()=>o.remove(),r.attente?2200:3200);return;}
+ $$('.flres.verif',card).forEach(x=>x.remove());
+ const me=r.res,o=document.createElement('div');o.className='flres '+(me?(me.win?'win':'lose'):(r.out===2?'eq':''));const lab=[d.b,d.a,d.e][r.out];
  const sub=me?(me.win?(me.be?_t("Break even, +120 XP"):_t("Gagné, +40 XP")):_t("Perdu cette fois")):esc(r.out===2?d.rbe:d.kind==='event'?(r.out===1?d.rs(true):d.rs(false)):d.rs(r.out===1));
  o.setAttribute('role','status');o.innerHTML=`<div class="flr-in"><div class="flr-t"><div class="kick">${_t("{0}, manche {1} terminée",[esc(d.name),F.int(r.round)])}</div><p class="muted">${sub} ${fmode()==='rot'?_t("Prochain pari vedette : ")+esc(SPOT().name)+'.':_t("La manche suivante est ouverte.")}</p></div><div class="big">${me?(me.win?'+'+F.usd(me.pay):'−'+F.usd(me.amt)):esc(lab)}</div><button class="x" data-a="flres-close" aria-label="${_t('Fermer')}">${ic('x',16)}</button></div>`;card.appendChild(o);fixText(o);if(me&&me.win)confetti(me.be?80:40);setTimeout(()=>o.remove(),2800);}
-function set2(){const me=S.me,d=AG();const s=(k,q)=>$$(`[data-fx="${k}"]`).forEach(e=>e.textContent=q);s('wins',me.flashWins);s('streak',me.flashStreak);s('best',me.flashBest);s('fprofit',F.signed(me.flashProfit));$$('[data-fx="fprofit"]').forEach(e=>e.className='num '+plc(me.flashProfit));$$('[data-fx="hist"]').forEach(e=>e.innerHTML=histH(fmode()==='rot'?S.flash.hist:G(d.id).hist,fmode()==='rot'?null:d));const need=TIERS[4].cond.flashWins;s('goal',Math.min(need,me.flashWins)+' / '+need);$$('[data-fx="goalbar"]').forEach(e=>e.style.width=Math.min(100,me.flashWins/need*100)+'%');}
+function set2(){const me=S.me,d=AG();const s=(k,q)=>$$(`[data-fx="${k}"]`).forEach(e=>e.textContent=q);s('wins',me.flashWins);s('streak',me.flashStreak);s('best',me.flashBest);s('fprofit',F.signed(me.flashProfit));$$('[data-fx="fprofit"]').forEach(e=>e.className='num '+plc(me.flashProfit));$$('[data-fx="hist"]').forEach(e=>e.innerHTML=histH(fmode()==='rot'?S.flash.hist:GA(d.id).hist,fmode()==='rot'?null:d));const need=TIERS[4].cond.flashWins;s('goal',Math.min(need,me.flashWins)+' / '+need);$$('[data-fx="goalbar"]').forEach(e=>e.style.width=Math.min(100,me.flashWins/need*100)+'%');}
 Object.assign(ACT,{
  'flash-bet':(a,e)=>flashBet(a.dataset.v,e,a.dataset.fg),
  'flash-amt':a=>{S.ui.flashAmt=+a.dataset.v;$$('[data-a="flash-amt"]').forEach(b=>b.classList.toggle('on',+b.dataset.v===S.ui.flashAmt));$$('[data-fa]').forEach(e=>e.textContent=F.usd0(S.ui.flashAmt));},

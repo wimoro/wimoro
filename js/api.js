@@ -172,16 +172,23 @@ const API=(()=>{
  /* retire un facteur (un enrôlement abandonné, jamais vérifié, gênerait le suivant) */
  const mfaRetirer=id=>mfa('unenroll',{factorId:id});
 
- /* ----- Réglages publics du site, annonce, maintenance : api_site(), lisible par tous -----
+ /* ----- Lectures publiques, ouvertes aux visiteurs : api_site(), api_live(), api_fixations() -----
     Avec une session, par le client ; sans session, par une lecture REST directe avec la clé publique (en-tête apikey
     seul), sans charger la bibliothèque : un visiteur ne dépend toujours d'aucun service extérieur pour s'afficher. */
- async function site(){
-  if(sb)return call('api_site');
-  let r;try{r=await delai(fetch(BACK+'/rest/v1/rpc/api_site',{method:'POST',headers:{apikey:CLE,'Content-Type':'application/json'},body:'{}',cache:'no-store'}),DELAI);}
+ async function lecture(nom,args,rest){
+  if(sb&&!rest)return call(nom,args);                                       /* rest : toujours la lecture REST, même avec une session */
+  let r;try{r=await delai(fetch(BACK+'/rest/v1/rpc/'+nom,{method:'POST',headers:{apikey:CLE,'Content-Type':'application/json'},body:JSON.stringify(args||{}),cache:'no-store'}),DELAI);}
   catch(e){throw err(e&&e.code==='delai'?'delai':'reseau',e);}
   if(!r.ok)throw err('serveur');
   return r.json();
  }
+ /* réglages publics du site, annonce, maintenance */
+ const site=()=>lecture('api_site');
+ /* données vivantes (partie D), dans tous les modes par la lecture REST (publiques, sans session) : les cours, et la courbe
+    des 90 dernières secondes d'un actif (serie) */
+ const live=serie=>lecture('api_live',serie?{p_serie:serie}:{},true);
+ /* pari éclair à cours réels : les modes figés et les fixations d'un jeu, manches de à a (défaut : les 12 dernières) */
+ const fixations=(jeu,de,a)=>lecture('api_fixations',Object.assign({p_jeu:jeu},de!=null?{p_de:de}:{},a!=null?{p_a:a}:{}),true);
 
  /* ----- Temps réel : diffusion par sujet. On ne s'abonne qu'à ce qui est à l'écran. ----- */
  async function subscribe(sujet,fnc,prive){
@@ -197,7 +204,7 @@ const API=(()=>{
   pret,on,emit,call,fn,
   get mode(){return mode;},get uid(){return uid;},get email(){return email;},
   signIn,signUp,signOut,resendConfirmation,resetRequest,resetConfirm,updatePassword,
-  mfaFacteurs,mfaNiveau,mfaEnroler,mfaDefi,mfaVerifier,mfaRetirer,site,
+  mfaFacteurs,mfaNiveau,mfaEnroler,mfaDefi,mfaVerifier,mfaRetirer,site,live,fixations,
   subscribe,unsubscribe,topics:()=>Object.keys(canaux),
   /* État complet du joueur (profil, solde, positions, historique, notifications, préférences…) */
   loadState:()=>call('api_state'),

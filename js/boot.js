@@ -33,6 +33,9 @@ API.on('recuperation',()=>{RECUP=true;if(PRET)recupModal();});
 
 async function demarrer(){
  const mode=await API.pret,srv=mode==='serveur';
+ /* Partie D : première lecture des cours et des fixations (js/direct.js), dans tous les modes ; 1,5 s au plus, jamais bloquante :
+    sans réponse, le pari éclair démarre simulé, comme avant, et passe aux vrais cours à l'arrivée des données */
+ const direct=typeof directDemarrer==='function'?Promise.race([directDemarrer(),new Promise(ok=>setTimeout(ok,1500))]):null;
  {const tm=LS.g('wimoro-tmode');if(tm==='bars')S.ui.tmode='bars';}
  {let n='';try{n=sessionStorage.getItem('wimoro-note')||'';sessionStorage.removeItem('wimoro-note');}catch(e){}if(n)S.ui.authNote=n;}   /* message laissé avant un rechargement (auto-exclusion) */
  if(srv){
@@ -44,10 +47,12 @@ async function demarrer(){
    if(e&&e.code==='maintenance'){S.me=guestMe();i18nStatic(document);PRET=true;document.body.classList.add('out');$('#view').innerHTML='<div class="wrap"></div>';   /* maintenance : le serveur refuse les joueurs, l'écran l'explique */
     API.site().then(d=>{siteAppliquer(d,true);if(!MAINT)maintErreur();}).catch(()=>maintErreur());return;}
    S.me=guestMe();i18nStatic(document);PRET=true;ecranErreurServeur(e);return;}
+  if(direct)await direct;
   flashBoot();
   if(!S.me.onboarded&&location.hash!=='#bienvenue')location.replace('#bienvenue');
  }else{
   bootAuth();if(typeof rgBoot==='function')rgBoot();
+  if(direct)await direct;
   flashBoot();marketsLoad();
   (S.me.props||[]).forEach(pr=>{if(pr.status==='live')createMarketFromProposal(pr,false);});
   SEMIS.forEach(f=>f());seedRooms();checkBadges(true);if(!S.me.missions.some(m=>m.day)){S.me.missions.forEach(m=>m.day=today());}

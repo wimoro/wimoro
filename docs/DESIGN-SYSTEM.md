@@ -219,7 +219,7 @@ le JavaScript des graphiques du Mode Pro et des images partagées les lit encore
 | Choix | `chk` (case), `tgl` + `sl` ou `sw` (interrupteur), `range`, `presets` | |
 | Onglets | `tabs` (soulignés), `utabs` (avec filet), `subnav` (sous-navigation d'une destination) | l'état actif est la classe `on` |
 | Contrôle segmenté | `seg` | deux à quatre choix courts |
-| Pastille | `chip` dans `chips` ; `xpc`, `demo-b`, `cnt2` (compteur), `lk` (verrou) | |
+| Pastille | `chip` dans `chips` ; `xpc`, `demo-b`, `cnt2` (compteur), `lk` (verrou) ; `fl-src` dans `fl-srcs` (à côté du prix d'un pari éclair : « simulé », bouton qui explique pourquoi ; « retardée » ; « via le fonds QQQ ») | `button.fl-src` est dans la règle des zones de toucher |
 | Carte | `pn`, avec `pad` | ni bordure ni ombre |
 | Ligne | `line` dans `calc` (libellé / valeur), `mrow` dans `menu-l` (ligne de menu), `lockrow`, `pickl` | |
 | Cours en direct | `mlive` (`data-mlive`), dans la case de la chance d'une ligne de marché | vide, elle ne prend aucune place ; sur téléphone, sa largeur est prise à la courbe, jamais aux boutons Oui / Non |

@@ -59,7 +59,7 @@ avec la même clé, l'opération n'est appliquée qu'une fois et renvoie le mêm
 | `api_users_search(texte)` | joueur | dix joueurs au plus dont le pseudo contient le texte (fiches publiques, jamais d'e-mail) |
 | `api_friend(action, joueur)` | joueur | `add`, `accept`, `cancel`, `decline`, `remove` ; rend les trois listes à jour |
 | Edge Function `connexion` | visiteur | connexion par pseudo, sans jamais révéler d'e-mail ; limite les tentatives |
-| Edge Function `eclair` | joueur | pari éclair : `bet` (miser) et `settle` (régler les manches terminées). La Série : `serie_start`, `serie_play`, `serie_cash`, `serie_settle` — le moteur du serveur fixe l'heure de début, le prix de départ, la cote et l'issue ; l'argent et l'état sont tenus par `srv_serie_…` (clé de service seulement, table `wm.series`). Blitz Royale : `blitz_state`, `blitz_join`, `blitz_choose`, `blitz_rebuy`, `blitz_settle` — la salle simulée vient du moteur, les vrais joueurs de `wm.blitz_joueurs` (fonctions `srv_blitz_…`) |
+| Edge Function `eclair` | joueur | pari éclair : `bet` (miser ; `reel: true` pour une manche que le nouveau front joue sur les vrais cours, § 10) et `settle` (régler les manches terminées). La Série : `serie_start`, `serie_play`, `serie_cash`, `serie_settle` — le moteur du serveur fixe l'heure de début, le prix de départ, la cote et l'issue ; l'argent et l'état sont tenus par `srv_serie_…` (clé de service seulement, table `wm.series`). Blitz Royale : `blitz_state`, `blitz_join`, `blitz_choose`, `blitz_rebuy`, `blitz_settle` — la salle simulée vient du moteur, les vrais joueurs de `wm.blitz_joueurs` (fonctions `srv_blitz_…`) |
 
 | `api_duel_create(p)`, `api_duel_accept(p)`, `api_duel_close(id, action)`, `api_duel_code(code)`, `api_duels()` | joueur | duels entre amis sur un marché : mise sous séquestre, cote du marché à l'acceptation, remboursement si refusé ou expiré ; réglés par la résolution du marché (`wm.duels`). Refuser, annuler, lire un lien et lister valent aussi pour les duels éclair |
 | `api_stack_create(p)`, `api_stacks()` | joueur | duels de stack (`wm.stacks`) : buy-in pris, stack du joueur lu sur ses résultats réels (`wm.resultat`), adversaire simulé (`wm.stack_adverse`), règlement au premier passage après sept jours (`wm.stacks_avant`, étape de `api_state`) ; un vrai joueur ne peut pas être défié (`stack_joueur_reel`) |
@@ -140,6 +140,9 @@ déduisent de l'heure. Le calcul vit dans `js/moteur-eclair.js`, module pur ; l'
   `supabase/functions/donnees/` (lot 7), redéployer les deux fonctions et relancer `node tools/version.mjs` (empreinte
   anti-cache de la page), sinon l'écran et le serveur ne calculeraient plus la même chose.
 - Cours réels (lot 7, interrupteur `eclair.cours_reels`, éteint) : voir le § 10 et `docs/DONNEES.md` § 2.5.
+- Le nouveau front joue déjà les vrais cours, par client, interrupteur éteint (partie D) : règle commune dans
+  `js/moteur-reel.js`, copie conforme dans `supabase/functions/eclair/` (même consigne : recopier, redéployer `eclair`,
+  `node tools/version.mjs`). Voir le § 10 et `docs/DONNEES.md` § 2.6.
 
 ## 5. Argent fictif et jeu responsable
 
@@ -178,7 +181,8 @@ dépôt, en moins d'une seconde, et exécute les fonctions « en tant que » un 
 invariants (solde jamais négatif, opérations simultanées, rejeu d'une clé), le panneau d'administration (§ 9 :
 `sauvegarde-20261119`, `equipe`, `blocages`, `gardes`, `reglages-frais`, `diffusion`) et les données réelles (§ 10 :
 `donnees`, `donnees-cascade`, `donnees-fixations`, `eclair-reel`, et `eclair-edge`, qui exécute le texte même de l'Edge
-Function `eclair`, types retirés, contre la base embarquée). Les bouchons de Vault et de pg_net
+Function `eclair`, types retirés, contre la base embarquée ; `eclair-mises-reelles` (partie D) fait de même avec la v6 et la
+v5 qui était en ligne, pour prouver qu'une mise sans marque se règle exactement comme avant). Les bouchons de Vault et de pg_net
 (`tests/sql/supabase-stubs.sql`) rangent les requêtes au lieu de les envoyer.
 
 ## 8. Ajouter une fonction
@@ -370,3 +374,22 @@ Le détail (sources, cascade, quotas, budget, tables) est dans `docs/DONNEES.md`
 - **Lecture** : `api_fixations(jeu, de, a)` (visiteurs compris) et la partie `eclair` d'`api_live`.
 - **Tâches** : `wm-eclair-fix` (10 s : figer, déclarer absentes, garder la preuve des mises oubliées au bout de 40 h,
   refaire l'instantané) et `wm-eclair-calibrage` (chaque heure : fréquence du break even observée).
+
+### Partie D : les mises du nouveau front à cours réels (migration `eclair_mises_reelles`, Edge Function `eclair` v6)
+
+L'interrupteur reste éteint (le site en ligne joue comme avant) ; le nouveau front joue les vrais cours **par client**,
+avec la règle du module pur `js/moteur-reel.js` (manche r réelle si la fixation r − 2 de l'actif est « ok » et écrite
+avant le début de la manche). Détail : `docs/DONNEES.md` § 2.6. Côté serveur, des ajouts seulement :
+
+- **Table** `wm.eclair_mises_reelles` (RLS, aucun droit client) : la marque d'une mise du nouveau front.
+- **Fonctions de service** (clé de service seulement) : `srv_eclair_reelles(p_user, p)` (`p.items` : contextes avec les
+  fixations quel que soit le mode figé, après avoir figé les modes à venir ; `p.ids` : les mises ouvertes et marquées du
+  joueur parmi celles données, avec leur contexte), `srv_eclair_miser_reelle(p_user, p)` (`srv_eclair_miser` inchangée,
+  puis la marque, dans la même transaction ; une clé rejouée ne marque rien de plus), `srv_eclair_rembourser_reelles(p_user,
+  p_res)` (comme `srv_eclair_rembourser`, pour les mises marquées, et seulement après le délai de grâce si une fixation
+  manque) ; aide `wm.eclair_reel_un(jeu, manche)`.
+- **Edge Function `eclair` v6** : `bet` avec `reel: true` → la règle (refus `jeu_en_pause` sinon), le moteur v2 avec les
+  paramètres du client, `srv_eclair_miser_reelle` ; réponse `{ …, mise, reel: true }`. `settle` → une lecture de plus
+  (`srv_eclair_reelles`), les mises marquées réglées par `reglerReel` ou rendues (`rembourses`) ; les autres exactement comme
+  avant. Interrupteur allumé et manche figée réelle : la marque est ignorée (chemin du lot 7).
+- Sauvegarde : `wm.eclair_remboursements`. Aucune fonction existante n'est modifiée.

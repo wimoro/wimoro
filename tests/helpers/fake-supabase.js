@@ -1076,7 +1076,7 @@
     var b = (opt && opt.body) || {}; rec('fn', name, { pseudo: b.pseudo });
     var ko = function (code) { return Promise.resolve({ data: null, error: { message: 'Edge Function returned a non-2xx status code', context: { json: function () { return Promise.resolve({ ok: false, code: code }); } } } }); };
     if (name === 'eclair') {
-      calls[calls.length - 1].args = { action: b.action, gid: b.gid, side: b.side, amt: b.amt, stake: b.stake, choice: b.choice, id: b.id, opp: b.opp, code: b.code };
+      calls[calls.length - 1].args = { action: b.action, gid: b.gid, side: b.side, amt: b.amt, stake: b.stake, choice: b.choice, id: b.id, opp: b.opp, code: b.code, reel: b.reel };   /* reel : partie D, mise du nouveau front à cours réels */
       if (CFG.horsLigne) return Promise.reject(new TypeError('Failed to fetch'));
       var forcee = (CFG.fn || {}).eclair; if (forcee) return ko(forcee);
       if (!uid()) return ko('session');

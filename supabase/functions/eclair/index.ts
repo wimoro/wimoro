@@ -32,12 +32,25 @@
 // La base refuse une mise calculée dans un autre mode que celui figé (« mode_change » : la fonction recommence une fois) et
 // toute mise sur un jeu en pause (« jeu_en_pause »). Une manche réelle annulée (fixation absente) rend les mises :
 // srv_eclair_rembourser ; le règlement renvoie alors aussi « rembourses ». La Série et Blitz Royale ne changent pas.
+//
+// Nouveau front, cours réels PAR CLIENT (partie D, v6) : l'interrupteur reste éteint, la base fige toutes les manches
+// « simulées » et le site en ligne (l'ancien front) joue comme avant. Le nouveau front envoie
+//   { action: 'bet', gid, side, amt, key, reel: true }  →  { ok: true, now, me, ev, mise, reel: true }
+// pour une manche qu'il joue sur les vrais cours : la règle du module pur moteur-reel.js (copie conforme de
+// js/moteur-reel.js) dit si elle est réelle (fixation r − 2 « ok », écrite avant le début de la manche) ; sinon refus
+// « jeu_en_pause ». La mise est calculée par le moteur v2 (etatReel, prixReel, beMultReel, beMaxReel) et passe par
+// srv_eclair_miser_reelle (srv_eclair_miser inchangée, puis la marque, dans la même transaction). Au règlement, les mises
+// marquées (srv_eclair_reelles) se règlent par reglerReel sur les fixations ; manche annulée → srv_eclair_rembourser_reelles
+// (« rembourses »). Une mise sans marque suit exactement le chemin d'avant.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.118.0";
 import "./moteur-eclair.js";
+import "./moteur-reel.js";
 
 // deno-lint-ignore no-explicit-any
 const ME = (globalThis as any).MoteurEclair;
+// deno-lint-ignore no-explicit-any
+const MR = (globalThis as any).MoteurReel;
 
 const ORIGINES = [/^https:\/\/(www\.)?wimoro\.com$/, /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/];
 const cors = (req: Request) => {
@@ -78,6 +91,14 @@ async function contextes(admin: any, items: { jeu: string; manche: number }[]): 
   // deno-lint-ignore no-explicit-any
   return Object.fromEntries((data?.items ?? []).map((c: any) => [c.jeu + ":" + c.r, c]));
 }
+// Nouveau front : contextes avec les fixations de l'actif quel que soit le mode figé (p.items, une mise), ou les mises
+// marquées parmi des mises ouvertes (p.ids, un règlement) — srv_eclair_reelles.
+// deno-lint-ignore no-explicit-any
+async function reelles(admin: any, joueur: string, p: Record<string, unknown>): Promise<any> {
+  const { data, error } = await admin.rpc("srv_eclair_reelles", { p_user: joueur, p });
+  if (error) throw error;
+  return data;
+}
 const enPause = (c: { mode?: string } | undefined) => !!c && (c.mode === "pause" || c.mode === "retire");
 // L'état de la cagnotte d'un jeu à un tick, dans le mode de la manche : { g, px } (cours réels : moteur v2).
 // deno-lint-ignore no-explicit-any
@@ -108,6 +129,31 @@ Deno.serve(async (req: Request) => {
     if (!d) return refus(req, "jeu_inconnu");
     if (!["oui", "non", "be"].includes(cote)) return refus(req, "cote_invalide");
     if (!(amt >= 1) || !(amt <= 10000)) return refus(req, "montant_invalide");
+    // Nouveau front, cours réels par client (voir l'en-tête). Interrupteur allumé et manche figée réelle : le chemin d'avant
+    // s'en charge (paramètres de la base, sans marque).
+    if (corps.reel === true) {
+      const t = Date.now();
+      if (!ME.ouvert(t)) return refus(req, "mises_fermees");
+      const manche = ME.round(t), tk = ME.tick(t);
+      // deno-lint-ignore no-explicit-any
+      let item: any = null;
+      try { item = ((await reelles(admin, joueur, { items: [{ jeu: d.id, manche }] }))?.items ?? [])[0] ?? null; }
+      catch (e) { const k = codeDe((e as Error)?.message); if (k === "serveur") console.error("mise réelle, contexte :", (e as Error)?.message ?? e); return refus(req, k, k === "serveur" ? 500 : 400); }
+      if (!item || item.mode !== "reel") {
+        if (enPause(item)) return refus(req, "jeu_en_pause");
+        const cc = MR.contexteMise(d.id, manche, item);
+        if (!cc) return refus(req, "jeu_en_pause");                                     // pas réelle pour le client : en pause
+        const g = ME.etatReel(d, manche, tk, null, cc), px = ME.prixReel(d, g, cc.P);
+        const p = {
+          manche, jeu: d.id, cote, amt, tk, key: corps.key ?? null, mode: "simule",        // le mode figé par la base (interrupteur éteint)
+          fee: ME.frais(d, g, cote, amt, false), fee_remise: ME.frais(d, g, cote, amt, true),
+          mult: ME.beMultReel(d, cc.P), prix: cote === "oui" ? px.o : cote === "non" ? px.n : px.e, be_max: ME.beMaxReel(g, d, cc.P),
+        };
+        const { data, error } = await admin.rpc("srv_eclair_miser_reelle", { p_user: joueur, p });
+        if (error) { const k = codeDe(error.message); if (k === "serveur") console.error("mise réelle :", error.message); return refus(req, k, k === "serveur" ? 500 : 400); }
+        return json(req, { ok: true, now: Date.now(), ...data });
+      }
+    }
     // l'heure du serveur décide de la manche et du tick ; les mises ne sont ouvertes que 30 secondes
     // deno-lint-ignore no-explicit-any
     const miser = async (force: boolean): Promise<{ data?: any; error?: any; non?: Response }> => {
@@ -148,14 +194,35 @@ Deno.serve(async (req: Request) => {
     // le mode de chaque manche (et, réelle, ses fixations) : la base le dit ; 60 manches au plus par appel, le reste au suivant
     // deno-lint-ignore no-explicit-any
     const toutes = (o?.mises ?? []).filter((m: any) => ME.JEUX[m.g]);
+    // les mises du nouveau front (marquées « reel ») et leur contexte, fixations comprises ; les autres : comme avant
     // deno-lint-ignore no-explicit-any
-    const items = [...new Map(toutes.map((m: any) => [m.g + ":" + m.r, { jeu: m.g, manche: Number(m.r) }])).values()].slice(0, 60) as { jeu: string; manche: number }[];
+    let marques: Record<string, any> = {}, grace = MR.GRACE_S;
+    if (toutes.length) {
+      try {
+        // deno-lint-ignore no-explicit-any
+        const rr = await reelles(admin, joueur, { ids: toutes.map((m: any) => m.id) });
+        grace = Number(rr?.grace_s) > 0 ? Number(rr.grace_s) : MR.GRACE_S;
+        // deno-lint-ignore no-explicit-any
+        marques = Object.fromEntries((rr?.mises ?? []).map((x: any) => [String(x.id), x]));
+      } catch (e) { console.error("règlement, mises réelles :", (e as Error)?.message ?? e); return refus(req, "serveur", 500); }
+    }
+    // deno-lint-ignore no-explicit-any
+    const items = [...new Map(toutes.filter((m: any) => !marques[String(m.id)]).map((m: any) => [m.g + ":" + m.r, { jeu: m.g, manche: Number(m.r) }])).values()].slice(0, 60) as { jeu: string; manche: number }[];
     // deno-lint-ignore no-explicit-any
     let ctx: Record<string, any> = {};
     try { ctx = await contextes(admin, items); }
     catch (e) { console.error("règlement, contextes :", (e as Error)?.message ?? e); return refus(req, "serveur", 500); }
-    const res: unknown[] = [], remb: unknown[] = [];
+    const res: unknown[] = [], remb: unknown[] = [], rembR: unknown[] = [];
     for (const m of toutes) {
+      const mk = marques[String(m.id)];
+      if (mk) {                                                                // nouveau front : réglée sur les fixations
+        const d = ME.JEUX[m.g], r = Number(m.r), my = { s: m.s, amt: Number(m.amt), net: Number(m.net), mult: Number(m.mult), tk: Number(m.tk) };
+        const cc = MR.ctx(m.g, r, mk.Fc ?? {});
+        if (MR.attente(r, cc.F, Date.now(), grace)) continue;                  // fin pas encore fixée : la mise attend
+        const x = ME.reglerReel(d, r, my, cc);
+        if (x.annule) rembR.push({ id: m.id, motif: x.motif }); else res.push({ id: m.id, win: x.win, pay: x.pay, part: x.part });
+        continue;
+      }
       const c = ctx[m.g + ":" + m.r];
       if (!c) continue;                                                        // au-delà des 60 : au prochain règlement
       const d = ME.JEUX[m.g], my = { s: m.s, amt: Number(m.amt), net: Number(m.net), mult: Number(m.mult), tk: Number(m.tk) };
@@ -170,10 +237,17 @@ Deno.serve(async (req: Request) => {
     }
     const { data, error } = await admin.rpc("srv_eclair_regler", { p_user: joueur, p_res: res });
     if (error) { const c = codeDe(error.message); if (c === "serveur") console.error("règlement :", error.message); return refus(req, c, c === "serveur" ? 500 : 400); }
-    if (!remb.length) return json(req, { ok: true, now: Date.now(), ...data, rembourses: [] });
-    const { data: b, error: e3 } = await admin.rpc("srv_eclair_rembourser", { p_user: joueur, p_res: remb });
-    if (e3) { console.error("remboursement :", e3.message); return json(req, { ok: true, now: Date.now(), ...data, rembourses: [] }); }
-    return json(req, { ok: true, now: Date.now(), ...data, ...b, ev: [...(data?.ev ?? []), ...(b?.ev ?? [])], regles: data?.regles ?? [], hist: data?.hist ?? [] });
+    if (!remb.length && !rembR.length) return json(req, { ok: true, now: Date.now(), ...data, rembourses: [] });
+    // les mises rendues : celles d'une manche réelle figée par la base (srv_eclair_rembourser), puis celles du nouveau front
+    // deno-lint-ignore no-explicit-any
+    let rep: any = { ...data }, rembourses: unknown[] = [], ev: unknown[] = [...(data?.ev ?? [])];
+    for (const [nom, liste] of [["srv_eclair_rembourser", remb], ["srv_eclair_rembourser_reelles", rembR]] as [string, unknown[]][]) {
+      if (!liste.length) continue;
+      const { data: b, error: e3 } = await admin.rpc(nom, { p_user: joueur, p_res: liste });
+      if (e3) { console.error("remboursement :", e3.message); continue; }
+      rep = { ...rep, ...b }; rembourses = rembourses.concat(b?.rembourses ?? []); ev = ev.concat(b?.ev ?? []);
+    }
+    return json(req, { ok: true, now: Date.now(), ...rep, rembourses, ev, regles: data?.regles ?? [], hist: data?.hist ?? [] });
   }
 
   // ── La Série ──

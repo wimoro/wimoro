@@ -24,6 +24,11 @@ i18n ×5  →  api.js  →  core, engine, moteur-eclair, views, auth, …, demo 
 - Feuilles de style, dans l'ordre : `css/tokens.css` → `base.css` → `components.css` → `screens.css` (`index.html`).
 - Traductions : `js/i18n.js`, puis `i18n-1.js` à `i18n-4.js` (`i18n-4.js` porte les textes ajoutés par la refonte).
 - `js/refonte.js` vient juste après `demo.js` et avant `serveur.js`.
+- Partie D : `js/moteur-reel.js` (règle du pari éclair à cours réels par client, module pur, copie conforme dans l'Edge
+  Function `eclair`) vient juste après `moteur-eclair.js` ; `js/direct.js` (données vivantes `api_live` et `api_fixations`
+  dans tous les modes, manches réelles ou en pause, règlement du compte démo) juste après `flash.js`. L'écran de l'éclair
+  lit l'état affiché d'un jeu par `GA(id)` : sa manche réelle ou en pause, sinon l'état simulé d'avant (`G(id)`, que La
+  Série, le Blitz et les duels continuent d'utiliser). Détail : `docs/DONNEES.md` § 2.6.
 
 - `js/api.js` — **la seule passerelle vers le back**. Seul fichier à toucher le client Supabase (version 2.118.0, figée
   dans `js/vendor/`, chargée seulement si nécessaire). Il expose `API.call(nom, arguments)` pour les fonctions du

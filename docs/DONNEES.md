@@ -420,6 +420,51 @@ tick) : un joueur qui regarde le vrai cours avant de miser a un avantage, comme 
 elle, se calculait d'avance à partir du code public). Le volume des clans compte la mise d'une manche annulée. Une
 cotation Finnhub rattrapée après la minute pile peut dater de quelques secondes après T (15 s au plus), pareil pour tous.
 
+### 2.6 Le nouveau front sur les vrais cours, par client (partie D)
+
+*Partie D, 19 nov. 2026, branche `marches-et-admin-eclair`. Migration `20261119191354_eclair_mises_reelles`, Edge Function
+`eclair` (v6), module pur `js/moteur-reel.js` (copie conforme dans `supabase/functions/eclair/`), écran `js/direct.js`.
+Tests : `tests/eclair-direct.spec.mjs`, `tests/sql/eclair-mises-reelles.spec.mjs`.*
+
+**Pourquoi « par client ».** Le site en ligne (l'ancien front, branche `main`) ne sait pas afficher un cours réel :
+allumer l'interrupteur global changerait ses résultats. L'interrupteur `eclair.cours_reels` reste donc **éteint** (la base
+fige toutes les manches « simulées », raison `interrupteur`) et c'est le nouveau front qui joue les vrais cours, avec une
+règle que tout le monde calcule pareil à partir des seules fixations (écrites une fois, jamais changées) :
+
+| Mode d'une manche r, pour le nouveau front | Quand | À l'écran |
+|---|---|---|
+| réel (`r`) | jeu à vraie source (Bitcoin, Ether, Solana, Dogecoin, Secousse ; Nasdaq 100 et S&P 500 par les fonds QQQ et SPY, Nvidia, Tesla) et fixation r − 2 de son actif « ok », écrite avant le début de la manche r | départ = fixation r (« Départ en cours de fixation » les 3 à 4 premières secondes), courbe des cours relevés, fin = fixation r + 1 (« Résultat en cours de vérification » jusqu'à elle) |
+| en pause (`p`) | pas de telle fixation : place fermée (indicateur `o` d'`api_live` à 0), clé absente, données muettes | « Marché fermé » et l'heure de réouverture (calendrier de New York, jours fériés de `wm.px_feries`), ou « En pause » ; la dernière clôture ; mises impossibles ; les jeux ouverts 24 h sur 24 proposés, et retirés de la rotation |
+| simulé (`s`) | jeu sans vraie source (CAC 40, or, argent, pétrole, devises, sport), ou aucune fixation lisible depuis l'ouverture de la page | le moteur d'avant, inchangé ; pastille « simulé » à côté du prix (un cours à la seconde demande un flux payant) |
+| retiré (`x`) | jeu sorti par l'équipe (`wm.eclair_jeux.config = 'retire'`) | hors rotation, mises impossibles |
+
+Paramètres d'une manche réelle du client : fréquence du break even **du modèle** (pas la calibrée, que l'écran ne peut pas
+lire tant que l'interrupteur est éteint), sources communes exigées de l'actif (2 pour la crypto, 1 pour une action),
+break even ouvert. Le résultat est celui du moteur v2 (`reglerReel`) : le même pour tous, compte démo, visiteur et serveur.
+Interrupteur un jour allumé : une manche figée « réelle » par la base prend les paramètres de la base, comme au § 2.5.
+
+**Lectures** (`js/direct.js`, toujours par la lecture REST avec la clé publique, même avec une session ; jamais onglet
+caché) : `api_live()` toutes les 10 s sur l'éclair, le Blitz et la Série, toutes les 30 s ailleurs (avec la courbe de
+l'actif affiché) ; `api_fixations(jeu)` une fois par manche et par jeu à vraie source sur l'éclair et l'accueil, 3,5 s
+après la frontière, puis toutes les 3 s tant que la fixation attendue manque (toutes les 3 min pour un jeu sans fixation
+récente) ; ailleurs, seulement pour un jeu dont une mise attend son résultat. Une panne : le dernier instantané reste,
+marqué « retardée » quand il vieillit. Au démarrage, une première lecture (1,5 s au plus, jamais bloquante).
+
+**Règlement.** Compte démo : sur la page, avec `reglerReel` ; une mise qui attend sa fin est gardée avec le compte
+(`S.me.freel`) et réglée au retour. Vrai compte : la mise part avec `reel: true` ; l'Edge Function vérifie la règle
+(sinon refus `jeu_en_pause`), calcule frais, cote et break even avec le moteur v2, puis `srv_eclair_miser_reelle` passe la
+mise par `srv_eclair_miser` (inchangée) et pose la marque dans `wm.eclair_mises_reelles`, dans la même transaction. Au
+règlement, `srv_eclair_reelles` dit quelles mises ouvertes sont marquées et rend leurs fixations ; elles se règlent par
+`reglerReel`, attendent tant que leur fin n'est pas fixée (délai de grâce), et une manche annulée rend la mise par
+`srv_eclair_rembourser_reelles` (mêmes écritures que `srv_eclair_rembourser` : table `wm.eclair_remboursements`, journal
+`flash_rembourse`, notification `flash_rembourse`). **Une mise sans marque (ancien front) se mise et se règle exactement
+comme avant** (prouvé par `tests/sql/eclair-mises-reelles.spec.mjs` contre le texte de la v5 qui était en ligne).
+
+**Limites.** Une mise marquée restée ouverte plus de 48 h (joueur pas revenu) n'a plus ses fixations (l'anneau de 48 h
+est réécrit, et la preuve du § 2.5 ne garde que les manches figées « réelles ») : elle est rendue. La Série, le Blitz et les
+duels restent simulés (trajectoire du moteur d'avant). Un compte qui joue une manche alors que ses fixations étaient
+illisibles mise « simulé » sans marque : si les données reviennent pendant la manche, l'écran garde cette manche simulée.
+
 ## 3. Tâches planifiées et budget
 
 ### 3.1 Tâches
@@ -515,6 +560,15 @@ Lot 7 (pari éclair à cours réels) :
 
 Sauvegarde prise avant d'écrire (lot 7) : `wm.eclair_mises`, `wm.sources`, `wm.live_cache` (dans `backup_20261119.tables`) ;
 définitions d'avant de `srv_eclair_miser` et `srv_duel_eclair_creer` dans `backup_20261119.fonctions_lots` (lot `lot7`).
+
+Partie D (le nouveau front sur les vrais cours, § 2.6) :
+
+| Table | Contenu | Taille |
+|---|---|---|
+| `wm.eclair_mises_reelles` | les mises du nouveau front marquées « reel » (mise, joueur, jeu, manche), effacées avec la mise | une ligne par mise marquée |
+
+Sauvegarde : `wm.eclair_remboursements` (dans `backup_20261119.tables`, `wm.eclair_mises` l'était déjà). Aucune fonction
+existante n'est modifiée.
 
 ## 5. Cycle de vie d'un marché
 

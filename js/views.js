@@ -35,7 +35,7 @@ function fixText(root){if(!root)return;const w=document.createTreeWalker(root,No
 function barH(b,isNew){return `<span class="b ${b.s===2?'e':b.s?'o':'n'}${b.me?' me':''}${isNew?' new':''}"><i style="height:${(6+b.a*42).toFixed(1)}%"></i></span>`;}
 function trailFill(el){const id=el.dataset.trail;
  if(id!=='flash'&&S.ui.tmode!=='bars'){const m=MK[id];if(m&&m.ph&&m.ph.length>1){const L=lineSVG(m.ph.slice(-(el.classList.contains('big')?120:70)),m.p>=m.d0);   /* la couleur suit la variation sur 24 h affichée à côté */el.classList.add('tl');el.innerHTML=L.svg+`<i class="tdot" style="top:${L.top.toFixed(1)}%;background:${L.col}"></i>`;return;}}
- el.classList.remove('tl');const src=id==='flash'?G(S.ui.fgame).bets:(MK[id]?MK[id].bets:[]);const cap=Math.max(8,Math.floor((el.clientWidth||300)/5));el.dataset.cap=cap;el.innerHTML=src.slice(-cap).map(b=>barH(b,false)).join('');}
+ el.classList.remove('tl');const src=id==='flash'?GA(S.ui.fgame).bets:(MK[id]?MK[id].bets:[]);const cap=Math.max(8,Math.floor((el.clientWidth||300)/5));el.dataset.cap=cap;el.innerHTML=src.slice(-cap).map(b=>barH(b,false)).join('');}
 function trailPush(id,b){if(id!=='flash'&&S.ui.tmode!=='bars')return;$$(`[data-trail="${id}"]`).forEach(el=>{el.insertAdjacentHTML('beforeend',barH(b,true));const cap=+el.dataset.cap||60;while(el.children.length>cap)el.firstElementChild.remove();});}
 function mountTrails(root=document){$$('[data-trail]',root).forEach(trailFill);if(root.dataset&&root.dataset.trail)trailFill(root);}
 /* fiche marché : la seconde courbe vit dans un <details> replié ; à l'ouverture, elle est redessinée à sa vraie largeur */
