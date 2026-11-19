@@ -162,7 +162,28 @@ function trailTip(e){const el=e.target&&e.target.closest?e.target.closest('.trai
 document.addEventListener('pointermove',trailTip,{passive:true});
 document.addEventListener('pointerleave',e=>{if(e.target&&e.target.classList&&e.target.classList.contains('trail'))$$('.tip',e.target).forEach(x=>x.remove());},true);
 /* Après chaque rendu d'écran (appelé par render, js/views.js). */
-function apresRendu(view){introVue(view);}
+function apresRendu(view,v,top){introVue(view);titreFocus(view,top);$$('input.range',view).forEach(curseurRempli);}
+
+/* ===================== Accessibilité (troisième passe, partie B) ===================== */
+/* Changement d'écran : le focus clavier va au titre de la page (h1, visible ou réservé aux lecteurs d'écran), pour que la
+   lecture reprenne en haut du nouvel écran. Ni au premier affichage, ni quand un écran se redessine sur place. */
+let ECRAN_VU=null;
+function titreFocus(view,top){const r=S.ui.route||'accueil',avant=ECRAN_VU;ECRAN_VU=r;if(!top||avant===null||avant===r)return;
+ const h=view.querySelector('h1');if(!h)return;if(!h.hasAttribute('tabindex'))h.setAttribute('tabindex','-1');try{h.focus({preventScroll:true});}catch(e){h.focus();}}
+/* La cloche et le bouton du menu du compte annoncent l'état de leur panneau (aria-expanded, aria-controls), quelle que soit
+   la façon dont il s'ouvre ou se ferme (clic, Échap, changement d'écran, clic ailleurs). Ouvert au clavier, le panneau
+   reçoit le focus ; fermé par Échap, le focus revient au bouton. */
+const PANNEAUX=[['npanel','[data-a="notifs"]'],['umenu','[data-a="umenu"]']];
+let PANNEAU_CLAVIER=null;
+function panneauxEtat(){for(const [id,sel] of PANNEAUX){const p=document.getElementById(id),ouvert=!!p;$$(sel).forEach(b=>{if(b.getAttribute('aria-expanded')===String(ouvert))return;b.setAttribute('aria-expanded',String(ouvert));if(ouvert)b.setAttribute('aria-controls',id);else b.removeAttribute('aria-controls');});
+  if(p&&!p.dataset.vu){p.dataset.vu='1';if(!p.hasAttribute('role')){p.setAttribute('role','region');p.setAttribute('aria-label',id==='npanel'?_t('Notifications'):_t('Menu du compte'));}const b=$(sel);if(b&&b.matches(':focus-visible')){const c=p.querySelector('a[href],button');if(c)c.focus();}}}}
+if(typeof MutationObserver==='function')new MutationObserver(panneauxEtat).observe(document.body,{childList:true});
+panneauxEtat();
+document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;const a=document.activeElement;for(const [id,sel] of PANNEAUX){const p=document.getElementById(id);if(p&&a&&p.contains(a))PANNEAU_CLAVIER=sel;}if(PANNEAU_CLAVIER)setTimeout(()=>{const b=$(PANNEAU_CLAVIER);PANNEAU_CLAVIER=null;if(b)b.focus();},0);},true);
+/* Curseur (input.range) : la partie remplie de la piste suit la pastille ; Chrome et Safari ne la dessinent pas d'eux-mêmes
+   (css/components.css lit --val). Au clavier comme au doigt, l'événement input la met à jour. */
+function curseurRempli(r){const mn=r.min===''?0:+r.min,mx=r.max===''?100:+r.max,v=+r.value;r.style.setProperty('--val',(mx>mn?(v-mn)/(mx-mn)*100:0)+'%');}
+document.addEventListener('input',e=>{const t=e.target;if(t&&t.matches&&t.matches('input.range'))curseurRempli(t);});
 /* Passage téléphone ↔ ordinateur : l'accueil se recompose (la carte Éclair change de colonne). */
 try{matchMedia('(min-width:880px)').addEventListener('change',()=>{if(PRET&&(S.ui.route||'accueil')==='accueil')render(false);});}catch(e){}
 
@@ -177,4 +198,6 @@ function replier(){const view=$('#view');if(!view)return;const r=(S.ui.route||'a
   const cle=r+':'+titre.textContent.trim(),o=REPLI.ouvert.has(cle);sec.classList.add('repli');sec.classList.toggle('plie',!o);sec.dataset.repli=cle;tete.classList.add('repli-t');const b=document.createElement('button');b.type='button';b.className='repli-b';b.setAttribute('aria-expanded',String(o));b.setAttribute('aria-label',titre.textContent.trim());tete.appendChild(b);});}
 function repliBascule(tete){const sec=tete.parentElement,o=sec.classList.toggle('plie'),b=tete.querySelector('.repli-b');if(b)b.setAttribute('aria-expanded',String(!o));if(o)REPLI.ouvert.delete(sec.dataset.repli);else REPLI.ouvert.add(sec.dataset.repli);}
 document.addEventListener('click',e=>{const t=e.target.closest('.repli-t');if(t&&(e.target.closest('.repli-b')||!e.target.closest('a,button,input,select,label')))repliBascule(t);});
-{const r0=render;render=function(top){r0(top);replier();};}
+{const r0=render;render=function(top){const a=document.activeElement,titre=!!(a&&a.matches&&a.matches('#view h1'));r0(top);replier();
+ /* un écran redessiné sur place garde le focus sur son titre s'il l'avait (le titre vient d'être remplacé) */
+ if(titre&&document.activeElement===document.body){const h=$('#view h1');if(h){h.setAttribute('tabindex','-1');try{h.focus({preventScroll:true});}catch(e){h.focus();}}}};}

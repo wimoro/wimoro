@@ -155,7 +155,10 @@
    input.range l'emporte sur .field input (même poids, plus loin dans le fichier). */
 input.range{-webkit-appearance:none;appearance:none;display:block;width:100%;height:var(--tap);min-height:var(--tap);padding:0;border:0;border-radius:0;background:transparent;accent-color:var(--accent-bg);cursor:pointer}
 input.range:focus{background:transparent}
-input.range::-webkit-slider-runnable-track{height:6px;border-radius:var(--r-pill);background:var(--fill-2)}
+/* partie remplie dans Chrome et Safari : deux aplats séparés net à la valeur (--val, posée par js/refonte.js), pas un dégradé ;
+   en hébreu, le curseur se remplit depuis la droite */
+input.range::-webkit-slider-runnable-track{height:6px;border-radius:var(--r-pill);background:linear-gradient(to right,var(--accent-bg) var(--val,0%),var(--fill-2) var(--val,0%))}
+[dir=rtl] input.range::-webkit-slider-runnable-track{background:linear-gradient(to left,var(--accent-bg) var(--val,0%),var(--fill-2) var(--val,0%))}
 input.range::-moz-range-track{height:6px;border-radius:var(--r-pill);background:var(--fill-2)}
 input.range::-moz-range-progress{height:6px;border-radius:var(--r-pill);background:var(--accent-bg)}
 input.range::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:22px;height:22px;margin-top:-8px;border-radius:50%;background:var(--accent-bg);box-shadow:0 0 0 3px var(--surface)}
