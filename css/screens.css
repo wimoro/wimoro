@@ -188,7 +188,7 @@ hr{border:0;height:1px;background:var(--line);margin:16px 0}
 .msg.palopen .pal{display:inline-flex}
 .composer{border-top:1px solid var(--line);padding:12px 16px 16px;display:flex;flex-direction:column;gap:10px;background:var(--surface)}
 .cin{display:flex;align-items:center;gap:8px;background:var(--fill);border-radius:var(--r-md);padding-block:0 0;padding-inline:16px 6px;height:46px;border:1px solid transparent;transition:border-color var(--dur-1),background var(--dur-1)}
-.cin:focus-within{background:var(--surface);border-color:var(--line)}
+.cin:focus-within{background:var(--surface);border-color:var(--accent)}
 .cin input{flex:1;border:0;background:transparent;outline:none;font-size:var(--fs-2);min-width:0}
 .cin .send{width:36px;height:36px;border-radius:var(--r-sm);display:grid;place-items:center;background:var(--accent-bg);transition:transform var(--dur-1);color:var(--on-color)}
 .cin .send:active{transform:scale(.92)}
@@ -2386,3 +2386,18 @@ html.pro-lock,html.pro-lock body{overflow:hidden}
   .acct-l .ui svg{width:20px;height:20px;color:var(--text-3)}
   .acct-l .ui.out svg{color:inherit}
 }
+
+/* ---------- Accessibilité (revue du système) ---------- */
+/* focus toujours visible : dans les listes qui rognent leur contenu, le contour passe à l'intérieur de la ligne */
+.sort select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mrow:focus-visible,.sres a:focus-visible,.acct-l .ui:focus-visible,.pn.clip :focus-visible{outline-offset:-3px}
+.tabs :focus-visible{outline-offset:-2px}
+/* un champ qui prend le focus dans une fenêtre ne passe pas sous son en-tête collant */
+.modal{scroll-padding-top:80px}
+@media (pointer:coarse){
+  /* la palette de réactions ouverte replace son bouton : sa zone d'appui élargie n'a plus d'ancre, on la retire */
+  .msg.palopen .reacts.empty .add::after{content:none}
+  .mobrooms button{min-height:var(--tap)}
+  .reacts{gap:var(--sp-3)}
+}
+@media (hover:none){.reacts .add{opacity:1}}

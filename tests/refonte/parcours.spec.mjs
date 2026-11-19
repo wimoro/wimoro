@@ -1,6 +1,7 @@
 // Dans un vrai navigateur (Playwright), parcours de bout en bout de la refonte du design : navigation en 5 destinations,
 // ticket de pari, Éclair, Portefeuille, dépôt, retrait, Communauté, langue, thème, déconnexion, et « trois gestes au plus ».
 import { test, expect } from '@playwright/test';
+import fs from 'node:fs';
 import { ouvrir, lire, fermerRang, debutManche } from '../helpers/app.mjs';
 
 const DESTINATIONS = [['accueil', '#accueil'], ['eclair', '#eclair'], ['portefeuille', '#portefeuille'], ['communaute', '#communaute'], ['profil', '#profil']];
@@ -246,3 +247,225 @@ for (const [ecran, chemin] of CHEMINS) {
     expect(erreurs).toEqual([]);
   });
 }
+
+/* ===================== Seconde passe : en-tête de départ, libellés, langue, montants, Communauté, barre d'onglets, ticket ===================== */
+const norm = s => s.replace(/[  ⁦-⁩]/g, ' ').replace(/\s+/g, ' ').trim();
+const FAUX_SB = fs.readFileSync(new URL('../helpers/fake-supabase.js', import.meta.url), 'utf8');
+
+/** Ouvre le site SANS écrire de langue (comme un premier visiteur) ; `local` est posé avant le premier script. */
+async function ouvrirNu(page, local = {}, hash = '#accueil') {
+  const erreurs = [];
+  page.on('pageerror', e => erreurs.push(`${e.name}: ${e.message}`));
+  page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) erreurs.push('console.error: ' + m.text()); });
+  await page.route(/(js\/vendor\/supabase[^/]*\.js|cdn\.jsdelivr\.net\/.*supabase)/, r => r.fulfill({ contentType: 'text/javascript', body: FAUX_SB }));
+  await page.route(/fonts\.(googleapis|gstatic)\.com/, r => r.fulfill({ status: 200, contentType: 'text/css', body: '' }));
+  await page.addInitScript(l => { window.__FAKE_SB__ = { session: null }; if (!sessionStorage.getItem('__nu__')) { sessionStorage.setItem('__nu__', '1'); for (const k in l) localStorage.setItem(k, l[k]); } }, local);
+  await page.goto('/index.html' + hash);
+  await expect(page.locator('#view > *').first()).toBeAttached({ timeout: 15000 });
+  return { erreurs };
+}
+const textes = (page, sel) => page.locator(sel).locator('visible=true').allInnerTexts().then(a => a.map(norm));
+
+test('14 · connexion : visiteur → formulaire → compte démo (bouton « compte démo »)', async ({ page }) => {
+  const { erreurs } = await ouvrir(page, { mode: 'visiteur', lang: 'fr', hash: '#accueil' });
+  await expect(page.locator('body')).toHaveClass(/\bout\b/);
+  await page.locator('.top .login').click();
+  await expect(page).toHaveURL(/#connexion/);
+  await expect(page.locator('[data-form="login"]')).toBeVisible();
+  await expect(page.locator('#view h1')).toHaveText('Se connecter');
+  await page.locator('[data-a="demo-login"]').click();
+  await expect(page.locator('body')).toHaveClass(/\bin\b/);
+  await expect(page.locator('body')).not.toHaveClass(/\bout\b/);
+  expect(await lire(page, () => S.me.logged)).toBeTruthy();
+  await expect(page.locator('.top .me-av')).toBeVisible();
+  expect(erreurs).toEqual([]);
+});
+
+test('15 · départ : état neutre (.sk) tant que boot.js n’a pas tourné, puis in OU out', async ({ page }) => {
+  let ouvrirVanne; const vanne = new Promise(r => { ouvrirVanne = r; });
+  await page.route(/js\/boot\.js/, async r => { await vanne; await r.continue(); });
+  const p = ouvrir(page, { mode: 'visiteur' });
+  await expect(page.locator('.top .sk')).toBeVisible();
+  const classes = await page.locator('body').getAttribute('class');
+  expect(classes || '').not.toMatch(/\b(in|out)\b/);
+  for (const s of ['.top .bal', '.top .bell', '.top .me-av', '.top .login', '.top .signup']) await expect(page.locator(s), s).toBeHidden();
+  ouvrirVanne();
+  const { erreurs } = await p;
+  await expect(page.locator('body')).toHaveClass(/\bout\b/);
+  await expect(page.locator('body')).not.toHaveClass(/\bin\b/);
+  await expect(page.locator('.top .sk')).toBeHidden();
+  await expect(page.locator('.top .login')).toBeVisible();
+  expect(erreurs).toEqual([]);
+});
+
+test('15b · départ : connecté, body.in seulement', async ({ page }) => {
+  const { erreurs } = await demo(page, { hash: '#accueil' });
+  await expect(page.locator('body')).toHaveClass(/\bin\b/);
+  await expect(page.locator('body')).not.toHaveClass(/\bout\b/);
+  await expect(page.locator('.top .bal')).toBeVisible();
+  await expect(page.locator('.top .login')).toBeHidden();
+  expect(erreurs).toEqual([]);
+});
+
+for (const [lang, connexion, inscription] of [['fr', 'Se connecter', 'S’inscrire'], ['en', 'Log in', 'Sign up']]) {
+  for (const w of [390, 1280]) {
+    test(`16 · libellés uniques (${lang}, ${w} px) : en-tête, onglets, titres, boutons`, async ({ page }) => {
+      await page.setViewportSize({ width: w, height: 844 });
+      const { erreurs } = await ouvrir(page, { mode: 'visiteur', lang, hash: '#accueil' });
+      const interdits = /Connexion|Créer un compte|Créer mon compte|Inscription/;
+      expect((await textes(page, '.top .right, .top .nav, nav.tabbar')).join(' | ')).not.toMatch(interdits);
+      await expect(page.locator('.top .signup')).toHaveText(inscription);
+      if (w < 880) await expect(page.locator('nav.tabbar .tab5 a.only-out span').first()).toHaveText(connexion);
+      else await expect(page.locator('.top .login')).toHaveText(connexion);
+      if (lang === 'fr') {
+        await page.evaluate(() => { location.hash = '#connexion'; });
+        await expect(page.locator('#view h1')).toHaveText('Se connecter');
+        await expect(page.locator('[data-form="login"] button[type="submit"]')).toHaveText('Se connecter');
+        await page.evaluate(() => { location.hash = '#inscription'; });
+        await expect(page.locator('#view h1').first()).toHaveText('S’inscrire');
+        await expect(page.locator('[data-form="signup"] button[type="submit"]')).toHaveText('S’inscrire');
+        const tout = norm(await page.locator('#view').innerText()) + ' ' + (await textes(page, '.top .right, .top .nav, nav.tabbar')).join(' ');
+        expect(tout).not.toMatch(interdits);
+      }
+      expect(erreurs).toEqual([]);
+    });
+  }
+}
+
+test('17 · langue par défaut : anglais', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  const { erreurs } = await ouvrirNu(page);
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  expect(await textes(page, 'nav.nav a')).toEqual(['Markets', 'Flash', 'Wallet', 'Community', 'Profile']);
+  expect(await textes(page, '.top .login, .top .signup')).toEqual(['Log in', 'Sign up']);
+  const desc = await page.locator('meta[name="description"]').getAttribute('content');
+  expect(desc).not.toMatch(/demo/i);
+  expect(desc).toMatch(/prediction markets/i);
+  expect(erreurs).toEqual([]);
+});
+
+test('17b · langue enregistrée « fr »', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  const { erreurs } = await ouvrirNu(page, { 'wimoro-lang': 'fr' });
+  await expect(page.locator('html')).toHaveAttribute('lang', 'fr');
+  expect(await textes(page, 'nav.nav a')).toEqual(['Marchés', 'Éclair', 'Portefeuille', 'Communauté', 'Profil']);
+  expect(await textes(page, '.top .login, .top .signup')).toEqual(['Se connecter', 'S’inscrire']);
+  expect(erreurs).toEqual([]);
+});
+
+test('17c · langue enregistrée « he » : RTL et libellés hébreu', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  const { erreurs } = await ouvrirNu(page, { 'wimoro-lang': 'he' });
+  await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'he');
+  for (const t of await textes(page, 'nav.nav a, .top .login, .top .signup')) expect(t).toMatch(/[֐-׿]/);
+  expect(erreurs).toEqual([]);
+});
+
+test('18 · fichier statique : ni « 248 », ni « Démo », ni « démo » dans l’en-tête et les métadonnées', async () => {
+  const html = fs.readFileSync(new URL('../../index.html', import.meta.url), 'utf8');
+  const tete = html.slice(0, html.indexOf('</header>'));
+  expect(tete).not.toMatch(/248|Démo|démo/);
+  expect(tete).not.toMatch(/\bdemo\b/i);
+});
+
+test('19 · sans JavaScript : message en trois langues et rien d’autre que le logo', async ({ browser }) => {
+  const ctx = await browser.newContext({ javaScriptEnabled: false, baseURL: test.info().project.use.baseURL, viewport: { width: 390, height: 844 } });
+  const page = await ctx.newPage();
+  await page.goto('/index.html');
+  const corps = norm(await page.locator('body').innerText());
+  const phrases = ['Turn on JavaScript to use Wimoro.', 'Active JavaScript pour utiliser Wimoro.', 'יש להפעיל JavaScript כדי להשתמש ב-Wimoro.'];
+  for (const p of phrases) expect(corps).toContain(p);
+  expect(norm(await page.locator('.top').innerText())).toBe('wimoro');
+  await expect(page.locator('.top .right')).toBeHidden();
+  await expect(page.locator('nav.tabbar')).toBeHidden();
+  await expect(page.locator('.top .sk')).toBeHidden();
+  let reste = corps.replace('wimoro', '');
+  for (const p of phrases) reste = reste.replace(p, '');
+  expect(reste.trim()).toBe('');
+  await ctx.close();
+});
+
+for (const w of [320, 390, 1280]) {
+  test(`20 · solde de l’en-tête avec ses centimes à ${w} px (fr et en)`, async ({ page }) => {
+    await page.setViewportSize({ width: w, height: 844 });
+    const { erreurs } = await demo(page, { hash: '#accueil', lang: 'fr' });
+    await expect(page.locator('.top .bal b[data-bal]')).toBeVisible();
+    expect(norm(await page.locator('.top .bal b[data-bal]').innerText())).toBe('1 000 248,50 $');
+    await page.evaluate(() => setLang('en'));
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+    await expect(page.locator('.top .bal b[data-bal]')).toBeVisible();
+    expect(norm(await page.locator('.top .bal b[data-bal]').innerText())).toBe('$1,000,248.50');
+    expect(erreurs).toEqual([]);
+  });
+}
+
+test('21 · Communauté : page d’entrée, cinq lignes, chaque section en un geste avec sa sous-navigation', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const { erreurs } = await demo(page, { hash: '#accueil', lang: 'fr' });
+  await page.locator('nav.tabbar a[href="#communaute"]').click();
+  await expect(page).toHaveURL(/#communaute/);
+  const lignes = page.locator('.wrap.hub a.mrow');
+  await expect(lignes).toHaveCount(5);
+  const cibles = ['#chat', '#clans', '#amis', '#classement', '#copie'];
+  for (let i = 0; i < 5; i++) {
+    expect(await lignes.nth(i).getAttribute('href')).toBe(cibles[i]);
+    expect((await lignes.nth(i).locator('b').first().innerText()).trim().length).toBeGreaterThan(0);
+    expect((await lignes.nth(i).locator('small').first().innerText()).trim().length).toBeGreaterThan(0);
+  }
+  for (const h of cibles) {
+    await page.evaluate(() => { location.hash = '#communaute'; });
+    await expect(page.locator('.wrap.hub')).toBeVisible();
+    await page.locator(`.wrap.hub a.mrow[href="${h}"]`).click();
+    await expect(page).toHaveURL(new RegExp(h + '(\\b|$)'));
+    const sub = page.locator('nav.subnav').filter({ has: page.locator('a[href="#chat"]') });
+    await expect(sub.locator(`a.on[href="${h}"]`), h).toBeVisible();
+    await expect(sub.locator('a.on')).toHaveCount(1);
+  }
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.evaluate(() => { location.hash = '#accueil'; });
+  await page.locator('nav.nav a[href="#communaute"]').click();
+  await expect(page).toHaveURL(/#communaute/);
+  await expect(page.locator('.wrap.hub')).toBeVisible();
+  expect(erreurs).toEqual([]);
+});
+
+test('22 · barre d’onglets : affichée jusqu’à 879 px, masquée dès 880 px (nav de l’en-tête prend le relais)', async ({ page }) => {
+  const { erreurs } = await demo(page, { hash: '#accueil' });
+  for (const [w, bas] of [[320, true], [879, true], [880, false], [1280, false]]) {
+    await page.setViewportSize({ width: w, height: 800 });
+    await page.evaluate(() => render(true));
+    if (bas) { await expect(page.locator('nav.tabbar'), String(w)).toBeVisible(); await expect(page.locator('nav.nav')).toBeHidden(); }
+    else { await expect(page.locator('nav.tabbar'), String(w)).toBeHidden(); await expect(page.locator('nav.nav')).toBeVisible(); }
+  }
+  await page.setViewportSize({ width: 390, height: 800 });
+  await expect(page.locator('.tab5 a.only-in[href="#profil"]')).toBeVisible();
+  await expect(page.locator('.tab5 a.only-out[href="#connexion"]')).toBeHidden();
+  expect(erreurs).toEqual([]);
+});
+
+test('22b · visiteur sur téléphone : en-tête recherche + langue + thème + « S’inscrire », « Se connecter » en cinquième onglet', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const { erreurs } = await ouvrir(page, { mode: 'visiteur', lang: 'fr', hash: '#accueil' });
+  await expect(page.locator('.top .hs-btn')).toBeVisible();
+  await expect(page.locator('.top .lgb')).toBeVisible();
+  await expect(page.locator('.top .thm')).toBeVisible();
+  await expect(page.locator('.top .signup')).toBeVisible();
+  await expect(page.locator('.top .signup')).toHaveText('S’inscrire');
+  await expect(page.locator('.top .login')).toBeHidden();
+  for (const s of ['.top .bal', '.top .bell', '.top .me-av']) await expect(page.locator(s)).toBeHidden();
+  await expect(page.locator('.tab5 a.only-out[href="#connexion"]')).toBeVisible();
+  await expect(page.locator('.tab5 a.only-out[href="#connexion"] span').first()).toHaveText('Se connecter');
+  await expect(page.locator('.tab5 a.only-in[href="#profil"]')).toBeHidden();
+  await expect(page.locator('nav.tabbar a').locator('visible=true')).toHaveCount(5);
+  expect(erreurs).toEqual([]);
+});
+
+test('23 · ticket de la feuille : les deux boutons Oui / Non sont pleinement opaques', async ({ page }) => {
+  const { erreurs } = await demo(page, { hash: '#accueil' });
+  await page.locator('.row [data-a="bet"]').first().click();
+  const sides = page.locator('[data-ticket="sheet"] .sides .sd');
+  await expect(sides).toHaveCount(2);
+  await expect.poll(() => sides.evaluateAll(els => els.map(e => getComputedStyle(e).opacity))).toEqual(['1', '1']);
+  expect(erreurs).toEqual([]);
+});

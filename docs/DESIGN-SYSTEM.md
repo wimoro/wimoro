@@ -34,13 +34,36 @@ Les quatre feuilles se chargent dans cet ordre dans `index.html`. Après toute m
    s'écrit de droite à gauche et la page se retourne seule.
 8. **Animations de 150 à 250 ms** (`--dur-1` à `--dur-3`, courbe `--ease`), sur `opacity`, `transform`, `background`,
    `color`. Rien ne tourne en boucle, sauf le compte à rebours de l'Éclair. « Réduire les animations » est respecté.
-9. **Cibles tactiles de 44 px** (`--tap`). Un petit contrôle garde sa taille visuelle et étend sa zone d'appui par un
-   pseudo-élément.
+9. **Cibles tactiles de 44 px** (`--tap`), par une seule règle : la section « Écrans tactiles » à la fin de
+   `components.css` (`@media (pointer:coarse)`). Un petit contrôle garde son dessin et reçoit une zone d'appui de
+   44 × 44 px centrée sur lui (pseudo-élément) ; les champs, les listes déroulantes et les boutons mesurent vraiment
+   44 px. Pour un nouveau petit contrôle : l'ajouter aux deux listes de cette règle, rien d'autre. Un contrôle qui rogne
+   son contenu (`overflow:hidden`) ne peut pas porter de zone élargie : il grandit par `min-height` ou par une marge
+   intérieure compensée (`padding-block` + `margin-block` négatif).
 10. **Tout texte passe par `_t('texte français')`** et reçoit ses traductions anglaise et hébraïque dans `js/i18n-4.js`.
 11. **Les icônes viennent d'un seul jeu**, Lucide (licence ISC), par `ic('nom')` (`js/core.js`). Elles prennent la
     couleur du texte. Pas d'emoji en guise d'icône (les réactions du chat sont du contenu, pas des icônes).
 12. **Le JavaScript s'accroche aux attributs `data-*` et aux identifiants**, pas à l'apparence : on peut changer le
     HTML et les classes d'un gabarit tant que ces attributs restent en place.
+13. **Un seul palier de navigation : 879 / 880 px.** Jusqu'à 879 px (téléphones, tablettes en portrait), les cinq
+    destinations sont dans la barre d'onglets du bas ; à partir de 880 px, dans l'en-tête. Le reste se plie tout seul :
+    grilles et `flex` qui passent à la ligne, `clamp()` pour les marges (`--gutter`), jamais de largeur fixe. Un écran doit
+    tenir sans défilement horizontal de 320 à 1920 px, et en paysage sur téléphone (844 × 390).
+14. **Tout ce qui se pose en bas de l'écran part de `--bas`** (barre d'achat d'un marché, zone de pari Éclair, combiné
+    en cours, barre d'enregistrement) : `--bas` vaut la zone sûre seule, ou la barre d'onglets plus la zone sûre. Aucun
+    décalage en pixels écrit en dur.
+15. **Sur téléphone, on lit et on écrit en 16 px** : paragraphes, messages du chat, champs (un champ plus petit fait
+    zoomer l'iPhone). 14 px pour les étiquettes et le texte secondaire, 12 px pour les légendes ; rien en dessous.
+16. **Un seul libellé par action, partout et à toutes les tailles** : « Se connecter », « S'inscrire ». Pas de version
+    courte pour le téléphone : si un libellé ne tient pas, c'est la mise en page qui s'adapte.
+17. **Un seul format de montant par langue**, par la fonction `money()` (`js/core.js`) : « 248,50 $ » en français,
+    « $248.50 » en anglais et en hébreu. Avec centimes pour l'argent du joueur (solde, mise, gain, valeur) ; en dollars
+    entiers pour les seuils, les mises rapides et les montants des autres joueurs ; en abrégé pour les volumes
+    (`F.usd`, `F.usd0`, `F.compact`). Aucun montant fabriqué à la main dans un gabarit.
+18. **La page de départ ne contient aucune valeur fictive.** `index.html` est écrit dans la langue par défaut (anglais) ;
+    chaque texte y porte sa clé française (`data-t` pour le contenu, `data-t-<attribut>` pour un attribut), traduite par
+    `i18nStatic` dès que les catalogues sont chargés. Tant que le site démarre, `<body>` n'a ni la classe `in` ni la classe
+    `out` : les éléments réservés à un état (`only-in`, `only-out`) restent cachés et un bloc neutre tient leur place.
 
 ## 3. Les variables
 
@@ -83,7 +106,9 @@ Graisses : 400, 500, 600. Les titres (20 px et plus) sont resserrés par `--trac
   `--r-xl` 20 (fenêtres) · `--r-pill`.
 - Ombres : `--shadow-1` (poignée d'un interrupteur), `--shadow-2` (menu, notification), `--shadow-3` (fenêtre).
 - Durées : `--dur-1` 150 ms (survol, appui) · `--dur-2` 200 ms (menus, onglets) · `--dur-3` 250 ms (feuilles, fenêtres).
-- Mise en page : `--page` 1200 px de large au plus, `--gutter` 16 / 24 / 32 px, `--bar-h` et `--tab-h` 56 px.
+- Mise en page : `--page` 1200 px de large au plus ; `--gutter`, marge de page fluide (de 16 à 24 px jusqu'à 879 px, puis
+  24 et 32 px) ; `--bar-h` et `--tab-h` 56 px ; `--bas`, la place prise en bas de l'écran (règle 14) ; `--mbar-h`, la hauteur
+  de la barre d'achat fixe d'un marché ; `--tap` 44 px.
 
 Les anciens noms (`--ink`, `--g2`, `--oui`, `--non`, `--panel`, `--sg`…) restent définis à la fin de `tokens.css` :
 le JavaScript des graphiques du Mode Pro et des images partagées les lit encore.
@@ -133,7 +158,9 @@ Ils remplacent les styles en ligne ; un gabarit ne doit plus contenir de `style=
    barre d'onglets (`index.html`).
 3. Composer avec les composants ci-dessus. Les styles propres à l'écran vont dans une section de `screens.css`.
 4. Chaque texte passe par `_t()` ; ajouter les deux traductions dans `js/i18n-4.js`.
-5. Vérifier : `CHROME=1 npx playwright test`, puis l'écran en clair, en sombre, en hébreu, sur 390 px et 1440 px.
+5. Vérifier : `CHROME=1 npx playwright test`, puis l'écran en clair et en sombre, connecté et déconnecté, en français,
+   en anglais et en hébreu, à 320, 390, 768 et 1440 px. Élargir la fenêtre de 320 à 1920 px : rien ne doit déborder
+   ni se couper, à aucune largeur.
 
 ## 6. Contrôles
 

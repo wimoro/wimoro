@@ -58,7 +58,7 @@ function appendTo(feed,x){if(feed.dataset.room.startsWith('m:')&&S.ui.mtab==='to
  /* C21 : en retirant les plus anciens (70 messages au plus), la position de lecture est conservée ; si on lit plus haut, une pastille annonce les nouveaux messages */
  if(feed.children.length>70){if(stick){while(feed.children.length>70)feed.firstElementChild.remove();feed._fr=0;}
   else{const ref=feed.children[feed.children.length-70],y0=ref.getBoundingClientRect().top;while(feed.children.length>70)feed.firstElementChild.remove();const adj=ref.getBoundingClientRect().top-y0+(feed._fr||0),t=feed.scrollTop;feed.scrollTop=t+adj;feed._fr=adj-(feed.scrollTop-t);}}
- if(stick){feed.dataset.down=Date.now();feed.scrollTo({top:feed.scrollHeight,behavior:'smooth'});feedPill(feed,false);}else feedPill(feed,true);}
+ if(stick){feed.dataset.down=Date.now();feed.scrollTo({top:feed.scrollHeight,behavior:doux()});feedPill(feed,false);}else feedPill(feed,true);}
 function feedPill(feed,on){const box=feed.parentElement;if(!box)return;let w=box.querySelector('.nm-w');if(!on){if(w)w.remove();return;}if(w)return;w=document.createElement('div');w.className='nm-w';w.innerHTML=`<button type="button" class="nm-pill" data-a="feed-down">${_t('Nouveaux messages')} <span aria-hidden="true">↓</span></button>`;feed.insertAdjacentElement('afterend',w);}
 document.addEventListener('scroll',e=>{const f=e.target;if(f&&f.classList&&f.classList.contains('feed')&&f.scrollHeight-f.scrollTop-f.clientHeight<60)feedPill(f,false);},{capture:true,passive:true});
 /* un geste de défilement annule la descente automatique */
@@ -112,7 +112,7 @@ new MutationObserver(ovSync).observe(document.body,{childList:true});
 document.addEventListener('keydown',e=>{if(e.key!=='Tab')return;const o=topOverlay();if(!o)return;const box=ovBox(o);if(!box)return;const L=[...box.querySelectorAll(FOCUSABLE)].filter(x=>x.getClientRects().length&&!x.closest('[inert]'));
  if(!L.length){e.preventDefault();return;}const a=document.activeElement,first=L[0],last=L[L.length-1];
  if(!box.contains(a)||a===box){e.preventDefault();(e.shiftKey?last:first).focus();}else if(e.shiftKey&&a===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&a===last){e.preventDefault();first.focus();}});
-function openModal(html,cls=''){ovRemember();const o=$('#ov');if(o)o.remove();const ov=document.createElement('div');ov.className='ov';ov.id='ov';ov.innerHTML=`<div class="modal ${cls}" role="dialog" aria-modal="true" tabindex="-1">${html}</div>`;ov.addEventListener('mousedown',e=>{if(e.target===ov)closeModal();});document.body.appendChild(ov);fixText(ov);mountTrails(ov);try{ov.firstElementChild.focus({preventScroll:true});}catch(e){}setTimeout(()=>{const i=ov.querySelector('[autofocus]'),a=document.activeElement;if(i&&!(a&&a!==i&&ov.contains(a)&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)))i.focus();},60);}   /* le curseur va au champ prévu, sauf si le joueur en a déjà choisi un autre dans la fenêtre */
+function openModal(html,cls=''){ovRemember();const o=$('#ov');if(o)o.remove();const ov=document.createElement('div');ov.className='ov';ov.id='ov';ov.innerHTML=`<div class="modal ${cls}" role="dialog" aria-modal="true" tabindex="-1">${html}</div>`;ov.addEventListener('mousedown',e=>{if(e.target===ov)closeModal();});document.body.appendChild(ov);fixText(ov);mountTrails(ov);{const t=ov.querySelector('.md-h h3,.md-h h2,h2,h3');if(t){t.id=t.id||'ov-titre';ov.firstElementChild.setAttribute('aria-labelledby',t.id);}}try{ov.firstElementChild.focus({preventScroll:true});}catch(e){}setTimeout(()=>{const i=ov.querySelector('[autofocus]'),a=document.activeElement;if(i&&!(a&&a!==i&&ov.contains(a)&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)))i.focus();},60);}   /* le curseur va au champ prévu, sauf si le joueur en a déjà choisi un autre dans la fenêtre */
 function closeModal(){const o=$('#ov');if(o)o.remove();S.ui.sheet=null;}
 /* C18 : une condition remplie s'écrit « 60 / 60 ✓ » (et non « 186 sur 60 ») ; noBtn retire le bouton de la ligne quand il ferait doublon */
 function condH(c,noBtn){const val=c.ok?(c.k==='acc'?_t('{0} % · {1} % requis',[c.have,c.need]):c.k==='xp'?_t('{0} / {1}',[F.int(c.need),F.xp(c.need)]):c.k==='top'?_t('{0}, dans le top {1}',[F.ord(c.have),c.need]):_t('{0} / {1}',[F.int(c.need),F.int(c.need)]))
@@ -442,12 +442,12 @@ function needLogin(msg){S.ui.after=location.hash||'#accueil';S.ui.authNote=msg;t
 const ACT={
  bet:a=>openBet(a.dataset.m,a.dataset.s,25),
  tside:a=>{const ctx=a.dataset.ctx,st=tState(ctx);st.side=a.dataset.v;st.lp='';const box=$(`[data-ticket="${ctx}"]`);if(box){box.innerHTML=ticketInner(ctx);fixText(box);}},
- tmode:a=>{const st=S.ui.ticket;st.mode=a.dataset.v;st.lp='';st.amt=st.mode==='sell'?'':'50';if(st.mode==='sell'){const p=S.me.positions.find(x=>x.m===st.m);if(p){st.side=p.s;st.amt=F.inp(Math.floor(p.sh*10)/10);}}rerenderTicket();const t=$('[data-ticket="page"]');if(t&&innerWidth<1100)t.scrollIntoView({behavior:'smooth',block:'center'});},
+ tmode:a=>{const st=S.ui.ticket;st.mode=a.dataset.v;st.lp='';st.amt=st.mode==='sell'?'':'50';if(st.mode==='sell'){const p=S.me.positions.find(x=>x.m===st.m);if(p){st.side=p.s;st.amt=F.inp(Math.floor(p.sh*10)/10);}}rerenderTicket();const t=$('[data-ticket="page"]');if(t&&innerWidth<1100)t.scrollIntoView({behavior:doux(),block:'center'});},
  preset:a=>{const ctx=a.dataset.ctx,st=tState(ctx),v=a.dataset.v;if(st.mode==='sell'){const p=posOf(st.m,st.side);st.amt=F.inp(Math.floor(p.sh*parseFloat(v)*10)/10);}else if(v==='max')st.amt=F.inp(Math.floor(Math.min(S.me.balance,quoteBuy(MK[st.m],st.side,1,myRank().t>=5).maxTotal)*100)/100);else{const cur=F.parse(st.amt);st.amt=F.inp(cur+parseFloat(v));}const i=$(`[data-tamt="${ctx}"]`);if(i)i.value=st.amt;updTicket(ctx);},
  buy:(a,e)=>placeBet(a.dataset.ctx,e),sell:a=>sellPos(a.dataset.ctx),
  cat:a=>{S.ui.cat=a.dataset.v;if((S.ui.route||'accueil')!=='accueil'){location.hash='#accueil';return;}$$('.filters .tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===S.ui.cat));const b=$('#board');if(b){b.innerHTML=boardH();fixText(b);mountTrails(b);}},
  tf:a=>{S.ui.tf=a.dataset.v;render(false);},
- pin:()=>{const c=$('.a-chat');if(c){c.scrollIntoView({behavior:'smooth',block:'start'});c.animate([{boxShadow:'0 0 0 4px rgba(36,72,255,.35)'},{boxShadow:'0 0 0 0 rgba(36,72,255,0)'}],{duration:1400});}},
+ pin:()=>{const c=$('.a-chat');if(c){c.scrollIntoView({behavior:doux(),block:'start'});c.animate([{boxShadow:'0 0 0 4px rgba(36,72,255,.35)'},{boxShadow:'0 0 0 0 rgba(36,72,255,0)'}],{duration:1400});}},
  hroom:a=>{S.ui.homeRoom=a.dataset.room;const box=$('[data-chatbox]');if(box){box.outerHTML=homeChatH();const nb=$('[data-chatbox]');fixText(nb);mountTrails(nb);const f=nb.querySelector('.feed');f.scrollTop=f.scrollHeight;}},
  troom:a=>{const r=a.dataset.room;S.ui.room=r;if((S.ui.route||'')!=='chat'){location.hash='#chat';return;}render(false);const f=$('.feed');if(f)f.scrollTop=f.scrollHeight;},
  mtab:a=>{S.ui.mtab=a.dataset.v;render(false);},
@@ -476,7 +476,7 @@ const ACT={
  withdraw:()=>{const c=wdCheck(),w=S.ui.wd;if(!c.ok)return;if(SRV()){srvRetrait({method:'crypto',net:w.net,addr:w.addr.trim(),amt:c.amt},()=>{w.amt='';});return;}
   S.me.balance-=c.amt;const x={net:w.net,addr:w.addr.trim(),amt:c.amt,fee:c.fee,at:now(),st:'pending'};S.me.wds.unshift(x);w.amt='';wdLance(x);save();const ep=S.epoch;setTimeout(()=>{if(ep!==S.epoch)return;x.st='sent';notif('out',wdNotifTxt(x),'#retrait');wdEnvoye(x);save();},4500);},
  notifs:()=>toggleNotifs(),'npanel-close':()=>{const p=$('#npanel');if(p)p.remove();},
- close:()=>closeModal(),'feed-down':a=>{const w=a.closest('.nm-w'),f=w&&w.previousElementSibling;if(f){f.dataset.down=Date.now();f.scrollTo({top:f.scrollHeight,behavior:'smooth'});}if(w)w.remove();},'rankup-close':()=>{const o=$('.rankup');if(o)o.remove();},
+ close:()=>closeModal(),'feed-down':a=>{const w=a.closest('.nm-w'),f=w&&w.previousElementSibling;if(f){f.dataset.down=Date.now();f.scrollTo({top:f.scrollHeight,behavior:doux()});}if(w)w.remove();},'rankup-close':()=>{const o=$('.rankup');if(o)o.remove();},
  reset:()=>resetDemo(),noop:()=>{}
 };
 document.addEventListener('click',e=>{const a=e.target.closest('[data-a]');

@@ -7,6 +7,8 @@
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const now=()=>Date.now();
+/* défilement doux, sauf si le joueur a demandé de réduire les animations */
+const doux=()=>matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth';
 const R=Math.random;
 const pick=a=>a[Math.floor(R()*a.length)];
 const NB=s=>String(s).replace(/[  ]/g,' ');

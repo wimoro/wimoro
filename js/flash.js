@@ -327,5 +327,5 @@ function tabArrows(){if(!matchMedia('(hover:hover) and (pointer:fine)').matches)
   const mk=d=>{const b=document.createElement('button');b.type='button';b.className='tarr '+d;b.dataset.a='tscroll';b.dataset.v=d;b.setAttribute('aria-label',d==='prev'?_t('Précédent'):_t('Suivant'));b.innerHTML=ic('right',16);return b;};
   const p=mk('prev'),n=mk('next');tb.insertBefore(p,tb.firstChild);tb.appendChild(n);tb.classList.add('has-arr');
   const upd=()=>{const x=Math.abs(tb.scrollLeft),mx=tb.scrollWidth-tb.clientWidth;p.classList.toggle('off',x<4);n.classList.toggle('off',x>mx-4);};tb.addEventListener('scroll',upd,{passive:true});upd();});}
-ACT.tscroll=a=>{const tb=a.parentElement;tb.scrollBy({left:(a.dataset.v==='next'?1:-1)*(RTL?-1:1)*tb.clientWidth*.7,behavior:'smooth'});};
+ACT.tscroll=a=>{const tb=a.parentElement;tb.scrollBy({left:(a.dataset.v==='next'?1:-1)*(RTL?-1:1)*tb.clientWidth*.7,behavior:doux()});};
 
