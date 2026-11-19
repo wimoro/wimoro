@@ -42,13 +42,64 @@ function ligneH(icone,texte,o){o=o||{};const fin=`${o.val?`<span class="mrow-v">
  const cls=`mrow${o.sub?' mrow-2':''}${o.cls?' '+o.cls:''}`;
  return o.a?`<button class="${cls}" data-a="${o.a}">${corps}</button>`:`<a class="${cls}" href="${o.href}">${corps}</a>`;}
 
-/* ===================== Communauté : la page d'entrée ===================== */
-/* Cinq entrées, une ligne d'explication chacune : chaque section est à un geste. Les chiffres sont ceux des écrans visés
-   (joueurs connectés du chat, demandes d'amis reçues) ; [data-online] est tenu à jour par le minuteur de boot.js. */
-function vCommunaute(){const demandes=S.me.logged&&typeof fIn==='function'?fIn().length:0;
+/* ===================== Communauté : la page d'entrée =====================
+   Téléphone : cinq entrées, une ligne d'explication chacune ; chaque section est à un geste.
+   Ordinateur (880 px et plus) : un carrefour composé sur la grille de 12 colonnes. En haut, le salon Général en direct
+   (son fil et son champ : on y écrit sans quitter la page) et le haut du classement avec ta place ; dessous, tes amis,
+   les clans et le copy trading. Le titre de chaque bloc mène à sa section. Les chiffres sont ceux des écrans visés :
+   [data-online] est tenu à jour par le minuteur de boot.js, le fil reçoit les messages comme la page du chat (addMsg). */
+function vCommunaute(){return GRAND()?hubOrdiH():hubTelH();}
+function hubTelH(){const demandes=S.me.logged&&typeof fIn==='function'?fIn().length:0;
  return `<div class="wrap hub"><div class="pagehead"><h1 class="ptitle">${_t("Communauté")}</h1></div>
  <section class="pn menu-l">${ligneH('chat',_t("Live chat"),{href:'#chat',sub:_t("Discute en direct avec les autres joueurs"),val:`<span class="num" data-online>${F.int(S.online)}</span> ${_t("connectés")}`})}${ligneH('shield',_t("Clans"),{href:'#clans',sub:_t("Rejoins une équipe et joue avec elle")})}${ligneH('users',_t("Amis"),{href:'#amis',sub:_t("Vois les mises de tes amis en direct"),n:demandes})}${ligneH('trophy',_t("Classement"),{href:'#classement',sub:_t("Compare-toi aux meilleurs joueurs de la saison")})}${ligneH('copy',_t("Copy trading"),{href:'#copie',sub:_t("Copie automatiquement les paris d’un joueur")})}</section></div>`;}
+/* tête d'un bloc du carrefour : le titre mène à la section, la méta (chiffres en direct) se range à droite */
+const hubTete=(href,titre,meta)=>`<div class="hub-h"><h2 class="h2"><a class="hub-t" href="${href}">${titre}${ic('right',18)}</a></h2>${meta?`<span class="hub-m">${meta}</span>`:''}</div>`;
+const hubGain=v=>bidi((v>=0?'+':'−')+plain(F.usd0(Math.abs(v))));
+/* nom d'un joueur : tronqué par sa fin s'il manque de place, son tag de clan jamais coupé */
+const hubNom=u=>`<span class="hub-n"><bdi dir="ltr">${esc(userOf(u).n)}</bdi>${typeof tagH==='function'?tagH(u,1):''}</span>`;
+const hubAv=(u,on)=>`<span class="hub-av">${avH(u,32,'span')}${on?'<i class="ondot" aria-hidden="true"></i>':''}</span>`;
+function hubOrdiH(){
+ return `<div class="wrap hub hubd"><div class="pagehead"><h1 class="ptitle">${_t("Communauté")}</h1></div>
+ <div class="hubg">${hubChatH()}${hubClassementH()}${hubAmisH()}${hubClansH()}${hubCopieH()}</div></div>`;}
+/* le salon Général : son fil en direct et son champ (envoi, connexion demandée à un visiteur : comme la page du chat) */
+function hubChatH(){const rid='general';room(rid).unread=0;
+ return `<section class="pn hub-b hub-chat">${hubTete('#chat',_t("Live chat"),`<span># ${_t("Général")}</span><span class="hub-on"><i class="live" aria-hidden="true"></i><span><span class="num" data-online>${F.int(S.online)}</span> ${_t("connectés")}</span></span>`)}<div class="feed" data-room="${rid}">${feedH(rid)}</div>${composerH(rid)}</section>`;}
+/* le haut de la saison (5 lignes, 8 sur très grand écran ; une de plus pour un visiteur), puis ta place (connecté) */
+function hubClassementH(){const rows=lbRows('Saison').slice(0,9),r=myRank();
+ const ligne=(x,i)=>`<a class="hub-r" href="${uHref(x.u)}"><span class="num hub-i">${F.int(i+1)}</span>${avH(x.u,32,'span')}${hubNom(x.u)}<b class="num ${plc(x.profit)}">${hubGain(x.profit)}</b></a>`;
+ return `<section class="pn hub-b hub-lb">${hubTete('#classement',_t("Classement"),_t("Saison 3, fin dans {0} jours",[12]))}${rows.length?`<div class="hub-l">${rows.map(ligne).join('')}</div>`:`<p class="hub-p">${_t("Compare-toi aux meilleurs joueurs de la saison")}</p>`}
+ ${S.me.logged?`<a class="hub-me" href="#rang">${emb(r.t,r.d)}<span class="hub-n2"><small>${_t("Ta place")}</small><b>${rankName(r.t,r.d)}</b></span><b class="num hub-pos">${F.ord(S.me.pos)}</b></a>`:''}</section>`;}
+/* tes amis, ceux en ligne d'abord ; sans ami (ou pour un visiteur), des joueurs croisés dans les chats */
+function hubAmisH(){const moi=S.me.logged,L=moi?friendsOf():[],In=moi?fIn():[],on=L.filter(isOnline),tri=L.slice().sort((a,b)=>isOnline(b)-isOnline(a)).slice(0,5);
+ const ligne=u=>{const U=userOf(u);return `<a class="hub-r hub-r2" href="#joueur-${u}">${hubAv(u,isOnline(u))}${hubNom(u)}${rk(U.t,U.d)}</a>`;};
+ const gens=L.length?[]:USER_IDS.filter(x=>!In.includes(x)&&!(moi&&fOut().includes(x))).slice(0,4);
+ const sugg=u=>`<div class="hub-r hub-r2">${hubAv(u,isOnline(u))}<a class="hub-n" href="#joueur-${u}"><bdi dir="ltr">${esc(userOf(u).n)}</bdi></a>${moi?friendBtnH(u,true):rk(userOf(u).t,userOf(u).d)}</div>`;
+ return `<section class="pn hub-b hub-fr">${hubTete('#amis',_t("Amis"),L.length?_t("{0} en ligne",[F.int(on.length)]):'')}
+ ${moi?'':`<p class="hub-p">${_t("Vois les mises de tes amis en direct")}</p>`}
+ ${In.length?`<a class="hub-req" href="#amis"><span class="cnt2">${F.int(In.length)}</span><span>${_t("{0, plural, one{demande reçue} other{demandes reçues}}",[In.length])}</span>${ic('right',16)}</a>`:''}
+ ${L.length?`<div class="hub-l">${tri.map(ligne).join('')}</div>`:gens.length?`<div class="hub-k">${_t("Joueurs que tu croises dans les chats")}</div><div class="hub-l">${gens.map(sugg).join('')}</div>`:moi?`<p class="hub-p">${_t("Vois les mises de tes amis en direct")}</p><div class="hub-f"><a class="btn b-white" href="#amis">${_t("Ajouter des amis")}</a></div>`:''}
+ ${moi?'':`<div class="hub-f"><a class="btn b-white" href="#connexion">${_t("Se connecter")}</a></div>`}</section>`;}
+/* ton clan (ou le clan recommandé), puis le top 3 du mois */
+function hubClansH(){const mine=S.me.logged?myClan():null,rec=S.me.logged&&!mine?clanRecommended():null,top=clansSorted().slice(0,3);
+ const carte=(c,k)=>`<a class="hub-mine" href="#clan-${c.id}">${emblemH(c,40)}<span class="hub-n2"><small>${k}</small><b><span class="hub-nm">${esc(c.name)}</span><span class="ctg${clanWorldRank(c)<=3?' gold':''}">${esc(c.tag)}</span></b><small>${clanPosTxt(c)}</small></span></a>`;
+ const ligne=(c,i)=>`<a class="hub-r" href="#clan-${c.id}"><span class="num hub-i">${F.int(i+1)}</span>${emblemH(c,28)}<span class="hub-n"><span class="hub-nm">${esc(c.name)}</span><span class="ctg gold">${esc(c.tag)}</span></span><b class="num">${F.int(c.score)}</b></a>`;
+ return `<section class="pn hub-b hub-cl">${hubTete('#clans',_t("Clans"),_t("{0} clans",[F.int(clansActive().length)]))}${mine?carte(mine,_t("Mon clan")):rec?carte(rec,_t("Clan recommandé")):''}
+ <div class="hub-k">${_t("Top 3 mondial")}</div><div class="hub-l">${top.map(ligne).join('')}</div></section>`;}
+/* tes copies en cours, puis les joueurs à copier (les plus précis) */
+function hubCopieH(){const live=S.me.logged?copiesLive():[],top=USER_IDS.filter(u=>copyElig(u).ok&&!copyOf(u)).sort((a,b)=>userOf(b).acc-userOf(a).acc).slice(0,live.length?2:4);
+ const copie=c=>{const p=cPnl(c);return `<a class="hub-r hub-r2" href="#copie">${hubAv(c.u)}${hubNom(c.u)}<b class="num ${plc(p)}">${F.signed(p)}</b></a>`;};
+ const joueur=u=>{const U=userOf(u);return `<a class="hub-r hub-r2" href="#joueur-${u}">${hubAv(u)}${hubNom(u)}<span class="hub-v"><b class="num">${F.pct(U.acc)}</b><small>${_t("de précision")}</small></span></a>`;};
+ return `<section class="pn hub-b hub-cp">${hubTete('#copie',_t("Copy trading"),live.length?_t("{0, plural, one{# copie active} other{# copies actives}}",[live.length]):'')}
+ ${live.length?`<div class="hub-l">${live.slice(0,3).map(copie).join('')}</div>`:''}${top.length?`<div class="hub-k">${_t("Joueurs à copier")}</div><div class="hub-l">${top.map(joueur).join('')}</div>`:live.length?'':`<p class="hub-p">${_t("Copie automatiquement les paris d’un joueur")}</p>`}</section>`;}
 VIEWS.communaute=vCommunaute;TITLES.communaute=_t("Communauté");
+/* Passage téléphone ↔ ordinateur : la page d'entrée Communauté, l'annuaire des clans et la page d'un clan changent de
+   composition ; le classement et une fiche joueur ouvrent ou replient leurs blocs latéraux. */
+try{matchMedia('(min-width:880px)').addEventListener('change',()=>{const r=(S.ui.route||'').split('-')[0];if(PRET&&['communaute','clans','clan','classement','joueur'].includes(r))render(false);});}catch(e){}
+/* Échap ferme aussi la palette de réactions d'un message (chat) et la bulle du nom d'un clan (tag survolé). */
+document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;$$('.msg.palopen').forEach(m=>m.classList.remove('palopen'));if(typeof ctipHide==='function')ctipHide();});
+/* Communauté sur ordinateur : dès 880 px, la colonne latérale du classement, d'un clan et d'une fiche joueur est à côté du
+   contenu ; ses blocs restent ouverts (ils se replient toujours sur téléphone : replier, plus bas). */
+{const r0=replier;replier=function(){const r=(S.ui.route||'accueil').split('-')[0];if(GRAND()&&(r==='classement'||r==='clan'||r==='joueur'))return;r0();};}
 
 /* ===================== Portefeuille ===================== */
 function vWallet(){const pf=portfolio(),t=S.ui.ptab==='history'?'history':'positions',nc=typeof combosAll==='function'?combosAll().filter(c=>c.status==='open').length:0;

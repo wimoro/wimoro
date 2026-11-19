@@ -364,7 +364,7 @@ hr{border:0;height:1px;background:var(--line);margin:16px 0}
 @media (hover:hover){.lb .lr:hover{background:var(--fill)}}
 .lb .lr.me{background:var(--accent-soft)}
 .lb .pos{font-variant-numeric:tabular-nums;font-weight:600;font-size:var(--fs-3);color:var(--text-3);font-variant-numeric:tabular-nums}
-.lb .lr.top .pos{color:var(--text)}
+.lb .lr.podium .pos{color:var(--text)}   /* les trois premiers (« podium » : la classe .top est celle de l'en-tête du site) */
 .lb .lr.me .pos{color:var(--accent)}
 .lb .pl .nm{font-weight:600;font-size:var(--fs-3)}
 .lb .r{text-align:end}
@@ -1777,8 +1777,9 @@ body.has-slip #view{padding-bottom:76px}
 .mobrooms button .unr{margin-inline-start:0}
 .mobrooms button [data-unread]:empty{display:none}
 
-/* CL1 : sur mobile et tablette, « Mon clan » (ou le clan recommandé) passe avant l'annuaire */
-@media (max-width:1100px){.clg>aside{display:contents}.clg>aside>.clg-1{order:-1}.clh.has-mine{display:none}}
+/* CL1 : sur téléphone et tablette en portrait, « Mon clan » (ou le clan recommandé) passe avant l'annuaire
+   (879 px depuis la troisième passe : à partir de 880 px, la colonne latérale est à côté de l'annuaire) */
+@media (max-width:879px){.clg>aside{display:contents}.clg>aside>.clg-1{order:-1}.clh.has-mine{display:none}}
 
 /* CL12 : la ligne d'un clan se lit en entier */
 .cln small .cl2::before,.clsc small .cl2::before{content:'\00a0· '}
@@ -2384,6 +2385,301 @@ html.pro-lock,html.pro-lock body{overflow:hidden}
 /* (fin de la section argent) */
 
 /* ====================================================================== Troisième passe : Communauté sur ordinateur (entrée, chat, clans, classement, amis, copy trading) [communaute] */
+/* Chaque écran est composé sur la grille des grands écrans (paliers 880, 1 280 et 1 680 px : tokens.css, base.css) : la
+   largeur montre plus de contenu. Les règles de cette section partent de 880 px ; les rares règles sans palier ne font
+   que garder le téléphone tel qu'il était (éléments ajoutés pour l'ordinateur masqués, styles en ligne devenus classes). */
+
+/* ---------- Page d'entrée : un carrefour (js/refonte.js, hubOrdiH) ----------
+   Ligne 1 : le salon Général en direct (8 colonnes) et le haut du classement (4). Ligne 2 : amis, clans, copy trading.
+   La hauteur de la ligne 1 est celle du classement (le chat ne pèse pas sur elle : contain:size, son fil défile seul) ;
+   le classement montre 5 joueurs, 8 à partir de 1 680 px, un de plus pour un visiteur (il n'a pas de ligne « Ta place »). */
+@media (min-width:880px){
+  .wrap.hub.hubd{max-width:var(--page)}
+  .hubd .pagehead{margin-bottom:var(--sp-6)}
+  .hubg{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:var(--col-gap);align-items:stretch}
+  .hub-b{display:flex;flex-direction:column;min-width:0;padding:var(--sp-4) var(--sp-6) var(--sp-6)}
+  .hub-chat{grid-column:span 7;min-height:400px;contain:size;padding:0;overflow:hidden}
+  .hub-lb{grid-column:span 5}
+  .hub-lb .hub-r:nth-child(n+6){display:none}
+  body.out .hub-lb .hub-r:nth-child(6){display:grid}
+  .hub-fr,.hub-cl,.hub-cp{grid-column:span 4}
+  /* tête d'un bloc : le titre est un lien vers la section (flèche qui avance au survol), la méta à droite */
+  .hub-h{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);min-height:var(--sp-10);margin-bottom:var(--sp-2)}
+  .hub-h .h2{min-width:0}
+  .hub-t{display:inline-flex;align-items:center;gap:var(--sp-1);border-radius:var(--r-xs);color:var(--text);transition:color var(--dur-1) var(--ease)}
+  .hub-t svg{color:var(--text-3);transition:color var(--dur-1) var(--ease),transform var(--dur-1) var(--ease)}
+  [dir=rtl] .hub-t svg{transform:scaleX(-1)}
+  .hub-m{display:inline-flex;align-items:center;gap:var(--sp-4);flex:none;font-size:var(--fs-2);color:var(--text-3);white-space:nowrap}
+  .hub-on{display:inline-flex;align-items:center;gap:var(--sp-2)}
+  .hub-on .num{color:var(--text)}
+  /* lignes : une hauteur, un filet entre deux lignes (effacé autour de la ligne survolée), les chiffres alignés à droite */
+  .hub-l{display:flex;flex-direction:column}
+  .hub-r{position:relative;display:grid;grid-template-columns:var(--sp-5) auto minmax(0,1fr) auto;align-items:center;column-gap:var(--sp-3);min-height:var(--sp-12);padding-inline:var(--sp-2);margin-inline:calc(-1*var(--sp-2));border-radius:var(--r-sm);color:inherit;transition:background var(--dur-1) var(--ease)}
+  .hub-r2{grid-template-columns:auto minmax(0,1fr) auto}
+  .hub-r+.hub-r::before{content:'';position:absolute;top:0;inset-inline:var(--sp-2);height:1px;background:var(--line);transition:opacity var(--dur-1) var(--ease)}
+  .hub-i{font-size:var(--fs-2);font-weight:var(--fw-medium);color:var(--text-3);text-align:end}
+  .hub-n{display:flex;align-items:center;min-width:0;font-weight:var(--fw-medium);color:var(--text)}
+  .hub-n>bdi,.hub-nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .hub-n .ctg,.hub-n2 .ctg{flex:none}
+  .hub-r>b.num{font-size:var(--fs-3)}
+  .hub-r>.rk{justify-self:end}
+  .hub-v{display:flex;flex-direction:column;align-items:flex-end;line-height:var(--lh-snug)}
+  .hub-v .num{font-size:var(--fs-3)}
+  .hub-v small{font-size:var(--fs-1);color:var(--text-3)}
+  .hub-av{position:relative;display:grid}
+  .hub-av .ondot{position:absolute;inset-inline-end:-2px;bottom:-2px;width:12px;height:12px;border-radius:50%;background:var(--yes);box-shadow:0 0 0 2px var(--surface)}
+  .hub-k{margin-block:var(--sp-3) var(--sp-1);font-size:var(--fs-2);color:var(--text-3)}
+  .hub-p{font-size:var(--fs-2);color:var(--text-2);max-width:48ch}
+  .hub-f{margin-top:auto;padding-top:var(--sp-4)}
+  /* ta place, ton clan : une carte dans la carte, sur fond teinté */
+  .hub-n2{display:flex;flex-direction:column;min-width:0;line-height:var(--lh-snug)}
+  .hub-n2 small{font-size:var(--fs-1);color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .hub-n2 b{display:flex;align-items:center;min-width:0;font-weight:var(--fw-medium);color:var(--text)}
+  .hub-lb .hub-l{margin-bottom:var(--sp-4)}
+  .hub-me{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;column-gap:var(--sp-3);margin-top:auto;padding:var(--sp-3) var(--sp-4);border-radius:var(--r-md);background:var(--accent-soft);color:var(--text);transition:box-shadow var(--dur-1) var(--ease)}
+  .hub-me .emb{width:28px;height:32px}
+  .hub-pos{font-size:var(--fs-4)}
+  .hub-mine{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-3);border-radius:var(--r-md);background:var(--fill);color:var(--text);transition:background var(--dur-1) var(--ease)}
+  .hub-req{display:flex;align-items:center;gap:var(--sp-2);min-height:var(--sp-10);margin-bottom:var(--sp-2);padding-inline:var(--sp-3);border-radius:var(--r-md);background:var(--fill);font-size:var(--fs-2);font-weight:var(--fw-medium);color:var(--text);transition:background var(--dur-1) var(--ease)}
+  .hub-req svg{margin-inline-start:auto;color:var(--text-3)}
+  [dir=rtl] .hub-req svg{transform:scaleX(-1)}
+  .hub-r .btn.sm{justify-self:end}
+  /* le salon Général : la tête, le fil qui défile seul, le champ (les outils du champ restent sur la page du chat) */
+  .hub-chat .hub-h{margin:0;padding:var(--sp-3) var(--sp-6);border-bottom:1px solid var(--line)}
+  .hub-chat .feed{flex:1;min-height:0;padding:var(--sp-4) var(--sp-6)}
+  .hub-chat .composer{padding:var(--sp-3) var(--sp-4) var(--sp-4)}
+  .hub-chat .ctools{display:none}
+  @media (hover:hover){
+    .hub-t:hover,.hub-t:hover svg{color:var(--accent)}
+    .hub-t:hover svg{transform:translateX(2px)}
+    [dir=rtl] .hub-t:hover svg{transform:scaleX(-1) translateX(2px)}
+    a.hub-r:hover{background:var(--fill)}
+    a.hub-r:hover::before,a.hub-r:hover+.hub-r::before{opacity:0}
+    .hub-me:hover{box-shadow:inset 0 0 0 1px var(--accent)}
+    .hub-mine:hover,.hub-req:hover{background:var(--fill-2)}
+  }
+}
+@media (min-width:1280px){
+  .hub-chat{grid-column:span 8}
+  .hub-lb{grid-column:span 4}
+}
+@media (min-width:1680px){
+  .hub-lb .hub-r:nth-child(-n+8){display:grid}
+  body.out .hub-lb .hub-r:nth-child(9){display:grid}
+}
+
+/* ---------- Live chat : trois colonnes à la hauteur de la fenêtre (js/views.js, vChat et tribInfoH) ----------
+   Salons | conversation | le salon ouvert (1 280 px et plus). La page ne défile plus : chaque colonne défile seule et le
+   champ du message reste en bas de l'écran, à toutes les hauteurs de fenêtre. */
+@media (min-width:880px){
+  .wrap.tribw{display:flex;flex-direction:column;height:calc(100dvh - var(--bar-h));min-height:560px;padding-bottom:var(--sp-6)}
+  .tribw>.subnav{flex:none}
+  .tribw>.g-trib{flex:1;min-height:0;grid-template-rows:minmax(0,1fr);align-items:stretch}
+  .wrap.tribw .g-trib .t-rooms{position:static;max-height:none;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin}
+  .tribw .g-trib>.col{min-height:0}
+  .tribw .chat.trib{flex:1;height:auto;min-height:0}
+  .tribw .trib .tx{max-width:72ch}
+  .tribw .t-right{min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;gap:var(--col-gap)}
+  .tri-id{display:flex;align-items:center;gap:var(--sp-3);color:var(--text)}
+  .tri-id .hub-n2 b{font-size:var(--fs-3)}
+  @media (hover:hover){.tri-id:hover .hub-nm{text-decoration:underline}}
+}
+
+/* ---------- Classement : un vrai tableau (js/views.js, vBoard ; aussi la semaine d'un clan) ----------
+   Les colonnes s'ajoutent selon la largeur du tableau (requêtes de conteneur) : rang dès 680 px, précision dès 820 px,
+   nombre de paris dès 940 px. L'en-tête des colonnes reste sous la barre du site au défilement et ta ligne reste en bas
+   de l'écran tant qu'elle n'est pas atteinte (overflow:clip ne crée pas de défilement : les deux restent collantes). */
+/* le pseudo est un lien (atteint au clavier), tronqué par sa fin comme avant (à toutes les largeurs) */
+.lb .pl .nm>.lbn{display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom}
+@media (min-width:880px){
+  .lbw .pagehead{margin-bottom:var(--sp-6)}
+  .lbw .pagehead .plead{max-width:none}
+  .pn.lb{container-type:inline-size;overflow:clip}
+  .pn.lb .lh,.pn.lb .lr{grid-template-columns:var(--sp-10) minmax(0,1fr) 120px 112px;column-gap:var(--sp-4);padding:var(--sp-3) var(--sp-5)}
+  .pn.lb .lh{position:sticky;top:var(--bar-h);z-index:2;padding-block:var(--sp-3);background:var(--surface);box-shadow:inset 0 -1px 0 var(--line)}
+  .pn.lb .lh+.lr{border-top:0}
+  .pn.lb .lr>.c-rk,.pn.lb .lr>.c-acc,.pn.lb .lr>.c-bets,.pn.lb .lh>span:nth-child(3),.pn.lb .lh>span:nth-child(5),.pn.lb .lh>span:nth-child(6){display:none}
+  .pn.lb .lr.me{position:sticky;bottom:0;z-index:2;box-shadow:0 -1px 0 var(--line)}
+  .pn.lb .lr .pl .nm{display:flex;align-items:center;gap:var(--sp-1);min-width:0;overflow:visible}
+  .pn.lb .lr .pl .nm>.lbn{flex:0 1 auto;min-width:0}
+  @media (hover:hover){.pn.lb .lr .lbn:hover{text-decoration:underline}}
+  .pn.lb .lr .pl .nm>.ctg{flex:none;margin-inline-start:var(--sp-1)}
+  .pn.lb .c-fol{justify-self:end}
+  .pn.lb .c-fol .btn{min-width:96px}
+  @container (min-width:680px){
+    .pn.lb .lh,.pn.lb .lr{grid-template-columns:var(--sp-10) minmax(0,1fr) 152px 120px 112px}
+    .pn.lb .lr>.c-rk,.pn.lb .lh>span:nth-child(3){display:block}
+  }
+  @container (min-width:820px){
+    .pn.lb .lh,.pn.lb .lr{grid-template-columns:var(--sp-10) minmax(0,1fr) 152px 120px 96px 112px}
+    .pn.lb .lr>.c-acc,.pn.lb .lh>span:nth-child(5){display:block}
+  }
+  @container (min-width:940px){
+    .pn.lb .lh,.pn.lb .lr{grid-template-columns:var(--sp-10) minmax(0,1fr) 152px 120px 96px 80px 112px}
+    .pn.lb .lr>.c-bets,.pn.lb .lh>span:nth-child(6){display:block}
+  }
+}
+
+/* ---------- Clans : l'annuaire en tableau, les onglets et les filtres sur une ligne (js/clans.js, vClans, clanTabH) ----------
+   Colonnes du tableau, selon sa largeur : # · clan · division · score, puis les membres (680 px), l'accès (720 px), les
+   langues (980 px) et les catégories (1 160 px). Le tag d'un clan ne se coupe jamais : c'est le nom qui se tronque.
+   Onglets et filtres partagent une ligne quand la carte a la place (820 px), sinon les filtres passent dessous. */
+@media (min-width:880px){
+  .clw .pagehead,.clpw .pagehead{margin-bottom:var(--sp-6)}
+  .clmain{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:stretch;container-type:inline-size}
+  .clmain>*{grid-column:1/-1;min-width:0}
+  .clmain>.clfilters{flex-wrap:nowrap;align-items:center;gap:var(--sp-5)}
+  @container (min-width:820px){
+    .clmain>.utabs:has(+.clfilters){grid-column:1}
+    .clmain>.clfilters{grid-column:2;grid-row:1;margin-bottom:var(--sp-4);padding-inline-start:var(--sp-6);border-bottom:1px solid var(--line)}
+  }
+  /* colonne latérale (300 px dès 880 px) : la ligne d'un clan se lit en entier, ses informations l'une sous l'autre */
+  aside .cln small{white-space:normal;overflow:visible}
+  aside .cln small>span{display:block}
+  aside .cln small .cl2::before,aside .clsc small .cl2::before{content:none}
+  aside .clsc small{white-space:normal}
+  aside .clsc small>span{display:block}
+  .clmain .hub-nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .cltab{--clt-dv:132px;container-type:inline-size}
+  .cltab.nodiv{--clt-dv:0px}
+  .cltab.nodiv .clt-h .clt-dv{visibility:hidden}
+  .clt-h,.clt-r{display:grid;grid-template-columns:var(--sp-10) minmax(0,1fr) var(--clt-dv) 112px;column-gap:var(--sp-4);align-items:center;margin-inline:calc(-1*var(--sp-3));padding-inline:var(--sp-3)}
+  .clt-h{min-height:var(--sp-10);font-size:var(--fs-1);color:var(--text-3);box-shadow:inset 0 -1px 0 var(--line)}
+  .clt-r{position:relative;min-height:60px;padding-block:var(--sp-2);border-radius:var(--r-sm);font-size:var(--fs-2);color:var(--text);transition:background var(--dur-1) var(--ease)}
+  .clt-r+.clt-r::before{content:'';position:absolute;top:0;inset-inline:var(--sp-3);height:1px;background:var(--line);transition:opacity var(--dur-1) var(--ease)}
+  .clt-r.mine{background:var(--accent-soft)}
+  .clt-r .r,.clt-h .r{text-align:end}
+  .clt-i{color:var(--text-3);font-weight:var(--fw-medium)}
+  .clt-n{display:flex;align-items:center;gap:var(--sp-3);min-width:0;font-size:var(--fs-3);font-weight:var(--fw-medium)}
+  .clt-n .cemb,.clt-n .ctg{flex:none}
+  .clt-n .ctg{margin-inline-start:0}
+  .clt-r small{display:block;font-size:var(--fs-1);color:var(--text-3)}
+  .clt-r>.num:last-child{font-size:var(--fs-3)}
+  .clt-x{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-2)}
+  .clt-h>:nth-child(4),.clt-h>:nth-child(5),.clt-h>:nth-child(6),.clt-h>:nth-child(7),
+  .clt-r>:nth-child(4),.clt-r>:nth-child(5),.clt-r>:nth-child(6),.clt-r>:nth-child(7){display:none}
+  @container (min-width:680px){
+    .clt-h,.clt-r{grid-template-columns:var(--sp-10) minmax(0,1fr) var(--clt-dv) 88px 112px}
+    .clt-h>:nth-child(4),.clt-r>:nth-child(4){display:block}
+  }
+  @container (min-width:720px){
+    .clt-h,.clt-r{grid-template-columns:var(--sp-10) minmax(0,1fr) var(--clt-dv) 88px 132px 112px}
+    .clt-h>:nth-child(5),.clt-r>:nth-child(5){display:block}
+  }
+  @container (min-width:980px){
+    .clt-h,.clt-r{grid-template-columns:var(--sp-10) minmax(0,1fr) var(--clt-dv) 88px 132px 150px 112px}
+    .clt-h>:nth-child(6),.clt-r>:nth-child(6){display:block}
+  }
+  @container (min-width:1160px){
+    .clt-h,.clt-r{grid-template-columns:var(--sp-10) minmax(0,1fr) var(--clt-dv) 88px 132px 150px 170px 112px}
+    .clt-h>:nth-child(7),.clt-r>:nth-child(7){display:block}
+  }
+  /* classement du mois : mêmes lignes, plus d'air ; le tag reste entier */
+  .clmain .cltr{grid-template-columns:var(--sp-12) minmax(0,1fr) 140px 96px 140px;column-gap:var(--sp-4);min-height:52px;padding-block:var(--sp-2);font-size:var(--fs-2);transition:background var(--dur-1) var(--ease)}
+  .clmain .cltr>span:nth-child(2){overflow:visible}
+  .clmain .cltr .ctg{flex:none}
+  .clmain .cltr:not(.h) .r.num:last-child{font-size:var(--fs-3)}
+  /* règles : deux colonnes de texte quand la place le permet */
+  .clrules{columns:2 320px;column-gap:var(--sp-10)}
+  .clrules h3{break-after:avoid}
+  .clrules h3:first-child{margin-top:0}
+  .clrules p{break-inside:avoid}
+  /* page d'un clan : les membres en tuiles, les informations en grille */
+  .clmem{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:var(--sp-3)}
+  .clmem .clmr{align-content:center;min-height:64px;padding:var(--sp-3) var(--sp-4);border-top:0;border-radius:var(--r-md);background:var(--fill)}
+  .clinfo .kvs{flex-wrap:wrap;gap:var(--sp-4) var(--sp-8)}
+  .clabout .clinfo p{font-size:var(--fs-2);color:var(--text-2)}
+  .clabout .clinfo .kvs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp-4)}
+  .clabout .kv b{font-size:var(--fs-2);font-weight:var(--fw-medium)}
+  @media (hover:hover){
+    .clt-r:hover{background:var(--fill)}
+    .clt-r.mine:hover{background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent)}
+    .clt-r:hover::before,.clt-r:hover+.clt-r::before{opacity:0}
+    .clmain a.cltr:hover{background:var(--fill)}
+    .clrow:hover .cln b{text-decoration:underline}
+  }
+}
+
+/* ---------- Amis : des cartes (js/auth.js, vFriends, frRowH, frMiseH) ----------
+   Demandes reçues, amis et demandes envoyées : une carte par joueur sur le fond de la page (3 par ligne à 1 440 px,
+   4 à 1 920 px) ; la carte d'un ami montre sa dernière mise. La recherche et le lien d'invitation restent à droite. */
+@media (max-width:879px){.frx{display:none}}
+@media (min-width:880px){
+  .frw .pagehead .plead{max-width:none}
+  .frw .frs.pn{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--carte-min),1fr));gap:var(--col-gap);padding:0;background:none}
+  .frw .frs>:not(.frow){grid-column:1/-1;margin-bottom:0}
+  .frw .frs>.frow{position:relative;display:flex;flex-direction:column;align-items:stretch;gap:var(--sp-4);padding:var(--sp-5);border-top:0;border-radius:var(--r-lg);background:var(--surface)}
+  .frw .frs .frl{padding-inline-end:var(--sp-16)}
+  .frw .frs .frn b{display:flex;align-items:center;min-width:0;font-size:var(--fs-3);overflow:visible}
+  .frw .frs .frn b>bdi{min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .frw .frs .frn .ctg{flex:none}
+  .frw .frs .fra{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:var(--sp-2);margin-top:auto}
+  .frw .frs .fra .btn{min-width:0;padding-inline:var(--sp-2)}
+  .frw .frs .fra [data-a="fr-remove"]{position:absolute;top:var(--sp-4);inset-inline-end:var(--sp-4);min-height:32px;padding-inline:var(--sp-2);box-shadow:none;font-weight:var(--fw-regular);color:var(--text-3)}
+  .frx{display:flex;flex-direction:column;gap:var(--sp-1);padding:var(--sp-3);border-radius:var(--r-md);background:var(--fill);font-size:var(--fs-2);color:var(--text);transition:background var(--dur-1) var(--ease)}
+  .frx-l{display:flex;align-items:baseline;gap:var(--sp-2)}
+  .frx-l .sidechip{align-self:center}
+  .frx-l .num{font-size:var(--fs-3)}
+  .frx-l>span:last-child{color:var(--text-3)}
+  .frx-q{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-2)}
+  @media (hover:hover){
+    .frx:hover{background:var(--fill-2)}
+    .frx:hover .frx-q{text-decoration:underline}
+    .frw .frs .fra [data-a="fr-remove"]:hover{background:var(--fill);color:var(--no)}
+  }
+}
+
+/* ---------- Copy trading : des cartes, le bouton « Copier » sur chaque joueur (js/copy.js, copyBodyH) ----------
+   Colonne principale : les chiffres et les cartes de tes copies, puis les joueurs à copier (6 cartes, 8 à partir de
+   1 680 px). Colonne de droite : tes copieurs. Sans copie en cours, la carte vide « Mes copies » s'efface : les boutons
+   « Copier » des cartes disent déjà quoi faire. */
+.cpx-pick>.cp-pick:nth-child(n+8){display:none}
+@media (max-width:879px){.cpk-go,.cpk-k{display:none}}
+@media (min-width:880px){
+  .wrap.cptr{max-width:var(--page)}
+  .cptr .pagehead .plead{max-width:none}
+  .cptr [data-copyroot]{display:grid;grid-template-columns:minmax(0,1fr) var(--rail);align-items:start;gap:var(--col-gap)}
+  .cptr [data-copyroot]>*{grid-column:1;min-width:0}
+  .cptr [data-copyroot]>.cpx-side{grid-column:2;grid-row:1/span 4}
+  .cptr [data-copyroot]>.cpx-mine.vide{display:none}
+  .cptr .cpx-mine.pn,.cptr .cpx-old.pn,.cptr .cpx-pick.pn{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--carte-min),1fr));gap:var(--col-gap);padding:0;background:none}
+  .cptr .cpx-mine>:not(.cp-row),.cptr .cpx-old>:not(.cp-row),.cptr .cpx-pick>:not(.cp-pick){grid-column:1/-1;margin-bottom:0}
+  .cptr .cp-row{align-content:start;padding:var(--sp-5);border-top:0;border-radius:var(--r-lg);background:var(--surface)}
+  .cptr .cp-row .cp-nums{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:var(--sp-3)}
+  .cptr .cp-pick{grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:'av n n' 'a a p' 'go go go';align-items:center;gap:var(--sp-4) var(--sp-3);padding:var(--sp-5);border-top:0;border-radius:var(--r-lg);background:var(--surface);cursor:pointer;transition:box-shadow var(--dur-1) var(--ease)}
+  .cptr .cp-pick>.av{grid-area:av}
+  .cptr .cpk-n{grid-area:n;min-width:0}
+  .cptr .cpk-l{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
+  .cptr .cpk-a{grid-area:a;flex-direction:row;flex-wrap:wrap;align-items:center;column-gap:var(--sp-2)}
+  .cptr .cpk-a .num{font-size:var(--fs-5)}
+  .cptr .cpk-a .cp-chip{margin-top:0}
+  .cptr .cpk-p{grid-area:p;display:flex;flex-direction:column;align-items:flex-end;min-width:0}
+  .cptr .cpk-p .num{font-size:var(--fs-4)}
+  .cpk-k{flex-basis:100%;font-size:var(--fs-1);color:var(--text-3)}
+  .cptr .cpk-go{grid-area:go;width:100%}
+  @media (hover:hover){
+    .cptr .cp-pick:hover{background:var(--surface);box-shadow:inset 0 0 0 1px var(--line-2)}
+    .cptr .cpk-l:hover b{text-decoration:underline}
+  }
+}
+@media (min-width:1680px){.cpx-pick>.cp-pick:nth-child(n+8){display:grid}}
+
+/* ---------- Fiche d'un joueur (js/views.js, vPlayer) ----------
+   Ordinateur : ses mises en cours à gauche ; à droite, la carte « Copier » (action principale, visible sans défiler) puis
+   ses derniers messages. Téléphone : la carte « Copier », puis les mises, puis les messages, comme avant. */
+.jbet{align-items:flex-start;gap:var(--sp-4);padding-block:var(--sp-4)}
+.jbet-t{min-width:0}
+@media (max-width:879px){.jg>.cp-card{margin-bottom:var(--sp-2)}}
+@media (min-width:880px){
+  .jw .pf-id h1{font-size:var(--fs-titre);letter-spacing:var(--track-title);line-height:var(--lh-tight)}
+  .g-side.jg{grid-template-areas:'bets copy' 'bets msg';grid-template-rows:auto minmax(0,1fr);margin-top:var(--col-gap)}
+  .jg>.cp-card{grid-area:copy;margin-top:0}
+  .jg>.jbets{grid-area:bets}
+  .jg>.jmsg{grid-area:msg}
+  .jbet{align-items:center;padding-block:var(--sp-4)}
+  .jbet .nm{font-size:var(--fs-3)}
+}
+
 /* (fin de la section communaute) */
 
 /* ====================================================================== Troisième passe : fiche d’un marché et ticket [marche] */
@@ -2539,8 +2835,9 @@ html.pro-lock,html.pro-lock body{overflow:hidden}
 @media (max-height:480px) and (max-width:879px){.chat.trib{min-height:0;height:calc(100dvh - var(--bas) - var(--sp-12))}}
 /* live chat, à partir de 880 px : la colonne des salons suit le défilement et défile seule */
 @media (min-width:880px){.g-trib .t-rooms{position:sticky;top:calc(var(--bar-h) + var(--sp-4));max-height:calc(100dvh - 120px);overflow:auto}}
-/* classement, téléphone et tablette : « Ta saison » passe avant la liste (les autres cartes restent après) */
-@media (max-width:1100px){.g-side:has(>.lb)>aside{display:contents}.g-side:has(>.lb)>aside>a.pn{order:-1}}
+/* classement, téléphone et tablette en portrait : « Ta saison » passe avant la liste (les autres cartes restent après).
+   (879 px depuis la troisième passe : à partir de 880 px, la colonne latérale est à côté du tableau.) */
+@media (max-width:879px){.g-side:has(>.lb)>aside{display:contents}.g-side:has(>.lb)>aside>a.pn{order:-1}}
 /* fiche joueur : la carte « Copier … » ne répète pas la précision, les paris et le profit affichés juste au-dessus
    (les chiffres d'une copie en cours, eux, restent) */
 .cp-card .cp-kpis:has(.cp-chip){display:none}

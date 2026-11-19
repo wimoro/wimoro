@@ -545,14 +545,14 @@ function srvSalons(){
  for(const r of vus)if(!SRV_SALONS.has(r)){SRV_SALONS.add(r);srvSalonOuvrir(r);}
  for(const r of Array.from(SRV_SALONS))if(!vus.has(r)){SRV_SALONS.delete(r);if(!srvPrive(r))API.unsubscribe(srvSujet(r));}
  if((S.ui.route||'')==='chat'&&!srvDmListeVue){srvDmListeVue=true;srvDmListe();}
- if((S.ui.route||'')==='classement')srvClassement();
+ if((S.ui.route||'')==='classement'||((S.ui.route||'')==='communaute'&&GRAND()))srvClassement();   /* la page d'entrée Communauté (ordinateur) montre le haut du classement */
  if((S.ui.route||'')==='duels')srvStacksRelire();
 }
 /* classement : les 50 meilleures fiches viennent du serveur et remplissent l'annuaire (relues au plus une fois par minute) */
 let srvClassementVu=0;
 async function srvClassement(){
  if(Date.now()-srvClassementVu<60000)return;srvClassementVu=Date.now();
- try{const r=await API.call('api_leaderboard');srvFiches(r.users);if((S.ui.route||'')==='classement')render(false);}
+ try{const r=await API.call('api_leaderboard');srvFiches(r.users);if(['classement','communaute'].includes(S.ui.route||''))render(false);}
  catch(e){srvClassementVu=0;console.warn('[srv] classement indisponible',e.code);}
 }
 /* les conversations privées du joueur, pour la colonne des salons */
