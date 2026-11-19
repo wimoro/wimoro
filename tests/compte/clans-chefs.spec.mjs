@@ -32,7 +32,7 @@ test('chef d’un clan : inviter un ami (un bot rejoint aussitôt, un vrai joueu
   await expect(toast(page, 'Invitation sent to lea_reelle')).toBeVisible();
   expect((await clan(page)).membres, 'un vrai joueur n’est jamais ajouté d’office').toEqual([BOT]);
   await page.locator('[data-a="cl-invite"]').click();
-  await expect(toast(page, 'You already invited this player today.')).toBeVisible();
+  await expect(toast(page, 'You already invited this player today')).toBeVisible();
   await page.locator('[data-a="cl-promote"][data-u="' + BOT + '"]').click();
   await expect(toast(page, 'maxou_bot is an officer')).toBeVisible();
   expect((await clan(page)).officiers).toEqual([BOT]);

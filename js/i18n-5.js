@@ -56,6 +56,23 @@ I18N_ADD("en",{
 /* (fin communaute) */
 /* Partie A [marche] */
 /* (fin marche) */
+/* Partie B */
+"Tu es passé Fer II":"You reached Iron II",
+"Bienvenue sur Wimoro. Tes 100 XP de bienvenue t’attendent.":"Welcome to Wimoro. Your 100 welcome XP are waiting.",
+"Compte créé, bienvenue {0}":"Account created, welcome {0}",
+"Offerts pour ton arrivée":"A gift for joining",
+"Rien de neuf pour l’instant":"Nothing new for now",
+"Aucun duel de stack":"No stack duel",
+"Personne pour l’instant":"Nobody yet",
+"Aucun résultat pour « {0} »":"No results for “{0}”",
+"Break even, +120 XP":"Break even, +120 XP",
+"Gagné, +40 XP":"Won, +40 XP",
+"Perdu cette fois":"Lost this time",
+"{0} · toutes doivent gagner":"{0} · all of them must win",
+"Mise maximale : {0} par duel":"Maximum stake: {0} per duel",
+"Mise minimale : {0}":"Minimum stake: {0}",
+"Aucun joueur avec ce pseudo":"No player with this username",
+/* (fin partie B) */
 });
 I18N_ADD("he",{
 "Choisis un marché, réponds Oui ou Non, et gagne si tu as vu juste.":"בוחרים שוק, עונים כן או לא, ומרוויחים אם צדקתם.",
@@ -73,7 +90,7 @@ I18N_ADD("he",{
 "But marqué dans la minute.":"שער הובקע בתוך הדקה.",
 "Break even : ":"ברייק איבן: ",
 "Éclair, manche {0} : break even sur {1}. Seulement {2} % des joueurs l’avaient vu venir.":"בזק, סיבוב {0}: ברייק איבן על {1}. רק {2}% מהשחקנים צפו את זה.",
-"Break even, +120 XP.":"ברייק איבן, ‎+120 XP.",
+"Break even, +120 XP.":"ברייק איבן, \u200e+120 XP.",
 "Break even.":"ברייק איבן.",
 "Une semaine sur tous les marchés : le plus gros stack remporte la cagnotte (frais {0}).":"שבוע על כל השווקים: הסטאק הגדול ביותר זוכה בקופה (עמלה {0}).",
 /* (fin jeux) */
@@ -107,4 +124,21 @@ I18N_ADD("he",{
 /* (fin communaute) */
 /* Partie A [marche] */
 /* (fin marche) */
+/* Partie B */
+"Tu es passé Fer II":"עלית לברזל II",
+"Bienvenue sur Wimoro. Tes 100 XP de bienvenue t’attendent.":"ברוכים הבאים ל-Wimoro. \u200f100 ה-XP של ההצטרפות מחכים לך.",
+"Compte créé, bienvenue {0}":"החשבון נוצר. ברוכים הבאים, {0}",
+"Offerts pour ton arrivée":"מתנה על ההצטרפות שלך",
+"Rien de neuf pour l’instant":"אין חדש בינתיים",
+"Aucun duel de stack":"אין דו-קרב סטאק",
+"Personne pour l’instant":"עדיין אף אחד",
+"Aucun résultat pour « {0} »":"אין תוצאות עבור ״{0}״",
+"Break even, +120 XP":"ברייק איבן, \u200e+120 XP",
+"Gagné, +40 XP":"ניצחת, \u200e+40 XP",
+"Perdu cette fois":"הפסדת הפעם",
+"{0} · toutes doivent gagner":"{0} · כולן חייבות לנצח",
+"Mise maximale : {0} par duel":"הימור מקסימלי: {0} לדו-קרב",
+"Mise minimale : {0}":"הימור מינימלי: {0}",
+"Aucun joueur avec ce pseudo":"אין שחקן עם שם המשתמש הזה",
+/* (fin partie B) */
 });

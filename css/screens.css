@@ -1662,7 +1662,9 @@ body.has-slip #view{padding-bottom:76px}
 .dc-side{display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;padding:12px 8px;border-radius:var(--r-md);background:var(--fill);min-width:0}
 .dc-side.oui{background:var(--yes-soft)}
 .dc-side.non{background:var(--no-soft)}
-.dc-side .dc-n{max-width:100%;font-size:var(--fs-2);color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dc-side .dc-n{display:flex;align-items:center;justify-content:center;max-width:100%;min-width:0;font-size:var(--fs-2);color:var(--text);white-space:nowrap}
+.dc-side .dc-n>bdi{min-width:0;overflow:hidden;text-overflow:ellipsis}   /* le pseudo se tronque, jamais le tag de clan qui le suit */
+.dc-side .dc-n>.ctg{flex:none}
 .dc-side .dsid{font-weight:600;font-size:var(--fs-1);color:var(--text-2)}
 .dc-side.oui .dsid{color:var(--yes)}
 .dc-side.non .dsid{color:var(--no)}
@@ -3266,3 +3268,23 @@ body:has(.auth) .top .signup,body:has(.auth) .top .login{display:none}
 /* hébreu : la légende de la courbe de l'accueil et les étiquettes du graphique de l'Éclair se lisent de droite à gauche */
 [dir=rtl] .tlegend>span{direction:rtl}
 [dir=rtl] .fl-chart .lab,[dir=rtl] .fl-chart .lab2{direction:rtl}
+
+/* ====================================================================== Troisième passe, partie B : le téléphone [telephone]
+   De 320 à 879 px. Les règles corrigées sur place ne sont pas répétées ici ; seules les règles nouvelles sont regroupées
+   dans cette section, écran par écran. L'ordinateur (880 px et plus) n'est pas touché. */
+
+/* ---------- Classement : à 320 px, le pseudo gardait une lettre (« l… ») à côté de son tag ; le gain passe en 16 px,
+   la position en 14 px, et le pseudo retrouve sa place (il se tronque encore s'il est très long, jamais le tag) ---------- */
+@media (max-width:879px){
+  .lb .lr{grid-template-columns:var(--sp-10) minmax(0,1fr) auto}
+  .lb .lr .pos{font-size:var(--fs-2)}
+  .lb .lr>.c-pr .num{font-size:var(--fs-3)}
+}
+
+/* ---------- Cibles tactiles : un lien qui rogne son texte (points de suspension) ne peut pas porter de zone élargie ;
+   il grandit par une marge intérieure compensée, sans rien déplacer (règle 9 du système) ---------- */
+@media (pointer:coarse){
+  .lb .pl .nm>.lbn,.cpk-l,.tri-m>a.h2{padding-block:var(--sp-3);margin-block:calc(-1*var(--sp-3))}
+  .cpk-l{display:block}   /* le lien contient un bloc (le pseudo) : il devient un bloc pour porter sa marge */
+}
+/* classement : le pseudo est aussi un lien (pour le clavier) ; au doigt, c'est la ligne entière qui ouvre la fiche du joueur */

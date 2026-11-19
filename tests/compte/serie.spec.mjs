@@ -70,7 +70,7 @@ test('choisir faux : la série est perdue, la mise seulement ; sans choix : la m
 test('refus du serveur : affiché clairement, rien ne change ; le mode Démo ne passe pas par le serveur', async ({ page, browser }) => {
   await ouvrirSerie(page, { fn: { eclair: 'serie_en_cours' } });
   await page.locator('[data-a="sr-start"]').click();
-  await expect(toast(page, 'You already have a streak in progress.')).toBeVisible();
+  await expect(toast(page, 'You already have a streak in progress')).toBeVisible();
   expect(await lire(page, () => ({ solde: S.me.balance, serie: S.me.serie }))).toEqual({ solde: 500, serie: null });
 
   const ctx = await browser.newContext(), demo = await ctx.newPage();                       // un navigateur neuf : aucune session

@@ -67,7 +67,7 @@ test('conversation privée : la réaction passe par le serveur ; celle de l’au
   // le serveur refuse (message retiré entre-temps) : c'est dit, et l'écran ne change pas
   await page.evaluate(s => { __fakeSB.db.chat[s].length = 0; __fakeSB.persist(); }, SALON);
   await msg.locator('[data-a="react"][data-e="👀"]').click();
-  await expect(toast(page, 'This message is no longer available.')).toBeVisible();
+  await expect(toast(page, 'This message is no longer available')).toBeVisible();
   await expect(msg.locator('[data-a="react"][data-e="👀"]')).toHaveText('👀 2');
   expect(erreurs).toEqual([]);
 });

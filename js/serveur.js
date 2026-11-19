@@ -1249,7 +1249,7 @@ async function srvDeconnexion(){clearTimeout(srvT);srvEnvoyer();await API.signOu
 /* message affiché après le rechargement qui suit un changement de mode */
 function srvApres(){let k='';try{k=sessionStorage.getItem('wimoro-apres')||'';sessionStorage.removeItem('wimoro-apres');}catch(e){}
  if(k==='connexion'&&SRV())toast({tone:'blue',icon:'check',title:_t("Content de te revoir, {0}",[S.me.n]),text:_t("{0}, solde {1}",[rankName(myRank().t,myRank().d),F.usd(S.me.balance)])});
- else if(k==='inscription'&&SRV())toast({tone:'blue',icon:'check',title:_t("Compte créé, bienvenue {0} !",[S.me.n]),text:_t("Encore 5 petites étapes.")});
+ else if(k==='inscription'&&SRV())toast({tone:'blue',icon:'check',title:_t("Compte créé, bienvenue {0}",[S.me.n]),text:_t("Encore 5 petites étapes.")});
  else if(k==='deconnexion')toast({icon:'out',title:_t("Tu es déconnecté"),text:_t("À bientôt sur Wimoro.")});
  else if(k==='expire')toast({tone:'amber',icon:'lock',force:true,title:_t("Ta session a expiré. Reconnecte-toi.")});
  else if(k==='motdepasse'&&SRV())toast({tone:'blue',icon:'check',title:_t("Mot de passe mis à jour"),text:_t("Tu es connecté avec ton nouveau mot de passe.")});}
