@@ -299,7 +299,7 @@ I18N_ADD("he",{
 "Cherche un joueur par son pseudo.":"חפש שחקן לפי שם משתמש.",
 "Cherche un pseudo ci-contre, ou invite tes amis avec ton lien.":"חפש שם משתמש כאן, או הזמן חברים עם הקישור שלך.",
 "Chercher un joueur":"חיפוש שחקן",
-"Chez Polymarket, ces frais seraient de <b>{0}</b>. Ici : <b>−{1} %</b>.":"ב-Polymarket העמלות האלה היו <b>{0}</b>. כאן: <b>⁦−{1}%⁩</b>.",
+"Chez Polymarket, ces frais seraient de <b>{0}</b>. Ici : <b>−{1} %</b>.":"ב-Polymarket העמלות האלה היו <b>{0}</b>. כאן: <b>\u2066−{1}%\u2069</b>.",
 "Choisir un pari éclair":"בחירת הימור בזק",
 "Choisis la crypto à envoyer":"בחר את הקריפטו לשליחה",
 "Choisis le réseau":"בחר רשת",
@@ -1864,7 +1864,7 @@ I18N_ADD("he",{
 "{0} point{1} {2}":"{0, plural, one{# נקודה} other{# נקודות}} {2}",
 "{0} depuis le départ":"{0} מאז הפתיחה"
 });
-I18N_ADD("he",{"Chez Polymarket, ces frais seraient de <b>{0}</b>. Ici : <b>−{1}</b>.":"ב-Polymarket העמלות האלה היו <b>{0}</b>. כאן: <b>⁦−{1}⁩</b>."});
+I18N_ADD("he",{"Chez Polymarket, ces frais seraient de <b>{0}</b>. Ici : <b>−{1}</b>.":"ב-Polymarket העמלות האלה היו <b>{0}</b>. כאן: <b>\u2066−{1}\u2069</b>."});
 I18N_ADD("he",{"Fichier enregistré":"הקובץ נשמר"});
 I18N_ADD("he",{
 "Politique":"פוליטיקה",
