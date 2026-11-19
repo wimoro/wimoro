@@ -72,6 +72,7 @@ I18N_ADD("en",{
 "Mise maximale : {0} par duel":"Maximum stake: {0} per duel",
 "Mise minimale : {0}":"Minimum stake: {0}",
 "Aucun joueur avec ce pseudo":"No player with this username",
+"Clôture : {0}":"Closes: {0}",
 /* (fin partie B) */
 });
 I18N_ADD("he",{
@@ -140,5 +141,6 @@ I18N_ADD("he",{
 "Mise maximale : {0} par duel":"הימור מקסימלי: {0} לדו-קרב",
 "Mise minimale : {0}":"הימור מינימלי: {0}",
 "Aucun joueur avec ce pseudo":"אין שחקן עם שם המשתמש הזה",
+"Clôture : {0}":"סגירה: {0}",
 /* (fin partie B) */
 });

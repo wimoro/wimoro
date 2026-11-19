@@ -258,7 +258,7 @@ function ringH(){return `<div class="ringw"><div class="ring" data-fx="ring"><sv
 function flashTeaserH(){const d=SPOT(),g=G(d.id),pr=flashPrices(g),s=src(d),vis=!S.me.logged;
  const bouton=(v,cls,lab,prix)=>vis?`<a class="btn ${cls}" href="#inscription" data-fgv="${v}">${esc(lab)} ${prix}</a>`:`<button class="btn ${cls}" data-a="flash-bet" data-fg="${d.id}" data-v="${v}">${esc(lab)} ${prix}</button>`;
  return `<section class="pn pad flt" data-flt><div class="flt-h"><span class="kick"><span class="bolt">${ic('bolt',13,'#fff',2.2)}</span>${_t("Éclair")} <span class="fxa" data-fx="asset">${d.code}</span></span>${ringH()}</div>
- <h3 data-fx="q">${esc(d.q)}</h3>
+ <h3 data-fx="q">${qNw(d.q)}</h3>
  <div class="fp"><b class="num" data-fx="price">${d.kind==='event'?esc(g.board):d.fp(s.price)}</b><span class="delta" data-fx="chg"></span></div>
  <div class="fl-chart spark" data-fx="spark"></div>
  <div class="fbt">${bouton('oui','b-yes',d.a,`<span data-fx="po">${pr.o} ¢</span>`)}${bouton('non','b-no',d.b,`<span data-fx="pn">${pr.n} ¢</span>`)}</div>
@@ -283,7 +283,7 @@ function vFlash(){if(fmode()==='rot')S.ui.fgame=SPOT().id;const d=AG(),g=G(d.id)
  const outilsH=d.kind==='event'?'':`<div class="chtools fl">${ctypeSeg()}<span class="cdur" data-cdur="flash">${cdurH('flash')}</span>${side?duelH:''}</div>`;
  const phaseH='<div class="fl-phase" data-fx="phase"></div>',myH='<div class="fl-my" data-fx="my"></div>';
  const carteH=`<section class="pn pad flash-card" data-flashcard><div class="fl-top">${fcatsH()}${fcatSelH()}<div class="fmode-w">${fmodeH()}<button class="fhelp${help?' on':''}" data-a="fhelp" aria-expanded="${help}" aria-controls="fmode-h" aria-label="${_t('Expliquer les modes Rotation et Libre')}">${ic('info',16)}</button></div><p class="fmode-h" id="fmode-h"${help?'':' hidden'}>${rot?_t('Rotation : la page suit le pari vedette, qui change à chaque manche.'):_t('Libre : tu choisis ton pari et tu peux en jouer plusieurs par manche.')}</p></div>${ftabsH(d)}
- <div class="fl-h"><div><div class="kick"><i class="live"></i><span class="kt"><span class="kx">${_t("Pari éclair,")} </span>${_t("manche")} <b data-fx="round">${F.int(f.round)}</b>, <span data-fx="players">${F.int(g.players)}</span> ${_t("joueurs")}</span><span class="fxa" data-fx="asset">${d.code}</span>${rot?`<span class="xpc">${_t('Vedette')}</span>`:''}</div><h1 class="ptitle" data-fx="q">${esc(d.q)}</h1></div>${ringH()}</div>
+ <div class="fl-h"><div><div class="kick"><i class="live"></i><span class="kt"><span class="kx">${_t("Pari éclair,")} </span>${_t("manche")} <b data-fx="round">${F.int(f.round)}</b>, <span data-fx="players">${F.int(g.players)}</span> ${_t("joueurs")}</span><span class="fxa" data-fx="asset">${d.code}</span>${rot?`<span class="xpc">${_t('Vedette')}</span>`:''}</div><h1 class="ptitle" data-fx="q">${qNw(d.q)}</h1></div>${ringH()}</div>
  <div class="fl-price${d.kind==='event'?' ev':''}"><b class="num" data-fx="price">${d.kind==='event'?esc(g.board):d.fp(s.price)}</b><span data-fx="chg"></span></div><div class="fl-chart" data-fx="chart"></div>${outilsH}${side?'':`${phaseH}
  <div class="fl-amts">${stkH}${duelH}</div>
  ${sidesH}
@@ -362,7 +362,7 @@ document.addEventListener('pointerdown',e=>{if(e.pointerType!=='mouse')ftipAt(e)
 document.addEventListener('mouseout',e=>{if(!e.relatedTarget&&FTIP)ftipClear();});
 /* Échap referme l'explication des modes Rotation et Libre (si aucune fenêtre n'est ouverte) ; le focus revient sur « ? » */
 document.addEventListener('keydown',e=>{if(e.key!=='Escape'||(S.ui.route||'')!=='eclair'||$('#ov')||!fhelpOpen())return;S.ui.fmh=false;render(false);const b=$('[data-a="fhelp"]');if(b)b.focus();});
-function updateFlashStatic(){const d=SPOT(),g=G(d.id),pr=flashPrices(g);$$('[data-fx="q"]').forEach(e=>{e.textContent=d.q;fixText(e);swapIn(e);});$$('[data-fx="asset"]').forEach(e=>{e.textContent=d.code;swapIn(e);});$$('[data-fx="nextmini"]').forEach(e=>e.textContent=_t("Ensuite : ")+GAMES[nthSpot(1)].name);$$('[data-fx="next"]').forEach(e=>{e.innerHTML=nextH();fixText(e);});$$('[data-a="flash-bet"][data-fg]').forEach(b=>{b.dataset.fg=d.id;const t=b.dataset.v;b.firstChild.textContent=(t==='oui'?d.a:t==='non'?d.b:d.e)+' ';});$$('[data-fgv]').forEach(b=>{const t=b.dataset.fgv;b.firstChild.textContent=(t==='oui'?d.a:t==='non'?d.b:d.e)+' ';});fxCache();}
+function updateFlashStatic(){const d=SPOT(),g=G(d.id),pr=flashPrices(g);$$('[data-fx="q"]').forEach(e=>{e.innerHTML=qNw(d.q);fixText(e);swapIn(e);});   /* « sera-t-il » ne se coupe pas au trait d'union (qNw) */$$('[data-fx="asset"]').forEach(e=>{e.textContent=d.code;swapIn(e);});$$('[data-fx="nextmini"]').forEach(e=>e.textContent=_t("Ensuite : ")+GAMES[nthSpot(1)].name);$$('[data-fx="next"]').forEach(e=>{e.innerHTML=nextH();fixText(e);});$$('[data-a="flash-bet"][data-fg]').forEach(b=>{b.dataset.fg=d.id;const t=b.dataset.v;b.firstChild.textContent=(t==='oui'?d.a:t==='non'?d.b:d.e)+' ';});$$('[data-fgv]').forEach(b=>{const t=b.dataset.fgv;b.firstChild.textContent=(t==='oui'?d.a:t==='non'?d.b:d.e)+' ';});fxCache();}
 function swapIn(e){e.classList.remove('swap');void e.offsetWidth;e.classList.add('swap');}
 function showFlashResult(){const d=fmode()==='rot'?(GM[S.flash.lastSpot]||AG()):AG(),r=G(d.id).result;set2();const card=$('[data-flashcard]');if(!card||!r)return;const me=r.res,o=document.createElement('div');o.className='flres '+(me?(me.win?'win':'lose'):(r.out===2?'eq':''));const lab=[d.b,d.a,d.e][r.out];
  const sub=me?(me.win?(me.be?_t("Break even, +120 XP"):_t("Gagné, +40 XP")):_t("Perdu cette fois")):esc(r.out===2?d.rbe:d.kind==='event'?(r.out===1?d.rs(true):d.rs(false)):d.rs(r.out===1));
@@ -383,7 +383,7 @@ document.addEventListener('change',e=>{const k=e.target.dataset&&e.target.datase
 
 /* barre des paris : recentre la puce active (la vue est reconstruite à chaque choix) */
 /* rangées d'onglets défilantes : l'onglet actif est ramené dans la vue */
-function centerTabs(){$$('.fl-tabs,.filters .tabs,.ptabs,.ctabs,.fl-top .fpills').forEach(tb=>{const on=tb.querySelector('.on');if(!on||tb.scrollWidth<=tb.clientWidth+1)return;const b=tb.getBoundingClientRect(),r=on.getBoundingClientRect();tb.scrollLeft+=(r.left+r.width/2)-(b.left+b.width/2);});tabArrows();tabFades();}
+function centerTabs(){$$('.fl-tabs,.filters .tabs,.ptabs,.ctabs,.fl-top .fpills,.tabs.subnav').forEach(   /* .subnav : sous 370 px, l'onglet actif d'une destination reste à l'écran */tb=>{const on=tb.querySelector('.on');if(!on||tb.scrollWidth<=tb.clientWidth+1)return;const b=tb.getBoundingClientRect(),r=on.getBoundingClientRect();tb.scrollLeft+=(r.left+r.width/2)-(b.left+b.width/2);});tabArrows();tabFades();}
 /* fondu aussi au début d'une rangée une fois qu'elle a défilé (le fondu de fin est toujours là) */
 function tabFades(){$$('.fl-tabs,.filters .tabs,.ptabs,.ctabs,.fl-top .fpills').forEach(tb=>{if(tb.dataset.fd)return;tb.dataset.fd=1;const upd=()=>tb.classList.toggle('at-s',Math.abs(tb.scrollLeft)>6);tb.addEventListener('scroll',upd,{passive:true});upd();});}
 /* B6 : sur un écran à souris, une rangée d'onglets qui déborde reçoit deux flèches de défilement ‹ › */

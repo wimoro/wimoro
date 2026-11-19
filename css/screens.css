@@ -3308,10 +3308,11 @@ body:has(.auth) .top .signup,body:has(.auth) .top .login{display:none}
 .mlive:empty{display:none}
 .mlive{min-width:0;max-width:112px;font-size:var(--fs-2);font-weight:var(--fw-medium);color:var(--text-2);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;unicode-bidi:isolate}
 /* Téléphone : une quatrième colonne, vide tant qu'il n'y a pas de cours, reçoit la largeur du cours ; elle la prend à la
-   courbe (qui rétrécit), jamais aux boutons Oui / Non, dont la colonne ne dépend que du volume (au plus 48 px). */
+   courbe (qui rétrécit), jamais aux boutons Oui / Non. La deuxième colonne a une largeur fixe : d’une ligne à l’autre, les paires Oui / Non et
+   les courbes partent du même bord (le volume et la date passent à la ligne au besoin). */
 @media (max-width:879px){
-  .board .row{grid-template-columns:32px fit-content(var(--sp-12)) auto minmax(0,1fr);grid-template-areas:'img q q q' 'pv pv pv tr' 'vol vol acts acts'}
-  .board .row.grow{grid-template-columns:32px fit-content(var(--sp-12)) auto minmax(0,1fr);grid-template-areas:'img q q q' 'chips chips chips chips' 'vol vol acts acts'}
+  .board .row{grid-template-columns:var(--sp-8) var(--sp-6) auto minmax(0,1fr);grid-template-areas:'img q q q' 'pv pv pv tr' 'vol vol acts acts'}
+  .board .row.grow{grid-template-columns:var(--sp-8) var(--sp-6) auto minmax(0,1fr);grid-template-areas:'img q q q' 'chips chips chips chips' 'vol vol acts acts'}
   .board .row .pv{display:grid;grid-template-columns:auto minmax(0,auto);column-gap:var(--sp-2);align-items:baseline;align-content:start}
   .board .row .pv>.num{grid-column:1/-1}
 }
@@ -3320,3 +3321,151 @@ body:has(.auth) .top .signup,body:has(.auth) .top .login{display:none}
    (« Mises fermées,Fermé, résultat… », coupé à 320 px) depuis la règle .fl-phase>.pl de la partie A ; le téléphone garde
    le libellé court (« Fermé, »), l'ordinateur le long ---------- */
 @media (max-width:879px){.fl-phase>.pl{display:none}}
+
+/* ---------- Revue de la partie B, marchés et jeux (390 × 844, clair et sombre) : ce qui pouvait être retiré, replié ou
+   clarifié, sur téléphone seulement ---------- */
+@media (max-width:879px){
+  /* accueil : la date d'un marché passe à la ligne plutôt que de décaler la paire Oui / Non ; le nombre d'issues d'un
+     marché à plusieurs issues n'est plus dit trois fois (« 7 issues », « +3 », « Voir les 7 issues ») */
+  .board .row .vol .c{white-space:normal}
+  .board .gchip.more{display:none}
+  /* carte Éclair de l'accueil : « Mises fermées, résultat dans 14 s » sans le double espace du flex */
+  .flt-st{display:block}
+  .flt-st>svg{display:inline-block;vertical-align:-3px;margin-inline-end:var(--sp-1)}
+  .flt-st>.live{vertical-align:1px;margin-inline-end:var(--sp-2)}
+  /* fiche d'un marché : la courbe passe avant les réglages (périodes, outils), elle tient au premier écran ; la vignette
+     s'aligne en haut du titre ; les bulles du chat posées sur la courbe ne sont plus l'objet le plus lumineux en sombre */
+  .a-chart.pad{display:flex;flex-direction:column}
+  .a-chart.pad>.cp-h{display:contents}
+  .a-chart.pad>.chart{order:1}
+  .a-chart.pad>.xax{order:2}
+  .a-chart.pad>.cp-h>.row-c{order:3;margin-block-start:var(--sp-4)}
+  .a-chart.pad>.chtools{order:4;margin-block-start:var(--sp-3)}
+  .a-chart.pad>details{order:5}
+  .a-chart.pad .cp-h .seg{width:100%}
+  .a-chart.pad .cp-h .seg button{flex:1}
+  .chart .pin{background:var(--fill-2);color:var(--text)}
+  .mq-t{align-items:flex-start}
+  /* marché à plusieurs issues : plus d'aplat lavande sous la courbe de tête ; l'axe du temps va jusqu'au bout du tracé ;
+     les barres des issues ont toutes la même longueur */
+  .gsvg path[fill-opacity]{fill-opacity:0}
+  .gchart+.xax{margin-inline-end:0;padding-inline:var(--sp-4)}
+  .orow{grid-template-columns:36px minmax(0,1fr) minmax(var(--sp-16),auto)}
+  /* Éclair : « Mise 10 $ » ne répète plus la pastille active ; la ligne de manche commence par une majuscule */
+  .flash-card .fl-stk .lbl b{display:none}
+  .flash-card .fl-stk .lbl{min-width:0}
+  .fl-h .kick .kt{display:inline-block}
+  .fl-h .kick .kt::first-letter{text-transform:uppercase}
+  /* duels : une liste dans la carte, plus une carte à filet dans une carte (règle 6) ; 34 px rendus aux pseudos */
+  .dl-list>.dcard{border:0;border-radius:0;padding-inline:0;margin:0}
+  .dl-list>.dcard+.dcard{border-block-start:1px solid var(--line)}
+  .dl-list>.dcard:first-child{padding-block-start:0}
+  /* créer un pari : la pastille d'un rang garde sa largeur dans la liste des options */
+  .net>.rk{grid-column:2;justify-self:start}
+}
+/* Éclair sous 360 px : le Break even garde son nom et sa cote, comme dans le Blitz */
+@media (max-width:359px){.flash-card .fl-sides small[data-fx="pe"]{display:none}}
+/* duels : la question d'une ligne ne creuse plus de bande vide ; sa zone d'appui reste de 44 px (marge compensée) */
+@media (pointer:coarse) and (max-width:879px){.dc-q{display:block;min-height:var(--tap);padding-block:var(--sp-3);margin-block:calc(-1*var(--sp-3))}}
+
+/* ---------- Revue de la partie B, argent et compte ---------- */
+@media (max-width:879px){
+  /* portefeuille : chaque position dit ce qu'est son chiffre (en-tête « Marché … Résultat »), son titre se lit en 16 px comme
+     à l'accueil, son côté porte son prix en direct, et le bouton de partage se range au bout de la ligne */
+  .pos-t .ph2{display:grid;grid-template-columns:minmax(0,1fr) auto;padding:var(--sp-3) var(--sp-4) var(--sp-2)}
+  .pos-t .ph2>span:not(:first-child,:last-child){display:none}
+  .pos-t .q2{font-size:var(--fs-3);font-weight:var(--fw-medium)}
+  .pos-t .pr2:not(.cur-def){grid-template-columns:auto auto minmax(0,1fr) auto}
+  .pos-t .pr2:not(.cur-def)>.q2{grid-area:1/1/2/4}
+  .pos-t .pr2:not(.cur-def)>[data-ppr]{display:block;grid-area:2/2;align-self:center;font-size:var(--fs-2);color:var(--text-2);font-variant-numeric:tabular-nums}
+  .pos-t .pr2:has(>.c-x:nth-child(2):not(:empty)):not(.cur-def)>:last-child{grid-area:1/4/3/5}
+  /* portefeuille et profil : les libellés des chiffres en 14 px (règle 15) ; les chiffres restent alignés */
+  .wal-kv small,.pf-stats small{font-size:var(--fs-2)}
+  .wal-kv{align-items:flex-end}
+  /* dépôt et retrait : la barre KYC sur une ligne (les cadenas disent déjà ce qui est fermé) ; l'icône du dépôt du jour
+     reste sur la ligne de son texte ; les repères des conditions ne crient plus comme des titres d'étape */
+  .kycbar{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:start}
+  .kycbar div>span{display:none}
+  .kycbar .btn{grid-column:1/-1}
+  .g-dep .limit{flex-wrap:nowrap}
+  .conds4 .num{font-size:var(--fs-3)}
+  /* rang : l'emblème et le titre côte à côte ; une condition remplie a sa coche blanche (6:1) ; la ligne d'XP passe à la
+     ligne entre ses deux moitiés, jamais au milieu d'un nombre */
+  .rk-hero{grid-template-columns:auto minmax(0,1fr);column-gap:var(--sp-5);row-gap:0}
+  .rk-hero>div{display:contents}
+  .rk-hero>.emb{grid-row:1/3}
+  .rk-hero>div>.kick{grid-column:2;align-self:end}
+  .rk-hero>div>h1{grid-column:2;align-self:start;margin-block-start:var(--sp-1)}
+  .rk-hero>div>:not(.kick,h1){grid-column:1/-1;justify-self:stretch}
+  .cond.ok .ck{color:var(--on-color)}
+  .xprow{flex-wrap:wrap;column-gap:var(--sp-3)}
+  .xprow bdi{white-space:nowrap}
+  /* connexion et inscription : le titre à la même place que sur les autres écrans ; un libellé de deux lignes a de l'air */
+  .auth-main{padding:0 0 var(--sp-6)}
+  .auth-card .btn.full{padding-block:var(--sp-2)}
+  /* panneau des notifications et menu du compte : un voile derrière la feuille, comme pour une fenêtre (un appui le ferme) */
+  body:has(>.npanel)::before{content:'';position:fixed;inset:0;z-index:84;background:var(--veil);animation:w-fade var(--dur-2) var(--ease)}
+}
+@media (min-width:360px) and (max-width:879px){
+  .pos-t .pr2,.pos-t .ph2{position:relative;padding-inline-end:calc(var(--sp-4) + var(--sp-8) + var(--sp-2))}
+  .pos-t .q2 .ibtn{position:absolute;inset-inline-end:var(--sp-4);inset-block-start:50%;transform:translateY(-50%);width:var(--sp-8);height:var(--sp-8);margin:0}
+  /* dépôt : le QR (96 px) à côté de l'adresse, qu'on copie sur le téléphone ; à 320 px l'adresse se couperait */
+  .addr-w{grid-template-columns:auto minmax(0,1fr);grid-template-areas:'qr lbl' 'qr adr' 'wrn wrn' 'btn btn';gap:var(--sp-3) var(--sp-4)}
+  .addr-w>.col{display:contents}
+  .addr-w .qr{grid-area:qr;justify-self:start;padding:var(--sp-2)}
+  .addr-w .qr svg{width:calc(2*var(--sp-12));height:calc(2*var(--sp-12))}
+  .addr-w .sub{grid-area:lbl}
+  .addr-w .addr{grid-area:adr}
+  .addr-w .warn{grid-area:wrn}
+  .addr-w .hbtns{grid-area:btn}
+}
+/* profil à 320 px : « Modifier le profil » débordait de son bouton */
+@media (max-width:359px){.prof .pf-top>.hbtns.own{flex-direction:column}}
+
+/* ---------- Revue de la partie B, communauté ---------- */
+@media (max-width:879px){
+  /* sous-navigation : les cinq entrées tiennent dès 370 px ; en dessous, la ligne défile (l'onglet actif est amené au
+     centre, centerTabs) et s'efface à son bout (règle sous 370 px plus bas) */
+  .tabs.subnav{gap:var(--sp-2)}
+  /* emblème d'un clan : son icône en blanc (elle prenait la couleur du texte, 2:1 sur certains fonds) ; sur l'ambre, en encre */
+  .cemb{color:var(--on-color)}
+  .cemb.cemb-clair{color:var(--on-vif)}
+  /* pseudos en 16 px partout (amis, copy trading), comme dans le classement et le chat */
+  .frn b,.cpk-l b{font-size:var(--fs-3)}
+  /* live chat : « # Général » répétait la pastille active (56 px rendus au fil) ; plus d'icône dans un seul titre de carte */
+  .trib .chat-h h2{display:none}
+  .t-right .h2>svg[data-ic]{display:none}
+  /* clans : « Score » dit une fois, sur la première ligne ; « Mon clan » sur un fond neutre (le titre le dit déjà) ; le
+     paragraphe d'explication s'efface quand on a un clan ; le tag suit le nom sans retrait */
+  .cllist>.clrow:not(:first-child) .clsc-k{display:none}
+  .clg-1 .clrow.mine{background:var(--fill)}
+  .clw .pagehead:has(>.clh.has-mine) .plead{display:none}
+  .cllist .cln>b{display:flex;flex-wrap:wrap;align-items:center;column-gap:var(--sp-2)}
+  .cllist .cln>b>.ctg{margin-inline-start:0}
+  /* classement : chaque pastille prend la largeur de son libellé (« Tous les joueurs » sortait de la sienne) ; les
+     positions s'alignent sur leurs unités */
+  .lbh .lbsc{flex-wrap:wrap}
+  .lbh .lbsc .chip{flex:1 0 auto;padding-inline:var(--sp-3)}
+  .lb .lr .pos{text-align:end}
+  /* amis : « Retirer » ne pèse plus autant que Défier et Message ; la phrase qui répète le champ de recherche s'efface */
+  .frs .fra [data-a="fr-remove"]{flex:0 0 auto;box-shadow:none;color:var(--text-3)}
+  .frw aside .sub:has(+.fsearch){display:none}
+  /* copy trading : « Activer » garde sa taille, sous son texte ; la liste des joueurs à copier passe avant « Tes copieurs » */
+  .cpx-side>.ph{flex-direction:column;align-items:flex-start;gap:var(--sp-3)}
+  .cptr [data-copyroot]>.cpx-side{order:1}
+  /* fiche d'un joueur : la tuile « Rang » répétait la pastille sous le nom (grille 2 × 2) ; « Copier » remonte au premier
+     écran ; l'icône décorative de sa carte s'efface (un seul accent, le bouton) */
+  .jw .pf-stats>div:nth-child(4){display:none}
+  .jw .jg>.cp-card{margin-block-start:var(--sp-4)}
+  .cp-card .cp-ic{display:none}
+}
+@media (max-width:359px){
+  .lbh .lbsc .chip{padding-inline:var(--sp-2)}
+  .clfilters{grid-auto-flow:row;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .clfilters .sort:nth-child(3){grid-column:1/-1}
+}
+@media (max-width:360px){.frow:not(.sm) .fra .btn{font-size:var(--fs-2)}}
+@media (max-width:369px){
+  .tabs.subnav{-webkit-mask-image:linear-gradient(to right,var(--text) calc(100% - var(--sp-6)),transparent);mask-image:linear-gradient(to right,var(--text) calc(100% - var(--sp-6)),transparent)}
+  [dir=rtl] .tabs.subnav{-webkit-mask-image:linear-gradient(to left,var(--text) calc(100% - var(--sp-6)),transparent);mask-image:linear-gradient(to left,var(--text) calc(100% - var(--sp-6)),transparent)}
+}

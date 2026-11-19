@@ -75,7 +75,7 @@ function clanWorldRank(c){return clansSorted().indexOf(c)+1;}
 /* libellé de position : « Division 3, 12e sur 20 » ou « 3e sur 12 clans » */
 function clanPosTxt(c){return clanDivMode()?`${_t("{0}, {1} sur {2}",[divName(c),ordinal(c.rank),CLAN.DIV_N])}`:_t('{0} sur {1} clans',[ordinal(clanWorldRank(c)),clansActive().length]);}
 const worldPot=()=>Math.round(clansActive().reduce((t,c)=>t+c.xp,0)*.02*CLAN.POT_SHARE);
-function emblemH(c,size=28){return `<span class="cemb" style="background:${c.emblem.col};width:${size}px;height:${size}px">${ic(c.emblem.ic,Math.round(size*.55),'#fff',2.2)}</span>`;}
+function emblemH(c,size=28){return `<span class="cemb${c.emblem.col==='#F59A0B'?' cemb-clair':''}" style="background:${c.emblem.col};width:${size}px;height:${size}px">${ic(c.emblem.ic,Math.round(size*.55),'#fff',2.2)}</span>`;}
 const divNameI=i=>_t('Division {0}',[CLAN.DIV_NUM[i]]);const divName=c=>divNameI(CLAN.DIVS.indexOf(c.div));
 const divPot=dv=>{const L=CLANS.filter(c=>c.div===dv);return Math.round(L.reduce((t,c)=>t+c.xp,0)*.02*CLAN.POT_SHARE);};
 const monthLeft=()=>{const d=new Date();return Math.max(1,new Date(d.getFullYear(),d.getMonth()+1,1).getDate()-d.getDate()+1);};

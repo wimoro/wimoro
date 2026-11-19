@@ -66,6 +66,8 @@
   --rank-6:#13804F;
   --rank-7:#AE2139;
   --rank-8:#CC8400;
+  /* Texte ou icône posé sur une couleur vive et claire choisie par un joueur (emblème de clan ambre) : l'encre, 7,6:1 */
+  --on-vif:#1D1D1F;
 
   /* Typographie : une seule famille, la pile système. Cinq tailles, trois graisses. */
   --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue","Noto Sans",Arial,"Noto Sans Hebrew","Arial Hebrew",sans-serif;
