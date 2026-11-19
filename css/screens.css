@@ -3058,6 +3058,84 @@ body.out:has(.jx .b-pri) .top .signup{display:none}
 
   /* ---------- Créer un pari : le bouton d'envoi dans la colonne de droite (js/auth.js, vCreate) ---------- */
   .cr-side [data-crsubmit]{margin-top:var(--sp-5)}
+
+  /* ---------- Jeu responsable (js/responsible.js, vRG ; repère : la carte des limites .rg-lims) ----------
+     Les trois outils visibles à 1 440 × 900 : les limites de dépôt côte à côte (jour, semaine, mois), puis la pause et
+     l'auto-exclusion sur une même rangée. Le chapeau prend toute la largeur. */
+  .wrap:has(.rg-lims) .pagehead .plead{max-width:none}
+  .g-side:has(.rg-lims)>.col:first-child{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--col-gap);align-items:stretch}
+  .g-side:has(.rg-lims)>.col:first-child>section:first-child{grid-column:1/-1}
+  .g-side:has(.rg-lims) .chips{gap:var(--sp-2)}
+  .rg-lims{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--sp-4) var(--sp-6);margin-top:var(--sp-4);padding-top:var(--sp-4);border-top:1px solid var(--line)}
+  .rg-lim{padding-top:0;border-top:0;align-content:start}
+  .rg-lim-f{max-width:calc(var(--rail) * .8)}   /* quelques chiffres à saisir : le champ ne s'étire pas sur grand écran */
+  .rg-lim-f .btn{padding-inline:var(--sp-4)}
+
+  /* ---------- Parrainage (js/referral.js, refOrdiH) ----------
+     La carte « inviter » : le code et son bouton « copier », le lien et le sien, « Partager mon lien » à la largeur de son
+     texte ; à côté (1 280 px et plus) ou dessous, les trois étapes. À droite, « Tes filleuls » : les chiffres, puis la liste. */
+  .refw .pagehead .plead{max-width:none}
+  .refo{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--sp-8)}
+  .refo-code{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:'lbl lbl' 'code cc' 'link link' 'go go';align-items:center;align-content:start;gap:var(--sp-3)}
+  .refo-code>.sub{grid-area:lbl}
+  .refo-code>.refcode{grid-area:code;font-size:var(--fs-titre)}
+  .refo-cc{grid-area:cc}
+  .refo-code>.reflink{grid-area:link;display:flex;align-items:center;gap:var(--sp-3);padding-block:var(--sp-2);padding-inline:var(--sp-4) var(--sp-2);font-size:var(--fs-3);color:var(--text)}
+  .refo-code>.reflink>span{flex:1;min-width:0}
+  .refo-go{grid-area:go;justify-self:start;margin-top:var(--sp-2)}
+  .refo-how .refsteps{gap:var(--sp-5)}
+  .refo-fil .cp-kpis{padding-bottom:var(--sp-5);border-bottom:1px solid var(--line)}
+  .refo-fil .cp-kpis .num{font-size:var(--fs-5)}
+  .refo-l{margin-top:var(--sp-2)}
+  .refo-l>.sub{margin-top:var(--sp-3)}
+  @media (hover:hover){.refo .ibtn:hover{background:var(--fill-2);color:var(--text)}}
+
+  /* ---------- Mes combinés (js/combos.js, combosOrdiH) ----------
+     Un combiné = une carte : un bandeau (statut, mise, gain, valeur du moment, « Encaisser »), puis le tableau de ses
+     sélections. Le combiné en cours se compose dans la colonne de droite : la barre flottante du bas n'a plus lieu d'être. */
+  .cbw .pagehead .plead{max-width:none}
+  .cbw-t{display:flex;align-items:baseline;gap:var(--sp-2);margin-top:var(--sp-2)}
+  .cbw-t:first-child{margin-top:0}
+  body:has([data-cbslip]) .slipbar{display:none}
+  .cbo{padding:0;overflow:clip}
+  .cbo-h{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto auto;align-items:center;gap:var(--sp-4) var(--sp-8);padding:var(--sp-5) var(--sp-6)}
+  .cbo:not(.open) .cbo-h{grid-template-columns:minmax(0,1fr) auto auto}
+  .cbo-t{display:flex;flex-direction:column;align-items:flex-start;gap:var(--sp-1);min-width:0}
+  .cbo-t>b{font-size:var(--fs-4);line-height:var(--lh-snug)}
+  .cbo-t>small,.cbo-k>small{font-size:var(--fs-2);color:var(--text-3)}
+  .cbo-k{display:flex;flex-direction:column;align-items:flex-end;gap:var(--sp-1);text-align:end}
+  .cbo-k>b{font-size:var(--fs-4)}
+  .cbo-cash{display:contents}
+  .cbt{border-top:1px solid var(--line)}
+  .cbt-h,.cbt-r{display:grid;grid-template-columns:minmax(0,1fr) 80px 104px 120px 96px 120px;align-items:center;column-gap:var(--sp-4);padding-inline:var(--sp-6)}   /* mêmes colonnes en cours et terminés : les tableaux s'alignent */
+  .cbt-h{min-height:var(--sp-10);font-size:var(--fs-1);color:var(--text-3)}
+  .cbt-r{min-height:52px;border-top:1px solid var(--line);font-size:var(--fs-2)}
+  .cbt .r{text-align:end}
+  .cbt-m{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--fs-3);font-weight:var(--fw-medium);color:var(--text)}
+  .cbt .cb-cur{font-size:var(--fs-3)}
+  .cbt .cb-res{font-size:var(--fs-2)}
+  .cbs .cb-leg{background:var(--fill);border:0}
+  .cbs-plus{display:inline-flex;align-items:center;gap:var(--sp-1);margin-top:var(--sp-3)}
+  .cbs-vide{padding-block:var(--sp-6)}
+  .cbs .calc{margin-block:var(--sp-4)}
+  @media (hover:hover){.cbt-m:hover{text-decoration:underline}.cbt-r:hover{background:var(--fill)}}
+}
+@media (min-width:1280px){
+  .refo{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:var(--sp-10)}
+  .refo-how{padding-inline-start:var(--sp-10);border-inline-start:1px solid var(--line)}
+}
+@media (min-width:880px) and (max-width:1279px){
+  /* palier S : la colonne principale est étroite ; la pause et l'auto-exclusion restent l'une sous l'autre, les limites
+     gardent leurs trois colonnes, le bouton « Appliquer » sous le champ */
+  .g-side:has(.rg-lims)>.col:first-child{grid-template-columns:minmax(0,1fr)}
+  .rg-lim-f{flex-wrap:wrap}
+  .rg-lim-f .btn{flex:1 1 100%}
+  /* combinés : le bandeau sur deux lignes, le tableau garde ses colonnes utiles */
+  .cbo-h{grid-template-columns:minmax(0,1fr) auto;row-gap:var(--sp-3)}
+  .cbo:not(.open) .cbo-h{grid-template-columns:minmax(0,1fr) auto}
+  .cbo-t{grid-column:1/-1}
+  .cbt-h,.cbt-r{grid-template-columns:minmax(0,1fr) 64px 96px 96px;padding-inline:var(--sp-5)}
+  .cbt-h>:nth-child(3),.cbt-r>:nth-child(3),.cbt-h>:nth-child(5),.cbt-r>:nth-child(5){display:none}
 }
 @media (min-width:1280px){
   /* Modifier le profil : l'identité en deux colonnes. La photo, la galerie (16 avatars sur deux rangées) et la couleur à

@@ -58,6 +58,8 @@ I18N_ADD("en",{
 /* (fin marche) */
 /* Partie A [revue] */
 "Accepter {0} ({1})":"Accept {0} ({1})",
+"Copier le lien":"Copy link",
+"Cote":"Odds",
 /* (fin revue) */
 });
 I18N_ADD("he",{
@@ -112,5 +114,7 @@ I18N_ADD("he",{
 /* (fin marche) */
 /* Partie A [revue] */
 "Accepter {0} ({1})":"לקבל {0} ({1})",
+"Copier le lien":"להעתיק את הקישור",
+"Cote":"יחס",
 /* (fin revue) */
 });
