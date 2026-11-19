@@ -47,10 +47,10 @@ adresse du compte à passer administrateur) → (3) C, A, B sur `refonte-design`
 | 2. D1 : recherche des sources (6 recherches parallèles, ~1 000 appels ; test depuis les serveurs Supabase dans 3 régions) | fait : [docs/DONNEES.md](DONNEES.md) § 1, notes détaillées dans `docs/donnees/` |
 | 3. Message au propriétaire (comptes gratuits à créer, adresse du compte à passer administrateur) | fait (19 nov., 15 h 40) ; correctif envoyé : API-Sports indispensable (ESPN refuse les robots), AcesAPI conseillé (tennis) |
 | 4. Partie C | fait (commit `b52824f`) |
-| 5. Partie A (ordinateur) | en cours : grille commune (3 paliers, `tokens.css`, `base.css`, DESIGN-SYSTEM § 3) et accueil faits (commit `8b5327c`) ; fiche marché et ticket faits ici. En parallèle, trois agents travaillent chacun dans un worktree, sur une branche à fusionner dans `refonte-design` : `refonte-a-jeux` (Éclair, Blitz, Série, Duels), `refonte-a-argent` (portefeuille, dépôt, retrait, profil, rang, connexion, inscription), `refonte-a-communaute` (entrée, chat, clans, classement, amis, copies, joueur). Chacun écrit son CSS et ses traductions entre ses repères (`[jeux]`, `[argent]`, `[communaute]`) dans `screens.css` et `i18n-5.js` |
+| 5. Partie A (ordinateur) | en cours : grille commune (3 paliers, `tokens.css`, `base.css`, DESIGN-SYSTEM § 3) et accueil faits (commit `8b5327c`) ; fiche marché et ticket faits ici. En parallèle, trois agents travaillent chacun dans un worktree, sur une branche à fusionner dans `refonte-design` : `refonte-a-jeux` (Éclair, Blitz, Série, Duels), `refonte-a-argent` (portefeuille, dépôt, retrait, profil, rang, connexion, inscription), `refonte-a-communaute` (entrée, chat, clans, classement, amis, copies, joueur). Chacun écrit son CSS et ses traductions entre ses repères (`[jeux]`, `[argent]`, `[communaute]`) dans `screens.css` et `i18n-5.js`. Fusionnés : `refonte-a-jeux` (`42843ff`), `refonte-a-argent` (`02dc554`), 396 tests verts après chaque fusion |
 | 6. Partie B (téléphone) | à faire |
-| 7. Partie D (branche `marches-et-admin`) | à faire |
-| 8. Partie E (panel) | à faire |
+| 7. Partie D (branche `marches-et-admin`) | à faire (branche créée depuis `f9cc269`) |
+| 8. Partie E (panel) | en cours côté serveur : un agent (worktree, branche `marches-et-admin`) fait les lots 0 à 3b et 5 du plan (`architecture-d-e.md`) : sauvegarde `backup_20261119`, réglages `wm.reglages`, équipe et rôles, journal en ajout seul, porte `api_equipe`, blocages, frais lus dans les réglages, sujet temps réel `site` |
 | 9. Vérification, revues, bilan | à faire |
 
 **Pour reprendre (notes de travail hors dépôt, dossier temporaire de la session `…\scratchpad\`)** : `d1/*.md` (recherche
