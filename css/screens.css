@@ -3297,3 +3297,16 @@ body:has(.auth) .top .signup,body:has(.auth) .top .login{display:none}
   svg[data-ic]:is([width="10"],[width="11"],[width="12"],[width="13"],[width="14"],[width="15"]){width:16px;height:16px}
   svg[data-ic]:is([width="17"],[width="19"]){width:18px;height:18px}
 }
+
+/* ---------- Accueil, liste des marchés : la place du cours en direct (partie D, attribut data-mlive) est à côté de la
+   chance, sur la ligne de la variation : la ligne d'un marché ne grandit pas. Vide, la case ne prend aucune place. ---------- */
+.mlive:empty{display:none}
+.mlive{min-width:0;max-width:112px;font-size:var(--fs-2);font-weight:var(--fw-medium);color:var(--text-2);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;unicode-bidi:isolate}
+/* Téléphone : une quatrième colonne, vide tant qu'il n'y a pas de cours, reçoit la largeur du cours ; elle la prend à la
+   courbe (qui rétrécit), jamais aux boutons Oui / Non, dont la colonne ne dépend que du volume (au plus 48 px). */
+@media (max-width:879px){
+  .board .row{grid-template-columns:32px fit-content(var(--sp-12)) auto minmax(0,1fr);grid-template-areas:'img q q q' 'pv pv pv tr' 'vol vol acts acts'}
+  .board .row.grow{grid-template-columns:32px fit-content(var(--sp-12)) auto minmax(0,1fr);grid-template-areas:'img q q q' 'chips chips chips chips' 'vol vol acts acts'}
+  .board .row .pv{display:grid;grid-template-columns:auto minmax(0,auto);column-gap:var(--sp-2);align-items:baseline;align-content:start}
+  .board .row .pv>.num{grid-column:1/-1}
+}
