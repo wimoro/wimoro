@@ -12,6 +12,7 @@
 import { creerBase, q } from '../tests/sql/base.mjs';
 
 const A = '-- [ajout] ';
+const R = (de, vers, cle) => ({ remplace: [de, vers, cle] });
 const paris = { apres: 'perform wm.rg_garde(v_uid);', lignes: [`  perform wm.garde(v_uid, 'paris');   ${A}blocage des paris`] };
 
 export const LOTS = {
@@ -56,6 +57,60 @@ export const LOTS = {
     { f: 'wm.dm_send(uuid,text)', edits: [{ apres: '  perform wm.dm_garde(v_uid, p_user, true);', lignes: [
       `  perform wm.garde(v_uid, 'chat', 'dm');   ${A}blocage du chat (messages privés compris)`,
       `  perform wm.chat_regles(v_uid, 'dm', v_text);   ${A}mots interdits, si le réglage vaut aussi en privé`] }] },
+  ],
+  // Lot 3 : les constantes lues dans wm.reglages (valeur par défaut = le littéral remplacé). wm.fee_rate, wm.argent et
+  // wm.ref_bonus sont réécrites à la main dans la migration du lot (vérifiées sur leurs résultats).
+  3: [
+    { f: 'wm.quote_buy(double precision,double precision,text,boolean,text,double precision)', volatilite: ['IMMUTABLE', 'STABLE'], edits: [] },
+    { f: 'wm.buy(text,text,numeric,uuid,jsonb)', edits: [
+      R('v_total < 1 then', "v_total < wm.reglage_num('paris.mise_min', 1) then", 'paris.mise_min'),
+      { apres: "  if p_key is null then perform wm.fail('cle_absente'); end if;", lignes: [
+        `  if v_total > wm.reglage_num('paris.mise_max', null) then perform wm.fail('montant_max'); end if;   ${A}plafond des paris (vide par défaut : aucun)`] }] },
+    { f: 'public.srv_eclair_miser(uuid,jsonb)', edits: [
+      R('v_amt < 1 or v_amt > 10000', "v_amt < wm.reglage_num('eclair.mise_min', 1) or v_amt > wm.reglage_num('eclair.mise_max', 10000)", 'eclair.mise_min, eclair.mise_max')] },
+    { f: 'public.srv_serie_start(uuid,jsonb)', edits: [
+      R('v_stake not in (5, 10, 25, 50, 100)', "not (v_stake = any (wm.reglage_liste('serie.mises', array[5, 10, 25, 50, 100])))", 'serie.mises')] },
+    { f: 'public.srv_blitz_join(uuid,jsonb)', edits: [
+      R('v_buyin not in (10, 25)', "v_buyin not in (wm.reglage_num('blitz.buyin', 10), wm.reglage_num('blitz.buyin_prime', 25))", 'blitz.buyin, blitz.buyin_prime')] },
+    { f: 'public.srv_blitz_rebuy(uuid,jsonb)', edits: [R('v_prix is distinct from 50', "v_prix is distinct from wm.reglage_num('blitz.rachat', 50)", 'blitz.rachat')] },
+    { f: 'wm.duel_create(jsonb)', edits: [
+      R('v_mise < 5 or v_mise > 5000', "v_mise < wm.reglage_num('duels.mise_min', 5) or v_mise > wm.reglage_num('duels.mise_max', 5000)", 'duels.mise_min, duels.mise_max'),
+      R("x.etat = 'open') >= 10", "x.etat = 'open') >= wm.reglage_num('duels.max_ouverts', 10)", 'duels.max_ouverts'),
+      R("now() + interval '48 hours'", "now() + interval '1 hour' * wm.reglage_num('duels.expiration_h', 48)", 'duels.expiration_h')] },
+    { f: 'public.srv_duel_eclair_creer(uuid,jsonb)', edits: [
+      R('v_mise < 5 or v_mise > 5000', "v_mise < wm.reglage_num('duels.mise_min', 5) or v_mise > wm.reglage_num('duels.mise_max', 5000)", 'duels.mise_min, duels.mise_max'),
+      R("x.etat = 'open') >= 10", "x.etat = 'open') >= wm.reglage_num('duels.max_ouverts', 10)", 'duels.max_ouverts')] },
+    { f: 'wm.combo_place(jsonb)', edits: [
+      R('v_mise < 2 or v_mise > 1000', "v_mise < wm.reglage_num('combines.mise_min', 2) or v_mise > wm.reglage_num('combines.mise_max', 1000)", 'combines.mise_min, combines.mise_max'),
+      R("jsonb_array_length(p -> 'legs') > 6", "jsonb_array_length(p -> 'legs') > wm.reglage_num('combines.selections_max', 6)", 'combines.selections_max'),
+      R('round(v_brut * 0.05, 2)', "round(v_brut * wm.reglage_num('frais.combines.commission', 0.05), 2)", 'frais.combines.commission'),
+      R('least(v_brut - v_frais, 50000)', "least(v_brut - v_frais, wm.reglage_num('combines.gain_max', 50000))", 'combines.gain_max')] },
+    { f: 'wm.combo_valeur(wm.combos)', edits: [R('v_p * 0.95)', "v_p * wm.reglage_num('combines.encaisse_decote', 0.95))", 'combines.encaisse_decote')] },
+    { f: 'wm.stack_create(jsonb)', edits: [
+      R('v_buyin < 5 or v_buyin > 1000', "v_buyin < wm.reglage_num('stacks.buyin_min', 5) or v_buyin > wm.reglage_num('stacks.buyin_max', 1000)", 'stacks.buyin_min, stacks.buyin_max'),
+      R("y.etat = 'active') >= 5", "y.etat = 'active') >= wm.reglage_num('stacks.max_actifs', 5)", 'stacks.max_actifs')] },
+    { f: 'wm.stacks_avant(uuid)', edits: [R('s.buyin * 2 * 0.96', "s.buyin * 2 * (1 - wm.reglage_num('frais.stacks.commission', 0.04))", 'frais.stacks.commission')] },
+    { f: 'wm.copy_start(jsonb)', edits: [
+      R('v_budget < 50', "v_budget < wm.reglage_num('copies.budget_min', 50)", 'copies.budget_min'),
+      R('(v_per < 5 or', "(v_per < wm.reglage_num('copies.mise_min', 5) or", 'copies.mise_min'),
+      R('(v_cap > 0 and v_cap < 5)', "(v_cap > 0 and v_cap < wm.reglage_num('copies.mise_min', 5))", 'copies.mise_min'),
+      R("x.etat <> 'stopped') >= 10", "x.etat <> 'stopped') >= wm.reglage_num('copies.max_actives', 10)", 'copies.max_actives')] },
+    { f: 'wm.copie_executer(bigint,text,text,numeric,boolean)', edits: [
+      R('trunc(v_fee * 0.20, 2)', "trunc(v_fee * wm.reglage_num('frais.copies.part_copie', 0.20), 2)", 'frais.copies.part_copie'),
+      R('donne = donne + v_fee * 0.20', "donne = donne + v_fee * wm.reglage_num('frais.copies.part_copie', 0.20)", 'frais.copies.part_copie'),
+      R('if v_amt < 5 or v_libre < v_amt', "if v_amt < wm.reglage_num('copies.mise_min', 5) or v_libre < v_amt", 'copies.mise_min')] },
+    { f: 'wm.demo_deposit(jsonb,uuid)', edits: [{ apres: '  end loop;', lignes: [
+      `  if v_usd + coalesce((select sum(x.usd_equivalent) from public.deposits x where x.user_id = v_uid and x.label is null and x.created_at >= now() - interval '1 day'), 0) > wm.reglage_num('depots.max_jour', null) then perform wm.fail('limite_depot'); end if;   ${A}plafond du site par jour (vide par défaut : aucun)`] }] },
+    { f: 'wm.demo_withdraw(jsonb,uuid)', edits: [{ apres: "  if s.balance < v_amt then perform wm.fail('solde_insuffisant'); end if;", lignes: [
+      `  if v_amt > wm.reglage_num('retraits.max', null) then perform wm.fail('retrait_max'); end if;   ${A}plafond d'un retrait (vide par défaut : aucun)`] }] },
+    { f: 'wm.clan_create(jsonb)', edits: [
+      R('if s.balance < 50 then', "if s.balance < wm.reglage_num('clans.frais_creation', 50) then", 'clans.frais_creation'),
+      R('set balance = balance - 50, profit_realized = coalesce(profit_realized, 0) - 50 where',
+        "set balance = balance - wm.reglage_num('clans.frais_creation', 50), profit_realized = coalesce(profit_realized, 0) - wm.reglage_num('clans.frais_creation', 50) where", 'clans.frais_creation'),
+      R("values (v_uid, -50, v_solde, 'clan', v_id)", "values (v_uid, -wm.reglage_num('clans.frais_creation', 50), v_solde, 'clan', v_id)", 'clans.frais_creation')] },
+    { f: 'wm.clan_war()', edits: [{ apres: '  insert into wm.clan_guerres (clan_id, ennemi, par, bots, fin)', lignes: [
+      `  if g.buyin is distinct from wm.reglage_num('clans.guerre_buyin', 20) then update wm.clan_guerres set buyin = wm.reglage_num('clans.guerre_buyin', 20) where id = g.id returning * into g; end if;   ${A}mise de la guerre (réglage ; 20 par défaut, comme la colonne)`] }] },
+    { f: 'wm.clan_guerres_avancer(uuid)', edits: [R('round(v_pot * 0.96 / v_n, 2)', "round(v_pot * (1 - wm.reglage_num('frais.guerres.commission', 0.04)) / v_n, 2)", 'frais.guerres.commission')] },
   ],
 };
 

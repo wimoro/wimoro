@@ -31,8 +31,16 @@ function diffLignes(a, b) {
   while (i < n) retirees.push(a[i++]); while (j < m) ajoutees.push(b[j++]);
   return { retirees, ajoutees };
 }
-// une ligne « [réglage] » redevient la ligne d'avant quand on remet chaque littéral à la place de sa lecture de réglage
-const sansReglage = l => l.replace(/\s+-- \[réglage\].*$/, '').replace(/wm\.reglage_num\('[a-z0-9_.]+', ([^()]+?)\)/g, '$1');
+// une ligne « [réglage] » redevient la ligne d'avant quand on remet chaque littéral à la place de sa lecture de réglage :
+//   not (x = any (wm.reglage_liste('k', array[L])))  →  x not in (L)
+//   wm.reglage_num('k', L)                            →  L
+//   (1 - 0.04)                                        →  0.96          (une commission réglée, à la place du facteur gardé)
+//   interval '1 hour' * 48                            →  interval '48 hours'
+const sansReglage = l => l.replace(/\s+-- \[réglage\].*$/, '')
+  .replace(/not \((\w+) = any \(wm\.reglage_liste\('[a-z0-9_.]+', array\[([^\]]+)\]\)\)\)/g, '$1 not in ($2)')
+  .replace(/wm\.reglage_num\('[a-z0-9_.]+', ([^()]+?)\)/g, '$1')
+  .replace(/\(1 - (\d+(?:\.\d+)?)\)/g, (_, x) => String(Math.round((1 - Number(x)) * 1e9) / 1e9))
+  .replace(/interval '1 hour' \* (\d+)/g, "interval '$1 hours'");
 
 test('fonctions existantes : seules celles prévues ont changé, et seulement par des lignes ajoutées ou des réglages', async () => {
   const db = await creerBase();
