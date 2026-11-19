@@ -19,6 +19,12 @@ I18N_ADD("en",{
 "Prochaine manche dans {0} s":"Next round in {0} s",
 "hier {0}":"yesterday {0}",
 /* Partie A [jeux] */
+"But marqué dans la minute.":"Goal scored within the minute.",
+"Break even : ":"Break even: ",
+"Éclair, manche {0} : break even sur {1}. Seulement {2} % des joueurs l’avaient vu venir.":"Flash, round {0}: break even on {1}. Only {2}% of players saw it coming.",
+"Break even, +120 XP.":"Break even, +120 XP.",
+"Break even.":"Break even.",
+"Une semaine sur tous les marchés : le plus gros stack remporte la cagnotte (frais {0}).":"One week across every market: the biggest stack wins the pot (fee {0}).",
 /* (fin jeux) */
 /* Partie A [argent] */
 /* (fin argent) */
@@ -40,6 +46,12 @@ I18N_ADD("he",{
 "Prochaine manche dans {0} s":"הסיבוב הבא בעוד {0} שנ׳",
 "hier {0}":"אתמול {0}",
 /* Partie A [jeux] */
+"But marqué dans la minute.":"שער הובקע בתוך הדקה.",
+"Break even : ":"ברייק איבן: ",
+"Éclair, manche {0} : break even sur {1}. Seulement {2} % des joueurs l’avaient vu venir.":"בזק, סיבוב {0}: ברייק איבן על {1}. רק {2}% מהשחקנים צפו את זה.",
+"Break even, +120 XP.":"ברייק איבן, ‎+120 XP.",
+"Break even.":"ברייק איבן.",
+"Une semaine sur tous les marchés : le plus gros stack remporte la cagnotte (frais {0}).":"שבוע על כל השווקים: הסטאק הגדול ביותר זוכה בקופה (עמלה {0}).",
 /* (fin jeux) */
 /* Partie A [argent] */
 /* (fin argent) */

@@ -26,6 +26,13 @@ const JEU_AIDE={
 };
 function jeuxNavH(cur){const n=S.me.logged&&typeof duelIncoming==='function'?duelIncoming().length:0;
  return sousNavH(_t("Modes de jeu"),[['eclair','#eclair',_t("Éclair")],['blitz','#blitz',_t("Blitz Royale")],['serie','#serie',_t("La Série")],['duels','#duels',_t("Duels"),n]],cur)+(JEU_AIDE[cur]&&!(S.me.played>0)?`<p class="aide">${JEU_AIDE[cur]()}</p>`:'');}   /* la ligne d'aide, à la première rencontre seulement */
+/* Jeux sur ordinateur (troisième passe, partie A) : à partir de 880 px, Éclair, Blitz Royale, La Série et Duels sont composés
+   pour le grand écran (colonne latérale qui reste visible) ; leurs blocs ne se replient plus que sur téléphone. Le passage
+   du seuil redessine l'écran (l'Éclair le fait déjà lui-même : js/flash.js, FLSIDE). */
+const JEUX_ORDI={eclair:1,blitz:1,serie:1,duels:1,duel:1};
+const routeJeu=()=>JEUX_ORDI[(S.ui.route||'accueil').split('-')[0]];
+{const rp=replier;replier=function(){if(routeJeu()&&GRAND())return;rp();};}
+try{matchMedia('(min-width:880px)').addEventListener('change',()=>{if(PRET&&routeJeu()&&!$('[data-flashcard]'))render(false);});}catch(e){}
 
 /* Insère un bloc en tête d'un écran (juste après l'ouverture de son .wrap) et retire au besoin son fil d'Ariane. */
 function enTete(html,bloc,sansFil){if(sansFil)html=html.replace(/<nav class="crumbs"[\s\S]*?<\/nav>/,'');const i=html.indexOf('class="wrap');if(i<0)return bloc+html;const j=html.indexOf('>',i);return html.slice(0,j+1)+bloc+html.slice(j+1);}

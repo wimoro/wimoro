@@ -645,7 +645,7 @@ async function srvSerieAppel(action,corps,ev){
 }
 /* les annonces d'une manche réglée ou d'un encaissement : mêmes messages qu'en mode Démo */
 function srvSerieAnnonce(x){const d=GM[x.gid]||{name:x.gid};
- if(x.r==='gagnee')toast({tone:'green',icon:'bolt',flash:true,title:`${_t("Manche {0} gagnée : stack {1}",[x.step,F.usd(+x.stack)])}`,text:`${_t("{0} Encaisse ou continue dans les {1} secondes.",[x.out==='be'?_t("Break even !"):x.out==='oui'?_t("Haut."):_t("Bas."),SERIE.CHOICE_MS/1000])}`,href:'#serie'});
+ if(x.r==='gagnee')toast({tone:'green',icon:'bolt',flash:true,title:`${_t("Manche {0} gagnée : stack {1}",[x.step,F.usd(+x.stack)])}`,text:`${_t("{0} Encaisse ou continue dans les {1} secondes.",[x.out==='be'?_t("Break even."):x.out==='oui'?_t("Haut."):_t("Bas."),SERIE.CHOICE_MS/1000])}`,href:'#serie'});
  else if(x.r==='perdue')toast({tone:'red',icon:'bolt',flash:true,title:`${_t("Série perdue à la manche {0}",[x.step])}`,text:`${_t("C’était {0}. Mise perdue : {1}.",[x.out==='be'?'break even':x.out==='oui'?_t("Haut"):_t("Bas"),F.usd(+x.stake)])}`,href:'#serie'});
  else if(x.r==='rendue'){if(x.out)toast({tone:'amber',icon:'wallet',force:true,title:_t("Série annulée"),text:_t("Aucun choix dans les 30 secondes : ta mise t’est rendue."),href:'#serie'});}
  else{const tot=+x.stack/+x.stake;
