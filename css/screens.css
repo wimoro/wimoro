@@ -2490,8 +2490,14 @@ html.pro-lock,html.pro-lock body{overflow:hidden}
    Les colonnes s'ajoutent selon la largeur du tableau (requêtes de conteneur) : rang dès 680 px, précision dès 820 px,
    nombre de paris dès 940 px. L'en-tête des colonnes reste sous la barre du site au défilement et ta ligne reste en bas
    de l'écran tant qu'elle n'est pas atteinte (overflow:clip ne crée pas de défilement : les deux restent collantes). */
-/* le pseudo est un lien (atteint au clavier), tronqué par sa fin comme avant (à toutes les largeurs) */
-.lb .pl .nm>.lbn{display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom}
+/* le pseudo est un lien (atteint au clavier) ; à toutes les largeurs, c'est lui qui se tronque, jamais le tag de clan
+   qui le suit (même règle pour les lignes de la page Amis) */
+.lb .lr .pl .nm{display:flex;align-items:center;min-width:0;overflow:visible}
+.lb .pl .nm>.lbn{display:inline-block;flex:0 1 auto;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom}
+.lb .pl .nm>.ctg,.frn b>.ctg{flex:none}
+.lbme{flex:none;margin-inline-start:var(--sp-1);white-space:nowrap}
+.frn b{display:flex;align-items:center;min-width:0;overflow:visible}
+.frn b>bdi{min-width:0;overflow:hidden;text-overflow:ellipsis}
 @media (min-width:880px){
   .lbw .pagehead{margin-bottom:var(--sp-6)}
   .lbw .pagehead .plead{max-width:none}
@@ -2502,10 +2508,7 @@ html.pro-lock,html.pro-lock body{overflow:hidden}
   .pn.lb .lh+.lr{border-top:0}
   .pn.lb .lr>.c-rk,.pn.lb .lr>.c-acc,.pn.lb .lr>.c-bets,.pn.lb .lh>span:nth-child(3),.pn.lb .lh>span:nth-child(5),.pn.lb .lh>span:nth-child(6){display:none}
   .pn.lb .lr.me{position:sticky;bottom:0;z-index:2;box-shadow:0 -1px 0 var(--line)}
-  .pn.lb .lr .pl .nm{display:flex;align-items:center;gap:var(--sp-1);min-width:0;overflow:visible}
-  .pn.lb .lr .pl .nm>.lbn{flex:0 1 auto;min-width:0}
   @media (hover:hover){.pn.lb .lr .lbn:hover{text-decoration:underline}}
-  .pn.lb .lr .pl .nm>.ctg{flex:none;margin-inline-start:var(--sp-1)}
   .pn.lb .c-fol{justify-self:end}
   .pn.lb .c-fol .btn{min-width:96px}
   @container (min-width:680px){
@@ -2625,9 +2628,7 @@ html.pro-lock,html.pro-lock body{overflow:hidden}
   /* colonne de droite étroite : le bouton « Ajouter en ami » passe sous le joueur plutôt que de le recouvrir */
   .frw aside .frow{flex-wrap:wrap;row-gap:var(--sp-2)}
   .frw aside .fra{margin-inline-start:auto}
-  .frw .frs .frn b{display:flex;align-items:center;min-width:0;font-size:var(--fs-3);overflow:visible}
-  .frw .frs .frn b>bdi{min-width:0;overflow:hidden;text-overflow:ellipsis}
-  .frw .frs .frn .ctg{flex:none}
+  .frw .frs .frn b{font-size:var(--fs-3)}
   .frw .frs .fra{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:var(--sp-2);margin-top:auto}
   .frw .frs .fra .btn{min-width:0;padding-inline:var(--sp-2)}
   .frw .frs .fra [data-a="fr-remove"]{position:absolute;top:var(--sp-4);inset-inline-end:var(--sp-4);min-height:32px;padding-inline:var(--sp-2);box-shadow:none;font-weight:var(--fw-regular);color:var(--text-3)}
