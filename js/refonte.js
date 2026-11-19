@@ -162,7 +162,12 @@ function trailTip(e){const el=e.target&&e.target.closest?e.target.closest('.trai
 document.addEventListener('pointermove',trailTip,{passive:true});
 document.addEventListener('pointerleave',e=>{if(e.target&&e.target.classList&&e.target.classList.contains('trail'))$$('.tip',e.target).forEach(x=>x.remove());},true);
 /* Après chaque rendu d'écran (appelé par render, js/views.js). */
-function apresRendu(view,v,top){introVue(view);titreFocus(view,top);$$('input.range',view).forEach(curseurRempli);}
+function apresRendu(view,v,top){introVue(view);titreFocus(view,top);$$('input.range',view).forEach(curseurRempli);barreEclair(view);}
+/* Éclair sur téléphone : la barre des mises se pose exactement sur la barre fixe des trois paris, quelle que soit sa hauteur
+   (le Break even passe sur deux ou trois lignes à 320 px) ; css/screens.css lit --fl-sides-h. */
+let FLRO=null;
+function barreEclair(view){if(FLRO){FLRO.disconnect();FLRO=null;}const s=view.querySelector('.flash-card .fl-sides');if(!s||typeof ResizeObserver!=='function')return;
+ FLRO=new ResizeObserver(()=>{const h=Math.round(s.getBoundingClientRect().height);if(h>0)document.documentElement.style.setProperty('--fl-sides-h',h+'px');});FLRO.observe(s);}
 
 /* ===================== Accessibilité (troisième passe, partie B) ===================== */
 /* Changement d'écran : le focus clavier va au titre de la page (h1, visible ou réservé aux lecteurs d'écran), pour que la
