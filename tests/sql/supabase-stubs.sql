@@ -122,6 +122,13 @@ returns void language sql as $$
     key_id = coalesce(new_key_id, key_id), updated_at = now() where id = secret_id
 $$;
 
+-- Storage : forme minimale de la table des buckets (colonnes relevées en production le 19 nov. 2026), pour la création du
+-- bucket public des images des marchés (lot 8). Les fichiers eux-mêmes ne sont jamais écrits par la base.
+create table storage.buckets (
+  id text primary key, name text not null unique, owner uuid, created_at timestamptz default now(), updated_at timestamptz default now(),
+  public boolean default false, file_size_limit bigint, allowed_mime_types text[]
+);
+
 -- pg_net : les requêtes sont seulement rangées dans une table (jamais envoyées), pour vérifier l'adresse et les en-têtes.
 create schema net;
 create table net.http_request_queue (id bigserial primary key, method text not null, url text not null, headers jsonb not null, body bytea, timeout_milliseconds integer not null);

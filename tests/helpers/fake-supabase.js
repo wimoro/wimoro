@@ -10,6 +10,9 @@
  *   marches   : [ { market_id, current_probability, volume_total, liquidity_depth, participants_count, status, price_history } ]
  *               un marché absent de la liste est créé à la demande avec les valeurs de départ du site
  *   rpc       : { nom: valeur | { error: { message } } }   réponses forcées
+ *   catalogue : { rev, en_ligne, cats, m, x, credits }   catalogue des marchés réels (api_catalogue) ; m au format de
+ *               wm.fiche_vue, textes dans les trois langues (t: { fr: { q, s, r }, en, he }) ; absent → 3 fiches d'exemple
+ *   operations: [ { id, k, montant, solde, ref, at } ]   relevé d'argent du joueur (api_operations)
  *   fn        : { eclair: 'mises_fermees' }                refus forcé d'une Edge Function (code)
  *   autoconfirm : false  → l'inscription demande une confirmation d'e-mail (pas de session)
  *   otp       : '123456'  code accepté par verifyOtp
@@ -306,6 +309,18 @@
       e.rg.pause = 0; e.rg.excl = a.p_months === 0 ? -1 : Math.max(e.rg.excl || 0, Date.now() + a.p_months * 30 * 864e5);
       return { excl: e.rg.excl }; },
     api_markets: function () { return { now: Date.now() + (CFG.decalage || 0), m: clone(db.marches) }; },
+    /* Catalogue des marchés réels : mêmes formes que wm.catalogue / wm.fiche_vue (…_catalogue.sql). p_depuis = révision déjà
+     * lue → seulement les fiches changées depuis (et x, les fiches retirées) ; p_langue fr|en|he → textes dans cette langue. */
+    api_catalogue: function (a) { var c = catalogueFaux(), d = +a.p_depuis || 0, L = ['fr', 'en', 'he'].indexOf(a.p_langue) >= 0 ? a.p_langue : null;
+      return { v: 1, rev: c.rev, t: Date.now() + (CFG.decalage || 0), en_ligne: c.en_ligne, img: IMG_MARCHES,
+        cats: d > 0 ? null : c.cats.map(function (x) { return { id: x.id, n: L ? (x.n[L] || x.n.fr) : clone(x.n), ic: x.ic }; }),
+        m: c.m.filter(function (x) { return (x.rev || 1) > d; }).map(function (x) { return vueFiche(x, L); }), x: d > 0 ? clone(c.x) : [] }; },
+    api_credits: function () { return { img: IMG_MARCHES, images: clone(catalogueFaux().credits) }; },
+    /* Présence (…_cycle_vie.sql) : le nouvel écran l'appelle toutes les 60 s, onglet visible ; relevé d'argent par pages. */
+    api_presence: function () { etat(); return { ok: true }; },
+    api_operations: function (a) { var n = Math.min(Math.max(+a.p_n || 50, 1), 200), av = a.p_avant == null ? Infinity : +a.p_avant;
+      var L = clone(etat().operations || CFG.operations || []).filter(function (o) { return o.id < av; }).sort(function (x, y) { return y.id - x.id; }).slice(0, n);
+      return { operations: L, suite: L.length === n ? L[L.length - 1].id : null }; },
     /* Propositions de marché : mêmes règles que supabase/migrations/…_propositions.sql */
     api_proposals: function () { var ev = []; propsAvancer(ev); var rep = reponse(ev); rep.props = propsEtat(); return rep; },
     api_proposal_create: function (a) { var p = a.p || {}, e = etat(), me = e.me, ev = [], propre = function (t) { return String(t || '').replace(/'/g, '’').replace(/\s+/g, ' ').trim(); };
@@ -482,7 +497,42 @@
       rep.hist = hist; rep.marches = marchesDe(fratrie(a.p_market));
       db.ops[cle] = clone(rep); return rep; }
   };
-  var SANS_SESSION = { api_markets: 1, api_pseudo_libre: 1 };
+  var SANS_SESSION = { api_markets: 1, api_pseudo_libre: 1, api_catalogue: 1, api_credits: 1 };
+
+  /* ----- Catalogue des marchés réels : 7 catégories et 3 fiches d'exemple (CFG.catalogue les remplace) ----- */
+  var IMG_MARCHES = 'https://brmwvxncyeypefsgiepf.supabase.co/storage/v1/object/public/marches/';
+  var CATS_MARCHES = [
+    { id: 'crypto', n: { fr: 'Crypto', en: 'Crypto', he: 'קריפטו' }, ic: 'bitcoin' }, { id: 'bourse', n: { fr: 'Bourse', en: 'Stocks', he: 'בורסה' }, ic: 'candlestick-chart' },
+    { id: 'economie', n: { fr: 'Économie', en: 'Economy', he: 'כלכלה' }, ic: 'landmark' }, { id: 'politique', n: { fr: 'Politique', en: 'Politics', he: 'פוליטיקה' }, ic: 'vote' },
+    { id: 'sport', n: { fr: 'Sport', en: 'Sports', he: 'ספורט' }, ic: 'trophy' }, { id: 'tech', n: { fr: 'Tech', en: 'Tech', he: 'טכנולוגיה' }, ic: 'cpu' },
+    { id: 'culture', n: { fr: 'Jeux vidéo et culture', en: 'Games and culture', he: 'גיימינג ותרבות' }, ic: 'gamepad-2' }];
+  var FICHES_EXEMPLE = [
+    { id: 'btc-fin-decembre-2026', k: 'b', c: 'crypto', st: 'ouvert', g: 'modele', p: 42, f: Date.parse('2026-12-30T23:59:00Z'), z: Date.parse('2027-01-01T00:05:00Z'),
+      i: 'img/0000000000000000000000000000000000000000000000000000000000000001.png', l: { actif: 'btc' }, per: { m: 'btc-mensuel', p: '2026-12' },
+      src: { n: 'Coinbase Exchange, bougie journalière BTC-USD', u: 'https://api.exchange.coinbase.com/products/BTC-USD/candles?granularity=86400' },
+      t: { fr: { q: 'Le Bitcoin sera-t-il au-dessus de 65 000 $ le 31 décembre 2026 à 23h59 UTC ?', s: 'BTC > 65 000 $ au 31/12', r: 'OUI si la clôture journalière BTC-USD de Coinbase du 31/12/2026 est strictement supérieure à 65 000 $ ; sinon NON.' },
+           en: { q: 'Will Bitcoin be above $65,000 on December 31, 2026 at 23:59 UTC?', s: 'BTC > $65K on Dec 31', r: 'YES if the Coinbase BTC-USD daily close of 12/31/2026 is strictly above $65,000; otherwise NO.' },
+           he: { q: 'האם הביטקוין ייסחר מעל 65,000 דולר ב-31 בדצמבר 2026 בשעה 23:59 UTC?', s: 'ביטקוין מעל 65K$ ב-31.12', r: 'כן אם סגירת הנר היומי של BTC-USD ב-Coinbase ב-31.12.2026 גבוהה ממש מ-65,000 דולר; אחרת לא.' } }, rev: 1 },
+    { id: 'pl-new-ars-2026-11-21', k: 'o', c: 'sport', st: 'ouvert', g: 'sport', f: Date.parse('2026-11-21T17:30:00Z'), z: Date.parse('2026-11-21T19:35:00Z'),
+      l: { match: { sport: 'foot', competition: 'PL', debut: '2026-11-21T17:30:00Z' } }, src: { n: 'Premier League', u: 'https://www.premierleague.com' },
+      t: { fr: { q: 'Qui va gagner : Newcastle, match nul ou Arsenal ?', s: 'Newcastle – Arsenal', r: 'Résultat à la fin du temps réglementaire.' },
+           en: { q: 'Who will win: Newcastle, draw, or Arsenal?', s: 'Newcastle – Arsenal', r: 'Result at the end of regulation time.' },
+           he: { q: 'מי תנצח: ניוקאסל, תיקו או ארסנל?', s: 'ניוקאסל – ארסנל', r: 'התוצאה בסיום הזמן החוקי.' } },
+      opt: [{ id: 'pl-new-ars-2026-11-21-home', c: 'home', t: { fr: 'Newcastle', en: 'Newcastle United', he: 'ניוקאסל' }, p: 17 },
+            { id: 'pl-new-ars-2026-11-21-draw', c: 'draw', t: { fr: 'Match nul', en: 'Draw', he: 'תיקו' }, p: 22 },
+            { id: 'pl-new-ars-2026-11-21-away', c: 'away', t: { fr: 'Arsenal', en: 'Arsenal', he: 'ארסנל' }, p: 61 }], rev: 2 },
+    { id: 'shutdown-usa-decembre-2026', k: 'b', c: 'economie', st: 'suspendu', g: 'actu', p: 30, f: Date.parse('2026-12-31T22:00:00Z'), sus: { m: 'vérification de la source' },
+      t: { fr: { q: 'Le gouvernement fédéral américain sera-t-il en shutdown en décembre 2026 ?', s: 'Shutdown USA en décembre', r: 'OUI si un shutdown fédéral débute ou est en cours en décembre 2026.' },
+           en: { q: 'Will the US federal government be shut down in December 2026?', s: 'US shutdown in December', r: 'YES if a federal shutdown starts or is ongoing in December 2026.' },
+           he: { q: 'האם הממשל הפדרלי בארה"ב יושבת בדצמבר 2026?', s: 'השבתה בארה"ב בדצמבר', r: 'כן אם השבתה פדרלית מתחילה או נמשכת בדצמבר 2026.' } }, rev: 3 }];
+  var CREDITS_EXEMPLE = [{ i: 'img/0000000000000000000000000000000000000000000000000000000000000001.png',
+    credit: { titre: 'File:Bitcoin.svg', auteur: 'Bitboy', licence: 'Domaine public', licence_url: null, source: 'Wikimedia Commons', url: 'https://commons.wikimedia.org/wiki/File:Bitcoin.svg' } }];
+  function catalogueFaux() { var c = CFG.catalogue || {};
+    return { rev: c.rev || 3, en_ligne: !!c.en_ligne, cats: c.cats || CATS_MARCHES, m: c.m || FICHES_EXEMPLE, x: c.x || [], credits: c.credits || CREDITS_EXEMPLE }; }
+  function vueFiche(x, L) { var f = clone(x); if (!L) return f;
+    if (f.t && f.t.fr) f.t = f.t[L] || f.t.fr;
+    (f.opt || []).forEach(function (o) { if (o.t && typeof o.t === 'object') o.t = o.t[L] || o.t.fr; });
+    return f; }
 
   /* ----- Marchés : le moteur est celui de js/engine.js, dont le serveur est le portage (parité vérifiée par tests/sql/moteur.spec.mjs) ----- */
   var r2 = function (x) { return Math.round(x * 100) / 100; }, r6 = function (x) { return Math.round(x * 1e6) / 1e6; }, r8 = function (x) { return Math.round(x * 1e8) / 1e8; };

@@ -38,7 +38,8 @@ test('droits d’appel : toute fonction api_ est réservée aux joueurs connect�
   // api_site (19 nov. 2026, lot 1 du panneau) : lecture seule des réglages publics, de l'annonce et de la maintenance
   // api_live (19 nov. 2026, lot 6 des données réelles) : lecture seule de l'instantané des cours, sans signal de présence
   // api_fixations (lot 7) : lecture seule de l'historique des fixations d'un jeu éclair (48 h), pour le compte Démo et les visiteurs
-  expect(api_.filter(l => l.anon).map(l => l.f)).toEqual(['api_fixations', 'api_live', 'api_markets', 'api_pseudo_libre', 'api_site']);
+  // api_catalogue, api_credits (19 nov. 2026, lot 8 des marchés réels) : lecture seule du catalogue et des crédits des images
+  expect(api_.filter(l => l.anon).map(l => l.f)).toEqual(['api_catalogue', 'api_credits', 'api_fixations', 'api_live', 'api_markets', 'api_pseudo_libre', 'api_site']);
   expect(api_.filter(l => !l.joueur)).toEqual([]);
   // dans wm : seules les fonctions qui portent le nom d'une fonction api_ sont appelables, et par les mêmes personnes.
   // Seule exception, à tenir courte : une fonction appelée par une règle d'accès (RLS) au nom du joueur connecté. Elle ne
@@ -47,7 +48,7 @@ test('droits d’appel : toute fonction api_ est réservée aux joueurs connect�
   const noms = new Set(api_.map(l => l.f.slice(4)));
   for (const l of lignes.filter(l => l.s === 'wm')) {
     expect(l.joueur, 'wm.' + l.f).toBe(noms.has(l.f) || REGLES.includes(l.f));
-    expect(l.anon, 'wm.' + l.f).toBe(['fixations', 'live', 'markets', 'pseudo_libre', 'site'].includes(l.f));
+    expect(l.anon, 'wm.' + l.f).toBe(['catalogue', 'credits', 'fixations', 'live', 'markets', 'pseudo_libre', 'site'].includes(l.f));
   }
   for (const f of ['wm.demo_regler(auth.uid())', 'wm.xp_add(auth.uid(), 1000, $$x$$)', 'wm.bots_tick()', 'wm.droits()', 'wm.notify(auth.uid(), $$a$$, $$b$$)', 'wm.rank_refresh(auth.uid())'])
     expect(await refus(db, await creerJoueur(db, 'essai' + Math.random().toString(36).slice(2, 8)), 'select ' + f), f).toMatch(/permission denied/);
