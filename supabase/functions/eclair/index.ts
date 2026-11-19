@@ -25,6 +25,13 @@
 //   { action: 'duel_settle' }                               →  { ok: true, now, me, ev, duels, regles }
 // Refus : { ok: false, code } avec un code stable (mises_fermees, deja_mise, solde_insuffisant, pause, be_plein…).
 // La fonction vérifie elle-même la session auprès du service d'authentification (getUser) : verify_jwt est désactivé.
+//
+// Cours réels (lot 7, interrupteur wm.reglages « eclair.cours_reels », éteint par défaut) : la base fige le mode de chaque
+// jeu pour chaque manche (réel, en pause, simulé, retiré) et garde les fixations ; srv_eclair_contexte les rend. Une manche
+// réelle se calcule avec le moteur v2 (etatReel, prixReel, reglerReel) sur ces fixations ; une manche simulée, comme avant.
+// La base refuse une mise calculée dans un autre mode que celui figé (« mode_change » : la fonction recommence une fois) et
+// toute mise sur un jeu en pause (« jeu_en_pause »). Une manche réelle annulée (fixation absente) rend les mises :
+// srv_eclair_rembourser ; le règlement renvoie alors aussi « rembourses ». La Série et Blitz Royale ne changent pas.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.118.0";
 import "./moteur-eclair.js";
@@ -57,6 +64,27 @@ const cle = (nouvelles: string, ancienne: string): string => {
 // Une erreur levée par la base porte un code métier dans son message (« pause », « deja_mise »…).
 const codeDe = (message: string | undefined) => /^[a-z][a-z0-9_]{2,40}$/.test(message ?? "") ? (message as string) : "serveur";
 
+// L'interrupteur des cours réels, vu au dernier contexte : gardé 30 s en mémoire pour ne pas ajouter d'appel à chaque mise
+// tant qu'il est éteint (sans risque : la base refuse une mise calculée dans un mode qui n'est pas celui de la manche).
+let reelsVu = false, reelsJusqua = 0;
+const reelsPossibles = () => reelsVu || Date.now() > reelsJusqua;
+// Contextes de manches { 'jeu:manche': { mode, raison, P, F, attente } } (lecture ; la base fige d'abord les modes à venir).
+// deno-lint-ignore no-explicit-any
+async function contextes(admin: any, items: { jeu: string; manche: number }[]): Promise<Record<string, any>> {
+  if (!items.length) return {};
+  const { data, error } = await admin.rpc("srv_eclair_contexte", { p: { items: items.slice(0, 60) } });
+  if (error) throw error;
+  reelsVu = !!data?.cours_reels; reelsJusqua = Date.now() + 30000;
+  // deno-lint-ignore no-explicit-any
+  return Object.fromEntries((data?.items ?? []).map((c: any) => [c.jeu + ":" + c.r, c]));
+}
+const enPause = (c: { mode?: string } | undefined) => !!c && (c.mode === "pause" || c.mode === "retire");
+// L'état de la cagnotte d'un jeu à un tick, dans le mode de la manche : { g, px } (cours réels : moteur v2).
+// deno-lint-ignore no-explicit-any
+const etatDe = (d: any, manche: number, tk: number, c: any) =>
+  c && c.mode === "reel" ? (() => { const g = ME.etatReel(d, manche, tk, null, c); return { g, px: ME.prixReel(d, g, c.P), reel: true }; })()
+    : (() => { const g = ME.etat(d, manche, tk); return { g, px: ME.prix(d, g), reel: false }; })();
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors(req) });
   if (req.method !== "POST") return refus(req, "methode", 405);
@@ -81,16 +109,31 @@ Deno.serve(async (req: Request) => {
     if (!["oui", "non", "be"].includes(cote)) return refus(req, "cote_invalide");
     if (!(amt >= 1) || !(amt <= 10000)) return refus(req, "montant_invalide");
     // l'heure du serveur décide de la manche et du tick ; les mises ne sont ouvertes que 30 secondes
-    const t = Date.now();
-    if (!ME.ouvert(t)) return refus(req, "mises_fermees");
-    const manche = ME.round(t), tk = ME.tick(t);
-    const g = ME.etat(d, manche, tk), px = ME.prix(d, g);
-    const p = {
-      manche, jeu: d.id, cote, amt, tk, key: corps.key ?? null,
-      fee: ME.frais(d, g, cote, amt, false), fee_remise: ME.frais(d, g, cote, amt, true),
-      mult: ME.beMult(d), prix: cote === "oui" ? px.o : cote === "non" ? px.n : px.e, be_max: ME.beMax(g, d),
+    // deno-lint-ignore no-explicit-any
+    const miser = async (force: boolean): Promise<{ data?: any; error?: any; non?: Response }> => {
+      const t = Date.now();
+      if (!ME.ouvert(t)) return { non: refus(req, "mises_fermees") };
+      const manche = ME.round(t), tk = ME.tick(t);
+      // deno-lint-ignore no-explicit-any
+      let c: any = null;
+      if (force || reelsPossibles()) {
+        try { c = (await contextes(admin, [{ jeu: d.id, manche }]))[d.id + ":" + manche] ?? null; }
+        catch (e) { console.error("mise, contexte :", (e as Error)?.message ?? e); return { non: refus(req, "serveur", 500) }; }
+      }
+      if (enPause(c)) return { non: refus(req, "jeu_en_pause") };
+      const { g, px, reel } = etatDe(d, manche, tk, c);
+      const p = {
+        manche, jeu: d.id, cote, amt, tk, key: corps.key ?? null, mode: reel ? "reel" : "simule",
+        fee: ME.frais(d, g, cote, amt, false), fee_remise: ME.frais(d, g, cote, amt, true),
+        mult: reel ? ME.beMultReel(d, c.P) : ME.beMult(d), prix: cote === "oui" ? px.o : cote === "non" ? px.n : px.e,
+        be_max: reel ? ME.beMaxReel(g, d, c.P) : ME.beMax(g, d),
+      };
+      return await admin.rpc("srv_eclair_miser", { p_user: joueur, p });
     };
-    const { data, error } = await admin.rpc("srv_eclair_miser", { p_user: joueur, p });
+    let r = await miser(false);
+    if (r.error && codeDe(r.error.message) === "mode_change") r = await miser(true);   // l'interrupteur vient de changer : on recalcule
+    if (r.non) return r.non;
+    const { data, error } = r;
     if (error) {
       const c = codeDe(error.message);
       if (c === "serveur") console.error("mise :", error.message);
@@ -102,14 +145,35 @@ Deno.serve(async (req: Request) => {
   if (corps?.action === "settle") {
     const { data: o, error: e1 } = await admin.rpc("srv_eclair_ouvertes", { p_user: joueur });
     if (e1) { const c = codeDe(e1.message); if (c === "serveur") console.error("mises à régler :", e1.message); return refus(req, c, c === "serveur" ? 500 : 400); }
+    // le mode de chaque manche (et, réelle, ses fixations) : la base le dit ; 60 manches au plus par appel, le reste au suivant
     // deno-lint-ignore no-explicit-any
-    const res = (o?.mises ?? []).filter((m: any) => ME.JEUX[m.g]).map((m: any) => {
-      const x = ME.regler(ME.JEUX[m.g], Number(m.r), { s: m.s, amt: Number(m.amt), net: Number(m.net), mult: Number(m.mult), tk: Number(m.tk) });
-      return { id: m.id, win: x.win, pay: x.pay, part: x.part };
-    });
+    const toutes = (o?.mises ?? []).filter((m: any) => ME.JEUX[m.g]);
+    // deno-lint-ignore no-explicit-any
+    const items = [...new Map(toutes.map((m: any) => [m.g + ":" + m.r, { jeu: m.g, manche: Number(m.r) }])).values()].slice(0, 60) as { jeu: string; manche: number }[];
+    // deno-lint-ignore no-explicit-any
+    let ctx: Record<string, any> = {};
+    try { ctx = await contextes(admin, items); }
+    catch (e) { console.error("règlement, contextes :", (e as Error)?.message ?? e); return refus(req, "serveur", 500); }
+    const res: unknown[] = [], remb: unknown[] = [];
+    for (const m of toutes) {
+      const c = ctx[m.g + ":" + m.r];
+      if (!c) continue;                                                        // au-delà des 60 : au prochain règlement
+      const d = ME.JEUX[m.g], my = { s: m.s, amt: Number(m.amt), net: Number(m.net), mult: Number(m.mult), tk: Number(m.tk) };
+      if (c.mode === "reel") {
+        if (c.attente) continue;                                               // fin pas encore fixée : la mise attend
+        const x = ME.reglerReel(d, Number(m.r), my, c);
+        if (x.annule) remb.push({ id: m.id, motif: x.motif }); else res.push({ id: m.id, win: x.win, pay: x.pay, part: x.part });
+      } else {
+        const x = ME.regler(d, Number(m.r), my);
+        res.push({ id: m.id, win: x.win, pay: x.pay, part: x.part });
+      }
+    }
     const { data, error } = await admin.rpc("srv_eclair_regler", { p_user: joueur, p_res: res });
     if (error) { const c = codeDe(error.message); if (c === "serveur") console.error("règlement :", error.message); return refus(req, c, c === "serveur" ? 500 : 400); }
-    return json(req, { ok: true, now: Date.now(), ...data });
+    if (!remb.length) return json(req, { ok: true, now: Date.now(), ...data, rembourses: [] });
+    const { data: b, error: e3 } = await admin.rpc("srv_eclair_rembourser", { p_user: joueur, p_res: remb });
+    if (e3) { console.error("remboursement :", e3.message); return json(req, { ok: true, now: Date.now(), ...data, rembourses: [] }); }
+    return json(req, { ok: true, now: Date.now(), ...data, ...b, ev: [...(data?.ev ?? []), ...(b?.ev ?? [])], regles: data?.regles ?? [], hist: data?.hist ?? [] });
   }
 
   // ── La Série ──
@@ -126,20 +190,36 @@ Deno.serve(async (req: Request) => {
   // ── Duels sur une manche éclair ──
   // Le prix d'un camp est celui du jeu à l'instant de l'appel (état de la manche en cours), comme à l'écran. La manche du
   // duel est fixée par l'horloge de la base ; l'issue vient du moteur, une fois la manche terminée.
+  // Cours réels : le prix du moment vient de la cagnotte réelle si la manche en cours est réelle ; l'issue du duel suit le
+  // mode de SA manche (figé par la base), réglée sur les fixations ; manche réelle annulée → issue 2 (mises rendues).
   // deno-lint-ignore no-explicit-any
-  const coteDuJeu = (d: any) => { const t = Date.now(), g = ME.etat(d, ME.round(t), ME.tick(t)); return { g, px: ME.prix(d, g) }; };
+  const coteDuJeu = async (d: any, plus: number[] = []) => {
+    const t = Date.now(), r = ME.round(t);
+    // deno-lint-ignore no-explicit-any
+    const ctx: Record<string, any> = reelsPossibles() ? await contextes(admin, [r, ...plus.map((k) => r + k)].map((manche) => ({ jeu: d.id, manche }))) : {};
+    return { ...etatDe(d, r, ME.tick(t), ctx[d.id + ":" + r]), r, ms: t - ME.t0(r), ctx };
+  };
 
   if (corps?.action === "duel_create") {
     const d = ME.JEUX[String(corps.gid ?? "")], camp = String(corps.side ?? ""), mise = Math.round(Number(corps.stake) * 100) / 100;
     if (!d) return refus(req, "jeu_inconnu");
     if (!["oui", "non"].includes(camp)) return refus(req, "cote_invalide");
     if (!(mise >= 5) || !(mise <= 5000)) return refus(req, "montant_invalide");
-    const { g, px } = coteDuJeu(d);
-    const r = await appel("srv_duel_eclair_creer", { p_user: joueur, p: {
-      gid: d.id, side: camp, stake: mise, opp: corps.opp ?? null, key: corps.key ?? null,
+    let cj;
+    try { cj = await coteDuJeu(d, [1]); } catch (e) { console.error("duel, contexte :", (e as Error)?.message ?? e); return refus(req, "serveur", 500); }
+    const { g, px } = cj;
+    // la manche du duel : celle en cours, ou la suivante s'il reste moins de dix secondes de mises (la base tranche)
+    const modeDe = (manche: number) => (cj.ctx[d.id + ":" + manche]?.mode === "reel" ? "reel" : "simule");
+    const prevue = cj.ms >= 20000 ? cj.r + 1 : cj.r;
+    if (enPause(cj.ctx[d.id + ":" + prevue])) return refus(req, "jeu_en_pause");
+    const creer = (mode: string) => admin.rpc("srv_duel_eclair_creer", { p_user: joueur, p: {
+      gid: d.id, side: camp, stake: mise, opp: corps.opp ?? null, key: corps.key ?? null, mode,
       prix: camp === "oui" ? px.o : px.n, frais: ME.frais(d, g, camp, mise, false), frais_remise: ME.frais(d, g, camp, mise, true),
-    } }, "duel éclair, création");
-    return r.non ?? json(req, { ok: true, now: Date.now(), ...r.data });
+    } });
+    let rc = await creer(modeDe(prevue));
+    if (rc.error && codeDe(rc.error.message) === "mode_change") rc = await creer(modeDe(prevue === cj.r ? cj.r + 1 : cj.r));   // l'autre manche
+    if (rc.error) { const c = codeDe(rc.error.message); if (c === "serveur") console.error("duel éclair, création :", rc.error.message); return refus(req, c, c === "serveur" ? 500 : 400); }
+    return json(req, { ok: true, now: Date.now(), ...rc.data });
   }
 
   if (corps?.action === "duel_accept") {
@@ -147,7 +227,9 @@ Deno.serve(async (req: Request) => {
     if (l.non) return l.non;
     const d = ME.JEUX[String(l.data?.gid ?? "")];
     if (!d) return refus(req, "jeu_inconnu");
-    const { g, px } = coteDuJeu(d);
+    let cj;
+    try { cj = await coteDuJeu(d); } catch (e) { console.error("duel, contexte :", (e as Error)?.message ?? e); return refus(req, "serveur", 500); }
+    const { g, px } = cj;
     const prix = l.data.side === "oui" ? px.o : px.n, autre = Math.round(Number(l.data.stake) * 100 / prix * (100 - prix)) / 100, camp = l.data.side === "oui" ? "non" : "oui";
     const r = await appel("srv_duel_eclair_accepter", { p_user: joueur, p: {
       id: l.data.id, prix, frais: ME.frais(d, g, camp, autre, false), frais_remise: ME.frais(d, g, camp, autre, true),
@@ -159,7 +241,22 @@ Deno.serve(async (req: Request) => {
     const o = await appel("srv_duel_eclair_ouverts", { p_user: joueur }, "duels éclair à régler");
     if (o.non) return o.non;
     // deno-lint-ignore no-explicit-any
-    const res = (o.data?.duels ?? []).filter((x: any) => ME.JEUX[x.gid]).map((x: any) => ({ id: x.id, out: ME.issue(ME.JEUX[x.gid], Number(x.round)) }));
+    const duels = (o.data?.duels ?? []).filter((x: any) => ME.JEUX[x.gid]);
+    // deno-lint-ignore no-explicit-any
+    let ctx: Record<string, any> = {};
+    // deno-lint-ignore no-explicit-any
+    try { ctx = await contextes(admin, [...new Map(duels.map((x: any) => [x.gid + ":" + x.round, { jeu: x.gid, manche: Number(x.round) }])).values()] as { jeu: string; manche: number }[]); }
+    catch (e) { console.error("duels, contextes :", (e as Error)?.message ?? e); return refus(req, "serveur", 500); }
+    const res: unknown[] = [];
+    for (const x of duels) {
+      const c = ctx[x.gid + ":" + x.round], d = ME.JEUX[x.gid], r = Number(x.round);
+      if (!c) continue;
+      if (c.mode === "reel") {
+        if (c.attente) continue;                                               // fin pas encore fixée : le duel attend
+        const out = ME.issueReelle(d, c.F[r], c.F[r + 1], c.P);
+        res.push({ id: x.id, out: out === null ? 2 : out });                    // manche annulée : les deux mises sont rendues
+      } else res.push({ id: x.id, out: ME.issue(d, r) });
+    }
     const r = await appel("srv_duel_eclair_regler", { p_user: joueur, p_res: res }, "duels éclair, règlement");
     return r.non ?? json(req, { ok: true, now: Date.now(), ...r.data });
   }

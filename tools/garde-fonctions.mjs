@@ -112,6 +112,14 @@ export const LOTS = {
       `  if g.buyin is distinct from wm.reglage_num('clans.guerre_buyin', 20) then update wm.clan_guerres set buyin = wm.reglage_num('clans.guerre_buyin', 20) where id = g.id returning * into g; end if;   ${A}mise de la guerre (réglage ; 20 par défaut, comme la colonne)`] }] },
     { f: 'wm.clan_guerres_avancer(uuid)', edits: [R('round(v_pot * 0.96 / v_n, 2)', "round(v_pot * (1 - wm.reglage_num('frais.guerres.commission', 0.04)) / v_n, 2)", 'frais.guerres.commission')] },
   ],
+  // Lot 7 des données réelles (pari éclair à cours réels) : le mode figé de la manche (réel, simulé, en pause), sans effet
+  // tant que l'interrupteur eclair.cours_reels est éteint (toute manche est alors figée « simule »).
+  7: [
+    { f: 'public.srv_eclair_miser(uuid,jsonb)', edits: [{ apres: "  if v_ms < -1500 or v_ms >= 31500 then perform wm.fail('mises_fermees'); end if;", lignes: [
+      `  perform wm.eclair_garde(v_jeu, v_manche, p ->> 'mode');   ${A}cours réels : jeu en pause, ou mode de la manche différent de celui du calcul`] }] },
+    { f: 'public.srv_duel_eclair_creer(uuid,jsonb)', edits: [{ apres: '  if v_ms >= 20000 then v_manche := v_manche + 1; end if;', lignes: [
+      `  perform wm.eclair_garde(v_gid, v_manche, p ->> 'mode');   ${A}cours réels : jeu en pause, ou mode de la manche différent de celui du calcul`] }] },
+  ],
 };
 
 /** Applique les modifications d'une fonction à sa définition ; lève si un repère manque ou n'est pas unique. */

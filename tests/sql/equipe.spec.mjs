@@ -55,6 +55,7 @@ test('réglages : chaque valeur par défaut est la constante en vigueur aujourd�
     'equipe.mfa_obligatoire': false, 'equipe.moderateur_solde_max': 1000,
     // données réelles, lot 6 (19 nov. 2026) : la collecte des cours
     'donnees.actif': true, 'donnees.cadence_s': 3, 'donnees.boucle_s': 55,
+    'eclair.cours_reels': false, 'eclair.secours_simule': false, 'eclair.grace_s': 120, 'eclair.pbe_max': 0.08,
   };
   const lignes = await q(db, 'select cle, categorie, libelle, explication, valeur, defaut, min, max, maj_at from wm.reglages order by cle');
   expect(Object.fromEntries(lignes.map(l => [l.cle, l.valeur]))).toEqual(ATTENDU);

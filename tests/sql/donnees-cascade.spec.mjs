@@ -97,7 +97,8 @@ test('passage nominal sans aucune clé : une source par famille, les 37 cours, l
   expect([src.btc, src.nvda, src.spx, src.mc, src.xau, src.eurusd, src.wti]).toEqual(['binance', 'yahoo', 'yahoo', 'yahoo', 'goldapi', 'frankfurter', 'fred']);
   for (const a of net.appels) expect(a.entetes).not.toHaveProperty('X-Finnhub-Token');
   const cles = C.presenceDesCles(e);
-  expect(cles.filter(c => !c.cle).map(c => c.id).sort()).toEqual(['coingecko', 'eia', 'eodhd', 'exchangerate', 'finnhub', 'goldprice', 'twelvedata']);
+  // finnhub_eclair (lot 7) : la même clé, pour les fixations des actions US du pari éclair ; sa présence décide de la pause « clé »
+  expect(cles.filter(c => !c.cle).map(c => c.id).sort()).toEqual(['coingecko', 'eia', 'eodhd', 'exchangerate', 'finnhub', 'finnhub_eclair', 'goldprice', 'twelvedata']);
   await ingerer({ cours: r.cours, sources: [...cles, ...r.sources] });
   const l = await live();
   expect(l.cours.btc).toMatchObject({ p: 63194.07, e: 'd' });

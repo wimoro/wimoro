@@ -148,8 +148,106 @@
   /* jackpot reporté sur le Blitz `id` : les entrées des Blitz précédents où aucun joueur simulé n'a survécu (5 au plus) */
   function bzReport(id, prof) { prof = prof || 0; if (prof >= 5) return 0; const p = bzBots(id - 1); return p.survivants > 0 ? 0 : p.n * p.buyin + bzReport(id - 1, prof + 1); }
 
+  /* =====================================================================================
+   *  Moteur v2 : les manches à cours réels (19 nov. 2026)
+   *  ------------------------------------------------------------------------------------
+   *  Le serveur fixe le cours de chaque jeu réel à chaque frontière de manche : une « fixation », moyenne de plusieurs
+   *  sources (valeurs aberrantes écartées), écrite une fois en base et jamais changée. La manche r va de la fixation r (son
+   *  départ, à t0(r)) à la fixation r + 1 (sa fin). Issue, cagnotte et gains ne dépendent que de ces fixations, servies à
+   *  tous : le navigateur (visiteur, compte Démo) et l'Edge Function calculent donc exactement le même résultat.
+   *    fixation : { e: 'ok' | 'absent', p: cours moyen, n: nombre de sources, s: { source: cours }, a: heure d'écriture (ms) }
+   *    contexte d'une manche (ctx) : { mode, P: { pbe, smin, beoff }, F: { <manche>: fixation } }
+   *      pbe : fréquence du break even retenue pour la manche (figée d'avance par le serveur) ; smin : sources communes
+   *      exigées aux deux bouts ; beoff : pas de mise break even (une égalité annule alors la manche).
+   *  Les fonctions d'avant (plan, issue, etat, regler…) ne changent pas : elles servent aux jeux simulés.
+   * ===================================================================================== */
+  const ECART_MAX = .003;                   // une source à plus de 0,3 % des autres est écartée
+  /* moyenne de cotations [[source, cours], …] rangées par priorité, valeurs aberrantes écartées : avec trois sources ou
+     plus, celles à plus de `ecart` de la médiane ; avec deux qui s'écartent, la première seule. Somme dans l'ordre des
+     noms de source : le même calcul partout. Rend { s: { source: cours } gardées, x: [écartées], p: moyenne, n }. */
+  function composite(liste, ecart) {
+    const ok = (liste || []).filter(c => Array.isArray(c) && typeof c[1] === 'number' && isFinite(c[1]) && c[1] > 0);
+    const lim = ecart > 0 ? ecart : ECART_MAX, s = {}, x = [];
+    if (ok.length >= 3) {
+      const tri = ok.map(c => c[1]).sort((a, b) => a - b), h = tri.length >> 1, med = tri.length % 2 ? tri[h] : (tri[h - 1] + tri[h]) / 2;
+      for (const [k, v] of ok) { if (Math.abs(v / med - 1) <= lim) s[k] = v; else x.push(k); }
+    } else if (ok.length === 2) {
+      s[ok[0][0]] = ok[0][1];
+      if (Math.abs(ok[1][1] / ok[0][1] - 1) <= lim) s[ok[1][0]] = ok[1][1]; else x.push(ok[1][0]);
+    } else if (ok.length === 1) s[ok[0][0]] = ok[0][1];
+    const k = Object.keys(s).sort(); let t = 0;
+    for (const c of k) t += s[c];
+    return { s, x, p: k.length ? t / k.length : null, n: k.length };
+  }
+  /* sources présentes aux deux bouts d'une manche (une source absente à un bout est retirée des deux) */
+  function communes(F0, F1) { const a = F0 && F0.s || {}, b = F1 && F1.s || {}; return Object.keys(a).filter(k => typeof b[k] === 'number').sort(); }
+  /* issue d'une manche réelle : 1 premier côté, 0 second, 2 break even ; null : manche annulée (fixation absente, sources
+     communes insuffisantes, ou égalité alors que le break even est fermé). Écart de deux sources constant (USD contre
+     USDT) : il s'annule, puisque le départ et la fin sont pris aux mêmes sources. */
+  function issueReelle(d, F0, F1, P) {
+    if (!d || d.kind === 'event' || !F0 || !F1 || F0.e !== 'ok' || F1.e !== 'ok') return null;
+    const c = communes(F0, F1);
+    if (c.length < Math.max(1, (P && P.smin) | 0)) return null;
+    let a = 0, b = 0;
+    for (const k of c) { a += F0.s[k]; b += F1.s[k]; }
+    a /= c.length; b /= c.length;
+    const m = Math.abs(b / a - 1);
+    if (m <= d.be) return P && P.beoff ? null : 2;
+    return d.kind === 'vol' ? (m > FVOL ? 1 : 0) : (b > a ? 1 : 0);
+  }
+  /* pourquoi une manche réelle est annulée (null : elle ne l'est pas) — le motif écrit avec la mise rendue */
+  function motifAnnule(d, F0, F1, P) {
+    if (issueReelle(d, F0, F1, P) !== null) return null;
+    if (!d || d.kind === 'event') return 'manche_annulee';
+    if (!F0 || !F1 || F0.e !== 'ok' || F1.e !== 'ok') return 'fixation_absente';
+    return communes(F0, F1).length < Math.max(1, (P && P.smin) | 0) ? 'sources_insuffisantes' : 'egalite_sans_break_even';
+  }
+  /* penchant de la foule simulée sur la manche r : la tendance de la manche r − 2 (fixation r − 1 contre r − 2), si les
+     deux fixations étaient écrites avant l'ouverture de la manche r (connues de tous) ; sinon neutre. */
+  function penchant(r, F) {
+    const a = F && F[r - 2], b = F && F[r - 1], t = t0(r);
+    if (!a || !b || a.e !== 'ok' || b.e !== 'ok' || !(a.a <= t) || !(b.a <= t)) return 0;
+    return b.p > a.p ? 1 : b.p < a.p ? -1 : 0;
+  }
+  /* break even d'une manche réelle : cote juste moins la marge, sur la fréquence figée pour la manche (calibrée sur les
+     vraies fixations), sinon celle du modèle */
+  const beMultReel = (d, P) => beMultFair(P && P.pbe > 0 ? P.pbe : beP(d));
+  const beMaxReel = (g, d, P) => (P && P.beoff ? 0 : Math.floor(beRoom(g) / beMultReel(d, P)));
+  function prixReel(d, g, P) { const e = Math.max(2, Math.min(20, Math.round(100 / beMultReel(d, P)))), so = g.pool.o / (g.pool.o + g.pool.n); let o = Math.round((100 - e) * so); o = Math.max(2, Math.min(98 - e, o)); return { o, e, n: 100 - e - o }; }
+  /* tick i d'une manche réelle : au plus une mise d'un autre joueur (simulé), qui penche du côté de `pen` (±7 %) */
+  function misesReel(d, g, r, i, pen, P) {
+    if (i * FTICK >= FOPEN) return null;
+    const rr = rng((graine(d, r, 'b') + i * 7919) >>> 0);
+    if (!(rr() < .5)) return null;
+    let s;
+    if (rr() < .05) s = 2; else s = rr() < .5 + pen * .07 ? 1 : 0;
+    const a = s === 2 ? .1 + rr() * .3 : Math.pow(rr(), 2);
+    if (s === 2) { const st = Math.round(2 + rr() * 10), M = beMultReel(d, P); if (st * M > beRoom(g)) s = rr() < .5 ? 1 : 0; else { g.pool.e += st; g.pool.eProm = (g.pool.eProm || 0) + st * M; } }
+    if (s !== 2) g.pool[s ? 'o' : 'n'] += Math.round(5 + a * 260);
+    if (rr() < .55) g.players++;
+    return { s, a, me: 0 };
+  }
+  /* cagnotte d'une manche réelle au tick k ; `my` (facultatif) : mise du joueur, posée à son tick */
+  function etatReel(d, r, k, my, ctx) {
+    const dep = depart(d, r), g = { pool: dep.pool, players: dep.players }, P = ctx && ctx.P || {}, pen = d.kind === 'vol' ? 0 : penchant(r, ctx && ctx.F);
+    const pose = my ? Math.max(0, Math.min(k, my.tk | 0)) : -1;
+    for (let i = 1; i <= k; i++) { if (i - 1 === pose) poser(g, my); misesReel(d, g, r, i, pen, P); }
+    if (pose === k) poser(g, my);
+    return g;
+  }
+  /* règlement d'une mise { s, net, mult, tk, amt } sur une manche réelle ; { annule: true, motif } si la manche est annulée
+     (la mise est alors rendue) */
+  function reglerReel(d, r, my, ctx) {
+    const F = ctx && ctx.F || {}, out = issueReelle(d, F[r], F[r + 1], ctx && ctx.P);
+    if (out === null) return { annule: true, motif: motifAnnule(d, F[r], F[r + 1], ctx && ctx.P), out: null, win: false, pay: 0, pnl: 0, part: 0 };
+    const g = etatReel(d, r, FK, my, ctx), k = out === 2 ? 'e' : out === 1 ? 'o' : 'n';
+    const win = (my.s === 'oui' ? 1 : my.s === 'non' ? 0 : 2) === out, pay = win ? gain(g, my) : 0;
+    return { out, win, pay, pnl: pay - my.amt, part: Math.round(g.pool[k] / total(g) * 100) };
+  }
+
   racine.MoteurEclair = { FCAL, FDUR, FOPEN, FVOL, FEPOCH, FTICK, FK, CAP_BE, JEUX, LISTE, hash, rng, round, t0, tick, ouvert, graine, niveau, plan, issue,
     depart, mises, poser, etat, regler, beP, beMult, beRoom, beMax, frais, prix, gain, cle, total, taux,
     SERIE_MS, SERIE_CHOIX, SERIE_MAX, prixAu, serieCotes, serieIssue, beProb, beMultFair,
-    BZ, bzId, bzDebut, bzManche, bzPrime, bzIssue, bzBots, bzReport };
+    BZ, bzId, bzDebut, bzManche, bzPrime, bzIssue, bzBots, bzReport,
+    ECART_MAX, composite, communes, issueReelle, motifAnnule, penchant, beMultReel, beMaxReel, prixReel, misesReel, etatReel, reglerReel };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

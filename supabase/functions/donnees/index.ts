@@ -5,7 +5,9 @@
 // jeton : refus 401, sans aucun travail. verify_jwt est désactivé (la tâche n'a pas de session de joueur).
 //
 //   POST { tache: 'boucle' }  →  202 tout de suite ; la boucle tourne ensuite environ 55 s (EdgeRuntime.waitUntil) :
-//                                 un passage toutes les 3 s (cascade.js), chaque passage écrit par srv_cours_ingerer.
+//                                 un passage toutes les 3 s (cascade.js), chaque passage écrit par srv_cours_ingerer ;
+//                                 en même temps, les fixations du pari éclair à chaque frontière de manche (fixations.js),
+//                                 écrites par srv_eclair_fixer (lot 7) — dans la même invocation, sans appel de plus.
 //   POST { tache: 'passe' }   →  un seul passage, rendu dans la réponse (diagnostic de l'équipe, même jeton).
 //
 // Les clés des sources sont lues dans les secrets des Edge Functions (FINNHUB_API_KEY, EODHD_API_TOKEN…) ; une clé absente
@@ -14,6 +16,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.118.0";
 import { UA, controler, etatInitial, passe, presenceDesCles, sansSecret } from "./cascade.js";
+import { calendrier, essayer } from "./fixations.js";
 
 const SECRETS = ["FINNHUB_API_KEY", "TWELVEDATA_API_KEY", "EODHD_API_TOKEN", "EXCHANGERATE_DEV_API_KEY", "GOLDPRICE_DEV_API_KEY", "EIA_API_KEY", "COINGECKO_API_KEY"];
 
@@ -74,6 +77,37 @@ async function ingerer(p: any) {
   if (error) crier("ingestion :", error.message);
 }
 
+// Les fixations du pari éclair pendant la boucle : chaque essai à son heure (calendrier), écrit dès qu'il est prêt.
+// deno-lint-ignore no-explicit-any
+async function fixations(etat: any, porteur: string, fin: number) {
+  const { data: cfgE, error } = await base.rpc("srv_eclair_config");
+  if (error || !cfgE) { crier("éclair, configuration :", error?.message); return { essais: 0, ecrites: 0 }; }
+  const acquis = {}, finies = new Set<string>();
+  let essais = 0, ecrites = 0;
+  for (const t of calendrier(cfgE, Date.now(), fin - 5000)) {
+    await dormir(t.at - Date.now());
+    if (Date.now() > fin - 4000) break;                                          // un essai (4 s au plus) finit avant le bail rendu
+    // deno-lint-ignore no-explicit-any
+    const actifs = cfgE.actifs.filter((a: any) => t.actifs.includes(a.id) && !finies.has(t.m + ":" + a.id));
+    if (!actifs.length) continue;
+    try {
+      const r = await essayer(etat, t, actifs, acquis, Date.now(), chercher);
+      essais++;
+      const ids = Object.keys(r.ecrire);
+      if (ids.length) {
+        const { data, error: ef } = await base.rpc("srv_eclair_fixer", { p: { manche: t.m, actifs: r.ecrire } });
+        if (ef && /trop_tard/.test(ef.message)) for (const id of ids) finies.add(t.m + ":" + id);   // délai écoulé : la base s'en charge
+        else if (ef) { if (!/trop_tot/.test(ef.message)) crier("éclair, fixation :", ef.message); }   // trop tôt (horloges) : essai suivant
+        else { for (const id of ids) finies.add(t.m + ":" + id); ecrites += (data?.ecrits ?? []).length; }
+      }
+      if (r.sources.length) await ingerer({ porteur, cours: [], sources: r.sources });
+    } catch (e) {
+      crier("éclair, essai :", String((e as Error)?.message ?? e));
+    }
+  }
+  return { essais, ecrites };
+}
+
 // Une boucle : bail (une seule à la fois), configuration, puis un passage toutes les `cadence_s` secondes jusqu'à la fin.
 async function boucle(unSeul = false) {
   const porteur = crypto.randomUUID(), debut = Date.now();
@@ -89,6 +123,7 @@ async function boucle(unSeul = false) {
   let passes = 0, appels = 0, erreurs = 0, premier = true;
   // deno-lint-ignore no-explicit-any
   let dernier: any = null;
+  const eclair = unSeul ? Promise.resolve(null) : fixations(etat, porteur, fin).catch((e) => { crier("éclair :", String(e?.message ?? e)); return null; });
   while (Date.now() < fin) {
     const t = Date.now();
     try {
@@ -106,8 +141,9 @@ async function boucle(unSeul = false) {
     if (unSeul) break;
     await dormir(Math.min(cadence - (Date.now() - t), fin - Date.now()));
   }
+  const fix = await eclair;                                                    // ses essais s'arrêtent à `fin`, avant le bail rendu
   await base.rpc("srv_donnees_bail", { p_porteur: porteur, p_duree_s: 0 });
-  console.log(JSON.stringify({ boucle: { passes, appels, erreurs, ms: Date.now() - debut } }));
+  console.log(JSON.stringify({ boucle: { passes, appels, erreurs, ms: Date.now() - debut, eclair: fix } }));
   return { ok: true, passes, appels, erreurs, dernier };
 }
 

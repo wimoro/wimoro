@@ -345,13 +345,90 @@ Une place fermée (nuit, week-end, jour férié) n'est rafraîchie que toutes le
 - Pas de journal bavard : une ligne par boucle (passages, appels, erreurs), et les erreurs espacées de 10 s au moins (la
   limite est de 100 événements par 10 s).
 
+### 2.5 Le pari éclair à cours réels (lot 7)
+
+*Lot 7, 19 nov. 2026. Migration `20261119180634_eclair_reel`, Edge Functions `donnees` (v3) et `eclair` (v5), moteur v2
+(`js/moteur-eclair.js`, copie conforme dans les deux fonctions). Tests : `tests/eclair-reel.spec.mjs`,
+`tests/sql/eclair-reel.spec.mjs`, `tests/sql/eclair-edge.spec.mjs`, `tests/sql/donnees-fixations.spec.mjs`.*
+
+**Interrupteur.** `eclair.cours_reels` (réglage public, **éteint**) : éteint, tous les jeux restent simulés exactement comme
+avant. Allumé, il vaut à partir de la deuxième manche suivante (les modes sont figés deux manches d'avance). Les réglages
+`eclair.secours_simule` (éteint : un jeu réel sans données passe en pause ; allumé : en simulation marquée « simulé »),
+`eclair.grace_s` (120 s : attente de la fixation de fin) et `eclair.pbe_max` (8 % : au-delà, la mise break even ferme).
+
+**Une fixation par frontière.** À chaque frontière de manche T (toutes les 45 s), la boucle de la fonction `donnees`
+(la même invocation, aucun appel de plus) lit le cours de chaque actif réel **à la seconde T** :
+
+| Actifs | Sources (dans l'ordre) | Essais | Sources concordantes exigées |
+|---|---|---|---|
+| Bitcoin, Ether, Solana, Dogecoin | Binance (bougie d'une seconde), OKX (bougie d'une seconde), Gate (transactions) ; Coinbase (transactions, en USD) en secours | T + 3 s, T + 8 s, T + 15 s (final) | 2 |
+| Fonds SPY et QQQ, Nvidia, Tesla | Finnhub `/quote` (clé `FINNHUB_API_KEY`), en séance seulement | T + 0,3 s, T + 1,5 s, T + 4 s (final) | 1 |
+
+- Le cours d'une source à la seconde T : son dernier prix échangé avant T + 1 s, s'il y a eu au moins un échange dans les
+  10 s ; sinon la source est « périmée » pour cette seconde. Finnhub : la cotation lue juste après T, gardée si sa dernière
+  transaction a moins de 15 s.
+- La moyenne et l'écart des valeurs aberrantes sont ceux du moteur (`composite`) : avec trois sources ou plus, celles à
+  plus de 0,3 % de la médiane sont écartées ; avec deux qui s'écartent, la première seule.
+- Une fixation est écrite **une fois** (`srv_eclair_fixer`) et ne change plus ; « absente » si la collecte a fini
+  d'essayer sans assez de sources, ou si la tâche `wm-eclair-fix` la constate manquante après le délai de grâce.
+- La frontière de la minute pile (une sur quatre) tombe entre deux boucles : la boucle suivante la rattrape dans les
+  secondes qui suivent (historique à la seconde pour la crypto ; la cotation Finnhub, lue jusqu'à 12 s après T).
+- Une source qui refuse (429, 5xx…) est mise en pause comme dans la cascade ; ses quotas (`wm.sources`, lignes
+  `*_eclair`) sont tenus de la même façon.
+
+**Le mode de chaque manche**, figé deux manches d'avance (`wm.eclair_manches`), identique pour tous :
+
+| Mode | Quand | Pour le joueur |
+|---|---|---|
+| réel (`r`) | interrupteur allumé, jeu à vraie source, place ouverte sur toute la manche (une minute avant, cinq après), sources utilisables, une fixation réussie depuis moins de 10 min | moteur v2 sur les fixations |
+| en pause (`p`) | place fermée (`ferme`, avec l'heure de réouverture `rouvre`), clé absente (`cle`), sources coupées (`source`), données muettes (`donnees`) | mises refusées (`jeu_en_pause`) ; l'écran propose les jeux ouverts |
+| simulé (`s`) | interrupteur éteint (`interrupteur`), jeu sans vraie source (`pas_de_source`), simulation de secours (`secours`) | moteur d'avant, inchangé |
+| retiré (`x`) | sorti de la rotation (`wm.eclair_jeux.config = 'retire'`) | mises refusées |
+
+**Les jeux** (décision du lot 7, d'après le § 1.2) :
+
+| Jeux | Mode visé | Pourquoi |
+|---|---|---|
+| Bitcoin, Ether, Solana, Dogecoin, Secousse (fixations du Bitcoin) | **réel**, 24 h sur 24, **sans clé** | trois places gratuites à la seconde |
+| Nasdaq 100 (fonds QQQ), S&P 500 (fonds SPY), Nvidia, Tesla | **réel en séance avec la clé Finnhub** ; en pause sinon (nuit, week-end, fériés, ou clé absente) | Finnhub est la seule source gratuite à la seconde |
+| CAC 40, or, argent, pétrole, EUR/USD, GBP/USD, USD/JPY | **simulé**, marqué « simulé » | aucune source gratuite à la seconde (Yahoo et EODHD : 15 min de retard pour le CAC ; or : 30 s ; devises : 15 min) |
+| Tennis, basket, foot | **simulé** | pas de vrai match découpé en manches de 45 s |
+
+Aucun jeu n'est retiré ; l'équipe peut en retirer un par la table `wm.eclair_jeux`.
+
+**Le règlement (moteur v2).** La manche r va de la fixation r à la fixation r + 1. L'issue compare la moyenne des
+sources **présentes aux deux bouts** (un écart constant entre deux places, USD contre USDT, s'annule) ; une égalité est
+un écart sous la bande du jeu. La foule simulée penche du côté de la manche r − 2 (deux fixations connues de tous avant
+l'ouverture), la cagnotte et les frais en découlent ; le navigateur et le serveur calculent donc exactement la même chose
+(testé au dernier chiffre dans un vrai navigateur). Le break even d'une manche réelle se paie sur sa fréquence observée
+(`wm.eclair_calibrage`, recalculée chaque heure sur 48 h, retenue à partir de 200 manches ; sinon celle du modèle) ; au-delà
+de `eclair.pbe_max`, la mise break even ferme et une égalité annule la manche.
+
+**Manche annulée** (fixation absente, sources communes insuffisantes, égalité sans break even) : chaque mise est
+**rendue** — une ligne dans `wm.eclair_remboursements` (la vérité du remboursement), une écriture `flash_rembourse` du
+journal d'argent, une notification `flash_rembourse` ; la mise est close « perdue » avec un gain égal à la mise (seule
+clôture que la contrainte existante permet ; aucune contrainte n'est changée). Rien n'est compté au joueur : ni XP, ni
+série, ni pari réglé, ni historique. Un duel sur une manche annulée rend les deux mises (issue 2). Une manche simulée ne
+s'annule jamais. Tant que la fin n'est pas fixée et que le délai court, la mise attend.
+
+**Preuves.** Les fixations et les modes vivent dans des anneaux de 48 h (3 840 manches, réécrits en place). Pour une mise
+ou un duel encore ouvert au bout de 40 h (joueur pas revenu), la tâche recopie le mode et les quatre fixations dans
+`wm.eclair_preuves` : le règlement reste le même, même des jours plus tard. Rien n'est écrit pour les autres.
+
+**Limites connues.** La foule simulée ne suit pas le cours pendant la manche (le serveur n'a pas de cours partagé à chaque
+tick) : un joueur qui regarde le vrai cours avant de miser a un avantage, comme avec la trajectoire simulée d'avant (qui,
+elle, se calculait d'avance à partir du code public). Le volume des clans compte la mise d'une manche annulée. Une
+cotation Finnhub rattrapée après la minute pile peut dater de quelques secondes après T (15 s au plus), pareil pour tous.
+
 ## 3. Tâches planifiées et budget
 
 ### 3.1 Tâches
 
 | Tâche | Rythme | Commande | Rôle |
 |---|---|---|---|
-| `wm-donnees` | chaque minute | `select wm.appeler('donnees', '{"tache":"boucle"}')` | réveille l'Edge Function de collecte (une invocation) |
+| `wm-donnees` | chaque minute | `select wm.appeler('donnees', '{"tache":"boucle"}')` | réveille l'Edge Function de collecte (une invocation) ; depuis le lot 7, la même boucle écrit aussi les fixations éclair |
+| `wm-eclair-fix` (lot 7) | toutes les 10 s | `select wm.eclair_fixer()` | fige les modes des manches en cours et des deux suivantes, déclare « absentes » les fixations manquantes après le délai de grâce, garde la preuve des mises oubliées, refait la partie éclair de l'instantané (SQL seul, aucune invocation) |
+| `wm-eclair-calibrage` (lot 7) | chaque heure, à la 17ᵉ minute | `select wm.eclair_calibrer()` | fréquence observée du break even sur 48 h de vraies fixations |
 
 Pour couper la collecte sans rien supprimer : le réglage `donnees.actif` à faux (`reglage_modifier`, ou une migration
 `update wm.reglages set valeur = 'false' where cle = 'donnees.actif'`) ; `wm.appeler` ne réveille alors plus la fonction,
@@ -361,13 +438,15 @@ et le site garde les dernières valeurs (qui passent à « retardées »).
 
 | Poste | Calcul | Par mois |
 |---|---|---|
-| `donnees` (lot 6) | 1 réveil par minute : 60 × 24 × 30 | 43 200 (8,6 %) |
-| `eclair` (joueurs, inchangé) | ≈ 170 appels par heure de jeu active × 300 à 1 000 heures | 51 000 à 170 000 |
+| `donnees` (lots 6 et 7) | 1 réveil par minute : 60 × 24 × 30 ; les fixations éclair tournent dans la même boucle | 43 200 (8,6 %) |
+| `eclair` (joueurs) | ≈ 170 appels par heure de jeu active × 300 à 1 000 heures ; le lot 7 n'ajoute aucune invocation (un appel de plus **à la base** par mise ou règlement, pas à une fonction) | 51 000 à 170 000 |
 | `connexion` | ≈ 50 par jour | ≈ 1 500 |
+| `wm-eclair-fix`, `wm-eclair-calibrage` | SQL dans la base, pas des Edge Functions | 0 |
 | **Total** | | **≈ 96 000 à 215 000 (19 à 43 %)** |
 
 La boucle dure 55 s pour une durée maximale de 150 s ; elle consomme quelques centaines de millisecondes de calcul par
-réveil (limite : 2 s), l'essentiel étant de l'attente réseau.
+réveil (limite : 2 s), l'essentiel étant de l'attente réseau. Les fixations y ajoutent environ 12 petites réponses JSON
+toutes les 45 s (et 4 en séance avec la clé Finnhub).
 
 ### 3.3 Appels aux sources (sans clé, aujourd'hui)
 
@@ -384,12 +463,24 @@ Avec les clés : Finnhub 9 appels toutes les 30 s en séance (18 par minute pour
 60 par minute), et toutes les 15 min hors séance ; EODHD 10 par jour au plus (sur 20) ; exchangerate.dev 80 par jour (sur
 160, soit 5 000 par mois) ; EIA 4 par jour ; CoinGecko 144 par jour (sur 330) ; Twelve Data 96 par jour (sur 800).
 
+Fixations éclair (lot 7), 1 920 frontières par jour :
+
+| Source | Appels | Par jour | Marge |
+|---|---|---|---|
+| Binance `klines` 1 s (4 actifs, poids 2) | 4 par frontière | ≈ 7 700 | ≈ 11 de poids par minute sur 6 000 |
+| OKX `market/candles` 1 s | 4 par frontière | ≈ 7 700 | 5 par minute ; limite publiée : 40 par 2 s |
+| Gate `spot/trades` | 4 par frontière | ≈ 7 700 | limite publiée : 200 par 10 s |
+| Coinbase `ticker` (secours, et au dernier essai d'un rattrapage) | 0 à 4 par frontière | ≤ 7 700 | plafond que Wimoro s'impose : 150 par minute |
+| Finnhub `/quote` (clé, en séance) | 4 par frontière, 3 essais au plus | ≈ 2 100 | 10 par minute au plus ; avec la collecte, 28 par minute sur 60 |
+
 ### 3.4 Base et pg_net
 
 - `srv_cours_ingerer` : 10 à 20 écritures par minute (mises à jour en place) ; `wm.px_echantillons` tient au plus
   37 × 1 200 lignes.
 - pg_net garde chaque réponse 6 heures (`net._http_response`, 360 lignes environ), puis l'efface lui-même ; le journal de
   pg_cron reçoit 1 440 lignes de plus par jour (la purge existante garde 6 heures).
+- Lot 7 : `srv_eclair_fixer` écrit au plus 8 fixations toutes les 45 s (en place) ; `wm-eclair-fix` ajoute 8 640 lignes
+  par jour au journal de pg_cron (même purge) ; les anneaux tiennent au plus 30 720 fixations et 72 960 modes (quelques Mo).
 
 ## 4. Tables ajoutées
 
@@ -408,6 +499,22 @@ Toutes dans le schéma `wm`, RLS activée sans règle, aucun droit pour les clie
 Sauvegarde prise avant d'écrire (lot 6) : `backup_20261119.wm_reglages`, `wm_droits_liste`, `wm_equipe_actions`,
 `cron_job` (schéma et données, dans `backup_20261119.tables`) ; nouvelle table `backup_20261119.fonctions_lots` pour les
 définitions des fonctions existantes que les lots suivants complètent.
+
+Lot 7 (pari éclair à cours réels) :
+
+| Table | Contenu | Taille |
+|---|---|---|
+| `wm.eclair_actifs` | les 8 actifs fixés : place, sources concordantes exigées, sources dans l'ordre (symbole, secours) | 8 lignes |
+| `wm.eclair_jeux` | les 19 jeux : `reel`, `simule` ou `retire`, actif suivi, bande d'égalité, fréquence du modèle, raison | 19 lignes |
+| `wm.eclair_fixations` | anneau de 48 h, `(actif, slot)` avec `slot = manche modulo 3 840` : état, cours moyen, sources gardées et écartées, heure d'écriture ; jamais réécrite pour la même manche | ≤ 30 720 lignes |
+| `wm.eclair_manches` | anneau de 48 h des modes figés `(jeu, slot)` : mode, raison, fréquence du break even, sources exigées, break even fermé | ≤ 72 960 lignes |
+| `wm.eclair_preuves` | mode et quatre fixations des manches réelles encore ouvertes au bout de 40 h (permanent) | rare |
+| `wm.eclair_remboursements` | les mises rendues d'une manche annulée (mise, joueur, montant, motif) | une ligne par mise rendue |
+| `wm.eclair_calibrage` | fréquence observée du break even par jeu réel, sur 48 h | 9 lignes |
+| `wm.sources` | 5 lignes de plus : `binance_eclair`, `okx_eclair`, `gate_eclair`, `coinbase_eclair`, `finnhub_eclair` | 20 lignes |
+
+Sauvegarde prise avant d'écrire (lot 7) : `wm.eclair_mises`, `wm.sources`, `wm.live_cache` (dans `backup_20261119.tables`) ;
+définitions d'avant de `srv_eclair_miser` et `srv_duel_eclair_creer` dans `backup_20261119.fonctions_lots` (lot `lot7`).
 
 ## 5. Cycle de vie d'un marché
 

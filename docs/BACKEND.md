@@ -19,8 +19,8 @@ Le navigateur n'écrit **jamais** directement dans une table. Il appelle des fon
   propriétaire (`SECURITY DEFINER`), avec `search_path` vide, et vérifient toujours l'identité de l'appelant
   (`wm.uid()`) ;
 - **`wm.droits()`** distribue les droits d'appel, à la fin de chaque migration : toute fonction `api_x` est ouverte aux
-  joueurs connectés (avec la fonction `wm.x` qu'elle appelle) ; seules `api_markets`, `api_pseudo_libre`, `api_site` et
-  `api_live` sont ouvertes aux visiteurs (la liste se complète par la table `wm.droits_liste`, sans réécrire `wm.droits`) ;
+  joueurs connectés (avec la fonction `wm.x` qu'elle appelle) ; seules `api_markets`, `api_pseudo_libre`, `api_site`,
+  `api_live` et `api_fixations` sont ouvertes aux visiteurs (la liste se complète par la table `wm.droits_liste`, sans réécrire `wm.droits`) ;
   tout le reste de `wm` est fermé. Test : `tests/sql/missions.spec.mjs`.
 
 Une fonction qui modifie quelque chose renvoie `{ me, ev, … }` : `me` est le profil et les compteurs à jour, `ev` la liste
@@ -80,7 +80,8 @@ avec la même clé, l'opération n'est appliquée qu'une fois et renvoie le mêm
 | `api_admin(action, paramètres)` | administrateur | la porte de l'ancien panel d'administration (`admin.html`) : `moi`, `chiffres`, `joueurs`, `joueur`, `solde`, `xp`, `rang`, `kyc`, `suspendre`, `marches`, `marche`, `marche_etat`, `resoudre`, `chat`, `masquer`, `bots`, `journal`. Refusée (`interdit`) à tout compte absent de `public.admin_users`, ou présent mais retiré de l'équipe (ou devenu modérateur) ; `mfa_requise` si le compte a un code de double authentification et que la session n'est pas `aal2`. Chaque modification est écrite dans `wm.admin_journal`, et recopiée dans `wm.journal` (§ 9) |
 | `api_equipe(action, paramètres)` | équipe (administrateur, modérateur) | la porte du nouveau panneau : rôle vérifié à chaque appel, registre des actions, double authentification, motif, journal en ajout seul. Détail au § 9 |
 | `api_site()` | visiteur | ce que l'écran doit savoir du site : réglages publics (`v`), révision (`rev`), annonce en cours, maintenance (`{actif, message}`). Ne réveille pas les bots |
-| `api_live(serie)` | visiteur | l'instantané des données réelles (§ 10) : `cours` (37 actifs : prix `p`, état `e` d/r/s, heure `t`, place ouverte `o`), `familles`, `eclair` (lot 7), `next` (rythme conseillé, ms) ; avec `serie` = un actif, la courbe de ses 90 dernières secondes. Un seul accès à la base, ne réveille pas les bots |
+| `api_live(serie)` | visiteur | l'instantané des données réelles (§ 10) : `cours` (37 actifs : prix `p`, état `e` d/r/s, heure `t`, place ouverte `o`), `familles`, `eclair` (lot 7 : modes des manches et dernières fixations ; `{on: false, r}` tant que tout est simulé), `next` (rythme conseillé, ms) ; avec `serie` = un actif, la courbe de ses 90 dernières secondes. Un seul accès à la base, ne réveille pas les bots |
+| `api_fixations(jeu, de, a)` | visiteur | pari éclair à cours réels (§ 10, lot 7) : les modes figés des manches `de` à `a` (100 au plus, 48 h au plus) et les fixations de `de − 2` à `a + 1` — de quoi calculer l'issue, la cagnotte et les gains avec le moteur, exactement comme le serveur (compte Démo, visiteurs) |
 | `api_mes_blocages()` | joueur | ses blocages en cours : `[{id, acces, salon, fin}]` (`fin` en millisecondes, -1 : sans fin). Pour griser un bouton ; le serveur refuse de toute façon |
 | `api_test_end()` | compte de test | un compte `wimoro-e2e-…@example.com` se supprime lui-même à la fin des tests ; refusée à tout autre compte |
 
@@ -135,8 +136,10 @@ déduisent de l'heure. Le calcul vit dans `js/moteur-eclair.js`, module pur ; l'
   issue, gain) ; `srv_eclair_regler` crédite, tient les statistiques (série, victoires contre la foule), l'historique, les
   XP (40, ou 120 sur un break even), les missions, et crée une notification si la manche est réglée après coup.
 - Les fonctions `srv_…` ne sont appelables qu'avec la clé de service : un joueur ne fixe ni ses frais ni son gain.
-- Après une modification de `js/moteur-eclair.js` : recopier le fichier dans `supabase/functions/eclair/` et redéployer
-  la fonction, sinon l'écran et le serveur ne calculeraient plus la même chose.
+- Après une modification de `js/moteur-eclair.js` : recopier le fichier dans `supabase/functions/eclair/` **et**
+  `supabase/functions/donnees/` (lot 7), redéployer les deux fonctions et relancer `node tools/version.mjs` (empreinte
+  anti-cache de la page), sinon l'écran et le serveur ne calculeraient plus la même chose.
+- Cours réels (lot 7, interrupteur `eclair.cours_reels`, éteint) : voir le § 10 et `docs/DONNEES.md` § 2.5.
 
 ## 5. Argent fictif et jeu responsable
 
@@ -170,12 +173,13 @@ dépôt, retrait possible, impossible à écourter), auto-exclusion (`wm.uid()` 
 ## 7. Tests du back
 
 `tests/sql/` charge une vraie base Postgres embarquée (PGlite) avec la photo du schéma puis toutes les migrations du
-dépôt, en moins d'une seconde, et exécute les fonctions « en tant que » un visiteur ou un joueur. 240 tests au 19 nov.
+dépôt, en moins d'une seconde, et exécute les fonctions « en tant que » un visiteur ou un joueur. 259 tests au 19 nov.
 2026 : sécurité, comptes, moteur, bots, argent fictif, jeu responsable, missions, chat, pari éclair, amis, messages privés,
 invariants (solde jamais négatif, opérations simultanées, rejeu d'une clé), le panneau d'administration (§ 9 :
 `sauvegarde-20261119`, `equipe`, `blocages`, `gardes`, `reglages-frais`, `diffusion`) et les données réelles (§ 10 :
-`donnees`, `donnees-cascade`). Les bouchons de Vault et de pg_net (`tests/sql/supabase-stubs.sql`) rangent les
-requêtes au lieu de les envoyer.
+`donnees`, `donnees-cascade`, `donnees-fixations`, `eclair-reel`, et `eclair-edge`, qui exécute le texte même de l'Edge
+Function `eclair`, types retirés, contre la base embarquée). Les bouchons de Vault et de pg_net
+(`tests/sql/supabase-stubs.sql`) rangent les requêtes au lieu de les envoyer.
 
 ## 8. Ajouter une fonction
 
@@ -312,3 +316,33 @@ Le détail (sources, cascade, quotas, budget, tables) est dans `docs/DONNEES.md`
   journal) ajoutées au registre `wm.equipe_actions`.
 - **Réglages** (non publics) : `donnees.actif` (couper la collecte), `donnees.cadence_s` (3), `donnees.boucle_s` (55).
 - Aucune fonction existante n'est modifiée ; les tables où le lot écrit sont sauvées avant (`backup_20261119`).
+
+### Lot 7 : le pari éclair à cours réels (migration `eclair_reel`)
+
+- **Interrupteur** `eclair.cours_reels` (réglage public, **éteint**) : éteint, rien ne change pour les joueurs (tous les
+  jeux simulés, moteur d'avant). Réglages `eclair.secours_simule`, `eclair.grace_s` (120), `eclair.pbe_max` (0,08).
+- **Fixations** : l'Edge Function `donnees` (v4) les écrit à chaque frontière de manche par `srv_eclair_fixer(p)`
+  (`{ manche, actifs: { actif: { s: {source: cours}, x: [écartées], final } } }` ; `trop_tot`, `trop_tard` ; une
+  fixation écrite ne change plus), après `srv_eclair_config()` (actifs, sources, place ouverte, frontières déjà fixées).
+  Module pur `supabase/functions/donnees/fixations.js` (calendrier des essais, sources, secours, quotas).
+- **Modes figés** deux manches d'avance (`wm.eclair_figer`, tâche `wm-eclair-fix` toutes les 10 s, ou la première mise) :
+  `wm.eclair_mode_calcul(jeu, manche)` (place ouverte une minute avant et cinq après, clé, sources, données fraîches).
+- **Edge Function `eclair` (v5)** : avant de miser, `srv_eclair_contexte({ items: [{jeu, manche}] })` rend pour chaque
+  manche `{ jeu, r, mode, raison, actif, P: { pbe, smin, beoff }, F: { manche: fixation }, attente }` ; manche réelle :
+  moteur v2 (`etatReel`, `prixReel`, `beMultReel`, `beMaxReel`), le mode part avec la mise (`p.mode`). L'interrupteur
+  éteint est gardé 30 s en mémoire : aucun appel de plus par mise tant qu'il l'est. Le règlement prend les contextes des
+  manches des mises ouvertes, règle les réelles par `reglerReel`, laisse attendre celles dont la fin n'est pas fixée et
+  rend les mises des manches annulées par `srv_eclair_rembourser(p_user, [{ id, motif }])` ; la réponse de `settle`
+  porte en plus `rembourses: [{ id, g, r, s, amt, motif }]`. Duels : le mode de la manche du duel part avec la création ;
+  une manche réelle annulée règle le duel en issue 2 (les deux mises rendues). La Série et Blitz Royale ne changent pas.
+- **Contrôle ajouté** à deux fonctions existantes (`srv_eclair_miser`, `srv_duel_eclair_creer`), une ligne
+  `-- [ajout]` chacune, produite par `tools/garde-fonctions.mjs` (lot 7) et vérifiée par `tests/sql/gardes.spec.mjs` :
+  `wm.eclair_garde(jeu, manche, mode)` refuse `jeu_en_pause` (manche en pause, retirée, ou départ réel « absent ») et
+  `mode_change` (calcul fait dans un autre mode : l'Edge Function recommence une fois). Interrupteur éteint : la manche est
+  figée « simulée » et la mise passe exactement comme avant. Définitions d'avant : `backup_20261119.fonctions_lots`.
+- **Remboursement** sans changer de contrainte : table `wm.eclair_remboursements`, écriture `flash_rembourse` du journal
+  d'argent, notification `flash_rembourse` (texte de secours en français, code et paramètres `{g, r, amt, motif}`) ; la
+  mise est close « perdue », gain = mise ; ni XP, ni série, ni pari réglé.
+- **Lecture** : `api_fixations(jeu, de, a)` (visiteurs compris) et la partie `eclair` d'`api_live`.
+- **Tâches** : `wm-eclair-fix` (10 s : figer, déclarer absentes, garder la preuve des mises oubliées au bout de 40 h,
+  refaire l'instantané) et `wm-eclair-calibrage` (chaque heure : fréquence du break even observée).

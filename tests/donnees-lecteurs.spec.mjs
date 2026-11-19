@@ -16,7 +16,7 @@ const T = json('_journal.json').frontiere_ms;                    // frontière d
 test('garde : aucun test ne peut appeler le réseau, et les modules de la collecte n’appellent jamais fetch eux-mêmes', async () => {
   await expect(fetch('https://exemple.invalid/')).rejects.toThrow(/interdit/);
   appelsInterdits.length = 0;
-  for (const f of ['lecteurs.js', 'cascade.js']) expect(fs.readFileSync('supabase/functions/donnees/' + f, 'utf8'), f).not.toMatch(/\bfetch\s*\(/);
+  for (const f of ['lecteurs.js', 'cascade.js', 'fixations.js']) expect(fs.readFileSync('supabase/functions/donnees/' + f, 'utf8'), f).not.toMatch(/\bfetch\s*\(/);
   expect(T).toBe(Date.UTC(2026, 10, 19, 16, 39, 0));
 });
 
