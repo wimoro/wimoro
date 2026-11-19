@@ -61,6 +61,10 @@ images) ; `architecture-d-e.md` (plan technique des parties D et E, agent ECC `a
 (captures à plusieurs tailles), `outils/passe2.mjs` (mesure responsive) ; captures « avant » dans `captures/avant/`
 (serveur du commit `cb382a6` : worktree `../wimoro-avant`, port 4176). Faits marquants : ESPN refuse les robots (écarté),
 API-Sports indispensable ; BTC à ~63 700 $ le 19/11 ; GTA VI sorti le 19/11 ; succession en cours chez Nvidia.
+**Comptes administrateurs demandés** (réponse du propriétaire, 19/11 vers 17 h) : le compte principal et un compte personnel
+pour chacun des quatre associés. Aucun n'existait encore sur le site : rien n'est créé ; ils seront ajoutés depuis la page
+Administrateurs du panel après leur inscription (adresses dans la conversation, volontairement absentes du dépôt public).
+Seul administrateur actuel : le compte WimoroAdmin. Les clés d'API seront rangées plus tard par le propriétaire.
 
 ## SECONDE PASSE (demandée le 19 nov. 2026)
 
