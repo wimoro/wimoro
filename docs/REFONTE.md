@@ -47,11 +47,20 @@ adresse du compte à passer administrateur) → (3) C, A, B sur `refonte-design`
 | 2. D1 : recherche des sources (6 recherches parallèles, ~1 000 appels ; test depuis les serveurs Supabase dans 3 régions) | fait : [docs/DONNEES.md](DONNEES.md) § 1, notes détaillées dans `docs/donnees/` |
 | 3. Message au propriétaire (comptes gratuits à créer, adresse du compte à passer administrateur) | fait (19 nov., 15 h 40) ; correctif envoyé : API-Sports indispensable (ESPN refuse les robots), AcesAPI conseillé (tennis) |
 | 4. Partie C | fait (commit `b52824f`) |
-| 5. Partie A (ordinateur) | en cours : grille commune (3 paliers, `tokens.css`, `base.css`, DESIGN-SYSTEM § 3) et accueil faits ; puis fiche marché et ticket, jeux, portefeuille, Communauté, profil, connexion |
+| 5. Partie A (ordinateur) | en cours : grille commune (3 paliers, `tokens.css`, `base.css`, DESIGN-SYSTEM § 3) et accueil faits (commit `8b5327c`) ; fiche marché et ticket faits ici. En parallèle, trois agents travaillent chacun dans un worktree, sur une branche à fusionner dans `refonte-design` : `refonte-a-jeux` (Éclair, Blitz, Série, Duels), `refonte-a-argent` (portefeuille, dépôt, retrait, profil, rang, connexion, inscription), `refonte-a-communaute` (entrée, chat, clans, classement, amis, copies, joueur). Chacun écrit son CSS et ses traductions entre ses repères (`[jeux]`, `[argent]`, `[communaute]`) dans `screens.css` et `i18n-5.js` |
 | 6. Partie B (téléphone) | à faire |
 | 7. Partie D (branche `marches-et-admin`) | à faire |
 | 8. Partie E (panel) | à faire |
 | 9. Vérification, revues, bilan | à faire |
+
+**Pour reprendre (notes de travail hors dépôt, dossier temporaire de la session `…\scratchpad\`)** : `d1/*.md` (recherche
+des sources, recopiée dans `docs/donnees/`) ; `d3/crypto-bourse-economie.md`, `d3/politique-tech-culture.md`,
+`d3/sport.md` (64 marchés réels vérifiés le 19/11 : questions en 3 langues, critères, sources, probabilités de départ,
+images) ; `architecture-d-e.md` (plan technique des parties D et E, agent ECC `architect`) ; `inventaire-admin-brut.txt`
+(inventaire du panel actuel : 17 actions ; ~175 valeurs écrites en dur, dont ~92 réglables) ; `outils/capture2.mjs`
+(captures à plusieurs tailles), `outils/passe2.mjs` (mesure responsive) ; captures « avant » dans `captures/avant/`
+(serveur du commit `cb382a6` : worktree `../wimoro-avant`, port 4176). Faits marquants : ESPN refuse les robots (écarté),
+API-Sports indispensable ; BTC à ~63 700 $ le 19/11 ; GTA VI sorti le 19/11 ; succession en cours chez Nvidia.
 
 ## SECONDE PASSE (demandée le 19 nov. 2026)
 

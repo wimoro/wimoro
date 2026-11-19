@@ -2387,6 +2387,23 @@ html.pro-lock,html.pro-lock body{overflow:hidden}
 /* (fin de la section communaute) */
 
 /* ====================================================================== Troisième passe : fiche d’un marché et ticket [marche] */
+/* l'image du marché à gauche de sa question ; titre à la taille des titres de page sur ordinateur */
+.mq-t{display:flex;align-items:center;gap:var(--sp-4);margin-top:var(--sp-3)}
+.mq-t .mq{margin-top:0}
+.mq-t .mimg{width:48px;height:48px;border-radius:var(--r-md)}
+@media (min-width:880px){
+  .mq{font-size:var(--fs-titre)}
+  .mq-t .mimg{width:64px;height:64px}
+}
+/* ordinateur moyen et grand : sous le graphique, le chat du marché et ses règles côte à côte ; le ticket reste à droite */
+@media (min-width:1280px){
+  .g-mkt{grid-template-columns:minmax(0,3fr) minmax(0,2fr) var(--rail);grid-template-areas:'chart chart side' 'chat rules side'}
+}
+/* marché à plusieurs issues : les graduations écrites dans la courbe étirée se déformaient ; la légende donne les chances */
+.gsvg .gt{display:none}
+/* la colonne du ticket, plus haute, ne doit pas creuser d'espace sous le graphique : la dernière rangée absorbe sa hauteur */
+@media (min-width:880px){.g-mkt{grid-template-rows:auto auto 1fr}}
+@media (min-width:1280px){.g-mkt{grid-template-rows:auto 1fr}}
 /* (fin de la section marche) */
 
 /* ---------- Utilitaires (remplacent les styles en ligne des gabarits ; en dernier pour l'emporter) ---------- */
