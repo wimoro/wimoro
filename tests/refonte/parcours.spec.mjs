@@ -332,9 +332,11 @@ for (const [lang, connexion, inscription] of [['fr', 'Se connecter', 'S’inscri
   }
 }
 
+// Les libellés de l'en-tête sont lus hors de l'accueil : sur l'accueil d'un visiteur, la présentation porte son propre
+// « S'inscrire » et l'en-tête ne le répète pas (seconde passe, lot 2 ; vérifié par le test 22b).
 test('17 · langue par défaut : anglais', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  const { erreurs } = await ouvrirNu(page);
+  const { erreurs } = await ouvrirNu(page, {}, '#classement');
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   expect(await textes(page, 'nav.nav a')).toEqual(['Markets', 'Flash', 'Wallet', 'Community', 'Profile']);
   expect(await textes(page, '.top .login, .top .signup')).toEqual(['Log in', 'Sign up']);
@@ -346,7 +348,7 @@ test('17 · langue par défaut : anglais', async ({ page }) => {
 
 test('17b · langue enregistrée « fr »', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  const { erreurs } = await ouvrirNu(page, { 'wimoro-lang': 'fr' });
+  const { erreurs } = await ouvrirNu(page, { 'wimoro-lang': 'fr' }, '#classement');
   await expect(page.locator('html')).toHaveAttribute('lang', 'fr');
   expect(await textes(page, 'nav.nav a')).toEqual(['Marchés', 'Éclair', 'Portefeuille', 'Communauté', 'Profil']);
   expect(await textes(page, '.top .login, .top .signup')).toEqual(['Se connecter', 'S’inscrire']);
@@ -446,7 +448,7 @@ test('22 · barre d’onglets : affichée jusqu’à 879 px, masquée dès 880 p
 
 test('22b · visiteur sur téléphone : en-tête recherche + langue + thème + « S’inscrire », « Se connecter » en cinquième onglet', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  const { erreurs } = await ouvrir(page, { mode: 'visiteur', lang: 'fr', hash: '#accueil' });
+  const { erreurs } = await ouvrir(page, { mode: 'visiteur', lang: 'fr', hash: '#classement' });
   await expect(page.locator('.top .hs-btn')).toBeVisible();
   await expect(page.locator('.top .lgb')).toBeVisible();
   await expect(page.locator('.top .thm')).toBeVisible();
@@ -458,6 +460,10 @@ test('22b · visiteur sur téléphone : en-tête recherche + langue + thème + �
   await expect(page.locator('.tab5 a.only-out[href="#connexion"] span').first()).toHaveText('Se connecter');
   await expect(page.locator('.tab5 a.only-in[href="#profil"]')).toBeHidden();
   await expect(page.locator('nav.tabbar a').locator('visible=true')).toHaveCount(5);
+  // accueil d'un visiteur : un seul « S’inscrire » à l’écran, celui de la présentation (seconde passe, lot 2)
+  await page.evaluate(() => { location.hash = '#accueil'; });
+  await expect(page.locator('.intro a[href="#inscription"]')).toBeVisible();
+  await expect(page.locator('.top .signup')).toBeHidden();
   expect(erreurs).toEqual([]);
 });
 

@@ -20,7 +20,7 @@ Les quatre feuilles se chargent dans cet ordre dans `index.html`. Après toute m
 ## 2. Les règles (à ne pas enfreindre)
 
 1. **Aucune valeur en dur** hors de `tokens.css` : pas de `#hex`, pas de `rgb()`, pas de taille de texte en pixels,
-   pas de rayon ni d'ombre libres. Le thème sombre n'existe **que** dans `tokens.css` : aucun sélecteur `[data-theme]`
+   pas de rayon ni d'ombre libres (une exception documentée au § 3 : les couleurs des issues d'un marché à plusieurs issues). Le thème sombre n'existe **que** dans `tokens.css` : aucun sélecteur `[data-theme]`
    ailleurs (une exception documentée : l'icône lune / soleil du bouton de thème).
 2. **Une seule couleur d'accent**, le bleu du logo : actions principales, éléments actifs, liens.
    **Le vert et le rouge ne portent que du sens** : Oui / Non, hausse / baisse, gain / perte, erreur.
@@ -80,10 +80,18 @@ Les quatre feuilles se chargent dans cet ordre dans `index.html`. Après toute m
 | `--yes`, `--yes-bg`, `--yes-soft` | Oui, hausse, gain | `#0B7A3B`, `#0B7A3B`, `#E4F4EA` | `#3DD68C`, `#12803F`, `#10291C` |
 | `--no`, `--no-bg`, `--no-soft` | Non, baisse, perte, erreur | `#C4142B`, `#C4142B`, `#FCE9EB` | `#FF6B6B`, `#C22A3A`, `#331417` |
 | `--ink-bg`, `--on-ink` | élément inversé (bulle d'aide, barre des combinés) | `#1D1D1F`, blanc | `#F5F5F7`, `#1D1D1F` |
+| `--seg-on` | segment actif d'un contrôle segmenté (`.seg`), plus clair que sa piste | `--surface` | `#3A3A40` |
+| `--side-bg`, `--on-side` | panneau latéral de la connexion et de l'inscription | `--ink-bg`, `--on-ink` | `--fill`, `--text` |
 
 Chaque teinte a trois emplois : `--x` pour un texte ou un trait posé sur une surface, `--x-bg` pour un fond plein portant
 du texte blanc (`--on-color`), `--x-soft` pour un fond teinté. Tous ces couples atteignent le contraste AA (4,5:1) ; ils
 sont vérifiés par le contrôle automatique décrit plus bas.
+
+**Exception documentée : les couleurs des issues d'un marché à plusieurs issues.** Elles sont écrites dans `js/groups.js`
+(`GCOL`), parce que chaque issue garde la même couleur dans le graphique, ses pastilles et sa barre : ambre `#C77700`,
+violet `#8B5CF6`, bleu-vert `#0E918C`, rose `#D23D8F`, ardoise `#64748B`, brun `#A3623A`, indigo clair `#7B83EB`.
+Aucune n'est le bleu d'accent, le vert ou le rouge (ils portent déjà un sens) ; chacune atteint 3:1 sur `--surface` dans
+les deux thèmes. Elles ne servent qu'aux traits, aux points et aux barres : le texte d'une issue reste à l'encre (`--text`).
 
 ### Typographie
 Une seule famille : la pile système (`--font`). Chiffres tabulaires par la classe `.num`.

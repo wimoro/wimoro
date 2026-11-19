@@ -18,7 +18,10 @@ I18N_ADD("en",{
 "Rejoins une équipe et joue avec elle":"Join a team and play together",
 "Vois les mises de tes amis en direct":"See your friends’ bets live",
 "Compare-toi aux meilleurs joueurs de la saison":"See how you rank against the season’s best players",
-"Copie automatiquement les paris d’un joueur":"Automatically copy a player’s bets"
+"Copie automatiquement les paris d’un joueur":"Automatically copy a player’s bets",
+"Cherche un pseudo, ou invite tes amis avec ton lien.":"Search for a username, or invite your friends with your link.",
+"Les 100 meilleurs joueurs de la saison, sur « {0} »":"The season’s top 100 players, on “{0}”",
+"KYC non fait : crypto uniquement":"KYC not done: crypto only"
 });
 I18N_ADD("he",{
 "Portefeuille":"ארנק",
@@ -37,5 +40,8 @@ I18N_ADD("he",{
 "Rejoins une équipe et joue avec elle":"מצטרפים לקבוצה ומשחקים יחד",
 "Vois les mises de tes amis en direct":"רואים את ההימורים של החברים בזמן אמת",
 "Compare-toi aux meilleurs joueurs de la saison":"משווים את עצמכם לשחקנים הטובים של העונה",
-"Copie automatiquement les paris d’un joueur":"מעתיקים אוטומטית את ההימורים של שחקן"
+"Copie automatiquement les paris d’un joueur":"מעתיקים אוטומטית את ההימורים של שחקן",
+"Cherche un pseudo, ou invite tes amis avec ton lien.":"חפש שם משתמש, או הזמן חברים עם הקישור שלך.",
+"Les 100 meilleurs joueurs de la saison, sur « {0} »":"100 השחקנים הטובים ביותר של העונה, על ״{0}״",
+"KYC non fait : crypto uniquement":"ללא אימות זהות: קריפטו בלבד"
 });

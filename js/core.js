@@ -26,7 +26,7 @@ const F={
  usd0:v=>v===Infinity?_t('Illimitée'):money(NB(nf0.format(Math.round(v)))),
  /* C10 : le solde n'est jamais arrondi vers le haut. Centimes tant que la place le permet ; dans l'en-tête mobile, à partir de 100 000 $, tronqué à l'unité. */
  bal:(v,full)=>{const c=Math.floor(v*100+1e-6)/100;return money(NB(nf2.format(c)));}   /* un seul format par langue, centimes compris, à toutes les tailles d'écran */,
- signed:v=>bidi((v>=-0.004?'+':'−')+plain(money(NB(nf2.format(Math.abs(v)))))),
+ signed:v=>bidi((Math.abs(v)<0.005?'':v>0?'+':'−')+plain(money(NB(nf2.format(Math.abs(v)))))),   /* « 0,00 $ » sans signe : ni gain ni perte */
  pct:p=>unit(Math.round(p),'%'),
  mult:p=>{const x=100/Math.max(1,p);return bidi('×'+NB((x>=10?nf1:nf2).format(x)));},
  c:p=>unit(Math.round(p),'¢'),
@@ -60,7 +60,7 @@ const ICP={layers:'<path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.
 /* Une icône prend la couleur de son texte. Les anciennes couleurs écrites en dur dans les gabarits sont ramenées aux
    variables du thème ; le blanc devient « couleur du texte » (blanc sur un bouton coloré, sombre sur un bouton gris). */
 const ICV={'#A3A8B2':'var(--text-4)','#7A808C':'var(--text-3)','#4A505C':'var(--text-2)','#2448FF':'var(--accent)','#9A5B00':'var(--text-2)','#C08A12':'var(--text-2)','#0B8247':'var(--yes)','#13804F':'var(--yes)'};
-function ic(k,s=18,c='currentColor',sw=1.75){if(c==='#fff')c='currentColor';const v=ICV[c];return `<svg data-ic="${k}" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="${v?'currentColor':c}"${v?` style="color:${v}"`:''} stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICP[k]}</svg>`;}
+function ic(k,s=18,c='currentColor',sw=1.75){if(c==='#fff')c='currentColor';const v=ICV[c]||(/^var\(--/.test(c)?c:'');   /* une couleur du système (« var(--text-2) ») passe par la propriété color */return `<svg data-ic="${k}" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="${v?'currentColor':c}"${v?` style="color:${v}"`:''} stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICP[k]}</svg>`;}
 
 /* ===================== Rangs (noms façon Valorant, emblèmes originaux) ===================== */
 const TIERS=[
@@ -210,7 +210,7 @@ function demoMe(){return {v:5,logged:true,onboarded:true,kyc:false,fmode:'free',
  notifs:[{id:1,ic:'users',text:_t("lea a suivi ta mise sur le Clásico."),href:'#profil',at:T0-36e5,read:false},{id:2,ic:'trophy',text:_t("Plus que 110 XP pour passer Or III."),href:'#rang',at:T0-72e5,read:false},{id:3,ic:'flame',text:_t("Signal de foule sur Bitcoin à 150 000 $."),href:'#marche-btc150k',at:T0-9e6,read:false}],
  missions:[{id:'bets2',type:'bet',label:_t("Place 2 paris"),goal:2,have:0,xp:40,go:'#accueil',claimed:false},{id:'chatm1',type:'chatm',label:_t("Écris dans le chat d’un marché"),goal:1,have:0,xp:30,go:'#marche-btc150k',claimed:false},{id:'flash1',type:'flashwin',label:_t("Gagne une manche au marché éclair"),goal:1,have:0,xp:60,go:'#eclair',claimed:false}],
  badges:[],copies:[],copiers:0,welcomed:false,blockedShown:''};}
-function newMe(n,email){return {v:5,logged:true,onboarded:false,kyc:false,fmode:'free',falerts:[],contraWins:0,n,email,photo:'g:'+AV_GALLERY[hash(n||'')%AV_GALLERY.length].id,color:'#2448FF',interests:[],since:_t("aujourd’hui"),followers:0,xp:0,balance:1e6,credit1m:true,bio:'',wallet:'',prefs:{},ctype:'courbe',settled:0,wins:0,played:0,flashWins:0,flashStreak:0,flashBest:0,flashProfit:0,followed:0,deposits:0,depDay:'',streak:1,bestStreak:1,pos:38901,msgsTotal:0,chatXP:0,chatDay:'',maxBet:0,realized:0,following:[],watch:[],props:[],voted:{},positions:[],history:[],deps:[{coin:'USDC',net:'Base',amt:1e6,usd:1e6,at:now(),conf:12,need:12,label:'Crédit démo'}],wds:[],
+function newMe(n,email){return {v:5,logged:true,onboarded:false,kyc:false,fmode:'free',falerts:[],contraWins:0,n,email,photo:'g:'+AV_GALLERY[hash(n||'')%AV_GALLERY.length].id,color:'#2448FF',interests:[],since:_t("aujourd’hui"),followers:0,xp:0,balance:1e6,credit1m:true,bio:'',wallet:'',prefs:{},ctype:'courbe',settled:0,wins:0,played:0,flashWins:0,flashStreak:0,flashBest:0,flashProfit:0,followed:0,deposits:0,depDay:'',streak:1,bestStreak:1,pos:38900,msgsTotal:0,chatXP:0,chatDay:'',maxBet:0,realized:0,following:[],watch:[],props:[],voted:{},positions:[],history:[],deps:[{coin:'USDC',net:'Base',amt:1e6,usd:1e6,at:now(),conf:12,need:12,label:'Crédit démo'}],wds:[],
  notifs:[{id:1,ic:'gift',text:_t("Bienvenue sur Wimoro ! Tes 100 XP de bienvenue t’attendent."),href:'#bienvenue',at:now(),read:false}],
  missions:[{id:'dep1',type:'dep',label:_t("Fais ton premier dépôt"),goal:1,have:0,xp:100,go:'#depot',claimed:false},{id:'fb1',type:'flashbet',label:_t("Joue une manche au marché éclair"),goal:1,have:0,xp:50,go:'#eclair',claimed:false},{id:'chat1',type:'chat',label:_t("Écris ton premier message"),goal:1,have:0,xp:20,go:'#chat',claimed:false}],
  badges:[],copies:[],copiers:0,welcomed:true,blockedShown:''};}

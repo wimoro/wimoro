@@ -105,8 +105,8 @@
 .utabs{border-bottom:1px solid var(--line);margin-bottom:var(--sp-4)}
 .ph>.utabs{flex:1;margin-bottom:0}
 .seg{display:inline-flex;padding:2px;gap:2px;background:var(--fill-2);border-radius:var(--r-sm);flex:none}
-.seg button,.seg a{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:32px;padding-inline:var(--sp-3);border-radius:6px;font-size:var(--fs-2);font-weight:var(--fw-medium);color:var(--text-2);white-space:nowrap;transition:background var(--dur-1) var(--ease),color var(--dur-1) var(--ease)}
-.seg .on{background:var(--surface);color:var(--text);box-shadow:var(--shadow-1)}
+.seg button,.seg a{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:32px;padding-inline:var(--sp-3);border-radius:var(--r-sm);font-size:var(--fs-2);font-weight:var(--fw-medium);color:var(--text-2);white-space:nowrap;transition:background var(--dur-1) var(--ease),color var(--dur-1) var(--ease)}
+.seg .on{background:var(--seg-on);color:var(--text);box-shadow:var(--shadow-1)}
 .chips{display:flex;flex-wrap:wrap;gap:var(--sp-2)}
 .chip{position:relative;display:inline-flex;align-items:center;gap:6px;min-height:36px;padding-inline:var(--sp-4);border-radius:var(--r-pill);background:var(--fill);color:var(--text-2);font-size:var(--fs-2);font-weight:var(--fw-medium);cursor:pointer;-webkit-user-select:none;user-select:none;transition:background var(--dur-1) var(--ease),color var(--dur-1) var(--ease)}
 .chip.lg{min-height:var(--tap);font-size:var(--fs-3)}
@@ -151,7 +151,15 @@
 .tgl input:checked+.sl::after,.sw.on i{transform:translateX(18px)}
 [dir=rtl] .tgl input:checked+.sl::after,[dir=rtl] .sw.on i{transform:translateX(-18px)}
 .tgl input:focus-visible+.sl{outline:2px solid var(--accent);outline-offset:2px}
-.range{width:100%;height:24px;accent-color:var(--accent-bg);cursor:pointer}
+/* curseur : piste grise (--fill-2) dans les deux thèmes, pastille d'accent ; 44 px de haut pour le doigt.
+   input.range l'emporte sur .field input (même poids, plus loin dans le fichier). */
+input.range{-webkit-appearance:none;appearance:none;display:block;width:100%;height:var(--tap);min-height:var(--tap);padding:0;border:0;border-radius:0;background:transparent;accent-color:var(--accent-bg);cursor:pointer}
+input.range:focus{background:transparent}
+input.range::-webkit-slider-runnable-track{height:6px;border-radius:var(--r-pill);background:var(--fill-2)}
+input.range::-moz-range-track{height:6px;border-radius:var(--r-pill);background:var(--fill-2)}
+input.range::-moz-range-progress{height:6px;border-radius:var(--r-pill);background:var(--accent-bg)}
+input.range::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:22px;height:22px;margin-top:-8px;border-radius:50%;background:var(--accent-bg);box-shadow:0 0 0 3px var(--surface)}
+input.range::-moz-range-thumb{width:22px;height:22px;border:0;border-radius:50%;background:var(--accent-bg);box-shadow:0 0 0 3px var(--surface)}
 .sort{display:flex;align-items:center;gap:6px;color:var(--text-3);font-size:var(--fs-2);white-space:nowrap}
 .sort select{border:0;background:transparent;font-weight:var(--fw-medium);color:var(--text);outline:none;cursor:pointer;min-height:36px}
 
@@ -283,8 +291,8 @@
 /* ====================================================================== Sous-navigation d'une destination, aide, lignes de menu */
 .subnav{margin-bottom:var(--sp-4);border-bottom:1px solid var(--line)}
 .aide{font-size:var(--fs-2);color:var(--text-3);margin-bottom:var(--sp-5);max-width:70ch}
-.cnt2{display:inline-grid;place-items:center;min-width:20px;height:20px;padding-inline:6px;border-radius:var(--r-pill);background:var(--fill-2);color:var(--text-2);font-size:var(--fs-1);font-weight:var(--fw-bold);font-variant-numeric:tabular-nums}
-.subnav .cnt2{background:var(--accent-bg);color:var(--on-color)}
+/* compteur : un seul style, dans la sous-navigation comme dans les lignes de menu (page Communauté, portefeuille) */
+.cnt2{display:inline-grid;place-items:center;min-width:20px;height:20px;padding-inline:6px;border-radius:var(--r-pill);background:var(--accent-bg);color:var(--on-color);font-size:var(--fs-1);font-weight:var(--fw-bold);font-variant-numeric:tabular-nums}
 .menu-l{overflow:hidden}
 .mrow{display:flex;align-items:center;gap:var(--sp-3);width:100%;min-height:52px;padding-inline:var(--sp-4);font-size:var(--fs-3);text-align:start;transition:background var(--dur-1) var(--ease)}
 .mrow+.mrow{border-top:1px solid var(--line)}

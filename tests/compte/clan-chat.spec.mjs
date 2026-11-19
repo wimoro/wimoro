@@ -53,8 +53,9 @@ test('chat du clan : ouvert en rejoignant le clan, historique et messages donné
   await page.reload(); await expect(page.locator('#view > *').first()).toBeAttached();
   await page.locator('[data-a="cl-ctab"][data-v="chat"]').click();
   await expect(feed.locator('.msg')).toHaveCount(3);                                             // le message reçu en direct n'était qu'une diffusion simulée
-  // quitter le clan : plus d'abonnement, plus d'accès
-  await page.locator('[data-a="cl-leave"]').first().click();
+  // quitter le clan : plus d'abonnement, plus d'accès (« Quitter le clan » est rangé dans l'onglet Infos, à toutes les largeurs)
+  await page.locator('[data-a="cl-ctab"][data-v="infos"]').click();
+  await page.locator('[data-a="cl-leave"]').locator('visible=true').first().click();
   await page.locator('[data-a="cl-leave-do"]').click();
   await expect.poll(() => lire(page, () => S.me.clan)).toBeNull();
   await expect.poll(() => lire(page, () => __fakeSB.prives().filter(s => s.startsWith('clan:')))).toEqual([]);
