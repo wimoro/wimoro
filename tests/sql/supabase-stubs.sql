@@ -46,6 +46,28 @@ create or replace function auth.jwt() returns jsonb language sql stable as $$
   select coalesce(nullif(current_setting('request.jwt.claims', true), '')::jsonb, '{}'::jsonb)
 $$;
 grant execute on function auth.uid(), auth.role(), auth.jwt() to anon, authenticated, service_role;
+-- Sessions et facteurs de double authentification : forme minimale des tables de Supabase Auth (colonnes relevées en
+-- production le 19 nov. 2026), lues par les fonctions de l'équipe (déconnexion forcée, double authentification).
+create table auth.sessions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  aal text default 'aal1',
+  not_after timestamptz,
+  refreshed_at timestamp,
+  user_agent text,
+  ip inet
+);
+create table auth.mfa_factors (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  friendly_name text,
+  factor_type text not null default 'totp',
+  status text not null default 'unverified',
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
 
 -- pg_cron : on enregistre les tâches, on ne les exécute pas.
 create table cron.job (jobid bigserial primary key, schedule text, command text, nodename text default 'localhost', nodeport int default 5432, database text default 'postgres', username text default 'postgres', active boolean default true, jobname text unique);
