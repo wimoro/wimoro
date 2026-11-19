@@ -1810,8 +1810,6 @@ body{overflow-x:visible;overflow-x:clip}
 .fl-bet .fsd.eq .eqt{min-width:0}
 .fl-amts:empty{display:none}
 
-/* tablette et petit ordinateur (761 à 1100 px) : la même barre fixe que sur mobile, mise au-dessus des trois boutons */
-@media (min-width:880px) and (max-width:1100px) and (min-height:600px){.flash-card .fl-sides{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;position:fixed;inset-inline-start:0;inset-inline-end:0;bottom:var(--bas);z-index:39;margin:0;padding:8px max(24px,calc(50% - 380px)) 10px;background:var(--bar);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}.flash-card .fl-sides .fsd{height:auto;min-height:62px;flex-direction:column;justify-content:center;align-items:center;gap:2px;padding:6px 8px;font-size:var(--fs-2);text-align:center;min-width:0}.flash-card .fl-sides .fsd>span:not(.eqt):not(.eqr){max-width:100%;line-height:1.15}.flash-card .fl-sides .fsd .num{font-size:var(--fs-4);line-height:1.1}.flash-card .fl-sides .fsd.eq{grid-column:auto;height:auto;min-height:62px}.flash-card .fl-sides .fsd.eq .eqt{align-items:center;text-align:center;max-width:100%}.flash-card .fl-sides .fsd.eq .eqt b{font-size:var(--fs-2);line-height:1.15}.flash-card .fl-sides .fsd.eq .eqt small{display:none}.flash-card .fl-sides .fsd.eq .eqr{display:flex;flex-direction:row;align-items:baseline;justify-content:center;gap:8px;max-width:100%}.flash-card .fl-sides .fsd.eq .eqr small{display:block;font-size:var(--fs-1);line-height:1.15;font-weight:500;color:inherit}.flash-card .fl-sides .fsd .mx{top:-7px;inset-inline-end:6px}.flash-card .fl-stk{display:flex;align-items:center;gap:8px;position:fixed;inset-inline-start:0;inset-inline-end:0;bottom:calc(var(--bas) + 80px);z-index:39;margin:0;padding:8px max(24px,calc(50% - 380px)) 2px;background:var(--bar);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line)}.flash-card .fl-stk .lbl{flex:none;min-width:70px;margin:0}.flash-card .fl-stk .btn{flex:1;min-width:0!important;height:32px;padding:0 4px}.flash-card .fl-amts{margin-top:10px}body.pg-flash main{padding-bottom:142px}body.pg-flash .slipbar{bottom:calc(var(--bas) + 134px)}}
 
 /* UX3 : pari éclair sur mobile, une rangée de réglages en moins (catégories en liste déroulante à côté du mode) */
 .fcat-sel{display:none}
@@ -2378,6 +2376,134 @@ html.pro-lock,html.pro-lock body{overflow:hidden}
 @media (hover:hover){.bigbet:hover .bm{color:var(--text)}}
 
 /* ====================================================================== Troisième passe : jeux sur ordinateur (Éclair, Blitz, Série, Duels) [jeux] */
+/* Chaque écran de jeu porte .jx sur son .wrap (.jx-eclair, .jx-blitz, .jx-serie, .jx-duels). À partir de 880 px, il est
+   composé sur la grille commune : contenu fluide + colonne latérale (--rail) qui reste visible au défilement (.rail-fixe),
+   et rien ne se replie (js/refonte.js, JEUX_ORDI). Sur téléphone, rien ne change, sauf l'info-bulle des courbes. */
+
+/* Info-bulle d'une courbe de manche (js/flash.js, ftipDraw) : un trait vertical, un point sur la courbe, la valeur et
+   l'heure. La courbe reste de gauche à droite en hébreu : les positions sont celles d'une boîte LTR. */
+.fl-chart:not(.spark){touch-action:pan-y}
+.fl-chart .ftip{position:absolute;inset:0;pointer-events:none;z-index:3}
+.ftip .vx{position:absolute;top:0;bottom:0;border-inline-start:1px dashed var(--text-3)}
+.ftip .hd{position:absolute;width:var(--sp-3);height:var(--sp-3);border-radius:50%;background:var(--surface);border:2px solid var(--accent);transform:translate(-50%,-50%)}
+.ftip .ftl{position:absolute;display:flex;gap:var(--sp-2);transform:translate(-50%,calc(-100% - var(--sp-3)));padding:var(--sp-1) var(--sp-2);border-radius:var(--r-sm);background:var(--ink-bg);color:var(--on-ink);font-size:var(--fs-1);font-variant-numeric:tabular-nums;white-space:nowrap;box-shadow:var(--shadow-2)}
+.ftip .ftl b{font-weight:var(--fw-bold)}
+.ftip .ftl.bas{transform:translate(-50%,var(--sp-3))}
+.ftip .ftl.deb{transform:translate(0,calc(-100% - var(--sp-3)))}
+.ftip .ftl.deb.bas{transform:translate(0,var(--sp-3))}
+.ftip .ftl.fin{transform:translate(-100%,calc(-100% - var(--sp-3)))}
+.ftip .ftl.fin.bas{transform:translate(-100%,var(--sp-3))}
+
+/* Ligne d'état d'une manche (Éclair, Blitz, Série) : un texte suivi, sans les écarts de la mise en flex entre ses morceaux
+   (« Choisis, encore 28 s » s'affichait « Choisis,  28  s ») ; l'icône ou le point reste aligné sur le texte */
+.fl-phase{display:block}
+.fl-phase>.pl{display:inline}   /* « Mises fermées, » (la classe .pl sert aussi aux lignes du classement, en flex) */
+.fl-phase>svg{display:inline-block;vertical-align:-3px;margin-inline-end:var(--sp-1)}
+.fl-phase>.live{vertical-align:1px;margin-inline-end:var(--sp-2)}
+
+/* Visiteur sur Blitz Royale ou La Série : le bouton bleu de la carte (« Entrer pour 10 $ ») est le seul ; celui de l'en-tête attend */
+body.out:has(.jx .b-pri) .top .signup{display:none}
+
+/* Survols : les choix Haut et Bas foncent comme les boutons Oui et Non ; l'aide « ? » du mode */
+@media (hover:hover){
+  .fsd.oui:hover{background:var(--yes-bg-hover)}
+  .fsd.non:hover{background:var(--no-bg-hover)}
+  .fhelp:hover{background:var(--fill-2);color:var(--text)}
+  .fhelp.on:hover{background:var(--accent-soft);color:var(--accent)}
+  /* interrupteurs des notifications éclair : la piste fonce au survol */
+  .jx .tgl:hover input:not(:checked)+.sl{background:var(--line-2)}
+  .jx .tgl:hover input:checked+.sl{background:var(--accent-bg-hover)}
+}
+
+@media (min-width:880px){
+  /* ---------- Éclair ---------- */
+  /* la question est le titre de la page ; la courbe grandit avec le palier (sa hauteur suit la colonne latérale) */
+  .jx .fl-h h1{font-size:var(--fs-titre);line-height:var(--lh-tight)}
+  .jx-eclair .flash-card .fl-chart{height:calc(var(--rail) * .7)}
+  /* les outils de la courbe et « Défier un ami » sur une seule ligne */
+  .jx-eclair .flash-card .chtools .fl-duel{margin-inline-start:auto}
+  /* colonne latérale : l'état de la manche en tête, la mise, les trois choix, puis ta mise ou le résultat précédent */
+  .jx-eclair .fl-bet{gap:var(--sp-4)}
+  .jx-eclair .fl-bet>.fl-phase{margin:0;padding-bottom:var(--sp-3);border-bottom:1px solid var(--line);white-space:normal;line-height:var(--lh-snug);text-wrap:balance}
+  .jx-eclair .fl-bet .fl-amts{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:var(--sp-2);margin:0}
+  .jx-eclair .fl-bet .fl-amts .lbl{grid-column:1/-1;margin:0}
+  .jx-eclair .fl-bet .fl-amts .btn{min-width:0;padding-inline:var(--sp-1)}
+  .jx-eclair .fl-bet .fl-sides{gap:var(--sp-2)}
+  /* ta mise ou le résultat précédent : un bloc calme (fond gris, pas d'encre : le vert et le rouge y restent lisibles).
+     L'aide « Choisis ta mise, puis… » et la ligne des XP disparaissent : la carte montre déjà quoi faire. */
+  .jx-eclair .fl-bet .fl-my{margin:0}
+  .jx-eclair .fl-bet .fl-my.has{background:var(--fill);color:var(--text-2)}
+  .jx-eclair .fl-bet .fl-my.has>span:not([class])>b{color:var(--text)}
+  .jx-eclair .fl-bet .fl-my:not(.has):not(.res),.jx-eclair .fl-bet .fl-hint{display:none}
+  /* sous la carte du pari, les blocs secondaires sur deux colonnes */
+  .jx-eclair .fl-plus>.col{gap:var(--col-gap)}
+
+  /* ---------- Blitz Royale et La Série ---------- */
+  .jx .bzcard h1,.jx .srcard h1{font-size:var(--fs-5);line-height:var(--lh-tight);margin:var(--sp-3) 0 var(--sp-6);text-wrap:balance}
+  /* la courbe de la manche grandit avec le palier ; les trois choix sur une ligne */
+  .jx .bz-chart{height:calc(var(--rail) * .6)}
+  .jx .bz-sides{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .jx .bz-sides .fsd{justify-content:center}
+  .jx .bz-sides .fsd.eq{grid-column:auto}
+  /* chiffres d'une manche en direct : « Tu dis Haut » a la taille des trois autres */
+  .jx .onair .bzprice>div>b{font-size:var(--fs-4)}
+  /* la règle du jeu sur deux colonnes de texte */
+  .jx-how .steps{display:block;columns:2 calc(var(--rail) - var(--sp-10));column-gap:var(--col-gap)}
+  .jx-how .steps li{break-inside:avoid;margin-bottom:var(--sp-4)}
+  /* Blitz : le chat occupe la colonne latérale sur la hauteur de l'écran */
+  .jx-blitz .rail-fixe>.chat{height:calc(100vh - var(--bar-h) - var(--sp-12))}
+  /* Blitz, salle d'attente : la phrase en titre, quatre chiffres alignés (départ, buy-in, cagnotte, inscrits), le bouton */
+  .jx-blitz .bz-salle{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-areas:'tag tag tag tag' 'h h h h' 'cd k1 k2 k3' 'cta cta cta cta' 'pl pl pl pl';column-gap:var(--col-gap);align-items:start}
+  .jx-blitz .bz-salle>.bzk,.jx-blitz .bz-salle>.bzkv{display:contents}
+  .jx-blitz .bz-salle .bztag{grid-area:tag;justify-self:start}
+  .jx-blitz .bz-salle>h1{grid-area:h}
+  .jx-blitz .bz-salle .bzk>.sub{grid-area:cd;margin:0;font-size:var(--fs-1);color:var(--text-3)}
+  .jx-blitz .bz-salle .bzk>.sub>b{display:block;margin-top:calc(var(--sp-1) / 2);font-size:var(--fs-5);font-weight:var(--fw-bold);color:var(--text)}
+  .jx-blitz .bz-salle .bzkv>:nth-child(1){grid-area:k1}
+  .jx-blitz .bz-salle .bzkv>:nth-child(2){grid-area:k2}
+  .jx-blitz .bz-salle .bzkv>:nth-child(3){grid-area:k3}
+  .jx-blitz .bz-salle .bzkv small{margin-bottom:calc(var(--sp-1) / 2)}
+  .jx-blitz .bz-salle .bzkv .num{font-size:var(--fs-5)}
+  .jx-blitz .bz-salle>.bzme,.jx-blitz .bz-salle>.btn{grid-area:cta;margin:var(--sp-6) 0 0}
+  .jx-blitz .bz-salle>.btn{justify-self:start;width:auto;padding-inline:var(--sp-8)}
+  .jx-blitz .bz-salle>.bzpl{grid-area:pl;margin-top:var(--sp-4)}
+  /* La Série, au départ : les réglages à gauche, la projection et le bouton à droite */
+  .jx-serie .sr-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--col-gap);align-items:start}
+  .jx-serie .sr-cfg>.cpf+.cpf{margin-top:var(--sp-5)}
+  .jx-serie .sr-proj{padding:var(--sp-5);border-radius:var(--r-md);background:var(--fill)}
+  .jx-serie .sr-proj .calc{margin-top:0}
+  .jx-serie .sr-proj .line{color:var(--text-2)}
+  .jx-serie .sr-proj .line>b{white-space:nowrap}
+  /* La Série, en manche : « Encaisser » à la fin de la ligne des choix, à sa taille */
+  .jx-serie .srcard.onair [data-a="sr-cash"]{display:flex;width:fit-content;margin-inline-start:auto}
+
+  /* ---------- Duels ---------- */
+  /* « Défier un ami » et « Duel de stack » sur la ligne de la sous-navigation, au-dessus du même filet */
+  .jx-duels{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end}
+  .jx-duels>*{grid-column:1/-1;min-width:0}
+  .jx-duels>.subnav{grid-column:1;grid-row:1}
+  .jx-duels>.pagehead{grid-column:2;grid-row:1;margin:0 0 var(--sp-4);padding-bottom:var(--sp-1);border-bottom:1px solid var(--line)}
+  /* les duels en grille de cartes (deux par ligne, trois au palier L), le pied de chaque carte en bas */
+  .jx-duels .dl-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,calc(var(--carte-min) + var(--sp-12))),1fr));gap:var(--sp-4)}
+  .jx-duels .dl-list>.dcard{display:flex;flex-direction:column;margin:0}
+  .jx-duels .dl-list>.dcard>.dc-f{margin-top:auto;padding-top:var(--sp-3)}
+  .jx-duels .dl-list>.empty{grid-column:1/-1}
+}
+@media (min-width:880px) and (max-width:1279px){
+  /* palier S : dans les dernières manches, la petite courbe cède sa place au nom ; dans le classement du jour de la Série,
+     le multiplicateur cède sa place au pseudo (comme sur un petit téléphone) */
+  .jx-eclair .fl-plus .rrow{grid-template-columns:auto minmax(0,1fr) auto}
+  .jx-eclair .fl-plus .rrow .hsp{display:none}
+  .jx-serie .srbd{grid-template-columns:var(--sp-6) var(--sp-8) minmax(0,1fr) auto auto}
+  .jx-serie .srrow>.num:not(.pl-up){display:none}
+}
+@media (min-width:1280px){
+  /* paliers M et L : les chiffres d'une manche en direct prennent la taille des grands chiffres */
+  .jx .onair .bzprice>div>b{font-size:var(--fs-5)}
+}
+@media (min-width:1280px) and (max-width:1679px){
+  .jx-duels .dl-list{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
 /* (fin de la section jeux) */
 
 /* ====================================================================== Troisième passe : portefeuille, dépôt, retrait, profil, rang, connexion et inscription [argent] */
