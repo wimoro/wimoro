@@ -62,6 +62,8 @@ body.attente{cursor:progress}
 .adm-note{font-size:var(--fs-2);color:var(--text-3);max-width:72ch}
 .vide{color:var(--text-3);font-size:var(--fs-2);padding:var(--sp-3) 0}
 .adm-erreur p{margin-block:var(--sp-2) var(--sp-4);color:var(--text-2)}
+#adm-mfa .limit,#adm-mfa .sub{margin-block:var(--sp-3)}
+.adm-session .hbtns{margin-block-start:var(--sp-3)}
 .adm-ancres{margin-bottom:calc(-1 * var(--sp-1))}
 .adm-ancres .chip{text-decoration:none}
 .adm-2col,.adm-cartes{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--sp-4);align-items:start}
@@ -184,14 +186,15 @@ fieldset.field{border:0;min-width:0}
 .reg.inactif .reg-vals dd{color:var(--text-2)}
 .reg.vise{background:var(--accent-soft);box-shadow:0 0 0 var(--sp-2) var(--accent-soft)}
 .reg-ed{grid-column:1/-1;display:flex;flex-direction:column;gap:var(--sp-3);padding:var(--sp-4);border-radius:var(--r-md);background:var(--fill)}
-.reg-ed .field input,.reg-ed .field select{background:var(--surface)}
+.reg-ed .field input,.reg-ed .field select{background-color:var(--surface)}   /* la couleur seule : la flèche d'une liste reste */
 .reg-champ{display:flex;align-items:center;gap:var(--sp-2);max-width:var(--adm-recherche)}
 .reg-champ>span{font-size:var(--fs-3);color:var(--text-2);min-width:var(--sp-4)}
 .reg-ed .reg-champ{max-width:calc(var(--adm-champ) * 1.5)}
 .reg-bornes{font-size:var(--fs-2);color:var(--text-3)}
+.reg-impact{font-size:var(--fs-2);color:var(--text-2);font-variant-numeric:tabular-nums;max-width:72ch}
 .salon .salon-a{align-items:center}
 .salon-l{display:flex;align-items:center;gap:var(--sp-2);font-size:var(--fs-2);color:var(--text-2)}
-.salon .salon-a select{min-height:calc(var(--sp-8) + var(--sp-1));border-radius:var(--r-sm);border:1px solid transparent;background:var(--fill);padding-inline:var(--sp-3)}
+.salon .salon-a select{min-height:calc(var(--sp-8) + var(--sp-1));border-radius:var(--r-sm);border:1px solid transparent;background-color:var(--fill);padding-inline:var(--sp-3)}
 .salon .chk{min-height:calc(var(--sp-8) + var(--sp-1))}
 .je-l1{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-1) var(--sp-2)}
 @media (min-width:880px){
@@ -204,7 +207,7 @@ fieldset.field{border:0;min-width:0}
 .exemple-t{font-size:var(--fs-2);font-weight:var(--fw-medium);color:var(--text-2)}
 .exemple-c{display:flex;flex-wrap:wrap;align-items:flex-end;gap:var(--sp-3)}
 .exemple-c .field{flex:1 1 calc(var(--adm-champ) * .8)}
-.exemple-c .field input,.exemple-c .field select{background:var(--surface)}
+.exemple-c .field input,.exemple-c .field select{background-color:var(--surface)}
 .exemple-c .chk{flex-basis:100%}
 .exemple-r{font-size:var(--fs-3);line-height:var(--lh);color:var(--text-2);max-width:72ch;font-variant-numeric:tabular-nums}
 .exemple-r b{color:var(--text);font-weight:var(--fw-bold)}

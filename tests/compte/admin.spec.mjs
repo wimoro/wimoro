@@ -258,6 +258,7 @@ test('chat et communauté : masquer (confirmation) et rendre, mode lent, salon f
   await page.locator('#adm-clans [data-a="clan-dissoudre"]').click();
   await confirmer(page, { lignes: [['Membres', '1', '0'], ['Salon du clan', 'ouvert', 'fermé']], motif: 'clan de triche' });
   await expect(message(page)).toContainText('Clan dissous.');
+  await expect(page.locator('#adm-clans [data-a="clan-dissoudre"], #adm-clans form[data-f="clan-renommer"]')).toHaveCount(0);   // plus rien à faire sur un clan dissous
   expect(await ecritures(page)).toEqual([
     ['chat_supprimer', { id: 41, motif: 'hors sujet' }], ['chat_restaurer', { id: 41 }],
     ['salon_regler', { salon: 'general', lent: 30, ferme: false, motif: '' }], ['salon_regler', { salon: 'vip', lent: 0, ferme: true, motif: 'raid de spam' }],
@@ -282,6 +283,9 @@ test('site : annonce publiée puis retirée, maintenance et sa sortie, activité
   await mt.locator('button.b-no').click();
   await confirmer(page, { lignes: [['Maintenance', 'non', 'en cours']], motif: 'mise à jour' });
   await expect(page.locator('[data-v="maintenance"]')).toHaveText('Le site est en maintenance.');
+  await mt.locator('[name="fr"]').fill('Retour vers 23 h.'); await page.locator('[data-a="maint-message"]').click();
+  await expect(fenetre(page).locator('#adm-ov-t')).toHaveText('Changer le message de maintenance');
+  await confirmer(page, { lignes: [['Maintenance', 'en cours', 'en cours'], ['Message', 'retour vers 22 h', 'Retour vers 23 h.']] });
   await page.locator('form[data-f="maintenance"] button.b-pri').click();
   await confirmer(page, { lignes: [['Maintenance', 'en cours', 'non']] });
   await expect(page.locator('[data-v="maintenance"]')).toHaveText('Le site est ouvert.');
@@ -292,10 +296,11 @@ test('site : annonce publiée puis retirée, maintenance et sa sortie, activité
   await confirmer(page, { lignes: [['Bots', 'en marche', 'coupés'], ['Intensité', '1', '2'], ['Bavardage', '1', '0,5']] });
   await expect(message(page)).toContainText('Activité simulée enregistrée.');
   const faits = await ecritures(page);
-  expect(faits.map(a => a[0])).toEqual(['annonce_publier', 'annonce_retirer', 'maintenance', 'maintenance', 'activite_simulee']);
+  expect(faits.map(a => a[0])).toEqual(['annonce_publier', 'annonce_retirer', 'maintenance', 'maintenance', 'maintenance', 'activite_simulee']);
   expect(faits[0][1]).toEqual({ textes: { fr: 'Nouveau : les duels de stack ouvrent ce soir.', en: 'New: stack duels open tonight.' }, ton: 'succes', fin: null, motif: '' });
   expect(faits[2][1]).toEqual({ actif: true, message: { fr: 'Mise à jour du serveur, retour vers 22 h.' }, motif: 'mise à jour' });
-  expect(faits[4][1]).toEqual({ actif: false, intensite: 2, chat: 0.5, motif: '' });
+  expect(faits[3][1]).toEqual({ actif: true, message: { fr: 'Retour vers 23 h.' }, motif: '' });
+  expect(faits[5][1]).toEqual({ actif: false, intensite: 2, chat: 0.5, motif: '' });
   expect(erreurs).toEqual([]);
 });
 
@@ -318,6 +323,8 @@ test('frais et argent : nom, phrase, valeur, défaut, « Revenir au défaut » ;
   const [f0, f1] = await lire(page, () => { const m = () => ({ id: 'x', cat: 'Crypto', p: 60, vol: 250000 }); return [quoteBuy(m(), 'oui', 100, false, .07 * .7).fee, quoteBuy(m(), 'oui', 100, false, .095 * .7).fee]; });
   await expect(page.locator('[data-v="exemple-brouillon"]')).toContainText(f1.toFixed(2).replace('.', ','));
   expect(avant).toContain(f0.toFixed(2).replace('.', ','));
+  await expect(crypto.locator('[data-v="impact"]')).toContainText(`(Crypto) : ${f0.toFixed(2).replace('.', ',')}`);   // et sous le champ même, là où l'on tape
+  await expect(crypto.locator('[data-v="impact"]')).toContainText(`${f1.toFixed(2).replace('.', ',')} $ avec la nouvelle valeur`);
   await crypto.locator('form[data-f="reglage"] button.b-pri').click();
   await confirmer(page, { lignes: [['Barème Crypto', '7', '9,5'], ['Frais sur 100', f0.toFixed(2).replace('.', ','), f1.toFixed(2).replace('.', ',')]], motif: 'volatilité' });
   await expect(page.locator('#r-frais\\.taux\\.crypto [data-v="valeur"]')).toHaveText('9,5 %');
@@ -390,6 +397,11 @@ test('journal : filtres (qui, type, joueur, dates), export CSV, vérification, �
   await expect(page.locator('#adm-journal .entree')).toHaveCount(3);
   await expect(page.locator('#adm-journal .entree').first()).toContainText('annule l’entrée n° 1');
   await expect(page.locator('#adm-journal .entree', { hasText: 'premier geste' }).locator('[data-a="journal-annuler"]')).toHaveCount(0);   // une seule fois
+  await page.evaluate(id => { location.hash = '#journal/joueur=' + id; }, LEA);                        // un lien porte tous ses filtres : le précédent ne reste pas
+  await expect(page.locator('#jf-j')).toHaveValue(LEA);
+  await page.evaluate(() => { location.hash = '#journal/action=joueur_kyc'; });
+  await expect(page.locator('#jf-t')).toHaveValue('joueur_kyc');
+  await expect(page.locator('#jf-j')).toHaveValue('');
   const faits = (await appels(page)).filter(a => /^journal_/.test(a[0]));
   expect(faits.find(a => a[0] === 'journal_annuler')).toEqual(['journal_annuler', { id: 1, motif: 'erreur de joueur' }]);
   expect(faits.find(a => a[0] === 'journal_lire' && a[1].action)).toEqual(['journal_lire', { n: 50, action: 'joueur_solde' }]);

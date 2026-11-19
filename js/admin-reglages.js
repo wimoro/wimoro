@@ -19,9 +19,11 @@ const monnaie = cle => cle.split('.').pop().toUpperCase();
 /* une valeur telle qu'on la lit (« 7 % », « × 0,70 », « 10,00 $ », « aucun plafond ») */
 function fmtVal(r, v) {
   if (v === null || v === undefined) return r && r.facultatif ? 'aucun plafond' : '—';
-  if (r && r.type === 'booleen') return v ? 'activé' : 'désactivé';
-  if (r && r.type === 'liste') return Array.isArray(v) ? v.map(x => usd0(x)).join(', ') : '—';
-  if (r && r.type === 'json') return Array.isArray(v) ? v.length + ' élément(s)' : '—';
+  const t = r && r.type ? r.type                                                                     // registre pas encore lu : le type se déduit de la valeur
+    : typeof v === 'boolean' ? 'booleen' : Array.isArray(v) ? (v.every(x => typeof x === 'number') ? 'liste' : 'json') : typeof v === 'object' ? 'json' : '';
+  if (t === 'booleen') return v ? 'activé' : 'désactivé';
+  if (t === 'liste') return Array.isArray(v) ? v.map(x => usd0(x)).join(', ') : '—';
+  if (t === 'json') return Array.isArray(v) ? v.length + ' élément(s)' : '—';
   const u = unite(r ? r.cle : '');
   if (u === 'pct') return nfx(v * 100, 2) + NB + '%';
   if (u === 'mult') return '×' + NB + nfx(v, 3);
@@ -121,6 +123,7 @@ function regEditeurH(r) {
     : `<span class="reg-champ"><input id="${id}" name="valeur" value="${esc(versSaisie(r, v))}" inputmode="${r.type === 'liste' ? 'text' : 'decimal'}" autocomplete="off"${r.facultatif ? ' placeholder="aucun plafond"' : ''}><span>${esc(suffixe(r))}</span></span>`;
   return `<form class="reg-ed" data-f="reglage" data-cle="${esc(r.cle)}" data-saisie="reglage" novalidate>
    <div class="field"><label for="${id}">Nouvelle valeur</label>${champ}<small class="reg-bornes">${esc(bornesTxt(r))}</small><p class="err" data-err></p></div>
+   ${estFrais(r.cle) ? `<p class="reg-impact" data-v="impact" aria-live="polite">${esc(impactDe(r.cle).texte)}</p>` : ''}
    <div class="hbtns"><button class="btn b-pri">Vérifier et enregistrer</button><button type="button" class="btn b-ghost" data-a="reg-fermer" data-cle="${esc(r.cle)}">Annuler</button></div></form>`;
 }
 function groupeH(g) {
@@ -131,16 +134,18 @@ function groupeH(g) {
 
 /* ----- L'exemple chiffré : « sur une mise de 100 $, le joueur paie … », aujourd'hui et avec le brouillon ----- */
 function baremeDe(over) {
-  const v = cle => { const r = regDe(cle); const b = over ? E.brouillons[cle] : undefined; return typeof b === 'number' ? b : r && typeof r.valeur === 'number' ? r.valeur : null; };
+  const src = over === true ? E.brouillons : over || null;                                           // true : les brouillons ; un objet : seulement ces valeurs-là
+  const v = cle => { const r = regDe(cle); const b = src ? src[cle] : undefined; return typeof b === 'number' ? b : r && typeof r.valeur === 'number' ? r.valeur : null; };
   const reg = JSON.parse(JSON.stringify(ENG_REG_DEF));
   if (v('frais.k') != null) reg.k = v('frais.k'); if (v('frais.remise_rang') != null) reg.remise = v('frais.remise_rang'); if (v('frais.taux.defaut') != null) reg.defaut = v('frais.taux.defaut');
   for (const [cat, k] of CATS_MARCHES) if (v('frais.taux.' + k) != null) reg.taux[cat] = v('frais.taux.' + k);
   return reg;
 }
-function exempleCalc(over) {
-  const x = E.exemple, reg = baremeDe(over), th = regRate(reg, x.cat, x.diamant);
-  const m = { id: 'exemple', cat: x.cat, p: x.prix, vol: 250000 };                                   // un marché ordinaire : 250 000 $ de volume
-  const q = quoteBuy(m, 'oui', x.mise, x.diamant, th);
+/* cat, diamant : pour chiffrer un réglage précis (le barème d'une catégorie, la remise du rang Diamant) */
+function exempleCalc(over, cat, diamant) {
+  const x = E.exemple, c = cat || x.cat, d = diamant == null ? x.diamant : diamant, reg = baremeDe(over), th = regRate(reg, c, d);
+  const m = { id: 'exemple', cat: c, p: x.prix, vol: 250000 };                                       // un marché ordinaire : 250 000 $ de volume
+  const q = quoteBuy(m, 'oui', x.mise, d, th);
   return { fee: q.fee, sh: q.sh, taux: th, part: x.mise > 0 ? q.fee / x.mise : 0 };
 }
 function exempleH() {
@@ -154,6 +159,15 @@ function exempleH() {
    ${b ? `<p class="exemple-r exemple-b" data-v="exemple-brouillon">Avec la nouvelle valeur : <b>${esc(usd(b.fee))}</b> de frais (${esc(signe(b.fee - a.fee))}).</p>` : ''}</div>`;
 }
 const exempleMaj = () => { const el = $('.exemple'); if (el) { const n = document.createElement('div'); n.innerHTML = exempleH(); el.replaceWith(n.firstElementChild); } };
+/* l'effet d'un réglage de frais, chiffré là où l'on tape : sa catégorie (un barème) ou un joueur Diamant (la remise) */
+const estFrais = cle => /^frais\.(k|remise_rang|taux\.)/.test(cle);
+function impactDe(cle) {
+  const c = CATS_MARCHES.find(([, k]) => 'frais.taux.' + k === cle), cat = c ? c[0] : cle === 'frais.taux.defaut' ? 'Autre' : E.exemple.cat, diamant = cle === 'frais.remise_rang' ? true : E.exemple.diamant;
+  const seul = E.brouillons[cle] !== undefined ? { [cle]: E.brouillons[cle] } : null;                // l'effet de ce réglage seul
+  const a = exempleCalc(false, cat, diamant), b = seul ? exempleCalc(seul, cat, diamant) : null;
+  const nom = cat === 'Autre' ? 'catégorie hors barème' : cat;                                       // « Autre » : une catégorie absente du barème, au taux par défaut
+  return { cat, nom, diamant, a, b, texte: 'Sur une mise de ' + usd0(E.exemple.mise) + ' à ' + nfx(E.exemple.prix, 1) + NB + '% (' + nom + (diamant ? ', rang Diamant' : '') + ') : ' + usd(a.fee) + ' de frais aujourd’hui' + (b ? ', ' + usd(b.fee) + ' avec la nouvelle valeur.' : '.') };
+}
 
 /* ----- Écrans ----- */
 async function chargerReglages() { const r = await eq('reglages_lire'); E.reglages = r.reglages || []; E.bots = r.bots || {}; }
@@ -170,7 +184,7 @@ ECRANS.jeux = { titre: 'Jeux', groupe: 'reglages', icone: 'bolt', phrase: 'pari 
   rendre: () => vReglages('jeux', 'Jeux', 'Les règles des jeux, toujours dans des bornes sûres. Un réglage marqué « pas encore appliqué » est calculé par le moteur éclair avec ses propres valeurs : il se branchera avec la prochaine version du pari éclair.') };
 
 /* ----- Actions ----- */
-CLICS['reg-modifier'] = async b => { E.edition = b.dataset.cle; delete E.brouillons[b.dataset.cle]; };
+CLICS['reg-modifier'] = async b => { E.edition = b.dataset.cle; E.brouillons = {}; };   // un seul réglage en cours : un brouillon abandonné ne fausse pas l'exemple
 CLICS['reg-fermer'] = async b => { delete E.brouillons[b.dataset.cle]; E.edition = null; };
 CLICS['reg-defaut'] = async b => {
   const r = regDe(b.dataset.cle); if (!r) return;
@@ -184,9 +198,9 @@ FORMS.reglage = async f => {
 };
 async function enregistrerReglage(r, v, titre) {
   const lignes = [[r.libelle, fmtVal(r, r.valeur), fmtVal(r, v)]];
-  if (/^frais\.(k|remise_rang|taux\.)/.test(r.cle)) {                                                   // l'effet sur l'exemple chiffré, avant de valider
-    const avant = exempleCalc(false), b0 = E.brouillons[r.cle]; E.brouillons[r.cle] = v; const apres = exempleCalc(true); if (b0 === undefined) delete E.brouillons[r.cle]; else E.brouillons[r.cle] = b0;
-    lignes.push(['Frais sur ' + usd0(E.exemple.mise) + ' (' + E.exemple.cat + ')', usd(avant.fee), usd(apres.fee)]);
+  if (estFrais(r.cle)) {                                                                                // l'effet sur l'exemple chiffré, avant de valider
+    const b0 = E.brouillons[r.cle]; E.brouillons[r.cle] = v; const i = impactDe(r.cle); if (b0 === undefined) delete E.brouillons[r.cle]; else E.brouillons[r.cle] = b0;
+    lignes.push(['Frais sur ' + usd0(E.exemple.mise) + ' (' + i.nom + (i.diamant ? ', rang Diamant' : '') + ')', usd(i.a.fee), usd(i.b.fee)]);
   }
   const motif = await confirmer({ titre, intro: 'Le serveur l’applique dès l’action suivante des joueurs, et l’écran des joueurs connectés se met à jour sans rechargement.', lignes,
     note: 'Écrit au journal avec ton nom ; il s’annule depuis le journal.', bouton: 'Enregistrer' });
@@ -200,7 +214,7 @@ SAISIES.reglage = (t, f) => {
   const v = depuisSaisie(r, t.value), err = f.querySelector('[data-err]');
   err.textContent = t.value.trim() === '' && !r.facultatif ? '' : controle(r, v);
   if (typeof v === 'number' && !isNaN(v)) E.brouillons[r.cle] = v; else delete E.brouillons[r.cle];
-  if (/^frais\.(k|remise_rang|taux\.)/.test(r.cle)) exempleMaj();
+  if (estFrais(r.cle)) { exempleMaj(); const p = f.querySelector('[data-v="impact"]'); if (p) p.textContent = impactDe(r.cle).texte; }
 };
 SAISIES.exemple = (t, box) => {
   const x = E.exemple;

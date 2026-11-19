@@ -106,16 +106,22 @@ const ligneJoueur = j => `<div class="rang-l"><span class="rl-t"><span class="je
 FORMS.chercher = async f => { E.q = champs(f).q.trim(); await ECRANS.joueurs.charger(); };
 
 /* ----- Fiche d'un joueur ----- */
+/* une réponse arrivée après l'ouverture d'une autre fiche est ignorée : les actions visent toujours le joueur affiché */
+const ficheOuverte = id => E.route === 'joueur' && E.arg === id;
 async function chargerFiche(id) {
-  const f = await eq('joueur_fiche', { id }); E.fiche = f; E.noms[id] = f.j.n; E.actTypes = []; E.actAvant = '';
+  const f = await eq('joueur_fiche', { id });
+  if (!ficheOuverte(id)) return;
+  E.fiche = f; E.noms[id] = f.j.n; E.actTypes = []; E.actAvant = ''; E.activite = null;
   await chargerActivite(false);
 }
 async function chargerActivite(suite) {
-  const p = { id: E.fiche.j.id, n: 30 };
+  const id = E.fiche.j.id, p = { id, n: 30 };
   if (E.actTypes.length) p.types = E.actTypes;
   if (suite && E.activite && E.activite.suite) p.avant = E.activite.suite; else if (E.actAvant) p.avant = E.actAvant;
-  try { const r = await eq('joueur_activite', p); E.activite = suite && E.activite ? { evenements: E.activite.evenements.concat(r.evenements || []), suite: r.suite } : { evenements: r.evenements || [], suite: r.suite }; }
-  catch (e) { E.activite = { evenements: [], suite: null, erreur: erreur(e) }; }
+  let a;
+  try { const r = await eq('joueur_activite', p); a = suite && E.activite ? { evenements: E.activite.evenements.concat(r.evenements || []), suite: r.suite } : { evenements: r.evenements || [], suite: r.suite }; }
+  catch (e) { a = { evenements: [], suite: null, erreur: erreur(e) }; }
+  if (E.fiche && E.fiche.j.id === id) E.activite = a;
 }
 const opt = (v, t, sel) => `<option value="${esc(v)}"${String(v) === String(sel) ? ' selected' : ''}>${esc(t)}</option>`;
 function vFiche() {
@@ -306,9 +312,9 @@ const messageH = m => `<div class="je msg${m.source === 'masque' ? ' masque' : '
 const salonH = (n, r) => { r = r || { lent: 0, ferme: false }; return `<form class="reg salon" data-f="salon" data-salon="${esc(n)}" id="s-${esc(n)}"><div class="reg-t"><b>${esc(salonNom(n))}</b><p>${r.ferme ? 'Fermé : les joueurs ne peuvent plus y écrire.' : r.lent ? 'Mode lent : un message toutes les ' + nb(r.lent) + ' secondes par joueur.' : 'Ouvert, sans mode lent.'}</p></div>
   <div class="reg-a salon-a"><label class="salon-l"><span>Mode lent</span><select name="lent">${[0, 5, 10, 30, 60, 120, 300].map(s => opt(s, s ? (s < 60 ? s + ' s' : s / 60 + ' min') : 'aucun', +r.lent || 0)).join('')}${[0, 5, 10, 30, 60, 120, 300].includes(+r.lent || 0) ? '' : opt(r.lent, r.lent + ' s', r.lent)}</select></label>
   <label class="chk"><input type="checkbox" name="ferme"${r.ferme ? ' checked' : ''}> Fermé</label><button class="btn b-white sm">Appliquer</button></div></form>`; };
-const clanH = c => `<div class="je clan" id="cl-${esc(c.id)}"><span><b>${esc(c.name)} [${esc(c.tag)}]</b><small>${nb((c.members || []).length)} membre(s), créé le ${esc(jour(c.createdAt))}${c.chief ? ', chef ' + esc(E.noms[c.chief] || court(c.chief)) : ''}</small></span>
-  <span class="hbtns"><form data-f="clan-renommer" data-id="${esc(c.id)}" class="clan-r"><input name="nom" value="${esc(c.name)}" aria-label="Nouveau nom de ${esc(c.name)}" maxlength="28"><button class="btn b-white sm">Renommer</button></form>
-  <button class="btn b-white sm" data-a="clan-dissoudre" data-id="${esc(c.id)}">Dissoudre</button></span></div>`;
+const clanH = c => `<div class="je clan" id="cl-${esc(c.id)}"><span><span class="je-l1"><b>${esc(c.name)} [${esc(c.tag)}]</b>${c.dissous ? '<span class="puce ko">dissous</span>' : ''}</span><small>${nb((c.members || []).length)} membre(s), créé le ${esc(jour(c.createdAt))}${c.chief ? ', chef ' + esc(E.noms[c.chief] || court(c.chief)) : ''}</small></span>
+  ${c.dissous ? '' : `<span class="hbtns"><form data-f="clan-renommer" data-id="${esc(c.id)}" class="clan-r"><input name="nom" value="${esc(c.name)}" aria-label="Nouveau nom de ${esc(c.name)}" maxlength="28"><button class="btn b-white sm">Renommer</button></form>
+  <button class="btn b-white sm" data-a="clan-dissoudre" data-id="${esc(c.id)}">Dissoudre</button></span>`}</div>`;
 FORMS['chat-filtre'] = async f => { const c = champs(f); E.chat.salon = c.salon.trim() === 'tous' ? '' : c.salon.trim(); E.chat.joueur = c.joueur.trim(); const r = await eq('chat_messages', chatFiltre()); E.chat.msgs = r.msgs || []; E.chat.suite = E.chat.msgs.length >= 60 ? E.chat.msgs[E.chat.msgs.length - 1].id : null; };
 CLICS['chat-suite'] = async () => { const r = await eq('chat_messages', chatFiltre(E.chat.suite)); const L = r.msgs || []; E.chat.msgs = E.chat.msgs.concat(L); E.chat.suite = L.length >= 60 ? L[L.length - 1].id : null; };
 CLICS.masquer = async b => {
@@ -412,7 +418,7 @@ CLICS['annonce-retirer'] = async () => {
 };
 async function maintenance(f, actif) {
   const avant = (E.site && E.site.maintenance) || {}, message = textes(f, false);
-  const motif = await confirmer({ titre: actif ? 'Mettre le site en maintenance' : avant.actif && actif === !!avant.actif ? 'Changer le message de maintenance' : 'Sortir de la maintenance',
+  const motif = await confirmer({ titre: actif && avant.actif ? 'Changer le message de maintenance' : actif ? 'Mettre le site en maintenance' : 'Sortir de la maintenance',
     lignes: [['Maintenance', avant.actif ? 'en cours' : 'non', actif ? 'en cours' : 'non'], ['Message', avant.message && avant.message.fr ? '« ' + avant.message.fr + ' »' : 'message par défaut', message && message.fr ? '« ' + message.fr + ' »' : 'message par défaut']],
     motif: 'facultatif', note: actif ? 'Tous les joueurs connectés voient aussitôt l’écran de maintenance ; le serveur refuse leurs actions. L’équipe passe.' : 'Les joueurs retrouvent le site : leur écran se recharge seul.',
     bouton: actif ? (avant.actif ? 'Changer le message' : 'Mettre en maintenance') : 'Sortir de la maintenance', danger: actif && !avant.actif });
@@ -437,7 +443,8 @@ FORMS.bots = async f => {
 
 /* ===================== Marchés (fonctions de l'ancien panneau) et écrans de la partie D ===================== */
 const CATS = ['Crypto', 'Football', 'Politique', 'Tech et IA', 'Économie', 'Culture', 'Météo', 'Sport', 'Sport live', 'Bourse', 'Matières', 'Devises'];
-const puceEtat = m => m.st === 'resolved' ? `<span class="puce">résolu${m.issue ? ' : ' + (m.issue === 'oui' ? 'Oui' : m.issue === 'non' ? 'Non' : esc(m.issue)) : ''}</span>` : m.st === 'closed' ? '<span class="puce att">mises fermées</span>' : clotureMs(m) < Date.now() ? '<span class="puce ko">à résoudre</span>' : '<span class="puce ok">ouvert</span>';
+const puceEtat = m => m.st === 'resolved' ? `<span class="puce">résolu${m.issue ? ' : ' + (m.issue === 'oui' ? 'Oui' : m.issue === 'non' ? 'Non' : esc(m.issue)) : ''}</span>`
+  : (m.st === 'closed' ? '<span class="puce att">mises fermées</span>' : clotureMs(m) < Date.now() ? '' : '<span class="puce ok">ouvert</span>') + (clotureMs(m) < Date.now() ? '<span class="puce ko">à résoudre</span>' : '');
 const bientotH = (t, L) => `<section class="pn pad bientot-c"><h2 class="h2">${esc(t)} <span class="puce att">bientôt</span></h2><ul class="adm-liste-p">${L.map(x => `<li>${esc(x)}</li>`).join('')}</ul></section>`;
 ECRANS.marches = {
   titre: 'Marchés', groupe: 'marches', icone: 'chart', phrase: 'créer, modifier, fermer les mises, résoudre', acces: () => admin(),
@@ -531,7 +538,7 @@ CLICS['membre-retirer'] = async b => {
 ECRANS.journal = {
   titre: 'Journal', groupe: 'pilotage', icone: 'layers', phrase: 'toutes les décisions : qui, quand, quoi, avant, après, motif', acces: () => peut('journal_lire'),
   charger: async arg => {
-    const f = E.journal.f; if (arg) for (const kv of String(arg).split('&')) { const [k, v] = kv.split('='); if (k in f) f[k] = v || ''; }
+    if (arg) { E.journal.f = { admin: '', joueur: '', action: '', du: '', au: '' }; for (const kv of String(arg).split('&')) { const [k, v] = kv.split('='); if (k in E.journal.f) E.journal.f[k] = v || ''; } }   // un lien porte tous ses filtres
     const [r, l] = await Promise.all([eq('journal_lire', journalP()), admin() && !E.equipe ? eq('equipe_liste').catch(() => null) : null]);
     E.journal.entrees = r.entrees || []; E.journal.suite = r.suite || null; if (l) E.equipe = l.membres || [];
   },
@@ -627,8 +634,8 @@ ECRANS.compte = {
     <section class="pn pad" id="adm-mfa"><h2 class="h2">Double authentification</h2>
      ${f.erreur ? `<p class="limit over">${esc(f.erreur)}</p>` : totp.length ? `<p class="limit" data-v="mfa">Active : un code de ton application est demandé à chaque connexion au panneau.${aal2 ? ' Cette session est validée par le code.' : ''}</p>${aal2 ? '' : '<div class="hbtns"><button class="btn b-pri" data-a="mfa-valider">Saisir mon code</button></div>'}`
        : `<p class="limit over" data-v="mfa">Pas encore activée : ton compte n’est protégé que par son mot de passe.</p><p class="sub">Il te faut une application d’authentification sur ton téléphone. Une fois activée, le panneau la demande à chaque connexion, et le serveur refuse toute action sans elle.</p><div class="hbtns"><button class="btn b-pri" data-a="mfa-activer">Activer la double authentification</button></div>`}
-     <p class="adm-note">Code perdu (téléphone changé) : un administrateur du projet le réinitialise depuis le tableau de bord Supabase, comme l’explique docs/EXPLOITATION.md.</p></section>
-    <section class="pn pad"><h2 class="h2">Session</h2><div class="hbtns"><button class="btn b-white" data-a="deconnexion">${ic('out', 16)} Se déconnecter</button><a class="btn b-ghost" href="index.html">Retour au site</a></div></section>`;
+     <p class="adm-note">Code perdu (téléphone changé) : le propriétaire du projet retire l’ancien code depuis le tableau de bord Supabase (docs/EXPLOITATION.md, § 8), puis tu en actives un nouveau ici.</p></section>
+    <section class="pn pad adm-session"><h2 class="h2">Session</h2><div class="hbtns"><button class="btn b-white" data-a="deconnexion">${ic('out', 16)} Se déconnecter</button><a class="btn b-ghost" href="index.html">Retour au site</a></div></section>`;
   }
 };
 CLICS['mfa-activer'] = async () => { if (await mfaFenetreEnrolement()) { await lireMoi(); await ECRANS.compte.charger(); demarrerPanneau(); } throw annule(); };
