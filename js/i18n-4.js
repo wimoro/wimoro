@@ -21,7 +21,14 @@ I18N_ADD("en",{
 "Copie automatiquement les paris d’un joueur":"Automatically copy a player’s bets",
 "Cherche un pseudo, ou invite tes amis avec ton lien.":"Search for a username, or invite your friends with your link.",
 "Les 100 meilleurs joueurs de la saison, sur « {0} »":"The season’s top 100 players, on “{0}”",
-"KYC non fait : crypto uniquement":"KYC not done: crypto only"
+"KYC non fait : crypto uniquement":"KYC not done: crypto only",
+"Si {0} finit au-dessus de la bande de départ, « Plus haut » gagne ; en dessous, c’est « Plus bas ». S’il reste dans la zone break even autour de son prix de départ, c’est le break even : très rare et très bien payé, seule la mise « Break even » gagne.":"If {0} ends above the starting band, “Higher” wins; below, it’s “Lower”. If it stays in the break-even zone around its starting price, it’s Break even: very rare and very well paid, only the “Break even” bet wins.",
+"{0} a monté":"{0} went up",
+"{0} a baissé":"{0} went down",
+"Bitcoin":"Bitcoin",
+"Ethereum":"Ethereum",
+"Solana":"Solana",
+"{0} sur {1} [réseau]":"{0} on {1}"
 });
 I18N_ADD("he",{
 "Portefeuille":"ארנק",
@@ -43,5 +50,12 @@ I18N_ADD("he",{
 "Copie automatiquement les paris d’un joueur":"מעתיקים אוטומטית את ההימורים של שחקן",
 "Cherche un pseudo, ou invite tes amis avec ton lien.":"חפש שם משתמש, או הזמן חברים עם הקישור שלך.",
 "Les 100 meilleurs joueurs de la saison, sur « {0} »":"100 השחקנים הטובים ביותר של העונה, על ״{0}״",
-"KYC non fait : crypto uniquement":"ללא אימות זהות: קריפטו בלבד"
+"KYC non fait : crypto uniquement":"ללא אימות זהות: קריפטו בלבד",
+"Si {0} finit au-dessus de la bande de départ, « Plus haut » gagne ; en dessous, c’est « Plus bas ». S’il reste dans la zone break even autour de son prix de départ, c’est le break even : très rare et très bien payé, seule la mise « Break even » gagne.":"אם {0} מסיים מעל רצועת הפתיחה, ״גבוה יותר״ מנצח; מתחת, זה ״נמוך יותר״. אם הוא נשאר באזור ברייק איבן סביב מחיר הפתיחה, זה ברייק איבן: נדיר מאוד ומשתלם מאוד, רק ההימור ״ברייק איבן״ מנצח.",
+"{0} a monté":"{0} עלה",
+"{0} a baissé":"{0} ירד",
+"Bitcoin":"ביטקוין",
+"Ethereum":"את׳ריום",
+"Solana":"סולאנה",
+"{0} sur {1} [réseau]":"{0} ברשת {1}"
 });

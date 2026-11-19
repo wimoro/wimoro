@@ -25,7 +25,7 @@ const JEU_AIDE={
  duels:()=>_t("Duel : un défi à deux sur un marché. Les deux mises sont bloquées, le gagnant prend tout.")
 };
 function jeuxNavH(cur){const n=S.me.logged&&typeof duelIncoming==='function'?duelIncoming().length:0;
- return sousNavH(_t("Modes de jeu"),[['eclair','#eclair',_t("Éclair")],['blitz','#blitz',_t("Blitz Royale")],['serie','#serie',_t("La Série")],['duels','#duels',_t("Duels"),n]],cur)+(JEU_AIDE[cur]?`<p class="aide">${JEU_AIDE[cur]()}</p>`:'');}
+ return sousNavH(_t("Modes de jeu"),[['eclair','#eclair',_t("Éclair")],['blitz','#blitz',_t("Blitz Royale")],['serie','#serie',_t("La Série")],['duels','#duels',_t("Duels"),n]],cur)+(JEU_AIDE[cur]&&!(S.me.played>0)?`<p class="aide">${JEU_AIDE[cur]()}</p>`:'');}   /* la ligne d'aide, à la première rencontre seulement */
 
 /* Insère un bloc en tête d'un écran (juste après l'ouverture de son .wrap) et retire au besoin son fil d'Ariane. */
 function enTete(html,bloc,sansFil){if(sansFil)html=html.replace(/<nav class="crumbs"[\s\S]*?<\/nav>/,'');const i=html.indexOf('class="wrap');if(i<0)return bloc+html;const j=html.indexOf('>',i);return html.slice(0,j+1)+bloc+html.slice(j+1);}
@@ -76,7 +76,7 @@ function introH(){return `<section class="intro"><h2 class="ptitle">${_t("Parie 
    ci-dessous arrivent repliés : seul leur titre s'affiche, un appui les déplie. Rien n'est retiré du document : les
    mises à jour en direct (data-fx, data-bz…) continuent d'écrire dedans. Le choix est gardé le temps de la visite. */
 const REPLI={ouvert:new Set(),routes:{eclair:1,blitz:1,serie:1,duels:1,duel:1,combines:1,clan:1,classement:1,joueur:1,rang:1,depot:1,retrait:1},
- sel:'aside.col>section.pn:not(.chat):not(.ticket),.g-side>.col+.col>section.pn:not([data-flbet])'};
+ sel:'aside.col>section.pn:not(.chat):not(.ticket),.g-side>.col+.col>section.pn:not([data-flbet]),.g-side>.col+.col>[data-ffr]>section.pn,[data-bzcard]~section.pn,[data-srcard]~section.pn'};
 function replier(){const view=$('#view');if(!view)return;const r=(S.ui.route||'accueil').split('-')[0];if(!REPLI.routes[r]||innerWidth>1100)return;
  view.querySelectorAll(REPLI.sel).forEach(sec=>{const tete=sec.firstElementChild;if(!tete||sec.classList.contains('repli'))return;const titre=tete.matches('.h2,h2,h3')?tete:tete.querySelector('.h2,h2,h3,.cpx-h b');if(!titre)return;   /* .cpx-h b : titre d'une carte à icône (parrainage du dépôt) */
   const cle=r+':'+titre.textContent.trim(),o=REPLI.ouvert.has(cle);sec.classList.add('repli');sec.classList.toggle('plie',!o);sec.dataset.repli=cle;tete.classList.add('repli-t');const b=document.createElement('button');b.type='button';b.className='repli-b';b.setAttribute('aria-expanded',String(o));b.setAttribute('aria-label',titre.textContent.trim());tete.appendChild(b);});}

@@ -31,7 +31,7 @@ updateMarket=function(m,old,noGroup){updateMarket0(m,old);if(!noGroup&&m.parent&
 /* ---------- Ligne de liste : question, puces des issues en tête, volume, bouton ---------- */
 function groupRowH(g){const L=gSorted(g),top=L.slice(0,4),rest=L.length-top.length,vol=gVol(g);
  return `<div class="row grow" data-href="#marche-${g.id}" data-row="${g.id}"><div class="qcell"><div class="cat">${_t(g.cat)}<span class="ctag multi">${_t("{0} issues",[g.outcomes.length])}</span></div><a class="q" href="#marche-${g.id}">${qNw(g.q)}</a></div>
- <div class="gchips">${top.map(o=>`<a class="gchip" href="#marche-${o.id}"><i style="background:${gColor(g,o)}"></i><span>${esc(o.label)}</span><b class="num" data-mp="${o.id}">${F.pct(o.p)}</b></a>`).join('')}${rest>0?`<a class="gchip more" href="#marche-${g.id}">+${rest}</a>`:''}</div>
+ <div class="gchips">${top.map(o=>`<a class="gchip" href="#marche-${o.id}"><i style="background:${gColor(g,o)}"></i><span>${esc(o.label)}</span><b class="num" data-mp="${o.id}">${F.pct(o.p)}</b></a>`).join('')}${rest>0?`<a class="gchip more" href="#marche-${g.id}">${bidi('+'+rest)}</a>`:''}</div>
  <div class="vol"><div class="v">${F.compact(vol)}</div><div class="c">${g.close}</div></div>
  <div class="acts"><a class="btn b-white sm full" href="#marche-${g.id}">${_t("Voir les {0} issues",[g.outcomes.length])}</a></div></div>`;}
 /* couleur stable d'une issue : son rang à l'ouverture (ne change pas quand les prix bougent) */

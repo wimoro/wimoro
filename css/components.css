@@ -270,7 +270,7 @@ input.range::-moz-range-thumb{width:22px;height:22px;border:0;border-radius:50%;
   .tabbar>*{flex:1 1 0;min-width:min-content}
   .tab5{display:flex}
   .tab5>a{flex:1 1 auto}
-  .tabbar a{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:var(--tab-h);padding-inline:2px;font-size:var(--fs-1);font-weight:var(--fw-medium);color:var(--text-3);white-space:nowrap;transition:color var(--dur-1) var(--ease)}
+  .tabbar a{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:var(--tab-h);padding-inline:var(--sp-1);font-size:var(--fs-1);font-weight:var(--fw-medium);color:var(--text-3);white-space:nowrap;transition:color var(--dur-1) var(--ease)}
   .tabbar a.on{color:var(--accent);font-weight:var(--fw-bold)}
   .tabbar a.on svg{stroke-width:2.5}
   .tabbar a .dotn{position:absolute;top:8px;inset-inline-start:calc(50% + 6px);width:8px;height:8px;border-radius:50%;background:var(--accent-bg);box-shadow:0 0 0 2px var(--surface)}
@@ -312,7 +312,7 @@ input.range::-moz-range-thumb{width:22px;height:22px;border:0;border-radius:50%;
 .tdet{border-top:1px solid var(--line)}
 .tdet summary{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);min-height:var(--tap);font-size:var(--fs-2);font-weight:var(--fw-medium);color:var(--text-2);cursor:pointer;list-style:none}
 .tdet summary::-webkit-details-marker{display:none}
-.tdet summary::after,.repli-b::after{content:'';flex:none;width:8px;height:8px;margin-inline:var(--sp-2) 4px;border-inline-end:2px solid var(--text-3);border-bottom:2px solid var(--text-3);transform:rotate(45deg);transition:transform var(--dur-2) var(--ease)}
+.tdet summary::after,.repli-b::after{content:'';flex:none;width:8px;height:8px;margin-inline:var(--sp-2) 4px;border-right:2px solid var(--text-3);border-bottom:2px solid var(--text-3);transform:rotate(45deg);transition:transform var(--dur-2) var(--ease)}   /* bord physique : une flèche vers le bas ne se retourne pas en hébreu */
 .tdet[open] summary::after,.repli-b[aria-expanded="true"]::after{transform:rotate(-135deg)}
 .tdet>*+*{margin-top:var(--sp-3)}
 .tdet>:last-child{margin-bottom:var(--sp-1)}

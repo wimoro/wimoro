@@ -176,9 +176,10 @@
   --shadow-3:0 0 0 1px var(--line),0 24px 64px rgba(0,0,0,.7);
 }
 
-/* Hébreu : les familles système qui dessinent bien l'hébreu passent devant. */
+/* Hébreu : les familles système qui dessinent bien l'hébreu passent devant ; les titres ne sont pas resserrés. */
 :root[lang="he"]{
   --font:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans Hebrew","Arial Hebrew",Roboto,Arial,sans-serif;
+  --track-title:0;
 }
 
 /* Barre d'onglets du bas : présente jusqu'à 879 px de large (téléphones, tablettes en portrait). Tout ce qui se pose

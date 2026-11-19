@@ -31,7 +31,8 @@ Les quatre feuilles se chargent dans cet ordre dans `index.html`. Après toute m
 6. **Pas de bordure et d'ombre à la fois.** Les cartes n'ont ni l'une ni l'autre : elles se détachent par leur fond.
    Seul ce qui flotte (menu, fenêtre, notification) porte une ombre. Les filets servent à séparer des lignes.
 7. **Propriétés logiques uniquement** (`margin-inline-start`, `inset-inline-end`, `text-align:start`…) : l'hébreu
-   s'écrit de droite à gauche et la page se retourne seule.
+   s'écrit de droite à gauche et la page se retourne seule. Exception documentée : le chevron des blocs repliables est
+   dessiné avec `border-right` (une flèche vers le bas ne se retourne pas).
 8. **Animations de 150 à 250 ms** (`--dur-1` à `--dur-3`, courbe `--ease`), sur `opacity`, `transform`, `background`,
    `color`. Rien ne tourne en boucle, sauf le compte à rebours de l'Éclair. « Réduire les animations » est respecté.
 9. **Cibles tactiles de 44 px** (`--tap`), par une seule règle : la section « Écrans tactiles » à la fin de
@@ -105,7 +106,8 @@ Une seule famille : la pile système (`--font`). Chiffres tabulaires par la clas
 | `--fs-5` | 28 px | titre de page, grand chiffre |
 | `--fs-display` | 40 px | chance d'un marché, pari Éclair |
 
-Graisses : 400, 500, 600. Les titres (20 px et plus) sont resserrés par `--track-title`.
+Graisses : 400, 500, 600 (`b` et `strong` valent 600). Les titres (20 px et plus) sont resserrés par `--track-title`
+(sauf en hébreu, où il vaut 0).
 
 ### Espacements, rayons, ombres, durées
 - Espacements : `--sp-1` 4 · `--sp-2` 8 · `--sp-3` 12 · `--sp-4` 16 · `--sp-5` 20 · `--sp-6` 24 · `--sp-8` 32 ·

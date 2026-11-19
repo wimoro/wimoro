@@ -6,10 +6,10 @@
 <title>Wimoro</title>
 <meta name="description" content="Wimoro: prediction markets. Bet Yes or No on news, sports and crypto, play 45-second flash bets, chat live and challenge your friends." data-t-content="Wimoro : marchés de prédiction. Parie par Oui ou par Non sur l’actualité, le sport et la crypto, joue des paris éclair de 45 secondes, discute en direct et défie tes amis.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 28 28%27%3E%3Crect width=%2728%27 height=%2728%27 rx=%278%27 fill=%27%232448FF%27/%3E%3Cpath d=%27M5 9l4.5 11 4.5-8.5 4.5 8.5L23 9%27 fill=%27none%27 stroke=%27%23fff%27 stroke-width=%272.7%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27/%3E%3Ccircle cx=%2723%27 cy=%279%27 r=%272.8%27 fill=%27%23F59A0B%27 stroke=%27%232448FF%27 stroke-width=%271.5%27/%3E%3C/svg%3E">
-<link rel="stylesheet" href="css/tokens.css?v=8a42fd01">
-<link rel="stylesheet" href="css/base.css?v=283b50d2">
-<link rel="stylesheet" href="css/components.css?v=7449de29">
-<link rel="stylesheet" href="css/screens.css?v=13d914ad">
+<link rel="stylesheet" href="css/tokens.css?v=c212c8dd">
+<link rel="stylesheet" href="css/base.css?v=42875347">
+<link rel="stylesheet" href="css/components.css?v=007ac43e">
+<link rel="stylesheet" href="css/screens.css?v=7cb75d01">
 <script>try{var l=localStorage.getItem("wimoro-lang")||"en";if(!/^(en|fr|he)$/.test(l))l="en";document.documentElement.lang=l;document.documentElement.dir=l==="he"?"rtl":"ltr";}catch(e){}setTimeout(function(){document.documentElement.classList.add("tr")},4000);</script>
 <script>try{if(localStorage.getItem("wimoro-theme")==="dark")document.documentElement.setAttribute("data-theme","dark");}catch(e){}</script>
 </head>
@@ -19,9 +19,9 @@
   <a class="logo" href="#accueil" aria-label="Wimoro, home" data-t-aria-label="Wimoro, accueil"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="8" fill="#2448FF"/><path d="M5 9l4.5 11 4.5-8.5 4.5 8.5L23 9" fill="none" stroke="#fff" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="23" cy="9" r="2.8" fill="#F59A0B" stroke="#2448FF" stroke-width="1.5"/></svg><b>wimoro</b></a>
   <!-- Textes de départ dans la langue par défaut (anglais) ; data-t porte la clé française, traduite au démarrage (js/refonte.js). -->
   <nav class="nav" aria-label="Main navigation" data-t-aria-label="Navigation principale">
-   <a href="#accueil" data-nav="accueil marche creer combines" data-t="Marchés">Markets</a>
+   <a href="#accueil" data-nav="accueil marche creer" data-t="Marchés">Markets</a>
    <a href="#eclair" data-nav="eclair blitz serie duels duel" data-t="Éclair">Flash</a>
-   <a href="#portefeuille" data-nav="portefeuille depot retrait" data-t="Portefeuille">Wallet</a>
+   <a href="#portefeuille" data-nav="portefeuille depot retrait combines" data-t="Portefeuille">Wallet</a>
    <a href="#communaute" data-nav="communaute chat clans clan classement joueur amis copie" data-t="Communauté">Community</a>
    <a href="#profil" data-nav="profil rang modifier parrainage responsable connexion inscription bienvenue" data-t="Profil">Profile</a>
   </nav>
@@ -41,9 +41,9 @@
 </header>
 <main id="view"></main>
 <nav class="tabbar" aria-label="Navigation" data-t-aria-label="Navigation">
- <a href="#accueil" data-nav="accueil marche creer combines"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m19 9-5 5-4-4-3 3"/></svg><span data-t="Marchés">Markets</span></a>
+ <a href="#accueil" data-nav="accueil marche creer"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m19 9-5 5-4-4-3 3"/></svg><span data-t="Marchés">Markets</span></a>
  <a href="#eclair" data-nav="eclair blitz serie duels duel"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z"/></svg><span data-t="Éclair">Flash</span></a>
- <a href="#portefeuille" data-nav="portefeuille depot retrait"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg><span data-t="Portefeuille">Wallet</span></a>
+ <a href="#portefeuille" data-nav="portefeuille depot retrait combines"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg><span data-t="Portefeuille">Wallet</span></a>
  <a href="#communaute" data-nav="communaute chat clans clan classement joueur amis copie"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></svg><span data-t="Communauté">Community</span></a>
  <!-- Cinquième onglet : le profil une fois connecté, la connexion sinon. La place est gardée pendant le démarrage. -->
  <div class="tab5">
@@ -54,33 +54,33 @@
 <div class="toasts" id="toasts" aria-live="polite"></div>
 <noscript><style>.top .right,.tabbar{display:none}</style><p class="empty"><span lang="en">Turn on JavaScript to use Wimoro.</span><br><span lang="fr">Active JavaScript pour utiliser Wimoro.</span><br><span lang="he" dir="rtl">יש להפעיל JavaScript כדי להשתמש ב-Wimoro.</span></p></noscript>
 <script src="js/i18n.js?v=590ec761"></script>
-<script src="js/i18n-1.js?v=952f828c"></script>
-<script src="js/i18n-2.js?v=1de404e1"></script>
+<script src="js/i18n-1.js?v=b00f9403"></script>
+<script src="js/i18n-2.js?v=adc6159d"></script>
 <script src="js/i18n-3.js?v=f27b3bb1"></script>
-<script src="js/i18n-4.js?v=3366e5ec"></script>
+<script src="js/i18n-4.js?v=612a3ba5"></script>
 <script>i18nStatic(document);</script>
 <script src="js/api.js?v=dd3b7ce5"></script>
-<script src="js/core.js?v=ad5a2e8d"></script>
+<script src="js/core.js?v=bb308ab7"></script>
 <script src="js/engine.js?v=4e2ca540"></script>
 <script src="js/moteur-eclair.js?v=6c875278"></script>
-<script src="js/views.js?v=fa2ed26b"></script>
-<script src="js/auth.js?v=ff216607"></script>
+<script src="js/views.js?v=b2284392"></script>
+<script src="js/auth.js?v=0a407916"></script>
 <script src="js/avatars.js?v=8a214e6c"></script>
-<script src="js/groups.js?v=5b34f6c7"></script>
+<script src="js/groups.js?v=40c53cb1"></script>
 <script src="js/account.js?v=d0578756"></script>
-<script src="js/flash.js?v=4c1ad564"></script>
+<script src="js/flash.js?v=6e08fe20"></script>
 <script src="js/copy.js?v=a4adf00e"></script>
 <script src="js/orders.js?v=48b5501a"></script>
 <script src="js/referral.js?v=07ed3f8c"></script>
-<script src="js/responsible.js?v=4cff21bd"></script>
-<script src="js/duels.js?v=c38524b3"></script>
-<script src="js/blitz.js?v=ed9d2e71"></script>
+<script src="js/responsible.js?v=9c883fc3"></script>
+<script src="js/duels.js?v=f8ac3a02"></script>
+<script src="js/blitz.js?v=17030080"></script>
 <script src="js/clans.js?v=b962caff"></script>
-<script src="js/combos.js?v=9fdb57ec"></script>
-<script src="js/pro.js?v=321cf939"></script>
+<script src="js/combos.js?v=b4200b21"></script>
+<script src="js/pro.js?v=00c3f155"></script>
 <script src="js/pro2.js?v=0057cc11"></script>
 <script src="js/demo.js?v=ff77eb9b"></script>
-<script src="js/refonte.js?v=2ba2e566"></script>
+<script src="js/refonte.js?v=0428c2de"></script>
 <script src="js/serveur.js?v=ac6b9491"></script>
 <script src="js/boot.js?v=85d3ad16"></script>
 </body>

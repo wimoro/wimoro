@@ -18,6 +18,7 @@ h1,h2,h3,h4{font-size:inherit;font-weight:var(--fw-bold);line-height:var(--lh-sn
 [hidden]{display:none!important}
 
 /* ---------- Texte ---------- */
+b,strong{font-weight:var(--fw-bold)}   /* une seule graisse forte (sinon « bolder » donne 700 ou 900) */
 .num{font-variant-numeric:tabular-nums;font-weight:var(--fw-bold);line-height:var(--lh-tight);unicode-bidi:isolate}
 .muted{color:var(--text-3)}
 .up{color:var(--yes)}

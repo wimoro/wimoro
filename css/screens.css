@@ -54,18 +54,18 @@ hr{border:0;height:1px;background:var(--line);margin:16px 0}
 .trail .b i{position:absolute;inset-inline-start:0;inset-inline-end:0;border-radius:1px}
 .trail .b.o i{bottom:50%;background:var(--yes-bg);transform-origin:bottom}
 .trail .b.n i{top:calc(50% + 1px);background:var(--no-bg);transform-origin:top}
-.trail .b.me i{background:var(--ink-bg);color:var(--on-ink)}
+.trail .b.me i{background:var(--accent-bg)}
 .trail .b.me::before{content:'';position:absolute;inset-inline-start:-2px;inset-inline-end:-2px;top:0;bottom:0;background:var(--line);border-radius:2px}
 .trail .b.new i{animation:grow var(--dur-3) var(--ease)}
 @keyframes grow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
 .trail.big{height:96px}
 .trail.mid{height:72px}
 .trail.sm{height:36px}
-.legend{display:flex;gap:16px;align-items:center;font-size:var(--fs-2);color:var(--text-2)}
+.legend{display:flex;flex-wrap:wrap;gap:var(--sp-1) 16px;align-items:center;font-size:var(--fs-2);color:var(--text-2)}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-inline-end:6px;vertical-align:-1px}
 .sw-o{background:var(--yes-bg)}
 .sw-n{background:var(--no-bg)}
-.sw-me{background:var(--ink-bg);color:var(--on-ink)}
+.sw-me{background:var(--accent-bg)}
 
 /* ---------- Pastille direct ---------- */
 .live{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent-bg);position:relative;flex:none}
@@ -274,7 +274,7 @@ hr{border:0;height:1px;background:var(--line);margin:16px 0}
 .fl-chart>svg{width:100%;height:100%;display:block;overflow:visible}
 .fl-chart .base{stroke:var(--text-4);stroke-dasharray:4 6;vector-effect:non-scaling-stroke}
 .fl-chart .ln{fill:none;stroke:var(--text);stroke-width:2.5;vector-effect:non-scaling-stroke;stroke-linejoin:round}
-.fl-chart .lab{position:absolute;inset-inline-end:0;font-size:var(--fs-1);color:var(--text-3);transform:translateY(-120%)}
+.fl-chart .lab{position:absolute;top:0;inset-inline-end:0;font-size:var(--fs-1);color:var(--text-3);transform:translateY(-120%)}
 .fl-phase{display:flex;align-items:center;gap:8px;margin-top:16px;font-weight:600;font-size:var(--fs-3)}
 .fl-sides{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
 .fsd{height:84px;border-radius:var(--r-md);display:flex;align-items:center;justify-content:space-between;padding:0 20px;font-weight:600;font-size:var(--fs-3);transition:transform var(--dur-1),background var(--dur-1),opacity var(--dur-2)}
@@ -738,13 +738,12 @@ main{overflow-x:clip}
 .hsum .hu{color:var(--yes)}
 .hsum .hd{color:var(--no)}
 .hbar{flex:1;height:8px;border-radius:var(--r-xs);background:var(--no);overflow:hidden}
-.hbar i{display:block;height:100%;background:var(--yes);box-shadow:2px 0 0 var(--surface);transition:width .6s cubic-bezier(.2,.8,.2,1)}
+.hbar i{display:block;height:100%;background:var(--yes);box-shadow:2px 0 0 var(--surface);transition:width var(--dur-3) var(--ease)}
 .beads{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:4px;margin-top:20px;align-items:center}
 .bead{aspect-ratio:1;border-radius:50%;display:grid;place-items:center;color:var(--on-color);position:relative}
-.bead.u{background:var(--yes)}
-.bead.d{background:var(--no)}
-.bead:not(.last){opacity:.78}
-.bead.last{opacity:1;animation:pop .5s cubic-bezier(.2,1.4,.4,1)}
+.bead.u{background:var(--yes-bg)}
+.bead.d{background:var(--no-bg)}
+.bead.last{animation:pop var(--dur-3) var(--ease)}
 .bead.last.u{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--yes)}
 .bead.last.d{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--no)}
 .bead.me::after{content:'';position:absolute;inset-inline-end:-1px;bottom:-1px;width:8px;height:8px;border-radius:50%;background:var(--ink-bg);border:2px solid var(--surface);color:var(--on-ink)}
@@ -778,8 +777,8 @@ main{overflow-x:clip}
 @media (max-width:879px){.chat-h .tt{flex-wrap:wrap;align-items:flex-start}.chat-h .tt>div:first-child{min-width:0;flex:1 1 200px}.chat-h .tt h2{font-size:var(--fs-4)}.chat-h .tt .seg{width:100%}.chat-h .tt .seg button{flex:1}.feed{padding:16px 16px;gap:16px}.msg{gap:10px}}
 
 /* ---------- v2.6 : catégories éclair, break even, alertes, pop-up ---------- */
-.fsd.eq{grid-column:1/-1;height:64px;background:var(--ink-bg);color:var(--on-ink)}
-@media (hover:hover){.fsd.eq:hover{background:var(--fill-2)}}
+.fsd.eq{grid-column:1/-1;height:64px;background:var(--fill-2);color:var(--text)}   /* Break even : neutre, jamais le bloc le plus lourd de l'écran */
+@media (hover:hover){.fsd.eq:hover{background:var(--line-2)}}
 .fsd.eq .eqt{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:start}
 .fsd.eq .eqt b{font-size:var(--fs-3)}
 .fsd.eq .eqt small{font-size:var(--fs-1);font-weight:500;color:inherit}
@@ -787,7 +786,7 @@ main{overflow-x:clip}
 .flt .fbt .eqb{height:34px;font-size:var(--fs-2)}
 .flt .fbt .eqb .eqx{color:var(--text);font-weight:600}
 .fl-chart .beband{fill:var(--text-3);opacity:.2}
-.fl-chart .lab2{position:absolute;inset-inline-start:0;font-size:var(--fs-1);font-weight:600;color:var(--text-2);transform:translateY(-120%);white-space:nowrap}
+.fl-chart .lab2{position:absolute;top:0;inset-inline-start:0;font-size:var(--fs-1);font-weight:600;color:var(--text-2);transform:translateY(-120%);white-space:nowrap}
 .fl-pool .pl2{gap:10px;flex-wrap:wrap}
 .fl-pool .eqp{font-size:var(--fs-2);font-weight:600;color:var(--text-2)}
 .fl-my.has .pl-up{color:var(--yes)!important}
@@ -846,10 +845,10 @@ main{overflow-x:clip}
 
 /* v2.7 — bulles catégories éclair */
 .fpills{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 20px}
-.fpill{height:34px;padding:0 16px;border-radius:var(--r-pill);border:1px solid var(--line);background:var(--surface);color:var(--text-2);font:600 14px/1 var(--font);cursor:pointer;transition:background var(--dur-1),color var(--dur-1),border-color var(--dur-1),transform var(--dur-1);-webkit-tap-highlight-color:transparent}
+.fpill{height:34px;padding:0 16px;border-radius:var(--r-pill);border:1px solid var(--line);background:var(--surface);color:var(--text-2);font:var(--fw-bold) var(--fs-2)/1 var(--font);cursor:pointer;transition:background var(--dur-1),color var(--dur-1),border-color var(--dur-1),transform var(--dur-1);-webkit-tap-highlight-color:transparent}
 @media (hover:hover){.fpill:hover{border-color:var(--text-4);color:var(--text)}}
 .fpill:active{transform:scale(.95)}
-.fpill.on{background:var(--accent-soft);border-color:var(--text);color:var(--accent)}
+.fpill.on{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
 .fpill:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 /* ===== v2.7 : finitions mobile ===== */
@@ -1004,7 +1003,7 @@ html,body{max-width:100%;overflow-x:hidden}
 
 /* focus visible sur les puces */
 .filters .tabs button:focus-visible,.fl-tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-@media (max-width:879px){/* ---------- Accueil : catégories ---------- *//* les puces passent à la ligne (plus de défilement caché), la ligne d'outils passe dessous */.filters{flex-direction:column;align-items:stretch;gap:12px;margin-bottom:2px}.filters .tabs{flex:none;flex-wrap:wrap;overflow:visible;gap:8px;padding:0;-webkit-mask-image:none;mask-image:none}.filters .tabs button{height:38px;padding:0 16px;font-size:var(--fs-2);line-height:1}.filters .tabs button.on{background:var(--accent-soft);border-color:transparent;color:var(--accent)}.filters .fright{display:flex;flex-wrap:nowrap;justify-content:space-between;align-items:center;gap:10px;padding:0}.filters .fright .btn{height:40px;flex:none}.filters .fright .tmode{flex:none}/* ---------- Éclair : en-tête stable ---------- */.kick .kx{display:none}.fl-phase .pl{display:none}.fl-phase .ps{display:inline}.kick .kt::first-letter{}.fl-h{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:12px;row-gap:10px;align-items:start}.fl-h>div:first-child{display:contents}.fl-h .kick{grid-column:1/-1}.fl-h h1{grid-column:1;grid-row:2;margin-top:0;min-width:0}.fl-h .ring{grid-column:2;grid-row:2}.fl-h h1{overflow-wrap:break-word;hyphens:auto}.fl-price{flex-direction:column;align-items:flex-start;flex-wrap:nowrap;gap:6px;margin-top:16px}.fl-price .num{font-size:var(--fs-display);max-width:100%}.fl-price .delta,.fl-price [data-fx="chg"]{display:block;max-width:100%;min-height:20px;line-height:20px;font-size:var(--fs-2);overflow:hidden;text-overflow:ellipsis}.fl-price.ev .num{white-space:normal;overflow-wrap:anywhere;font-size:var(--fs-display);min-height:1.1em}/* sélecteur des paris : puces à défilement visible, recentré sur le pari choisi */.fl-tabs{gap:8px;margin:-2px 0 16px;padding-block:2px 2px;padding-inline:0 24px;scroll-snap-type:x proximity;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent)}.fl-tabs button{height:36px;padding:0 16px;border-radius:var(--r-pill);border:1px solid var(--line);background:var(--surface);color:var(--text-2);font-weight:600;box-shadow:none;flex:none;scroll-snap-align:center}.fl-tabs button.on{background:var(--accent-soft);border-color:var(--text);color:var(--on-ink);box-shadow:none;color:var(--accent)}.fl-tabs button.has::after{background:var(--accent-bg)}.fl-tabs button.on.has::after{background:var(--on-ink)}.fpill{height:38px}.fmode button,.seg.ctype button{min-height:36px}/* ---------- Zones de toucher ---------- */.seg button,.tmode button{min-height:34px;padding-top:0;padding-bottom:0}.bellt{width:36px;height:36px}.toast .tx,.reacts button,.thm,.bell{position:relative}.reacts.empty .add{position:absolute}.msg.palopen .reacts.empty .add{position:relative}a.un{padding:6px 2px;margin:-6px -2px}/* ---------- Page d'un marché : barre d'achat fixe ---------- */.mbar{grid-template-columns:repeat(2,minmax(0,1fr))}.mbar .btn{min-width:0;padding:0 8px;white-space:nowrap}}
+@media (max-width:879px){/* ---------- Accueil : catégories ---------- *//* les puces passent à la ligne (plus de défilement caché), la ligne d'outils passe dessous */.filters{flex-direction:column;align-items:stretch;gap:12px;margin-bottom:2px}.filters .tabs{flex:none;flex-wrap:wrap;overflow:visible;gap:8px;padding:0;-webkit-mask-image:none;mask-image:none}.filters .tabs button{height:38px;padding:0 16px;font-size:var(--fs-2);line-height:1}.filters .tabs button.on{background:var(--accent-soft);border-color:transparent;color:var(--accent)}.filters .fright{display:flex;flex-wrap:nowrap;justify-content:space-between;align-items:center;gap:10px;padding:0}.filters .fright .btn{height:40px;flex:none}.filters .fright .tmode{flex:none}/* ---------- Éclair : en-tête stable ---------- */.kick .kx{display:none}.fl-phase .pl{display:none}.fl-phase .ps{display:inline}.kick .kt::first-letter{}.fl-h{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:12px;row-gap:10px;align-items:start}.fl-h>div:first-child{display:contents}.fl-h .kick{grid-column:1/-1}.fl-h h1{grid-column:1;grid-row:2;margin-top:0;min-width:0}.fl-h .ring{grid-column:2;grid-row:2}.fl-h h1{overflow-wrap:break-word;hyphens:auto}.fl-price{flex-direction:column;align-items:flex-start;flex-wrap:nowrap;gap:6px;margin-top:16px}.fl-price .num{font-size:var(--fs-display);max-width:100%}.fl-price .delta,.fl-price [data-fx="chg"]{display:block;max-width:100%;min-height:20px;line-height:20px;font-size:var(--fs-2);overflow:hidden;text-overflow:ellipsis}.fl-price.ev .num{white-space:normal;overflow-wrap:anywhere;font-size:var(--fs-display);min-height:1.1em}/* sélecteur des paris : puces à défilement visible, recentré sur le pari choisi */.fl-tabs{gap:8px;margin:-2px 0 16px;padding-block:2px 2px;padding-inline:0 24px;scroll-snap-type:x proximity;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent)}.fl-tabs button{height:36px;padding:0 16px;border-radius:var(--r-pill);border:1px solid var(--line);background:var(--surface);color:var(--text-2);font-weight:600;box-shadow:none;flex:none;scroll-snap-align:center}.fl-tabs button.on{background:var(--accent-soft);border-color:transparent;box-shadow:none;color:var(--accent)}.fl-tabs button.has::after{background:var(--accent-bg)}.fl-tabs button.on.has::after{background:var(--on-ink)}.fpill{height:38px}.fmode button,.seg.ctype button{min-height:36px}/* ---------- Zones de toucher ---------- */.seg button,.tmode button{min-height:34px;padding-top:0;padding-bottom:0}.bellt{width:36px;height:36px}.toast .tx,.reacts button,.thm,.bell{position:relative}.reacts.empty .add{position:absolute}.msg.palopen .reacts.empty .add{position:relative}a.un{padding:6px 2px;margin:-6px -2px}/* ---------- Page d'un marché : barre d'achat fixe ---------- */.mbar{grid-template-columns:repeat(2,minmax(0,1fr))}.mbar .btn{min-width:0;padding:0 8px;white-space:nowrap}}
 @media (max-width:340px){.fl-h .kick .fxa{display:none}}
 @media (max-width:360px){.fsd:not(.eq){flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;padding:0 12px}.fsd:not(.eq) .num{font-size:var(--fs-4)}.fl-h h1{font-size:var(--fs-4)}.filters .tabs button{padding:0 12px}.fl-tabs button{padding:0 12px}}
 
@@ -1207,7 +1206,7 @@ html,body{max-width:100%;overflow-x:hidden}
 [dir=rtl] svg[data-ic=right],[dir=rtl] svg[data-ic=logout],[dir=rtl] svg[data-ic=send],[dir=rtl] svg[data-ic=out]{transform:scaleX(-1)}
 [dir=rtl] .chart,[dir=rtl] .fl-chart,[dir=rtl] .trail,[dir=rtl] .xh,[dir=rtl] .xax,[dir=rtl] .tlegend{direction:ltr}
 [dir=rtl] .num,[dir=rtl] input[type=number],[dir=rtl] input[inputmode=decimal],[dir=rtl] input[inputmode=numeric],[dir=rtl] .code,[dir=rtl] .addr,[dir=rtl] .mono{unicode-bidi:isolate}
-[dir=rtl] input[type=email],[dir=rtl] input[type=url],[dir=rtl] .pw input,[dir=rtl] .addr,[dir=rtl] .mono{direction:ltr;text-align:start}
+[dir=rtl] input[type=email],[dir=rtl] input[type=url],[dir=rtl] .addr,[dir=rtl] .mono{direction:ltr;text-align:end}   /* écrits de gauche à droite, alignés du côté de la lecture (le mot de passe reste de droite à gauche) */
 [lang=he] body{--sg:'Heebo','Geist',system-ui,-apple-system,'Segoe UI',sans-serif;--bs:'Heebo','Big Shoulders Display','Geist',system-ui,sans-serif}
 [lang=he] .num,[lang=he] .big,[lang=he] .h1,[lang=he] h1{}
 
@@ -1318,7 +1317,7 @@ html,body{max-width:100%;overflow-x:hidden}
 .dacc p{margin:0 0 12px;font-size:var(--fs-2)}
 .stk{border:1px solid var(--line);border-radius:var(--r-md);padding:12px 16px;margin-top:10px}
 .stk-h{display:flex;justify-content:space-between;align-items:center;font-size:var(--fs-2)}
-.stk-h small{color:var(--text-3)}
+.stk-h small{color:var(--text-3);font-size:var(--fs-1)}
 .stk-b{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
 .stk-b small{display:block;font-size:var(--fs-1);color:var(--text-3)}
 .stk-b .num{font-size:var(--fs-3)}
@@ -1334,7 +1333,7 @@ html,body{max-width:100%;overflow-x:hidden}
 .bzkv small,.bzprice small{display:block;font-size:var(--fs-1);color:var(--text-3)}
 .bzkv .num{font-size:var(--fs-4)}
 .bzkv em,.bzprice em{display:block;font-style:normal;font-size:var(--fs-1);color:var(--text-3)}
-.bzme{margin:12px 0;padding:10px 12px;border-radius:var(--r-md);background:var(--fill);font-size:var(--fs-2);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.bzme{margin:12px 0;padding:10px 12px;border-radius:var(--r-md);background:var(--fill);font-size:var(--fs-2);display:flex;align-items:flex-start;gap:8px;flex-wrap:nowrap}
 .bzme.ok{background:var(--fill);color:var(--text-2)}
 .bzme.out{background:var(--no-soft);color:var(--no)}
 .bzpl{display:flex;flex-wrap:wrap;gap:4px;margin-top:12px;align-items:center}
@@ -1425,7 +1424,7 @@ h1 .ctg{height:22px;font-size:var(--fs-2);padding:0 8px;vertical-align:middle}
 .bzvol .pl2 .eqp{color:var(--text-2);align-items:center;text-align:center}
 .bzvol .pl2 .dn{color:var(--no);align-items:flex-end;text-align:end}
 .split3{display:flex;height:10px;border-radius:var(--r-xs);overflow:hidden;background:var(--text-4);gap:2px}
-.split3 i{display:block;height:100%;transition:width .6s;min-width:0}
+.split3 i{display:block;height:100%;transition:width var(--dur-3) var(--ease);min-width:0}
 .split3 .o{background:var(--yes-bg)}
 .split3 .e{background:var(--text-3)}
 .split3 .n{background:var(--no-bg)}
@@ -1443,7 +1442,7 @@ body.has-slip #view{padding-bottom:76px}
 .cb-addbtn{margin-top:8px}
 .cb-legs{display:flex;flex-direction:column;gap:8px;margin-top:4px}
 .cb-leg{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface)}
-.cb-leg.sm{padding:8px 10px;grid-template-columns:minmax(0,1fr) auto;background:var(--fill)}
+.cb-leg.sm{padding:8px 10px;grid-template-columns:minmax(0,1fr) auto;background:var(--fill);border:0}   /* fond gris dans une carte blanche : sans contour */
 .cb-lt{display:flex;flex-direction:column;min-width:0;gap:1px}
 .cb-lt a{font-weight:600;color:var(--text);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cb-lt small{color:var(--text-3);font-size:var(--fs-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1459,7 +1458,7 @@ body.has-slip #view{padding-bottom:76px}
 .cb-res{font-size:var(--fs-1);font-weight:600;color:var(--text-3)}
 .cb-res.ok{color:var(--yes)}
 .cb-res.ko{color:var(--no)}
-.cbcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px 20px;display:flex;flex-direction:column;gap:12px}
+.cbcard{background:var(--surface);border-radius:var(--r-lg);padding:16px 20px;display:flex;flex-direction:column;gap:12px}   /* posée sur le fond de page : son fond suffit, sans contour */
 .cb-h{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}
 .cb-h>div:first-child{display:flex;flex-direction:column;gap:4px;min-width:0;align-items:flex-start}
 .cb-h>div:first-child>b{font-size:var(--fs-3)}
@@ -1575,13 +1574,11 @@ body.has-slip #view{padding-bottom:76px}
 .fl-h .ringw{align-self:flex-start}
 @media (max-width:879px){.fl-h .ringw{grid-column:2;grid-row:2}}
 
-/* C3 : hausse en bleu, baisse en orange (le vert reste aux gains et au break even) */
+/* C3 : hausse en vert, baisse en rouge, comme leurs libellés (la barre « hausses / baisses » reprend les couleurs de base de .hbar) */
 .dir-u{color:var(--yes)}
 .dir-d{color:var(--no)}
 .hsum .hu{color:var(--yes)}
 .hsum .hd{color:var(--no)}
-.hbar{background:var(--fill-2)}
-.hbar i{background:var(--accent-bg)}
 .bead.last.u{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--yes)}
 .bead.last.d{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--no)}
 .hsp polyline.u{stroke:var(--yes)}
@@ -1812,24 +1809,22 @@ body{overflow-x:visible;overflow-x:clip}
 
 /* UX3 : pari éclair sur mobile, une rangée de réglages en moins (catégories en liste déroulante à côté du mode) */
 .fcat-sel{display:none}
-.fhelp{flex:none;width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--text-2);font:700 14px/1 var(--font);display:inline-grid;place-items:center;cursor:pointer;transition:background var(--dur-1),color var(--dur-1)}
-.fhelp.on{background:var(--accent-soft);border-color:var(--text);color:var(--accent)}
+.fhelp{flex:none;width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--text-2);font:var(--fw-bold) var(--fs-2)/1 var(--font);display:inline-grid;place-items:center;cursor:pointer;transition:background var(--dur-1),color var(--dur-1)}
+.fhelp.on{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
 
-/* le repli de la phrase d'explication ne concerne que le mobile : à partir de 761 px elle reste affichée, sans bouton « ? » */
+/* la phrase d'explication du mode s'ouvre avec le bouton d'aide, à toutes les largeurs */
 .fmode-w{display:flex;align-items:center;gap:8px;flex:none}
-.fhelp{display:none}
-.fmode-h[hidden]{display:block}
-@media (max-width:879px){.fl-top{flex-direction:row;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:10px}.fmode-w{gap:6px}.fhelp{display:inline-grid}.fmode-h[hidden]{display:none}.fl-top .fpills{display:none}.fcat-sel{display:block;flex:1 1 96px;min-width:96px}.fcat-sel select{width:100%;min-width:0;height:38px;border-radius:var(--r-md);border:1px solid var(--line);background-color:var(--surface);padding-block:0;padding-inline:10px 24px;font:600 16px/1 var(--font);color:var(--text);appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%237A808C' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:14px;text-overflow:ellipsis}[dir=rtl] .fcat-sel select{background-position:left 10px center}.fl-top .fmode{flex:none;align-self:center}.fl-top .fmode button svg{display:none}.fl-top .fmode button{padding-inline:8px}.fhelp{width:38px;height:38px}}
+@media (max-width:879px){.fl-top{flex-direction:row;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:10px}.fmode-w{gap:6px}.fhelp{display:inline-grid}.fmode-h[hidden]{display:none}.fl-top .fpills{display:none}.fcat-sel{display:block;flex:1 1 96px;min-width:96px}.fcat-sel select{width:100%;min-width:0;height:38px;border-radius:var(--r-md);border:1px solid var(--line);background-color:var(--surface);padding-block:0;padding-inline:10px 24px;font:var(--fw-bold) var(--fs-3)/1 var(--font);color:var(--text);appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--text-3) 50%),linear-gradient(135deg,var(--text-3) 50%,transparent 50%);background-repeat:no-repeat;background-position:calc(100% - 17px) 50%,calc(100% - 11px) 50%;background-size:6px 6px;text-overflow:ellipsis}[dir=rtl] .fcat-sel select{background-position:11px 50%,17px 50%}.fl-top .fmode{flex:none;align-self:center}.fl-top .fmode button svg{display:none}.fl-top .fmode button{padding-inline:8px}.fhelp{width:38px;height:38px}}
 
 /* UX4 : fin de manche, un bandeau en haut de la carte. Il ne couvre plus les boutons et laisse passer les appuis. */
-.flres{position:absolute;inset:auto;top:10px;inset-inline-start:10px;inset-inline-end:10px;display:block;place-items:normal;background:var(--ink-bg);color:var(--on-ink);border-radius:var(--r-md);padding:10px 10px 10px 16px;z-index:6;pointer-events:none;backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:var(--shadow-2);animation:flrin .28s cubic-bezier(.2,.9,.3,1.1)}
+.flres{position:absolute;inset:auto;top:10px;inset-inline-start:10px;inset-inline-end:10px;display:block;place-items:normal;background:var(--ink-bg);color:var(--on-ink);border-radius:var(--r-md);padding:10px 10px 10px 16px;z-index:6;pointer-events:none;backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:var(--shadow-2);animation:flrin var(--dur-3) var(--ease)}
 @keyframes flrin{from{transform:translateY(-12px);opacity:0}}
 .flres>.flr-in{display:flex;flex-direction:row;align-items:center;gap:12px;text-align:start}
 .flres .flr-t{flex:1;min-width:0}
 .flres .kick{display:block;font-size:var(--fs-1);font-weight:600;color:inherit;opacity:.8}
 .flres .muted{color:inherit;opacity:.85;font-size:var(--fs-2);line-height:1.35;margin:2px 0 0}
 .flres .big{font-size:var(--fs-5);line-height:1;white-space:nowrap;color:inherit!important;letter-spacing:var(--track-title)}
-.flres .x{pointer-events:auto;flex:none;width:32px;height:32px;border-radius:var(--r-sm);display:grid;place-items:center;color:inherit;opacity:.8}
+.flres .x{pointer-events:auto;flex:none;width:32px;height:32px;border-radius:var(--r-sm);display:grid;place-items:center;background:none;color:inherit;opacity:.8}
 .flres.win{background:var(--yes)}
 .flres.lose{background:var(--surface);color:var(--text);border:1px solid var(--line);border-inline-start:4px solid var(--no)}
 .flres.lose .big{color:var(--no)!important}
@@ -2326,7 +2321,7 @@ html.pro-lock,html.pro-lock body{overflow:hidden}
 .fsd.eq .num,.fsd.eq small,.flt .fbt .eqb .eqx{color:inherit}
 
 /* ---------- Éclair : le choix actif ne garde que son fond d'accent (plus de contour sombre) ---------- */
-.fl-tabs button.on,.fpill.on,.fhelp,.fhelp.on{box-shadow:none}
+@media (max-width:879px){.fl-tabs button.on,.fpill.on,.fhelp,.fhelp.on{box-shadow:none}}   /* à partir de 880 px, le pari actif garde son soulignement */
 .fhelp{background:var(--fill)}
 
 /* ====================================================================== Seconde passe : responsive, écran par écran
@@ -2496,3 +2491,59 @@ body:has(.auth) .top .signup,body:has(.auth) .top .login{display:none}
 
 /* Classement de 1300 à 1699 px : la colonne « Paris » cède sa place au pseudo (elle revient sur très grand écran ; en dessous de 1300 px, les règles plus haut s'appliquent) */
 @media (min-width:1300px) and (max-width:1699px){.lb .lh,.lb .lr{grid-template-columns:40px minmax(0,1fr) 144px 112px 64px 100px}.lb .c-bets,.lb .lh>span:nth-child(6){display:none}}
+
+/* ====================================================================== Seconde passe : relecture écran par écran (lot 3)
+   Éclair, Blitz Royale, La Série, Duels, Combinés. Les règles corrigées sur place (Break even neutre, billes, pastilles,
+   aide « ? », animations…) ne sont pas répétées ici : seules les règles nouvelles sont regroupées dans cette section. */
+
+/* Blitz en manche et Série lancée, téléphone : les trois choix restent au-dessus de la barre d'onglets, comme ceux de l'Éclair ;
+   la page garde en bas la place de cette barre (rien ne passe dessous) */
+@media (max-width:879px) and (min-height:600px){
+  .bz-sides{position:fixed;inset-inline:0;bottom:var(--bas);z-index:39;margin:0;padding:var(--sp-2) var(--sp-4);grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--sp-2);background:var(--bar);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-top:1px solid var(--line)}
+  .bz-sides .fsd{min-width:0;padding:var(--sp-2);align-items:center;text-align:center}
+  .bz-sides .fsd.eq{grid-column:auto}
+  body:has(.bz-sides) main{padding-bottom:128px}
+  body:has(.bz-sides) .slipbar{bottom:calc(var(--bas) + 128px)}
+}
+/* sous 360 px, la barre ne garde que les trois libellés (le prix de départ et la zone break even restent affichés dans la carte) */
+@media (max-width:359px) and (min-height:600px){.bz-sides .fsd small{display:none}}
+/* Éclair, téléphone en paysage : ni la ligne d'aide ni l'explication du mode ; les boutons de pari restent visibles en bas.
+   Une rangée basse (libellé et prix sur une ligne) et un haut de page resserré : la question reste visible au-dessus à l'ouverture. */
+@media (max-height:480px) and (max-width:879px){
+  p.aide,.fmode-h{display:none}
+  .flash-card .fl-sides{position:sticky;bottom:var(--bas);background:var(--surface)}
+  .flash-card .fl-sides .fsd,.flash-card .fl-sides .fsd.eq{min-height:var(--tap);flex-direction:row;gap:var(--sp-2);padding-block:var(--sp-1)}
+  .flash-card .fl-sides .fsd.eq .eqr small{display:none}
+  .wrap:has(.flash-card){padding-top:var(--sp-2)}
+  .wrap:has(.flash-card)>.subnav{margin-bottom:var(--sp-2)}
+}
+/* barre d'onglets : 4 px de chaque côté d'un libellé ; sous 360 px, la moitié, pour que les cinq libellés tiennent (« Se connecter » en français) */
+@media (max-width:359px){.tabbar a{padding-inline:calc(var(--sp-1)/2)}}
+/* « Chat du Blitz » replié : le titre à gauche, le chevron à droite, comme les autres blocs repliés */
+.chat.plie .chat-h{flex-direction:row;padding-bottom:var(--sp-5);border-bottom:0}
+/* Éclair : la ligne « Victoires pour débloquer Platine » et son compteur */
+.fgoal-t{display:flex;justify-content:space-between;gap:var(--sp-2)}
+/* La Série : les colonnes du classement du jour s'alignent d'une ligne à l'autre (une grille commune) */
+.srbd{display:grid;grid-template-columns:22px 28px minmax(0,1fr) auto auto auto;column-gap:var(--sp-2)}
+.srrow{grid-column:1/-1;grid-template-columns:subgrid}
+.srrow>.num{justify-self:end}
+@media (max-width:380px){.srbd{grid-template-columns:22px 28px minmax(0,1fr) auto auto}}
+/* La Série, carte de départ : de l'air entre les réglages */
+.srcard .cpf+.cpf,.srcard .calc{margin-top:var(--sp-4)}
+
+/* ====================================================================== Seconde passe : relecture écran par écran (lot 4)
+   Anglais et hébreu : textes trop longs à 320 px, sens de lecture des nombres, des pseudos et des étiquettes en hébreu. */
+
+/* classement : le pseudo est tronqué par sa fin, de gauche à droite même en hébreu ; l'étiquette de clan suit quand il reste de la place */
+.lb .pl .nm>bdi{display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom}
+/* 320 px : les trois boutons d'un marché (« Following »…) tiennent */
+@media (max-width:359px){.mact .btn{padding-inline:var(--sp-1);gap:var(--sp-1)}}
+/* 320 px, accueil : le multiplicateur ne colle plus au prix */
+@media (max-width:359px){.hero .mx{display:none}}
+/* 320 px, rang : les conditions de « Changer de rang » passent à la ligne */
+@media (max-width:359px){.drk small{white-space:normal}}
+/* 320 px, dépôt : deux cryptos par ligne */
+@media (max-width:359px){.coins{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* hébreu : la légende de la courbe de l'accueil et les étiquettes du graphique de l'Éclair se lisent de droite à gauche */
+[dir=rtl] .tlegend>span{direction:rtl}
+[dir=rtl] .fl-chart .lab,[dir=rtl] .fl-chart .lab2{direction:rtl}

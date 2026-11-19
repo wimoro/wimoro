@@ -49,7 +49,10 @@ const SITE_URL='https://wimoro.com';
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function hash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
 function rng(seed){let a=seed>>>0;return()=>{a=(a+0x6D2B79F5)|0;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};}
-const hhmm=t=>{const d=new Date(t);return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');};
+/* heure : sur 24 h en français et en hébreu ; à l'américaine en anglais (« 11:59 PM ») */
+const hhmm=t=>{const d=new Date(t);return LANG==='en'?d.toLocaleTimeString(LOC,{hour:'numeric',minute:'2-digit'}):String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');};
+/* même règle pour une heure écrite « 23:59 » dans les données d'un marché */
+const hTxt=s=>{const m=/^(\d{1,2}):(\d{2})$/.exec(String(s||''));if(LANG!=='en'||!m)return s;const d=new Date(2000,0,1,+m[1],+m[2]);return hhmm(d.getTime());};
 function ago(ts){const s=(now()-ts)/1000;if(s<60)return _t('à l’instant');if(s<3600)return _t('il y a {0} min',[Math.floor(s/60)]);if(s<86400)return _t('il y a {0} h',[Math.floor(s/3600)]);return s<172800?_t('hier'):_t('il y a {0} j',[Math.floor(s/86400)]);}
 const today=()=>new Date().toISOString().slice(0,10);
 const norm=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
@@ -135,10 +138,10 @@ let PRET=false;
 const demoB=()=>`<span class="demo-b">${_t('Mode démo')}</span>`;
 const demoHint=(txt,tag='p')=>`<${tag} class="demo-h">${demoB()}<span>${txt}</span></${tag}>`;
 /* ===================== Dates ===================== */
-/* Un seul formateur par langue ; l'heure est toujours sur 24 h (« 23:59 »). */
+/* Un seul formateur par langue ; l'heure est sur 24 h (« 23:59 »), sauf en anglais (« 11:59 PM », voir hTxt). */
 const DAYMS=864e5,isoDate=s=>{const [y,mo,d]=s.split('-').map(Number);return new Date(y,mo-1,d);};
 const fmtDay=d=>d.toLocaleDateString(LOC,{day:'numeric',month:'long',year:'numeric'});
-const fmtWhen=(iso,time)=>time?_t('{0} à {1}',[fmtDay(isoDate(iso)),time]):fmtDay(isoDate(iso));
+const fmtWhen=(iso,time)=>time?_t('{0} à {1}',[fmtDay(isoDate(iso)),hTxt(time)]):fmtDay(isoDate(iso));
 const isoIn=n=>{const d=new Date(now()+n*DAYMS);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
 /* Clôture d'un marché : la date longue et le délai affiché (« Dans 14 j ») sont calculés à partir de la même date. */
 function closeOf(iso,time,lab){const d=isoDate(iso),days=Math.max(0,Math.ceil((d-now())/DAYMS));
@@ -148,7 +151,7 @@ function closeOf(iso,time,lab){const d=isoDate(iso),days=Math.max(0,Math.ceil((d
 const CATS=Array('Tout','Crypto','Football','Politique','Tech et IA','Économie','Culture','Météo','Sport');
 const MARKETS=[
  {id:'btc150k',cat:'Crypto',q:_t("Le Bitcoin dépassera-t-il 150 000 $ avant le 31 décembre ?"),short:_t("Bitcoin à 150 000 $"),p:63,d0:51,vol:4.2e6,...closeOf('2026-12-31','23:59','d'),people:1284,msgs:312,heat:3.2,rules:_t("Ce marché se résout par Oui si le prix du Bitcoin atteint ou dépasse 150 000 $ sur Coinbase (paire BTC-USD) à n’importe quel moment avant le 31 décembre 2026 à 23:59, heure de Paris. Sinon, il se résout par Non.")},
- {id:'clasico',cat:'Football',q:_t("Le Barça gagnera-t-il le prochain Clásico ?"),short:_t("Barça au Clásico"),p:54,d0:50,vol:8.6e5,close:_t("Ce soir"),closeLong:_t('ce soir à {0}',['21:00']),days:0,people:1204,msgs:842,heat:2.6,rules:_t("Ce marché se résout par Oui si le FC Barcelone gagne le match dans le temps réglementaire. Un match nul ou une défaite donne Non.")},
+ {id:'clasico',cat:'Football',q:_t("Le Barça gagnera-t-il le prochain Clásico ?"),short:_t("Barça au Clásico"),p:54,d0:50,vol:8.6e5,close:_t("Ce soir"),closeLong:_t('ce soir à {0}',[hTxt('21:00')]),days:0,people:1204,msgs:842,heat:2.6,rules:_t("Ce marché se résout par Oui si le FC Barcelone gagne le match dans le temps réglementaire. Un match nul ou une défaite donne Non.")},
  {id:'ia-olympiades',cat:'Tech et IA',q:_t("Une IA remportera-t-elle l’or aux Olympiades de maths 2027 ?"),short:_t("IA aux Olympiades"),p:72,d0:63,vol:1.3e6,...closeOf(isoIn(14)),people:2310,msgs:518,heat:2,rules:_t("Ce marché se résout par Oui si un système d’IA obtient un score de médaille d’or selon le barème officiel des Olympiades internationales de mathématiques 2027, confirmé par les organisateurs.")},
  {id:'eth6000',cat:'Crypto',q:_t("Ethereum finira-t-il novembre au-dessus de 6 000 $ ?"),short:_t("Ethereum à 6 000 $"),p:28,d0:33,vol:2.1e6,...closeOf('2026-11-30','23:59'),people:3045,msgs:276,heat:2.2,rules:_t("Ce marché se résout par Oui si le prix de clôture d’Ethereum (ETH-USD sur Coinbase) le 30 novembre 2026 à 23:59 est strictement supérieur à 6 000 $.")},
  {id:'box-office',cat:'Culture',q:_t("Le film le plus vu de 2026 dépassera-t-il 1 milliard $ ?"),short:_t("Un film à 1 milliard $"),p:46,d0:45,vol:5.4e5,...closeOf('2026-12-31'),people:688,msgs:94,heat:1,rules:_t("Ce marché se résout par Oui si au moins un film sorti en 2026 dépasse 1 milliard de dollars de recettes mondiales selon Box Office Mojo au 31 décembre 2026.")},
@@ -259,7 +262,7 @@ function progress(){const r=myRank(),nx=nextStep(r),xp=S.me.xp,cur=DIV_XP[r.t][r
 /* ===================== Salons ===================== */
 let MID=0;const MSG={};
 function room(id){if(!S.rooms[id]){let name=_t("Général"),kind='global';if(id==='vip'){name=_t("Salon VIP");kind='vip';}else if(id.startsWith('m:')){name='#'+id.slice(2);kind='market';}else if(id.startsWith('dm:')){name=userOf(id.slice(3)).n;kind='dm';}else if(id.startsWith('clan:')){name=typeof CK!=='undefined'&&CK[id.slice(5)]?CK[id.slice(5)].name:_t("Clan");kind='clan';}S.rooms[id]={id,name,kind,msgs:[],unread:0};}return S.rooms[id];}
-function roomLabel(id){const r=room(id);return r.kind==='market'?'#'+id.slice(2):r.name;}
+function roomLabel(id){const r=room(id);return r.kind==='market'?bidi('#'+id.slice(2)):r.name;}
 function mkMsg(o){const x=Object.assign({id:++MID,at:now(),r:{},my:[],followers:0},o);MSG[x.id]=x;return x;}
 
 const MLINES={
