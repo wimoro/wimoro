@@ -19,9 +19,9 @@ Le navigateur n'écrit **jamais** directement dans une table. Il appelle des fon
   propriétaire (`SECURITY DEFINER`), avec `search_path` vide, et vérifient toujours l'identité de l'appelant
   (`wm.uid()`) ;
 - **`wm.droits()`** distribue les droits d'appel, à la fin de chaque migration : toute fonction `api_x` est ouverte aux
-  joueurs connectés (avec la fonction `wm.x` qu'elle appelle) ; seules `api_markets`, `api_pseudo_libre` et `api_site`
-  sont ouvertes aux visiteurs (la liste se complète par la table `wm.droits_liste`, sans réécrire `wm.droits`) ; tout le
-  reste de `wm` est fermé. Test : `tests/sql/missions.spec.mjs`.
+  joueurs connectés (avec la fonction `wm.x` qu'elle appelle) ; seules `api_markets`, `api_pseudo_libre`, `api_site` et
+  `api_live` sont ouvertes aux visiteurs (la liste se complète par la table `wm.droits_liste`, sans réécrire `wm.droits`) ;
+  tout le reste de `wm` est fermé. Test : `tests/sql/missions.spec.mjs`.
 
 Une fonction qui modifie quelque chose renvoie `{ me, ev, … }` : `me` est le profil et les compteurs à jour, `ev` la liste
 de ce que l'écran doit montrer (`xp`, `notif`, `badge`, `mission`, `dep`, `wd`). Une erreur métier est un **code**
@@ -80,6 +80,7 @@ avec la même clé, l'opération n'est appliquée qu'une fois et renvoie le mêm
 | `api_admin(action, paramètres)` | administrateur | la porte de l'ancien panel d'administration (`admin.html`) : `moi`, `chiffres`, `joueurs`, `joueur`, `solde`, `xp`, `rang`, `kyc`, `suspendre`, `marches`, `marche`, `marche_etat`, `resoudre`, `chat`, `masquer`, `bots`, `journal`. Refusée (`interdit`) à tout compte absent de `public.admin_users`, ou présent mais retiré de l'équipe (ou devenu modérateur) ; `mfa_requise` si le compte a un code de double authentification et que la session n'est pas `aal2`. Chaque modification est écrite dans `wm.admin_journal`, et recopiée dans `wm.journal` (§ 9) |
 | `api_equipe(action, paramètres)` | équipe (administrateur, modérateur) | la porte du nouveau panneau : rôle vérifié à chaque appel, registre des actions, double authentification, motif, journal en ajout seul. Détail au § 9 |
 | `api_site()` | visiteur | ce que l'écran doit savoir du site : réglages publics (`v`), révision (`rev`), annonce en cours, maintenance (`{actif, message}`). Ne réveille pas les bots |
+| `api_live(serie)` | visiteur | l'instantané des données réelles (§ 10) : `cours` (37 actifs : prix `p`, état `e` d/r/s, heure `t`, place ouverte `o`), `familles`, `eclair` (lot 7), `next` (rythme conseillé, ms) ; avec `serie` = un actif, la courbe de ses 90 dernières secondes. Un seul accès à la base, ne réveille pas les bots |
 | `api_mes_blocages()` | joueur | ses blocages en cours : `[{id, acces, salon, fin}]` (`fin` en millisecondes, -1 : sans fin). Pour griser un bouton ; le serveur refuse de toute façon |
 | `api_test_end()` | compte de test | un compte `wimoro-e2e-…@example.com` se supprime lui-même à la fin des tests ; refusée à tout autre compte |
 
@@ -169,10 +170,12 @@ dépôt, retrait possible, impossible à écourter), auto-exclusion (`wm.uid()` 
 ## 7. Tests du back
 
 `tests/sql/` charge une vraie base Postgres embarquée (PGlite) avec la photo du schéma puis toutes les migrations du
-dépôt, en moins d'une seconde, et exécute les fonctions « en tant que » un visiteur ou un joueur. 220 tests au 19 nov.
+dépôt, en moins d'une seconde, et exécute les fonctions « en tant que » un visiteur ou un joueur. 240 tests au 19 nov.
 2026 : sécurité, comptes, moteur, bots, argent fictif, jeu responsable, missions, chat, pari éclair, amis, messages privés,
-invariants (solde jamais négatif, opérations simultanées, rejeu d'une clé), et le panneau d'administration (§ 9 :
-`sauvegarde-20261119`, `equipe`, `blocages`, `gardes`, `reglages-frais`, `diffusion`).
+invariants (solde jamais négatif, opérations simultanées, rejeu d'une clé), le panneau d'administration (§ 9 :
+`sauvegarde-20261119`, `equipe`, `blocages`, `gardes`, `reglages-frais`, `diffusion`) et les données réelles (§ 10 :
+`donnees`, `donnees-cascade`). Les bouchons de Vault et de pg_net (`tests/sql/supabase-stubs.sql`) rangent les
+requêtes au lieu de les envoyer.
 
 ## 8. Ajouter une fonction
 
@@ -282,3 +285,30 @@ des 385 fonctions de `public` et `wm` (`backup_20261119.fonctions`). 40 d'entre 
 contrôle ajoutées, littéraux remplacés par leur réglage, et `wm.fee_rate`, `wm.argent`, `wm.ref_bonus` réécrites pour lire
 les réglages.
 `backup_20261119.restaurer('<signature>')` remet une fonction telle qu'elle était. Aucun client n'a accès à ce schéma.
+
+## 10. Données réelles (lots 6 et 7, 19 nov. 2026)
+
+Le détail (sources, cascade, quotas, budget, tables) est dans `docs/DONNEES.md`, § 2 à 4. Côté serveur :
+
+### Lot 6 : le socle (migration `donnees_socle`)
+
+- **Réveil des Edge Functions sans secret dans le dépôt.** La migration crée elle-même, dans Vault, un jeton de 64
+  caractères (`wm_cron_jeton`). `wm.appeler(fonction, corps)` (aucun droit client) l'envoie par pg_net dans l'en-tête
+  `x-wm-jeton`, avec `x-region: ap-southeast-2` (la région de la base) ; l'Edge Function le fait vérifier par
+  `srv_jeton_ok(jeton)` (empreintes SHA-256, clé de service) et répond 401 sans rien faire s'il est faux. Le jeton n'est ni
+  dans le texte de la tâche planifiée, ni dans un journal. Le renouveler : une migration
+  `select vault.update_secret((select id from vault.secrets where name = 'wm_cron_jeton'), encode(extensions.gen_random_bytes(32), 'hex'));`.
+- **Edge Function `donnees`** (`supabase/functions/donnees/`, `verify_jwt` désactivé) : `index.ts` (requête, bail, boucle,
+  réseau), `cascade.js` (quelle source appeler, quotas, pauses ; module pur) et `lecteurs.js` (réponse → cotations ; module
+  pur). Les deux modules purs sont testés sous Node sur des réponses enregistrées (`tests/fixtures/donnees/`, outil
+  `tools/donnees-enregistrer.mjs`) ; un test remplace `fetch` par une garde : aucun test n'appelle une vraie API.
+- **Fonctions de service** (clé de service seulement) : `srv_jeton_ok`, `srv_donnees_bail(porteur, durée)` (une boucle à
+  la fois), `srv_donnees_config()` (sources, compteurs du jour, heure du dernier appel, actifs, places ouvertes, réglages
+  `donnees.*`), `srv_cours_ingerer(p)` (cotations, bilan des sources, contrôle des places ; refait l'instantané).
+- **Calendrier** : `wm.marche_ouvert(place, t)` et `wm.marche_prochaine_ouverture(place, t)` (fuseaux IANA, jours fériés,
+  fermetures anticipées, pause de midi de Tokyo, semaine « hebdo » du CME et de l'ICE).
+- **Lecture** : `api_live(serie)` (visiteurs compris), un seul accès à `wm.live_cache`.
+- **Panneau** : actions `sources_etat` (administrateur) et `source_activer` (administrateur, motif, annulable depuis le
+  journal) ajoutées au registre `wm.equipe_actions`.
+- **Réglages** (non publics) : `donnees.actif` (couper la collecte), `donnees.cadence_s` (3), `donnees.boucle_s` (55).
+- Aucune fonction existante n'est modifiée ; les tables où le lot écrit sont sauvées avant (`backup_20261119`).

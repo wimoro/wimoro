@@ -1,0 +1,141 @@
+{
+  "enregistre_le": "2026-11-19T16:39:31.188Z",
+  "frontiere_ms": 1795106340000,
+  "manche": 35893,
+  "ua": "WimoroBot/1.0 (https://wimoro.com)",
+  "appels": [
+    {
+      "nom": "binance_ticker.json",
+      "url": "https://data-api.binance.vision/api/v3/ticker/price?symbols=%5B%22BTCUSDT%22%2C%22ETHUSDT%22%2C%22SOLUSDT%22%2C%22XRPUSDT%22%2C%22BNBUSDT%22%2C%22DOGEUSDT%22%2C%22ADAUSDT%22%2C%22AVAXUSDT%22%2C%22LINKUSDT%22%2C%22LTCUSDT%22%5D",
+      "statut": 200,
+      "octets": 435,
+      "ms": 1643
+    },
+    {
+      "nom": "kraken_ticker.json",
+      "url": "https://api.kraken.com/0/public/Ticker?pair=XBTUSD,ETHUSD,SOLUSD,XRPUSD,BNBUSD,XDGUSD,ADAUSD,AVAXUSD,LINKUSD,LTCUSD",
+      "statut": 200,
+      "octets": 2762,
+      "ms": 191
+    },
+    {
+      "nom": "coinbase_rates.json",
+      "url": "https://api.coinbase.com/v2/exchange-rates?currency=USD",
+      "statut": 200,
+      "octets": 17518,
+      "ms": 290
+    },
+    {
+      "nom": "coingecko_simple.json",
+      "url": "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,ripple,binancecoin,dogecoin,cardano,avalanche-2,chainlink,litecoin&vs_currencies=usd&include_last_updated_at=true",
+      "statut": 200,
+      "octets": 549,
+      "ms": 397
+    },
+    {
+      "nom": "yahoo_spark.json",
+      "url": "https://query1.finance.yahoo.com/v8/finance/spark?symbols=NVDA,AAPL,MSFT,TSLA,AMZN,GOOGL,META,SPY,QQQ,%5EGSPC,%5ENDX,%5EDJI,%5EFCHI,%5EGDAXI,%5EN225,MC.PA,ASML.AS,TTE.PA&range=1d&interval=5m",
+      "statut": 200,
+      "octets": 20836,
+      "ms": 381
+    },
+    {
+      "nom": "eodhd_realtime.json",
+      "url": "https://eodhd.com/api/real-time/AAPL.US?api_token=demo&fmt=json",
+      "statut": 200,
+      "octets": 187,
+      "ms": 708
+    },
+    {
+      "nom": "twelvedata_market_state.json",
+      "url": "https://api.twelvedata.com/market_state?apikey=demo",
+      "statut": 200,
+      "octets": 21896,
+      "ms": 368
+    },
+    {
+      "nom": "goldapi_xau.json",
+      "url": "https://api.gold-api.com/price/XAU",
+      "statut": 200,
+      "octets": 181,
+      "ms": 284
+    },
+    {
+      "nom": "goldapi_xag.json",
+      "url": "https://api.gold-api.com/price/XAG",
+      "statut": 200,
+      "octets": 182,
+      "ms": 57
+    },
+    {
+      "nom": "goldprice_xau.json",
+      "url": "https://api.goldprice.dev/v1/prices?symbol=XAU-USD-SPOT",
+      "statut": 200,
+      "octets": 180,
+      "ms": 635
+    },
+    {
+      "nom": "fawaz_usd.json",
+      "url": "https://latest.currency-api.pages.dev/v1/currencies/usd.json",
+      "statut": 200,
+      "octets": 7507,
+      "ms": 302
+    },
+    {
+      "nom": "exchangerate_dev.json",
+      "url": "https://api.exchangerate.dev/v1/latest/USD?symbols=EUR,GBP,JPY,ILS,CHF",
+      "statut": 200,
+      "octets": 625,
+      "ms": 437
+    },
+    {
+      "nom": "frankfurter.json",
+      "url": "https://api.frankfurter.dev/v1/latest?base=USD&symbols=EUR,GBP,JPY,ILS,CHF",
+      "statut": 200,
+      "octets": 125,
+      "ms": 333
+    },
+    {
+      "nom": "fred_wti.csv",
+      "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DCOILWTICO&cosd=2026-10-20",
+      "statut": 200,
+      "octets": 395,
+      "ms": 332
+    },
+    {
+      "nom": "fred_brent.csv",
+      "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DCOILBRENTEU&cosd=2026-10-20",
+      "statut": 200,
+      "octets": 398,
+      "ms": 183
+    },
+    {
+      "nom": "binance_klines_1s.json",
+      "url": "https://data-api.binance.vision/api/v3/klines?symbol=BTCUSDT&interval=1s&startTime=1795106331000&limit=10",
+      "statut": 200,
+      "octets": 1615,
+      "ms": 1165
+    },
+    {
+      "nom": "okx_candles_1s.json",
+      "url": "https://www.okx.com/api/v5/market/candles?instId=BTC-USDT&bar=1s&after=1795106341000&limit=10",
+      "statut": 200,
+      "octets": 901,
+      "ms": 362
+    },
+    {
+      "nom": "gate_trades.json",
+      "url": "https://api.gateio.ws/api/v4/spot/trades?currency_pair=BTC_USDT&from=1795106330&to=1795106341&limit=1000",
+      "statut": 200,
+      "octets": 11141,
+      "ms": 1259
+    },
+    {
+      "nom": "coinbase_trades.json",
+      "url": "https://api.coinbase.com/api/v3/brokerage/market/products/BTC-USD/ticker?limit=100&start=1795106330&end=1795106341",
+      "statut": 200,
+      "octets": 18832,
+      "ms": 270
+    }
+  ]
+}

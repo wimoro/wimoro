@@ -53,6 +53,8 @@ test('réglages : chaque valeur par défaut est la constante en vigueur aujourd�
     'chat.salons': {}, 'chat.mots_interdits': [], 'chat.mots_prives': false,
     'site.maintenance': false, 'site.maintenance_message': null, 'site.annonce': null,
     'equipe.mfa_obligatoire': false, 'equipe.moderateur_solde_max': 1000,
+    // données réelles, lot 6 (19 nov. 2026) : la collecte des cours
+    'donnees.actif': true, 'donnees.cadence_s': 3, 'donnees.boucle_s': 55,
   };
   const lignes = await q(db, 'select cle, categorie, libelle, explication, valeur, defaut, min, max, maj_at from wm.reglages order by cle');
   expect(Object.fromEntries(lignes.map(l => [l.cle, l.valeur]))).toEqual(ATTENDU);
