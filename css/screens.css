@@ -2410,6 +2410,9 @@ body.out:has(.jx .b-pri) .top .signup{display:none}
   .fsd.non:hover{background:var(--no-bg-hover)}
   .fhelp:hover{background:var(--fill-2);color:var(--text)}
   .fhelp.on:hover{background:var(--accent-soft);color:var(--accent)}
+  /* interrupteurs des notifications éclair : la piste fonce au survol */
+  .jx .tgl:hover input:not(:checked)+.sl{background:var(--line-2)}
+  .jx .tgl:hover input:checked+.sl{background:var(--accent-bg-hover)}
 }
 
 @media (min-width:880px){
@@ -2421,7 +2424,7 @@ body.out:has(.jx .b-pri) .top .signup{display:none}
   .jx-eclair .flash-card .chtools .fl-duel{margin-inline-start:auto}
   /* colonne latérale : l'état de la manche en tête, la mise, les trois choix, puis ta mise ou le résultat précédent */
   .jx-eclair .fl-bet{gap:var(--sp-4)}
-  .jx-eclair .fl-bet>.fl-phase{margin:0;padding-bottom:var(--sp-3);border-bottom:1px solid var(--line);white-space:normal;line-height:var(--lh-snug)}
+  .jx-eclair .fl-bet>.fl-phase{margin:0;padding-bottom:var(--sp-3);border-bottom:1px solid var(--line);white-space:normal;line-height:var(--lh-snug);text-wrap:balance}
   .jx-eclair .fl-bet .fl-amts{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:var(--sp-2);margin:0}
   .jx-eclair .fl-bet .fl-amts .lbl{grid-column:1/-1;margin:0}
   .jx-eclair .fl-bet .fl-amts .btn{min-width:0;padding-inline:var(--sp-1)}
@@ -2442,6 +2445,8 @@ body.out:has(.jx .b-pri) .top .signup{display:none}
   .jx .bz-sides{grid-template-columns:repeat(3,minmax(0,1fr))}
   .jx .bz-sides .fsd{justify-content:center}
   .jx .bz-sides .fsd.eq{grid-column:auto}
+  /* chiffres d'une manche en direct : « Tu dis Haut » a la taille des trois autres */
+  .jx .onair .bzprice>div>b{font-size:var(--fs-4)}
   /* la règle du jeu sur deux colonnes de texte */
   .jx-how .steps{display:block;columns:2 calc(var(--rail) - var(--sp-10));column-gap:var(--col-gap)}
   .jx-how .steps li{break-inside:avoid;margin-bottom:var(--sp-4)}
@@ -2453,11 +2458,11 @@ body.out:has(.jx .b-pri) .top .signup{display:none}
   .jx-blitz .bz-salle .bztag{grid-area:tag;justify-self:start}
   .jx-blitz .bz-salle>h1{grid-area:h}
   .jx-blitz .bz-salle .bzk>.sub{grid-area:cd;margin:0;font-size:var(--fs-1);color:var(--text-3)}
-  .jx-blitz .bz-salle .bzk>.sub>b{display:block;margin-top:2px;font-size:var(--fs-5);font-weight:var(--fw-bold);color:var(--text)}
+  .jx-blitz .bz-salle .bzk>.sub>b{display:block;margin-top:calc(var(--sp-1) / 2);font-size:var(--fs-5);font-weight:var(--fw-bold);color:var(--text)}
   .jx-blitz .bz-salle .bzkv>:nth-child(1){grid-area:k1}
   .jx-blitz .bz-salle .bzkv>:nth-child(2){grid-area:k2}
   .jx-blitz .bz-salle .bzkv>:nth-child(3){grid-area:k3}
-  .jx-blitz .bz-salle .bzkv small{margin-bottom:2px}
+  .jx-blitz .bz-salle .bzkv small{margin-bottom:calc(var(--sp-1) / 2)}
   .jx-blitz .bz-salle .bzkv .num{font-size:var(--fs-5)}
   .jx-blitz .bz-salle>.bzme,.jx-blitz .bz-salle>.btn{grid-area:cta;margin:var(--sp-6) 0 0}
   .jx-blitz .bz-salle>.btn{justify-self:start;width:auto;padding-inline:var(--sp-8)}
@@ -2494,7 +2499,7 @@ body.out:has(.jx .b-pri) .top .signup{display:none}
 }
 @media (min-width:1280px){
   /* paliers M et L : les chiffres d'une manche en direct prennent la taille des grands chiffres */
-  .jx .onair .bzprice .num{font-size:var(--fs-5)}
+  .jx .onair .bzprice>div>b{font-size:var(--fs-5)}
 }
 @media (min-width:1280px) and (max-width:1679px){
   .jx-duels .dl-list{grid-template-columns:repeat(2,minmax(0,1fr))}
