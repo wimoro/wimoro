@@ -27,6 +27,16 @@ I18N_ADD("en",{
 "Une semaine sur tous les marchés : le plus gros stack remporte la cagnotte (frais {0}).":"One week across every market: the biggest stack wins the pot (fee {0}).",
 /* (fin jeux) */
 /* Partie A [argent] */
+"Il faut remplir toutes les conditions pour changer de palier.":"To move up a tier, you must meet every requirement.",
+"Chaque fonction de Wimoro s’ouvre à un rang précis.":"Every Wimoro feature unlocks at a specific rank.",
+"Ton rang ne limite jamais le montant d’un pari : seuls ton solde et la liquidité du marché comptent.":"Your rank never limits the size of a bet: only your balance and the market’s liquidity matter.",
+"Du Fer au Radiant, trois divisions par rang.":"From Iron to Radiant, three divisions per rank.",
+"Afficher moins":"Show less",
+"Tout l’historique ({0})":"Full history ({0})",
+"Ton dépôt est crédité en dollars sur ton solde.":"Your deposit is credited in dollars to your balance.",
+"Ton retrait est prélevé en dollars sur ton solde.":"Your withdrawal is taken in dollars from your balance.",
+"Tes progrès sont gardés dans ce navigateur.":"Your progress is kept in this browser.",
+"Les montants et les dates suivent la langue choisie.":"Amounts and dates follow the chosen language.",
 /* (fin argent) */
 /* Partie A [communaute] */
 /* (fin communaute) */
@@ -54,6 +64,16 @@ I18N_ADD("he",{
 "Une semaine sur tous les marchés : le plus gros stack remporte la cagnotte (frais {0}).":"שבוע על כל השווקים: הסטאק הגדול ביותר זוכה בקופה (עמלה {0}).",
 /* (fin jeux) */
 /* Partie A [argent] */
+"Il faut remplir toutes les conditions pour changer de palier.":"כדי לעלות דרגה צריך לעמוד בכל התנאים.",
+"Chaque fonction de Wimoro s’ouvre à un rang précis.":"כל תכונה ב-Wimoro נפתחת בדרגה מסוימת.",
+"Ton rang ne limite jamais le montant d’un pari : seuls ton solde et la liquidité du marché comptent.":"הדרגה אף פעם לא מגבילה את גודל ההימור: רק היתרה ונזילות השוק קובעות.",
+"Du Fer au Radiant, trois divisions par rang.":"מברזל ועד זוהר, שלוש חטיבות לכל דרגה.",
+"Afficher moins":"להציג פחות",
+"Tout l’historique ({0})":"להציג את כל ההיסטוריה ({0})",
+"Ton dépôt est crédité en dollars sur ton solde.":"ההפקדה מזוכה ביתרה בדולרים.",
+"Ton retrait est prélevé en dollars sur ton solde.":"המשיכה יורדת מהיתרה בדולרים.",
+"Tes progrès sont gardés dans ce navigateur.":"ההתקדמות נשמרת בדפדפן הזה.",
+"Les montants et les dates suivent la langue choisie.":"הסכומים והתאריכים מותאמים לשפה שנבחרה.",
 /* (fin argent) */
 /* Partie A [communaute] */
 /* (fin communaute) */

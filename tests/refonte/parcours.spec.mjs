@@ -95,7 +95,7 @@ test('4 · pari Éclair depuis #eclair : la mise est enregistrée', async ({ pag
   expect(erreurs).toEqual([]);
 });
 
-test('5 · portefeuille : solde, Déposer, Retirer, onglet Historique', async ({ page }) => {
+test('5 · portefeuille : solde, Déposer, Retirer ; positions et historique côte à côte (ordinateur), onglet Historique (téléphone)', async ({ page }) => {
   const { erreurs } = await demo(page, { hash: '#portefeuille' });
   await expect(page.locator('[data-bal-plain]')).toBeVisible();
   await expect(page.locator('[data-bal-plain]')).toContainText(/\d/);
@@ -107,6 +107,12 @@ test('5 · portefeuille : solde, Déposer, Retirer, onglet Historique', async ({
   await expect(page).toHaveURL(/#retrait/);
   await page.goBack();
   await expect(page).toHaveURL(/#portefeuille/);
+  // ordinateur (troisième passe) : plus d'onglets, les positions et l'historique sont affichés ensemble
+  await expect(page.locator('[data-ptab-body] .pos-t')).toBeVisible();
+  await expect(page.locator('.wal-side .act').first()).toBeVisible();
+  await expect(page.locator('[data-a="ptab"]')).toHaveCount(0);
+  // téléphone : le portefeuille se redessine avec ses onglets Positions / Historique
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.locator('[data-a="ptab"][data-v="history"]').click();
   await expect(page).toHaveURL(/#portefeuille/);
   await expect(page.locator('[data-a="ptab"][data-v="history"]')).toHaveClass(/\bon\b/);

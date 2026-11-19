@@ -58,13 +58,30 @@ function vCommunaute(){const demandes=S.me.logged&&typeof fIn==='function'?fIn()
 VIEWS.communaute=vCommunaute;TITLES.communaute=_t("Communauté");
 
 /* ===================== Portefeuille ===================== */
+/* Liens du portefeuille : combinés, jeu responsable, KYC (téléphone et ordinateur) */
+function walLiensH(nc){return `<section class="pn menu-l">${ligneH('layers',_t("Mes combinés"),{href:'#combines',n:nc})}${ligneH('shield',_t("Jeu responsable"),{href:'#responsable'})}${S.me.kyc?'':ligneH('lock',_t("KYC non fait : crypto uniquement"),{a:'kyc',val:_t("Faire le KYC")})}</section>`;}
+/* Ordinateur : un tableau de bord sur la grille de 12 colonnes. Une bande pour le solde, ses deux chiffres et les deux
+   actions (alignées sur la colonne de droite) ; dessous, les positions puis les derniers dépôts et retraits (8 colonnes),
+   et l'historique (4 colonnes). Les listes [data-deps] et [data-wds] se mettent à jour seules (refreshDeps, wdEnvoye). */
+function walletOrdiH(pf,nc){const n=S.me.positions.length;
+ return `<div class="wrap wal wal-o"><h1 class="vhid">${_t("Portefeuille")}</h1><div class="grille12">
+ <section class="pn wal-top"><div class="wal-sol"><small class="wal-k">${_t("Solde")}</small><b class="num wal-b" data-bal-plain>${F.bal(S.me.balance,true)}</b></div>
+  <div class="wal-kv"><div><small>${_t("Valeur des positions")}</small><b class="num" data-live="pvalue">${F.usd(pf.value)}</b></div><div><small>${_t("Profit total")}</small><b class="num ${plc(pf.profit)}" data-live="profit">${F.signed(pf.profit)}</b></div></div>
+  <div class="wal-a"><a class="btn b-pri lg" href="#depot">${_t("Déposer")}</a><a class="btn b-ink lg" href="#retrait">${_t("Retirer")}</a></div></section>
+ <div class="col wal-main s8"><section class="pn clip"><div class="pn-tete"><h2 class="h2">${_t("Positions")}</h2>${n?`<span class="sub m-0 num">${F.int(n)}</span>`:''}</div><div data-ptab-body>${ptabH('positions')}</div></section>
+  <div class="wal-mvt"><section class="pn pad"><div class="h2 mb-1">${_t("Dépôts récents")}</div><div data-deps>${depsH()}</div></section><section class="pn pad"><div class="h2 mb-1">${_t("Retraits récents")}</div><div data-wds>${wdsH()}</div></section></div></div>
+ <div class="col wal-side s4"><section class="pn clip"><div class="pn-tete"><h2 class="h2">${_t("Historique")}</h2></div>${ptabH('history',8)}</section>${walLiensH(nc)}</div></div></div>`;}
+ACT['hist-all']=()=>{S.ui.histAll=!S.ui.histAll;render(false);};
+/* passer le palier de 880 px redessine les écrans qui ont un gabarit d'ordinateur (argentOrdi, js/views.js) */
+try{matchMedia('(min-width:880px)').addEventListener('change',()=>{if(PRET&&/^(portefeuille|depot|retrait|profil|rang)$/.test(S.ui.route||''))render(false);});}catch(e){}
 function vWallet(){const pf=portfolio(),t=S.ui.ptab==='history'?'history':'positions',nc=typeof combosAll==='function'?combosAll().filter(c=>c.status==='open').length:0;
+ if(argentOrdi())return walletOrdiH(pf,nc);
  return `<div class="wrap wal"><h1 class="vhid">${_t("Portefeuille")}</h1>
  <section class="pn pad wal-top"><small class="wal-k">${_t("Solde")}</small><b class="num wal-b" data-bal-plain>${F.bal(S.me.balance,true)}</b>
   <div class="wal-kv"><div><small>${_t("Valeur des positions")}</small><b class="num" data-live="pvalue">${F.usd(pf.value)}</b></div><div><small>${_t("Profit total")}</small><b class="num ${plc(pf.profit)}" data-live="profit">${F.signed(pf.profit)}</b></div></div>
   <div class="wal-a"><a class="btn b-pri lg" href="#depot">${_t("Déposer")}</a><a class="btn b-ink lg" href="#retrait">${_t("Retirer")}</a></div></section>
  <section class="pn clip"><div class="wal-tabs"><div class="tabs ptabs">${[['positions',_t("Positions")],['history',_t("Historique")]].map(([k,l])=>`<button class="${t===k?'on':''}" data-a="ptab" data-v="${k}">${l}</button>`).join('')}</div></div><div data-ptab-body>${ptabH(t)}</div></section>
- <section class="pn menu-l">${ligneH('layers',_t("Mes combinés"),{href:'#combines',n:nc})}${ligneH('shield',_t("Jeu responsable"),{href:'#responsable'})}${S.me.kyc?'':ligneH('lock',_t("KYC non fait : crypto uniquement"),{a:'kyc',val:_t("Faire le KYC")})}</section></div>`;}
+ ${walLiensH(nc)}</div>`;}
 VIEWS.portefeuille=vWallet;PROTECTED.add('portefeuille');TITLES.portefeuille=_t("Portefeuille");
 /* les onglets Positions et Historique vivent dans le portefeuille, les autres dans le profil */
 ACT.ptab=a=>{const v=a.dataset.v,ou=v==='positions'||v==='history'?'portefeuille':'profil';S.ui.ptab=v;if((S.ui.route||'')!==ou){location.hash='#'+ou;return;}render(false);};

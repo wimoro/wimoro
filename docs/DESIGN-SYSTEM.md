@@ -164,6 +164,13 @@ Exemple — un écran avec sa colonne latérale :
 </div>
 ```
 
+**Écrans à deux gabarits.** Le portefeuille, le dépôt, le retrait, le profil et le rang ont un gabarit d'ordinateur
+distinct de celui du téléphone : leur fonction de rendu teste `argentOrdi()` (880 px et plus, `js/views.js`) et pose les
+mêmes blocs sur `.grille12` ; franchir le palier redessine l'écran (`js/refonte.js`). Le gabarit du téléphone ne change pas.
+Exemples : le portefeuille (une bande avec le solde, deux chiffres et les deux actions alignées sur la colonne de droite,
+puis les positions sur 8 colonnes et l'historique sur 4) ; le dépôt (le moyen, le formulaire, l'envoi et son bouton, sur
+3, 5 et 4 colonnes). Styles : section « [argent] » de `screens.css`.
+
 Les anciens noms (`--ink`, `--g2`, `--oui`, `--non`, `--panel`, `--sg`…) restent définis à la fin de `tokens.css` :
 le JavaScript des graphiques du Mode Pro et des images partagées les lit encore.
 
