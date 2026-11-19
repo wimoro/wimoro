@@ -41,7 +41,8 @@ Les quatre feuilles se chargent dans cet ordre dans `index.html`. Après toute m
    44 px. Pour un nouveau petit contrôle : l'ajouter aux deux listes de cette règle, rien d'autre. Un contrôle qui rogne
    son contenu (`overflow:hidden`) ne peut pas porter de zone élargie : il grandit par `min-height` ou par une marge
    intérieure compensée (`padding-block` + `margin-block` négatif).
-10. **Tout texte passe par `_t('texte français')`** et reçoit ses traductions anglaise et hébraïque dans `js/i18n-4.js`.
+10. **Tout texte passe par `_t('texte français')`** et reçoit ses traductions anglaise et hébraïque dans `js/i18n-4.js`
+    (première et seconde passes) ou `js/i18n-5.js` (troisième passe, une section par partie).
 11. **Les icônes viennent d'un seul jeu**, Lucide (licence ISC), par `ic('nom')` (`js/core.js`). Elles prennent la
     couleur du texte. Pas d'emoji en guise d'icône (les réactions du chat sont du contenu, pas des icônes).
 12. **Le JavaScript s'accroche aux attributs `data-*` et aux identifiants**, pas à l'apparence : on peut changer le
@@ -71,6 +72,18 @@ Les quatre feuilles se chargent dans cet ordre dans `index.html`. Après toute m
     chaque texte y porte sa clé française (`data-i18n` pour le contenu, `data-i18n-<attribut>` pour un attribut), traduite par
     `i18nStatic` dès que les catalogues sont chargés. Tant que le site démarre, `<body>` n'a ni la classe `in` ni la classe
     `out` : les éléments réservés à un état (`only-in`, `only-out`) restent cachés et un bloc neutre tient leur place.
+20. **Les textes de l'interface** : aucun point d'exclamation ; pas de point final sur un titre, un libellé, un bouton,
+    un état vide ni une notification d'une seule phrase (un texte de plusieurs phrases garde les siens). Pour les
+    notifications éphémères et le panneau des notifications, la règle est appliquée à l'affichage (`sansPoint`,
+    `js/views.js`), donc aussi aux textes du serveur. Les messages des joueurs simulés du chat sont du contenu.
+    En hébreu : boutons et actions à l'infinitif (« להירשם »), phrases au présent impersonnel pluriel (« בוחרים שוק »),
+    jamais l'impératif masculin singulier ; les marques de sens d'écriture s'écrivent par leur échappement visible, jamais le caractère lui-même.
+21. **Accessibilité** : à chaque changement d'écran, le focus va au titre de la page (`h1`, visible ou non) ; un bouton
+    qui ouvre un panneau porte `aria-expanded` et, ouvert, `aria-controls` ; Échap ferme le panneau et rend le focus au
+    bouton (`js/refonte.js`, « Accessibilité »).
+22. **Les images à partager** (duel, série, clan, parrainage, analyse) prennent leurs couleurs dans les variables du
+    thème en cours (`imgPal()`, `js/referral.js`) : fond uni, encre, accent, vert et rouge pour le sens ; ni dégradé, ni
+    halo, graisses 600 au plus, et le vrai logo (`drawLogo`).
 
 ## 3. Les variables
 
@@ -89,6 +102,7 @@ Les quatre feuilles se chargent dans cet ordre dans `index.html`. Après toute m
 | `--ink-bg`, `--on-ink` | élément inversé (bulle d'aide, barre des combinés) | `#1D1D1F`, blanc | `#F5F5F7`, `#1D1D1F` |
 | `--seg-on` | segment actif d'un contrôle segmenté (`.seg`), plus clair que sa piste | `--surface` | `#3A3A40` |
 | `--side-bg`, `--on-side` | panneau latéral de la connexion et de l'inscription | `--ink-bg`, `--on-ink` | `--fill`, `--text` |
+| `--rank-0` à `--rank-8` | emblème de rang : un ton plein par rang (Fer… Radiant), signe blanc par-dessus | mêmes tons dans les deux thèmes | — |
 
 Chaque teinte a trois emplois : `--x` pour un texte ou un trait posé sur une surface, `--x-bg` pour un fond plein portant
 du texte blanc (`--on-color`), `--x-soft` pour un fond teinté. Tous ces couples atteignent le contraste AA (4,5:1) ; ils
@@ -119,7 +133,12 @@ Graisses : 400, 500, 600 (`b` et `strong` valent 600). Les titres (20 px et plus
 
 ### Espacements, rayons, ombres, durées
 - Espacements : `--sp-1` 4 · `--sp-2` 8 · `--sp-3` 12 · `--sp-4` 16 · `--sp-5` 20 · `--sp-6` 24 · `--sp-8` 32 ·
-  `--sp-10` 40 · `--sp-12` 48 · `--sp-16` 64.
+  `--sp-10` 40 · `--sp-12` 48 · `--sp-16` 64. Trois jetons hérités, `--sp-h3`, `--sp-h6`, `--sp-h10`, remplacent les
+  anciennes valeurs hors grille des règles communes : 4, 8 et 12 px sur téléphone, l'ancienne valeur (3, 6, 10 px) sur
+  ordinateur, pour ne pas toucher la composition de la partie A. Pour aligner l'ordinateur, retirer leurs trois lignes du
+  palier S dans `tokens.css`. À ne pas employer dans une règle nouvelle.
+- Icônes : 16 px dans le texte, les boutons et les pastilles, 18 px dans les lignes et les en-têtes ; sur téléphone, les
+  anciennes tailles (10 à 15, 17, 19 px) sont ramenées à 16 et 18 px par une règle de `screens.css` (section `[telephone]`).
 - Rayons : `--r-xs` 4 (barres) · `--r-sm` 8 (pastilles) · `--r-md` 12 (boutons, champs) · `--r-lg` 16 (cartes) ·
   `--r-xl` 20 (fenêtres) · `--r-pill`.
 - Ombres : `--shadow-1` (poignée d'un interrupteur), `--shadow-2` (menu, notification), `--shadow-3` (fenêtre).
@@ -201,6 +220,7 @@ le JavaScript des graphiques du Mode Pro et des images partagées les lit encore
 | Pastille | `chip` dans `chips` ; `xpc`, `demo-b`, `cnt2` (compteur), `lk` (verrou) | |
 | Carte | `pn`, avec `pad` | ni bordure ni ombre |
 | Ligne | `line` dans `calc` (libellé / valeur), `mrow` dans `menu-l` (ligne de menu), `lockrow`, `pickl` | |
+| Cours en direct | `mlive` (`data-mlive`), dans la case de la chance d'une ligne de marché | vide, elle ne prend aucune place ; sur téléphone, sa largeur est prise à la courbe, jamais aux boutons Oui / Non |
 | Message | `limit` (information, `over` pour une erreur), `warn`, `note`, `empty` (état vide) | |
 | Détail à la demande | `<details class="tdet">`, sections `.repli` (posées par `js/refonte.js`) | l'essentiel reste visible |
 | Fenêtre | `ov` > `modal` > `md` (`md-h`, `md-acts`) ; bouton `x` | feuille en bas sur téléphone |

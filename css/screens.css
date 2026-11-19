@@ -3281,6 +3281,11 @@ body:has(.auth) .top .signup,body:has(.auth) .top .login{display:none}
   .lb .lr .pos{font-size:var(--fs-2)}
   .lb .lr>.c-pr .num{font-size:var(--fs-3)}
 }
+/* sous 360 px : position sur 32 px et écarts de 8 px, autant de place rendue au pseudo */
+@media (max-width:359px){
+  .lb .lr{grid-template-columns:var(--sp-8) minmax(0,1fr) auto;column-gap:var(--sp-2)}
+  .lb .lr .pl{gap:var(--sp-2)}
+}
 
 /* ---------- Cibles tactiles : un lien qui rogne son texte (points de suspension) ne peut pas porter de zone élargie ;
    il grandit par une marge intérieure compensée, sans rien déplacer (règle 9 du système) ---------- */
@@ -3310,3 +3315,8 @@ body:has(.auth) .top .signup,body:has(.auth) .top .login{display:none}
   .board .row .pv{display:grid;grid-template-columns:auto minmax(0,auto);column-gap:var(--sp-2);align-items:baseline;align-content:start}
   .board .row .pv>.num{grid-column:1/-1}
 }
+
+/* ---------- Éclair, Blitz, Série : la ligne d'état d'une manche fermée affichait ses deux libellés à la fois sur téléphone
+   (« Mises fermées,Fermé, résultat… », coupé à 320 px) depuis la règle .fl-phase>.pl de la partie A ; le téléphone garde
+   le libellé court (« Fermé, »), l'ordinateur le long ---------- */
+@media (max-width:879px){.fl-phase>.pl{display:none}}
