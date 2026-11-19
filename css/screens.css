@@ -2587,6 +2587,7 @@ html.pro-lock,html.pro-lock body{overflow:hidden}
   /* classement du mois : mêmes lignes, plus d'air ; le tag reste entier */
   .clmain .cltr{grid-template-columns:var(--sp-12) minmax(0,1fr) 140px 96px 140px;column-gap:var(--sp-4);min-height:52px;padding-block:var(--sp-2);font-size:var(--fs-2);transition:background var(--dur-1) var(--ease)}
   .clmain .cltr>span:nth-child(2){overflow:visible}
+  .clmain .cltr .r{text-align:end}   /* les chiffres alignés à droite, comme dans les autres tableaux */
   .clmain .cltr .ctg{flex:none}
   .clmain .cltr:not(.h) .r.num:last-child{font-size:var(--fs-3)}
   /* règles : deux colonnes de texte quand la place le permet */
