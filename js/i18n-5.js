@@ -39,6 +39,20 @@ I18N_ADD("en",{
 "Les montants et les dates suivent la langue choisie.":"Amounts and dates follow the chosen language.",
 /* (fin argent) */
 /* Partie A [communaute] */
+"Saison 3, fin dans {0} jours":"Season 3, ends in {0} days",
+"Ta place":"Your position",
+"{0} en ligne":"{0} online",
+"{0, plural, one{demande reçue} other{demandes reçues}}":"{0, plural, one{request received} other{requests received}}",
+"de précision":"accuracy",
+"{0, plural, one{# copie active} other{# copies actives}}":"{0, plural, one{# active copy} other{# active copies}}",
+"Voir le profil":"View profile",
+"À propos":"About",
+"Chaque pari des joueurs que tu copies est reproduit sur ton compte, avec ton propre budget.":"Every bet of the players you copy is replayed on your account, with your own budget.",
+"S’il mise {0}, tu mises {1} : tes mises suivent les siennes à l’échelle de ton budget.":"If they bet {0}, you bet {1}: your bets follow theirs, scaled to your budget.",
+"{0} Copié par {1, plural, one{# joueur} other{# joueurs}}":"{0} Copied by {1, plural, one{# player} other{# players}}",
+"Les performances passées ne garantissent pas les résultats futurs.":"Past performance does not guarantee future results.",
+"{0} rejoint {1}.":"{0} joins {1}.",
+"Guerre de clans contre {0} [{1}] : 48 h pour marquer des points. Buy-in {2}.":"Clan war against {0} [{1}]: 48 h to score points. Buy-in {2}.",
 /* (fin communaute) */
 /* Partie A [marche] */
 /* (fin marche) */
@@ -76,6 +90,20 @@ I18N_ADD("he",{
 "Les montants et les dates suivent la langue choisie.":"הסכומים והתאריכים מותאמים לשפה שנבחרה.",
 /* (fin argent) */
 /* Partie A [communaute] */
+"Saison 3, fin dans {0} jours":"עונה 3, מסתיימת בעוד {0} ימים",
+"Ta place":"המקום שלך",
+"{0} en ligne":"{0} מחוברים",
+"{0, plural, one{demande reçue} other{demandes reçues}}":"{0, plural, one{בקשה שהתקבלה} other{בקשות שהתקבלו}}",
+"de précision":"דיוק",
+"{0, plural, one{# copie active} other{# copies actives}}":"{0, plural, one{העתקה פעילה אחת} other{# העתקות פעילות}}",
+"Voir le profil":"לפרופיל",
+"À propos":"אודות",
+"Chaque pari des joueurs que tu copies est reproduit sur ton compte, avec ton propre budget.":"כל הימור של השחקנים שמעתיקים משוחזר בחשבון שלכם, עם התקציב שלכם.",
+"S’il mise {0}, tu mises {1} : tes mises suivent les siennes à l’échelle de ton budget.":"אם הוא מהמר {0}, מהמרים {1}: ההימורים עוקבים אחרי שלו, בקנה המידה של התקציב שלכם.",
+"{0} Copié par {1, plural, one{# joueur} other{# joueurs}}":"{0} מועתק על ידי {1, plural, one{שחקן אחד} other{# שחקנים}}",
+"Les performances passées ne garantissent pas les résultats futurs.":"ביצועי עבר אינם מבטיחים תוצאות בעתיד.",
+"{0} rejoint {1}.":"{0} מצטרף ל-{1}.",
+"Guerre de clans contre {0} [{1}] : 48 h pour marquer des points. Buy-in {2}.":"מלחמת קלאנים מול {0} [{1}]: 48 שעות לצבור נקודות. דמי כניסה {2}.",
 /* (fin communaute) */
 /* Partie A [marche] */
 /* (fin marche) */
