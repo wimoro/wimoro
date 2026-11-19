@@ -23,7 +23,37 @@ puis `git log --oneline refonte-design`.** Le suivi de la réparation du back re
 | 7. Nettoyage | fait (`css/main.css` et code mort retirés) |
 | 8. Vérification et livraison | fait : pull request ouverte, non fusionnée ; rien n'est en ligne |
 
-## SECONDE PASSE (demandée le 19 nov. 2026) — à lire en premier
+## TROISIÈME PASSE (demandée le 19 nov. 2026, après-midi) — à lire en premier
+
+Mission : finir la refonte (ordinateur dessiné pour le grand écran, téléphone encore amélioré), brancher de vrais
+marchés en direct (cours, scores, actualité) et un panel d'administration complet. Brief complet du propriétaire :
+parties A (ordinateur), B (téléphone), C (points en attente), D (données réelles, 60 marchés), E (panel). Règles
+principales : unslop, ECC (plan, revues, tests, vérification) et frontend-design réellement utilisés ; rien sur `main` ;
+un commit par étape ; aucune fonction ne disparaît ; Supabase modifiable depuis cette machine **après sauvegarde du schéma
+et des données des tables touchées**, en ajoutant plutôt qu'en modifiant (une fonction existante ne reçoit qu'une
+vérification de plus, sans changer le comportement d'un joueur non concerné) ; ne rien supprimer ; inscription et
+connexion inchangées ; clés d'API seulement dans les secrets Supabase ; aucun « argent fictif », « play money » ni
+« démo » à l'écran (sauf pour le compte démo), aucun concurrent nommé ; trois langues (anglais par défaut, français,
+hébreu) pour tout texte vu par un joueur. Seul arrêt permis : une action sur le serveur que ces règles n'autorisent pas.
+
+Ordre : (1) lecture et accès → (2) D1, recherche des sources, puis un message au propriétaire (comptes gratuits à créer,
+adresse du compte à passer administrateur) → (3) C, A, B sur `refonte-design` → (4) D puis E sur la branche
+`marches-et-admin` (créée depuis `refonte-design`) → bilan.
+
+### Avancement de la troisième passe
+| Étape | État |
+|---|---|
+| 1. Lecture des documents, accès Supabase (projet `brmwvxncyeypefsgiepf`, sain, droits complets), plugins (unslop, ECC, frontend-design présents) | fait |
+| 2. D1 : recherche des sources (6 recherches parallèles, notes de travail dans le dossier temporaire `d1/`) | en cours |
+| 3. Message au propriétaire (comptes, adresse admin) | à faire |
+| 4. Partie C | en cours |
+| 5. Partie A (ordinateur) | à faire |
+| 6. Partie B (téléphone) | à faire |
+| 7. Partie D (branche `marches-et-admin`) | à faire |
+| 8. Partie E (panel) | à faire |
+| 9. Vérification, revues, bilan | à faire |
+
+## SECONDE PASSE (demandée le 19 nov. 2026)
 
 Le propriétaire a mis la première version en prévisualisation et demande une seconde passe sur la même branche
 (`refonte-design`, pull request n° 29). Mêmes règles : unslop et ECC réellement utilisés, back-end intouché, aucune

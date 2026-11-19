@@ -1028,11 +1028,12 @@ html,body{max-width:100%;overflow-x:hidden}
 
 /* ===== Moteur de marché v9 ===== */
 
-/* ticket d'achat : notes sous le détail (liquidité, ordre important, comparaison Polymarket) */
+/* ticket d'achat : notes sous le détail (liquidité, ordre important) */
 .tnotes{display:flex;flex-direction:column;gap:8px}
 .tnotes:empty{display:none}
-.note.vs{color:var(--text-3);line-height:1.4}
-.note.vs b{color:var(--text-2);font-weight:600}
+
+/* écran « Connexion au serveur impossible » (js/serveur.js, ecranErreurServeur) */
+.srv-err{max-width:520px;margin:var(--sp-12) auto;text-align:center}
 
 /* ligne « Frais » : l'étiquette ne se coupe jamais ; sur petit écran la pastille de rang passe sous le montant */
 

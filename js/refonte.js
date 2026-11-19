@@ -68,7 +68,7 @@ ACT.ptab=a=>{const v=a.dataset.v,ou=v==='positions'||v==='history'?'portefeuille
 function bigsBlocH(){return `<section class="pn pad"><div class="ph"><div><div class="h2">${_t("Grosses mises en direct")}</div><div class="sub">${_t("Les plus gros paris de la dernière heure")}</div></div></div><div class="bigs" data-bigs>${bigsH()}</div></section>`;}
 
 /* ===================== Accueil : Wimoro en une phrase, pour un visiteur ===================== */
-function introH(){return `<section class="intro"><h2 class="ptitle">${_t("Parie sur ce qui va arriver")}</h2><p class="plead">${_t("Choisis un marché, réponds Oui ou Non, et gagne si tu as vu juste. Ici, tout l’argent est fictif.")}</p><div class="hbtns"><a class="btn b-pri lg" href="#inscription">${_t("S’inscrire")}</a><button class="btn b-ink lg" data-a="demo-login">${_t("Explorer avec le compte démo")}</button></div></section>`;}
+function introH(){return `<section class="intro"><h2 class="ptitle">${_t("Parie sur ce qui va arriver")}</h2><p class="plead">${_t("Choisis un marché, réponds Oui ou Non, et gagne si tu as vu juste.")}</p><div class="hbtns"><a class="btn b-pri lg" href="#inscription">${_t("S’inscrire")}</a><button class="btn b-ink lg" data-a="demo-login">${_t("Explorer avec le compte démo")}</button></div></section>`;}
 {const v=VIEWS.accueil;VIEWS.accueil=a=>{const h=v(a);return S.me.logged?h:enTete(h,introH());};}
 
 /* ===================== Sections repliables : l'essentiel d'abord, le détail à la demande =====================

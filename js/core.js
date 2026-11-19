@@ -135,8 +135,12 @@ const planifier=(nom,ms,fn,quand)=>{PLAN.push({nom,ms,fn,quand:quand||'local'});
 let PRET=false;
 
 /* Indice pour le testeur : petite mention toujours identique, jamais dans le libellé principal d'un bouton ou d'un titre. */
-const demoB=()=>`<span class="demo-b">${_t('Mode démo')}</span>`;
-const demoHint=(txt,tag='p')=>`<${tag} class="demo-h">${demoB()}<span>${txt}</span></${tag}>`;
+/* « Mode démo » ne s'affiche que pour le compte démo (isDemoAcc, js/demo.js) : un visiteur ou un vrai compte ne lit jamais
+   « démo » ni « argent fictif ». toujours=true : exception voulue (l'inscription par portefeuille crée un compte de démonstration). */
+const demoPill=()=>`<span class="demo-b">${_t('Mode démo')}</span>`;
+const demoVu=()=>typeof isDemoAcc==='function'&&isDemoAcc();
+const demoB=()=>demoVu()?demoPill():'';
+const demoHint=(txt,tag='p',toujours)=>toujours||demoVu()?`<${tag} class="demo-h">${demoPill()}<span>${txt}</span></${tag}>`:'';
 /* ===================== Dates ===================== */
 /* Un seul formateur par langue ; l'heure est sur 24 h (« 23:59 »), sauf en anglais (« 11:59 PM », voir hTxt). */
 const DAYMS=864e5,isoDate=s=>{const [y,mo,d]=s.split('-').map(Number);return new Date(y,mo-1,d);};
