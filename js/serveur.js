@@ -31,11 +31,19 @@ const ERR_TXT={
  liquidite:()=>_t("Pas assez de liquidité sur ce marché pour ce montant."),
  marche_ferme:()=>_t("Ce marché est fermé."),
  marche_inconnu:()=>_t("Ce marché est fermé."),
- montant_min:()=>_t("La mise minimale est de 1 $."),
+ montant_min:()=>siteNum('paris.mise_min',1)===1?_t("La mise minimale est de 1 $."):_t("La mise minimale est de {0}.",[F.usd(siteNum('paris.mise_min',1))]),
  position_absente:()=>_t("Tu n’as plus cette position."),
  quantite_invalide:()=>_t("Tu n’as plus cette position."),
  pause:()=>_t("Tu es en pause : les paris et les dépôts sont bloqués."),
- limite_depot:()=>_t("Limite de dépôt atteinte"),
+ limite_depot:()=>siteNum('depots.max_jour')?_t("Limite de dépôt atteinte : {0} au plus sur 24 heures, ou moins si tu as fixé ta propre limite.",[F.usd0(siteNum('depots.max_jour'))]):_t("Limite de dépôt atteinte. Réessaie plus tard ou choisis un montant plus petit."),
+ montant_max:()=>siteNum('paris.mise_max')?_t("Mise trop élevée : {0} au plus par pari.",[F.usd0(siteNum('paris.mise_max'))]):_t("Mise trop élevée pour ce pari."),
+ retrait_max:()=>siteNum('retraits.max')?_t("Retrait trop élevé : {0} au plus par retrait.",[F.usd0(siteNum('retraits.max'))]):_t("Retrait trop élevé."),
+ maintenance:()=>_t("Wimoro est en maintenance. Réessaie dans quelques minutes."),
+ mode_lent:e=>{const s=+(e&&e.cause&&e.cause.details)||0;return s>0?_t("Mode lent dans ce salon : attends encore {0} s avant d’écrire.",[s]):_t("Mode lent dans ce salon : attends un peu avant d’écrire.");},
+ salon_ferme:()=>_t("Ce salon est fermé pour le moment."),
+ mot_interdit:()=>_t("Ton message contient un mot interdit dans le chat. Reformule-le."),
+ clan_indisponible:()=>_t("Ce clan a été dissous : il n’accepte plus de membres."),
+ bloque:e=>blocTexte(blocDe(e)),
  kyc_requis:()=>_t("Fais d’abord le KYC pour utiliser ce moyen de paiement."),
  depot_min:()=>_t("Montant inférieur au minimum."),
  depot_max:()=>_t("Montant supérieur au maximum autorisé."),
@@ -114,8 +122,11 @@ const ERR_TXT={
  deja_mise:()=>_t("Une mise par pari et par manche. Tu peux jouer les autres paris éclair."),
  be_plein:()=>_t("La cagnotte de cette manche ne peut plus couvrir de break even.")
 };
-const errTxt=e=>{const c=e&&e.code||'';return ERR_TXT[c]?ERR_TXT[c]():_t("Une erreur est survenue. Réessaie.");};
-const srvErreur=e=>{if(e&&e.code==='session'){srvSessionPerdue();return;}if(e&&e.code==='exclu'){srvExclu(e);return;}if(e&&e.code==='suspendu'){srvSuspendu(e);return;}toast({tone:'red',icon:'info',force:true,title:_t("Action impossible"),text:errTxt(e)});};
+const errTxt=e=>{const c=e&&e.code||'';return ERR_TXT[c]?ERR_TXT[c](e):_t("Une erreur est survenue. Réessaie.");};
+/* maintenance : l'écran de maintenance ; blocage posé par l'équipe : noté (le message s'affiche à l'endroit bloqué) et annoncé */
+const srvErreur=e=>{if(e&&e.code==='session'){srvSessionPerdue();return;}if(e&&e.code==='exclu'){srvExclu(e);return;}if(e&&e.code==='suspendu'){srvSuspendu(e);return;}
+ if(e&&e.code==='maintenance'){maintErreur();return;}if(e&&e.code==='bloque'){blocErreur(e);return;}
+ toast({tone:'red',icon:'info',force:true,title:_t("Action impossible"),text:errTxt(e)});};
 
 /* ----- Ce qui n'est pas encore relié au serveur est clairement indisponible en mode serveur -----
    La liste se vide au fil des lots (voir docs/PLAN.md). Le test tests/compte/garde.spec.mjs vérifie qu'aucune action
@@ -248,6 +259,9 @@ function hydrater(e){
  if(e.duels){srvFiches(e.duels.users);me.duels=(e.duels.liste||[]).map(x=>duelDe(x,e.uid));}
  if(e.stacks){srvFiches(e.stacks.users);me.stacks=(e.stacks.liste||[]).map(stackDe);}   /* au démarrage, l'identifiant du joueur vient de l'état lui-même */
  me.notifs=(e.notifs||[]).map(notifDe);me.missions=(e.missions||[]).map(missionDe);me.badges=(e.badges||[]).slice();
+ /* un ajustement de solde par l'équipe (opération « ajustement_admin » du relevé) entre dans l'historique, par sa notification */
+ {const adj=(e.notifs||[]).filter(n=>n&&n.code==='admin_solde'&&n.p&&isFinite(+n.p.delta)).map(n=>({k:'ajustement_admin',q:_t("Ajustement de l’équipe Wimoro"),s:'',win:+n.p.delta>=0,pnl:+n.p.delta,at:+n.at||0}));
+  if(adj.length)me.history=me.history.concat(adj).sort((a,b)=>(b.at||0)-(a.at||0));}
  me.friends=(e.friends||[]).slice();me.freqIn=(e.freqIn||[]).slice();me.freqOut=(e.freqOut||[]).slice();me.following=(e.following||[]).slice();
  const pr=e.prefs||{};for(const k of SRV_PREFS)if(pr[k]!==undefined)me[k]=pr[k];
  for(const id of USER_IDS.slice())delete USERS[id];        /* l'annuaire ne contient que des joueurs connus du serveur */
@@ -623,11 +637,18 @@ async function srvChatEnvoyer(rid,inp,text){
  try{
   const r=srvPrive(rid)?await API.call('api_dm_send',{p_user:rid.slice(3),p_text:text}):await API.call('api_chat_send',{p_room:rid,p_text:text});
   if(inp.value.trim()===text)inp.value='';
+  chatNote(rid,'');
   srvChatAjouter(rid,r.msg);
   const b=inp.getBoundingClientRect();srvAppliquer(r,{clientX:b.left+Math.min(b.width-40,160),clientY:b.top});
- }catch(e){srvErreur(e);}
+ }catch(e){
+  if(e&&e.code==='bloque')blocErreur(e);                                                               /* le champ du salon laisse place au message du blocage */
+  else if(e&&e.code==='salon_ferme'){salonNoter(rid,{ferme:true});blocsRendre();srvErreur(e);}       /* le champ laisse place à « salon fermé » */
+  else{if(e&&CHAT_REFUS.has(e.code))chatNote(rid,errTxt(e));srvErreur(e);}}                            /* le refus s'écrit sous le champ, et la notification reste */
  finally{srvChatOccupe=false;}
 }
+/* refus du chat : le message s'écrit sous le champ du salon concerné (et non dans une notification) */
+const CHAT_REFUS=new Set(['bloque','mode_lent','salon_ferme','mot_interdit','trop_vite','message_repete','trop_de_messages','message_trop_long','texte_refuse']);
+function chatNote(rid,t){$$('[data-cnote]').forEach(el=>{if(el.dataset.cnote===rid)el.textContent=t;});}
 
 /* ----- La Série : lancée, jouée et réglée par le serveur (Edge Function « eclair », actions serie_…) -----
    Le serveur donne l'heure de début de la manche, le prix de départ, la cote retenue et l'issue ; l'écran garde son
@@ -1156,6 +1177,11 @@ async function srvBzRacheter(){const r=bzR();if(!r||!bzCanRebuy(r)||SRV_BZ.occup
 
 /* ----- Sujet privé du joueur : ses messages privés et ses notifications arrivent en direct, à lui seul ----- */
 function srvPerso(evt,d){
+ /* l'équipe : état à relire, blocage posé ou levé, déconnexion forcée (Partie E) */
+ if(evt==='etat'){srvVu=0;srvRafraichir();return;}
+ if(evt==='bloc'){blocRecu(d);return;}
+ if(evt==='debloc'){deblocRecu(d);return;}
+ if(evt==='deco'){decoForcee();return;}
  if(evt==='dm'){if(d&&d.u)srvChatAjouter('dm:'+d.u,d);return;}
  if(evt==='re'){if(d&&d.u)srvChatReactions('dm:'+d.u,d);return;}                    /* réaction de l'autre participant, dans une conversation privée */
  if(evt==='fc'){if(d&&d.u)srvChatSuivis('dm:'+d.u,d);return;}                       /* mise partagée en privé : son compteur de suivis */
@@ -1202,10 +1228,137 @@ planifier('serveur : présence',240000,()=>{if(document.hidden||!S.me.logged)ret
  const salons=Array.from(SRV_SALONS).filter(r=>!srvPrive(r));if(salons.length)API.call('api_chat_seen',{p_rooms:salons}).catch(()=>{});   /* les bots ne parlent que dans les salons regardés */
 },'serveur');
 
+/* ===================== Partie E : ce que l'équipe change, appliqué sans rechargement =====================
+   Réglages publics, annonce et maintenance : api_site() au démarrage, puis le sujet public « site » pour un compte connecté
+   (« cfg », « annonce », « maint », « marche »). Un visiteur et le compte démo relisent api_site() toutes les 3 minutes tant
+   que l'onglet est visible, et à son retour : ni bibliothèque ni temps réel pour eux (le quota temps réel reste aux comptes).
+   Le sujet privé « joueur:<id> » porte l'état à relire, les blocages et la déconnexion forcée (srvPerso).
+   Le serveur applique tout dès l'appel suivant ; l'écran montre la règle à l'endroit concerné : aperçu du ticket, champ du
+   chat, page bloquée, écran de maintenance. */
+const REG={};                                                   /* réglages publics du serveur : {clé: valeur} */
+let SITE_REV=0,SITE_LU=0;
+const siteNum=(k,d)=>{const v=REG[k];return typeof v==='number'&&isFinite(v)?v:(d===undefined?null:d);};
+/* bornes d'un pari sur un marché (paris.mise_min, paris.mise_max ; vide : seule la liquidité limite la mise) */
+const miseMin=()=>siteNum('paris.mise_min',1),miseMax=()=>siteNum('paris.mise_max',null);
+function siteAppliquer(d,init){if(!d||typeof d!=='object')return;
+ if(typeof d.rev==='number')SITE_REV=d.rev;SITE_LU=Date.now();
+ regAppliquer(d.v||{},false,init);annonceAfficher(d.annonce||null);maintAfficher(d.maintenance||null);}
+/* vivant : un réglage vient de changer (événement « cfg ») ; init : avant le premier rendu, rien à redessiner */
+function regAppliquer(v,vivant,init){if(!v||typeof v!=='object')return;
+ const salons=JSON.stringify(REG['chat.salons']||{});for(const k in v)REG[k]=v[k];
+ const frais=engReglages(REG);argentReglages();
+ if(init||!PRET)return;
+ const ouvert=['page','sheet'].filter(c=>$(`[data-tcalc="${c}"]`));ouvert.forEach(updTicket);                  /* l'aperçu du ticket suit le nouveau barème */
+ if(vivant&&frais&&ouvert.length)toast({tone:'blue',icon:'info',force:true,title:_t("Les frais ont changé"),text:_t("L’aperçu de ton pari est à jour.")});
+ if(JSON.stringify(REG['chat.salons']||{})!==salons&&$('[data-cnote]'))render(false);}                 /* mode lent ou salon fermé : le champ du chat le dit */
+/* dépôts et retraits : frais des moyens de paiement et minimums par monnaie, ceux du serveur (wm.argent) */
+function argentReglages(){
+ if(typeof FIAT==='object')for(const m of ['card','bank','paypal']){if(!FIAT[m])continue;const df=siteNum('frais.depots_fiat.'+m),wf=siteNum('frais.retraits_fiat.'+m);if(df!=null)FIAT[m].df=df;if(wf!=null)FIAT[m].wf=wf;}
+ if(typeof COINS==='object')for(const c in COINS){const x=siteNum('depots.min.'+c.toLowerCase());if(x!=null)COINS[c].min=x;}
+ if(typeof WFEE==='object')for(const n in WFEE){const x=siteNum('frais.retraits.'+n.toLowerCase());if(x!=null)WFEE[n]=x;}}
+function siteEvt(evt,d){d=d||{};if(typeof d.rev==='number'&&d.rev>SITE_REV)SITE_REV=d.rev;
+ if(evt==='cfg'&&d.cle){regAppliquer({[d.cle]:d.v},true);return;}
+ if(evt==='annonce'){annonceAfficher(d.annonce||null);return;}
+ if(evt==='maint'){maintAfficher(d);return;}
+ if(evt==='marche'&&d.id){const m=MK[d.id];if(m&&m.srv){if(d.q)m.q=d.q;if(d.short)m.short=d.short;render(false);}}}   /* titre corrigé d'un marché créé depuis le panneau */
+/* une fois abonné : une relecture, pour un changement survenu entre la première lecture et l'abonnement */
+function siteRattraper(){API.site().then(d=>{if(d&&d.rev!==SITE_REV)siteAppliquer(d);}).catch(()=>{});}
+/* visiteur et compte démo : relecture périodique, seulement onglet visible */
+function siteRelire(force){if(SRV()||(document.hidden&&!force)||Date.now()-SITE_LU<30000)return;SITE_LU=Date.now();API.site().then(d=>siteAppliquer(d)).catch(()=>{});}
+planifier('site : réglages, annonce et maintenance',180000,()=>siteRelire(false),'local');
+
+/* ----- Annonce : un bandeau sous l'en-tête, fermé par son numéro (il revient si l'équipe en publie une autre) ----- */
+let ANNONCE=null;
+function annonceTexte(a){const t=a&&a.t||{};return String(t[LANG]||t.en||t.fr||'');}
+function annonceAfficher(a){const vue=LS.g('wimoro-annonce-vue');let el=$('#annonce');
+ if(!a||!annonceTexte(a)||(+a.fin&&+a.fin<Date.now())||String(a.id)===vue){ANNONCE=null;if(el)el.remove();return;}
+ ANNONCE=a;
+ if(!el){el=document.createElement('div');el.id='annonce';const h=$('header.top');if(h&&h.parentNode)h.parentNode.insertBefore(el,h.nextSibling);else document.body.prepend(el);}
+ const ton=a.ton==='alerte'||a.ton==='succes'?a.ton:'info';el.className='annonce '+ton;el.setAttribute('role','status');
+ el.innerHTML=`<div class="annonce-in">${ic(ton==='alerte'?'info':ton==='succes'?'check':'bell',16)}<p dir="auto">${esc(annonceTexte(a))}</p><button class="x" data-a="annonce-x" aria-label="${_t("Fermer l’annonce")}">${ic('x',14)}</button></div>`;}
+
+/* ----- Maintenance : un écran pour les joueurs et les visiteurs ; l'équipe passe (bandeau seulement) ----- */
+let MAINT=null,EQUIPE,EQUIPE_P=null;                            /* EQUIPE : rôle d'équipe du compte connecté (null : joueur), demandé au besoin */
+function equipeRole(){if(!SRV())return Promise.resolve(null);if(!EQUIPE_P)EQUIPE_P=API.call('api_equipe',{p_action:'moi'}).then(r=>{EQUIPE=r&&r.role||null;return EQUIPE;}).catch(()=>{EQUIPE=null;return null;});return EQUIPE_P;}
+function maintAfficher(m){
+ if(!(m&&m.actif)){const el=$('#maint'),eq=$('#maint-eq');MAINT=null;if(eq)eq.remove();if(el){el.remove();document.documentElement.classList.remove('lock');location.reload();}return;}   /* fin de la maintenance : on repart d'un état propre */
+ MAINT={actif:true,message:m.message||null};
+ if(SRV()&&EQUIPE===undefined){equipeRole().then(()=>{if(MAINT)maintDessiner();});return;}
+ maintDessiner();}
+const maintErreur=()=>maintAfficher({actif:true,message:REG['site.maintenance_message']||null});
+function maintDessiner(){const m=MAINT;if(!m)return;
+ if(EQUIPE){let b=$('#maint-eq');if(!b){b=document.createElement('div');b.id='maint-eq';b.className='annonce alerte';b.setAttribute('role','status');const h=$('header.top');if(h&&h.parentNode)h.parentNode.insertBefore(b,h.nextSibling);else document.body.prepend(b);}
+  b.innerHTML=`<div class="annonce-in">${ic('lock',16)}<p>${_t("Maintenance en cours : seuls les membres de l’équipe peuvent jouer.")}</p></div>`;return;}
+ let el=$('#maint');if(!el){el=document.createElement('div');el.id='maint';el.className='maint';el.setAttribute('role','alertdialog');el.setAttribute('aria-modal','true');el.setAttribute('aria-labelledby','maint-t');document.body.appendChild(el);}
+ document.documentElement.classList.add('lock');closeModal();
+ const t=m.message&&typeof m.message==='object'?String(m.message[LANG]||m.message.en||m.message.fr||''):'';
+ el.innerHTML=`<div class="maint-in"><span class="maint-ic">${ic('refresh',22)}</span><h1 class="ptitle" id="maint-t">${_t("Wimoro est en maintenance")}</h1><p class="plead" dir="auto">${esc(t||_t("Le site revient dans quelques minutes. Tes fonds et tes paris sont en sécurité."))}</p><button class="btn b-pri lg" data-a="maint-retry">${_t("Vérifier à nouveau")}</button></div>`;
+ try{el.querySelector('[data-a="maint-retry"]').focus({preventScroll:true});}catch(e){}}
+
+/* ----- Blocages posés par l'équipe : un accès (paris, chat, dépôts, retraits, création de marchés, clans) pour une durée ----- */
+let BLOCS=[];                                                   /* blocages en cours du joueur connecté : {id, acces, salon, fin (ms, -1 : sans fin)} */
+const blocPropre=b=>b&&b.acces?{id:b.id==null?'e:'+b.acces+':'+(b.salon||''):b.id,acces:String(b.acces),salon:b.salon||null,fin:+b.fin>0?+b.fin:-1}:null;
+const blocDe=e=>{let d=null;try{d=JSON.parse(e&&e.cause&&e.cause.details||'null');}catch(x){d=null;}return blocPropre(d);};
+const blocSalon=rid=>String(rid||'').startsWith('dm:')?'dm':String(rid||'');   /* le salon tel que le serveur le nomme */
+function blocActif(acces,salon){const t=Date.now();return BLOCS.find(b=>b.acces===acces&&(b.fin===-1||b.fin>t)&&(acces!=='chat'||!b.salon||!salon||b.salon===salon))||null;}
+function blocTexte(b){if(!b||!b.acces)return _t("Cette action est bloquée sur ton compte par l’équipe Wimoro.");const f=b.fin===-1?'':fmtDT(b.fin);
+ switch(b.acces){
+  case 'paris':return f?_t("Les paris sont bloqués sur ton compte jusqu’au {0}.",[f]):_t("Les paris sont bloqués sur ton compte.");
+  case 'chat':return b.salon?(f?_t("Tu ne peux plus écrire dans ce salon jusqu’au {0}.",[f]):_t("Tu ne peux plus écrire dans ce salon.")):(f?_t("Tu ne peux plus écrire dans le chat jusqu’au {0}.",[f]):_t("Tu ne peux plus écrire dans le chat."));
+  case 'depots':return f?_t("Les dépôts sont bloqués sur ton compte jusqu’au {0}.",[f]):_t("Les dépôts sont bloqués sur ton compte.");
+  case 'retraits':return f?_t("Les retraits sont bloqués sur ton compte jusqu’au {0}.",[f]):_t("Les retraits sont bloqués sur ton compte.");
+  case 'creation':return f?_t("La création de marchés est bloquée sur ton compte jusqu’au {0}.",[f]):_t("La création de marchés est bloquée sur ton compte.");
+  case 'clans':return f?_t("Rejoindre, créer ou gérer un clan est bloqué sur ton compte jusqu’au {0}.",[f]):_t("Rejoindre, créer ou gérer un clan est bloqué sur ton compte.");
+  case 'site':return f?_t("Ce compte est suspendu jusqu’au {0}.",[fmtD(b.fin)]):_t("Ce compte est suspendu.");}
+ return _t("Cette action est bloquée sur ton compte par l’équipe Wimoro.");}
+function deblocTexte(b){switch(b&&b.acces){
+  case 'paris':return _t("Tu peux de nouveau parier.");
+  case 'chat':return b.salon?_t("Tu peux de nouveau écrire dans ce salon."):_t("Tu peux de nouveau écrire dans le chat.");
+  case 'depots':return _t("Tu peux de nouveau déposer des fonds.");
+  case 'retraits':return _t("Tu peux de nouveau retirer des fonds.");
+  case 'creation':return _t("Tu peux de nouveau créer des marchés.");
+  case 'clans':return _t("Tu peux de nouveau rejoindre, créer ou gérer un clan.");}
+ return _t("Ton accès est rétabli.");}
+/* le message à l'endroit bloqué (ticket, page, champ du chat) */
+function blocNoteH(acces,salon){if(!SRV())return '';const b=blocActif(acces,salon);return b?`<div class="limit over bloc-note" data-bloc="${esc(acces)}" role="status">${ic('lock',16)}<span>${esc(blocTexte(b))}</span></div>`:'';}
+const BLOC_ROUTES={eclair:'paris',blitz:'paris',serie:'paris',duels:'paris',duel:'paris',combines:'paris',copie:'paris',depot:'depots',retrait:'retraits',creer:'creation',clans:'clans',clan:'clans'};
+/* appelée par render() : le haut de la page bloquée porte le message (le ticket d'un marché porte le sien) */
+function blocsDansVue(view,v){if(!SRV()||!BLOCS.length)return;const a=BLOC_ROUTES[v],h=a&&blocNoteH(a);if(!h)return;const w=view.querySelector('.wrap');if(w)w.insertAdjacentHTML('afterbegin',h);}
+function blocNoter(b){if(!b)return;BLOCS=BLOCS.filter(x=>x.id!==b.id&&!(x.acces===b.acces&&(x.salon||'')===(b.salon||'')&&String(x.id).startsWith('e:')));BLOCS.push(b);}
+function blocsRendre(){if(!PRET)return;render(false);if($('[data-tcalc="sheet"]'))updTicket('sheet');}
+function blocRecu(d){const b=blocPropre(d);if(!b)return;blocNoter(b);toast({tone:'red',icon:'lock',force:true,title:_t("Accès bloqué par l’équipe Wimoro"),text:blocTexte(b)});blocsRendre();}
+function deblocRecu(d){const b=blocPropre(d);if(!b)return;const avant=BLOCS.length;BLOCS=BLOCS.filter(x=>x.id!==b.id&&!(String(x.id).startsWith('e:')&&x.acces===b.acces&&(x.salon||'')===(b.salon||'')));
+ if(BLOCS.length===avant&&d.id!=null)return;toast({tone:'green',icon:'check',force:true,title:_t("Accès rétabli"),text:deblocTexte(b)});blocsRendre();}
+function blocErreur(e){const b=blocDe(e);if(b){blocNoter(b);blocsRendre();}toast({tone:'red',icon:'lock',force:true,title:_t("Accès bloqué par l’équipe Wimoro"),text:blocTexte(b)});}
+
+/* ----- Salons du chat : mode lent et salon fermé (réglage public chat.salons) ; l'équipe n'y est pas soumise ----- */
+function salonNoter(rid,patch){const s=Object.assign({},REG['chat.salons']||{});s[rid]=Object.assign({lent:0,ferme:false},s[rid]||{},patch);REG['chat.salons']=s;}
+/* ce que le champ d'un salon doit dire : un blocage, le salon fermé, ou le mode lent */
+function salonEtat(rid){if(!SRV()||!rid)return null;const b=blocActif('chat',blocSalon(rid));if(b)return {bloc:blocTexte(b)};
+ const s=!String(rid).startsWith('dm:')&&(REG['chat.salons']||{})[rid];if(!s)return null;
+ if(EQUIPE===undefined){equipeRole().then(r=>{if(r&&PRET)render(false);});}
+ if(EQUIPE)return null;
+ if(s.ferme)return {bloc:_t("Ce salon est fermé pour le moment.")};
+ const n=Math.max(0,Math.round(+s.lent||0));return n?{lent:n}:null;}
+
+/* ----- Déconnexion forcée : la session est refusée par le serveur ; l'écran se ferme et explique ----- */
+let DECO=false;
+async function decoForcee(){if(DECO)return;DECO=true;srvNote(_t("L’équipe Wimoro a fermé ta session sur tous tes appareils. Reconnecte-toi pour continuer."));try{await API.signOut();}catch(e){}LS.r(SESK);srvRecharger('#connexion','deco');}
+
+Object.assign(ACT,{
+ 'annonce-x':()=>{if(ANNONCE)LS.s('wimoro-annonce-vue',String(ANNONCE.id));annonceAfficher(null);},
+ 'maint-retry':a=>{a.disabled=true;API.site().then(d=>{if(d&&d.maintenance&&d.maintenance.actif){a.disabled=false;toast({tone:'amber',icon:'info',force:true,title:_t("Toujours en maintenance"),text:_t("Réessaie dans quelques minutes.")});}else location.reload();}).catch(()=>{a.disabled=false;});}
+});
+
 /* ----- Démarrage en mode serveur ----- */
 async function bootServeur(){
- const [etat]=await Promise.all([API.loadState(),srvMarches().catch(e=>console.warn('[srv] marchés indisponibles',e.code))]);
+ const [etat,,site,blocs]=await Promise.all([API.loadState(),srvMarches().catch(e=>console.warn('[srv] marchés indisponibles',e.code)),
+  API.site().catch(e=>{console.warn('[srv] réglages du site indisponibles',e&&e.code);return null;}),
+  API.call('api_mes_blocages').catch(e=>{console.warn('[srv] blocages indisponibles',e&&e.code);return null;})]);
  hydrater(etat);srvArgentSuivre();
+ if(site)siteAppliquer(site,true);
+ if(blocs)BLOCS=(blocs.blocages||[]).map(blocPropre).filter(Boolean);
+ API.subscribe('site',siteEvt).then(siteRattraper).catch(e=>console.warn('[srv] sujet du site indisponible',e&&e.code));
  if(SRV_ECLAIR_DU>0)setTimeout(()=>srvEclairRegler(0,3),1200);                 /* des manches jouées avant le rechargement restent à régler */
  setTimeout(()=>srvDuelsApresManche(S.flash.round-1),1500);                     /* de même pour un duel éclair dont la manche s'est terminée entre-temps */
  API.on('session',()=>srvSessionPerdue());
@@ -1252,6 +1405,7 @@ function srvApres(){let k='';try{k=sessionStorage.getItem('wimoro-apres')||'';se
  else if(k==='inscription'&&SRV())toast({tone:'blue',icon:'check',title:_t("Compte créé, bienvenue {0} !",[S.me.n]),text:_t("Encore 5 petites étapes.")});
  else if(k==='deconnexion')toast({icon:'out',title:_t("Tu es déconnecté"),text:_t("À bientôt sur Wimoro.")});
  else if(k==='expire')toast({tone:'amber',icon:'lock',force:true,title:_t("Ta session a expiré. Reconnecte-toi.")});
+ else if(k==='deco')toast({tone:'amber',icon:'lock',force:true,dur:9000,title:_t("Tu as été déconnecté"),text:_t("L’équipe Wimoro a fermé ta session sur tous tes appareils. Reconnecte-toi pour continuer.")});
  else if(k==='motdepasse'&&SRV())toast({tone:'blue',icon:'check',title:_t("Mot de passe mis à jour"),text:_t("Tu es connecté avec ton nouveau mot de passe.")});}
 
 /* ----- Onboarding et profil ----- */

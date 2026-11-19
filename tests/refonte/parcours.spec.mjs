@@ -2,7 +2,7 @@
 // ticket de pari, Éclair, Portefeuille, dépôt, retrait, Communauté, langue, thème, déconnexion, et « trois gestes au plus ».
 import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
-import { ouvrir, lire, fermerRang, debutManche } from '../helpers/app.mjs';
+import { ouvrir, lire, fermerRang, debutManche, routerSite } from '../helpers/app.mjs';
 
 const DESTINATIONS = [['accueil', '#accueil'], ['eclair', '#eclair'], ['portefeuille', '#portefeuille'], ['communaute', '#communaute'], ['profil', '#profil']];
 const url = h => new RegExp(h.replace('#', '#') + '(\\b|$)');
@@ -259,6 +259,7 @@ async function ouvrirNu(page, local = {}, hash = '#accueil') {
   page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) erreurs.push('console.error: ' + m.text()); });
   await page.route(/(js\/vendor\/supabase[^/]*\.js|cdn\.jsdelivr\.net\/.*supabase)/, r => r.fulfill({ contentType: 'text/javascript', body: FAUX_SB }));
   await page.route(/fonts\.(googleapis|gstatic)\.com/, r => r.fulfill({ status: 200, contentType: 'text/css', body: '' }));
+  await routerSite(page);                                                    // réglages du site : servis par le test, jamais par le vrai serveur
   await page.addInitScript(l => { window.__FAKE_SB__ = { session: null }; if (!sessionStorage.getItem('__nu__')) { sessionStorage.setItem('__nu__', '1'); for (const k in l) localStorage.setItem(k, l[k]); } }, local);
   await page.goto('/index.html' + hash);
   await expect(page.locator('#view > *').first()).toBeAttached({ timeout: 15000 });

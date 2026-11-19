@@ -13,6 +13,18 @@ export const UID = '11111111-1111-4111-8111-111111111111';
 export const AMI = '22222222-2222-4222-8222-222222222222';
 export const ECRANS = ['accueil', 'marche-btc150k', 'marche-presid27', 'marche-presid27-roux', 'eclair', 'blitz', 'serie', 'chat', 'clans', 'classement', 'rang', 'profil', 'joueur-lea', 'depot', 'retrait', 'creer', 'modifier', 'amis', 'copie', 'parrainage', 'responsable', 'duels', 'combines', 'bienvenue', 'connexion', 'inscription'];
 
+/**
+ * Réglages publics du site (api_site) lus par un visiteur ou le compte démo : une lecture REST directe, sans la bibliothèque
+ * Supabase. Le test la sert lui-même (jamais le vrai serveur) ; `site` reste modifiable pendant le test.
+ */
+export const siteNeuf = (plus = {}) => ({ rev: 1, v: {}, annonce: null, maintenance: { actif: false, message: null }, ...plus });
+export async function routerSite(page, site = siteNeuf()) {
+  const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'apikey, content-type, authorization, x-client-info', 'access-control-allow-methods': 'POST, OPTIONS' };
+  await page.route(/\/rest\/v1\/rpc\/api_site/, r => r.request().method() === 'OPTIONS' ? r.fulfill({ status: 204, headers: cors })
+    : r.fulfill({ status: 200, headers: cors, contentType: 'application/json', body: JSON.stringify(site) }));
+  return site;
+}
+
 /** Début (en ms) d'une manche éclair : les manches durent 45 s à partir du 1er nov. 2026 UTC. */
 export const debutManche = (n = 1000) => Date.UTC(2026, 10, 1) + n * 45000;
 
@@ -29,6 +41,8 @@ export async function ouvrir(page, o = {}) {
   // Le client Supabase (fichier local ou CDN) est toujours remplacé par le faux serveur ; les polices ne sont pas chargées.
   await page.route(/(js\/vendor\/supabase[^/]*\.js|cdn\.jsdelivr\.net\/.*supabase)/, r => r.fulfill({ contentType: 'text/javascript', body: FAUX }));
   await page.route(/fonts\.(googleapis|gstatic)\.com/, r => r.fulfill({ status: 200, contentType: 'text/css', body: '' }));
+  /* faux.siteKo : la lecture des réglages du site échoue (serveur injoignable) */
+  const site = faux.siteKo ? (await page.route(/\/rest\/v1\/rpc\/api_site/, r => r.abort('failed')), null) : await routerSite(page, siteNeuf(faux.site || {}));
   const cfg = { ...faux, session: mode === 'compte' ? (faux.session || { user: { id: UID, email: 'real@test.dev' } }) : null };
   if (horloge != null) await page.clock.install({ time: horloge });
   await page.addInitScript(({ lang, mode, cfg, local }) => {
@@ -43,7 +57,7 @@ export async function ouvrir(page, o = {}) {
   }, { lang, mode, cfg, local });
   await page.goto('/index.html' + requete + hash);                    // requete : ex. '?r=CODE' (lien d'invitation)
   await expect(page.locator('#view > *').first()).toBeAttached({ timeout: 15000 });
-  return { erreurs };
+  return { erreurs, site };
 }
 
 /** Change d'écran par le hash et attend le rendu. */

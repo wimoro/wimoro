@@ -43,6 +43,8 @@
   try { db = JSON.parse(localStorage.getItem(DBKEY) || 'null'); } catch (e) { db = null; }
   if (!db) {
     db = { session: clone(CFG.session || null), comptes: clone(CFG.comptes || {}), etats: {}, marches: {}, ops: {}, chat: clone(CFG.chat || {}), fiches: clone(CFG.fiches || {}), analyses: clone(CFG.analyses || {}), seq: 1 };
+    if (CFG.clans) db.clans = clone(CFG.clans);                                     /* clans de joueurs déjà créés (panneau d'administration) */
+    if (CFG.aal) db.aal = CFG.aal;
     (CFG.marches || []).forEach(function (x) { db.marches[x.market_id] = { def: x.def ? clone(x.def) : undefined, p: +x.current_probability, d0: x.d0 == null ? null : +x.d0, vol: +(x.volume_total || 0), people: x.participants_count | 0, liq: x.liquidity_depth == null ? null : +x.liquidity_depth, st: x.status || 'open', hot: 0, ph: clone(x.price_history || []) }; });
     if (db.session) { var u0 = db.session.user; db.etats[u0.id] = fusion(etatNeuf(u0.id, u0.email || '', 'realuser', false), CFG.etat || {}); }
   }
@@ -80,6 +82,7 @@
     api_present: function () { return null; },
     /* Panel d'administration : même contrat que wm.admin (une action, des paramètres), sur un petit modèle en mémoire. */
     api_admin: function (a) { var act = a.p_action, p = a.p || {}; if (act === 'moi') return { admin: !!CFG.admin }; if (!CFG.admin) throw { message: 'interdit' };
+      if (CFG.equipe && !aalOk()) throw { message: 'mfa_requise' };                       /* comme wm.admin : la double authentification, dès qu'un code est enrôlé */
       var A = db.admin = db.admin || fusion({ joueurs: [], marches: [], msgs: [], bots: { actif: true, intensite: 1, chat: 1 }, journal: [] }, CFG.adminData || {});
       var J = function (id) { var j = A.joueurs.filter(function (x) { return x.id === id; })[0]; if (!j) throw { message: 'joueur_inconnu' }; return j; };
       var M = function (id) { var m = A.marches.filter(function (x) { return x.id === id; })[0]; if (!m) throw { message: 'marche_inconnu' }; if (m.st === 'resolved') throw { message: 'deja_resolu' }; return m; };
@@ -482,7 +485,257 @@
       rep.hist = hist; rep.marches = marchesDe(fratrie(a.p_market));
       db.ops[cle] = clone(rep); return rep; }
   };
-  var SANS_SESSION = { api_markets: 1, api_pseudo_libre: 1 };
+  var SANS_SESSION = { api_markets: 1, api_pseudo_libre: 1, api_site: 1 };
+
+  /* ===== Partie E : réglages publics du site, blocages du joueur connecté, et la porte du panneau d'administration =====
+     Configuration : CFG.site = { rev, v: {clé: valeur}, annonce, maintenance: {actif, message}, mots: [mots interdits] } ;
+     CFG.blocages = [{ id, acces, salon, fin }] (blocages en cours du joueur connecté) ; CFG.equipeJoueur = rôle d'équipe du
+     joueur connecté sur le site (l'équipe passe la maintenance et les règles du chat). */
+  function siteEtat() {
+    if (!db.site) {
+      db.site = fusion({ rev: 1, v: {}, annonce: null, maintenance: { actif: false, message: null }, mots: [] }, CFG.site || {});
+      if (db.eq && db.eq.reglages) db.eq.reglages.forEach(function (r) { if (r.public && !(r.cle in db.site.v)) db.site.v[r.cle] = clone(r.valeur); });
+    }
+    return db.site;
+  }
+  var blocsJoueur = function () { var t = Date.now(); db.blocsJoueur = db.blocsJoueur || clone(CFG.blocages || []); return db.blocsJoueur.filter(function (b) { return +b.fin === -1 || +b.fin > t; }); };
+  RPC.api_site = function () { var S = siteEtat(), a = S.annonce && (!S.annonce.fin || S.annonce.fin > Date.now()) ? clone(S.annonce) : null;
+    return { rev: S.rev, v: clone(S.v), annonce: a, maintenance: clone(S.maintenance) }; };
+  RPC.api_mes_blocages = function () { etat(); return { blocages: blocsJoueur().map(function (b) { return { id: b.id, acces: b.acces, salon: b.salon || null, fin: +b.fin }; }) }; };
+  /* ce que wm.uid(), wm.garde() et wm.chat_regles() refusent au joueur connecté (sans effet pour un joueur non concerné) */
+  var ACCES_RPC = { api_buy: 'paris', api_duel_create: 'paris', api_duel_accept: 'paris', api_combo_place: 'paris', api_stack_create: 'paris', api_copy_start: 'paris',
+    api_demo_deposit: 'depots', api_demo_withdraw: 'retraits', api_proposal_create: 'creation',
+    api_clan_join: 'clans', api_clan_apply: 'clans', api_clan_create: 'clans', api_clan_invite: 'clans', api_clan_call: 'clans', api_clan_war: 'clans', api_clan_war_join: 'clans',
+    api_chat_send: 'chat', api_chat_share: 'chat', api_dm_send: 'chat' };
+  function gardeJoueur(name, a) {
+    if (!uid() || name === 'api_site' || name === 'api_equipe' || name === 'api_admin' || name === 'api_present') return null;
+    if (db.decoAt) return { message: 'session', code: 'P0001' };
+    var bs = blocsJoueur(), S = siteEtat(), equipe = CFG.equipeJoueur;
+    var site = bs.filter(function (b) { return b.acces === 'site'; })[0];
+    if (site) return { message: 'suspendu', code: 'P0001', details: String(site.fin) };
+    if (S.maintenance && S.maintenance.actif && !equipe) return { message: 'maintenance', code: 'P0001' };
+    var acces = ACCES_RPC[name];
+    if (acces) { var salon = acces === 'chat' ? (name === 'api_dm_send' ? 'dm' : a.p_room) : null;
+      var b = bs.filter(function (x) { return x.acces === acces && (acces !== 'chat' || !x.salon || x.salon === salon); })[0];
+      if (b) return { message: 'bloque', code: 'P0001', details: JSON.stringify({ acces: b.acces, salon: b.salon || null, fin: +b.fin }) }; }
+    if (name === 'api_chat_send' && !equipe) {
+      var r = ((S.v || {})['chat.salons'] || {})[a.p_room], der = (db.dernierMsg || {})[a.p_room];
+      if (r && r.ferme) return { message: 'salon_ferme', code: 'P0001' };
+      if (r && +r.lent > 0 && der && Date.now() - der < r.lent * 1000) return { message: 'mode_lent', code: 'P0001', details: String(Math.ceil((r.lent * 1000 - (Date.now() - der)) / 1000)) };
+      var t = String(a.p_text || '').toLowerCase(); if ((S.mots || []).some(function (m) { return m && t.indexOf(m) >= 0; })) return { message: 'mot_interdit', code: 'P0001' };
+    }
+    if (name === 'api_buy') { var mx = (S.v || {})['paris.mise_max']; if (typeof mx === 'number' && +a.p_total > mx) return { message: 'montant_max', code: 'P0001' }; }
+    return null;
+  }
+
+  /* ----- La porte du panneau : api_equipe(action, p), même contrat que wm.equipe (registre, rôle à chaque appel, double
+     authentification, motif, journal). Configuration : CFG.equipe = { role : 'administrateur' | 'moderateur' | null,
+     facteurs : codes de double authentification déjà vérifiés, mfaObligatoire, ancien : accès à l'ancien panneau
+     (vrai par défaut pour un administrateur), modMax, joueurs : [{ id, n, email, bot, test, confirme, since, vu, balance,
+     xp, t, d, settled, wins, deposits, kyc }], membres, msgs : [{ id, room, u, n, text, k, source, at }], reglages (comme
+     wm.reglage_vue, voir tests/fixtures/reglages.json), bots, journal, sessions : { id : [...] }, ledger : [...] } ----- */
+  var EQ_REG = {                                                     /* action : [rôles (A, M), écrit, motif obligatoire, annulable] */
+    tableau: ['A', 0, 0, 0], reglages_lire: ['A', 0, 0, 0], reglage_modifier: ['A', 1, 1, 1],
+    equipe_liste: ['A', 0, 0, 0], equipe_ajouter: ['A', 1, 1, 1], equipe_retirer: ['A', 1, 1, 1], equipe_role: ['A', 1, 1, 1],
+    journal_lire: ['AM', 0, 0, 0], journal_csv: ['A', 0, 0, 0], journal_verifier: ['A', 0, 0, 0], journal_annuler: ['AM', 1, 1, 0],
+    joueurs_chercher: ['AM', 0, 0, 0], joueur_fiche: ['AM', 0, 0, 0], joueur_activite: ['AM', 0, 0, 0], joueur_solde: ['AM', 1, 1, 1], joueur_rang: ['AM', 1, 1, 0],
+    joueur_kyc: ['AM', 1, 0, 1], joueur_bloquer: ['AM', 1, 1, 1], joueur_debloquer: ['AM', 1, 1, 1], joueur_deconnecter: ['AM', 1, 0, 0],
+    chat_messages: ['AM', 0, 0, 0], chat_supprimer: ['AM', 1, 0, 1], chat_restaurer: ['AM', 1, 0, 1], salon_regler: ['AM', 1, 0, 1], mots_interdits: ['AM', 1, 0, 1],
+    clan_renommer: ['AM', 1, 0, 1], clan_dissoudre: ['AM', 1, 1, 0],
+    annonce_publier: ['A', 1, 0, 1], annonce_retirer: ['A', 1, 0, 1], maintenance: ['A', 1, 0, 1], activite_simulee: ['A', 1, 0, 1]
+  };
+  function EQ() {
+    if (!db.eq) {
+      db.eq = fusion({ role: CFG.equipe ? 'administrateur' : null, facteurs: 0, mfaObligatoire: false, modMax: 1000,   /* sans CFG.equipe : un joueur ordinaire */ joueurs: [], msgs: [], reglages: [], bots: { actif: true, intensite: 1, chat: 1 },
+        journal: [], blocages: [], deconnexions: [], ledger: [], sessions: {}, dissous: {}, seq: 1000 }, CFG.equipe || {});
+      var M = db.eq, moi = db.session && db.session.user;
+      if (!M.membres) M.membres = M.role && moi ? [{ id: moi.id, n: 'chef', email: moi.email || '', role: M.role, actif: true, origine: 'ancien', ajoute_at: Date.now() - 30 * 864e5, retire_at: null }] : [];
+      db.mfa = db.mfa || []; for (var i = db.mfa.length; i < (M.facteurs | 0); i++) db.mfa.push({ id: 'f' + (i + 1), factor_type: 'totp', status: 'verified', friendly_name: 'Wimoro, équipe' });
+      persist();
+    }
+    return db.eq;
+  }
+  var verifies = function () { return (db.mfa || []).filter(function (f) { return f.status === 'verified'; }).length; };
+  var aalOk = function () { return db.aal === 'aal2' || (verifies() === 0 && !EQ().mfaObligatoire); };
+  var eqRole = function (id) { var m = EQ().membres.filter(function (x) { return x.id === id && x.actif; })[0]; return m ? m.role : null; };
+  var monNom = function () { var m = EQ().membres.filter(function (x) { return x.id === uid(); })[0]; return m ? m.n : 'chef'; };
+  RPC.api_equipe = function (a) {
+    var act = a.p_action, p = a.p || {}, M = EQ(), role = M.role;
+    if (act === 'moi') return { role: role, aal: db.aal || 'aal1', facteurs: verifies(), mfa_requise: !!role && !aalOk(),
+      permissions: role ? Object.keys(EQ_REG).filter(function (k) { return EQ_REG[k][0].indexOf(role === 'administrateur' ? 'A' : 'M') >= 0; }).sort() : [], ancien_panneau: role === 'administrateur' && M.ancien !== false };
+    return eqPorte(act, p);
+  };
+  function eqPorte(act, p) {
+    var M = EQ(), role = M.role;
+    if (!role) throw { message: 'interdit' };
+    var R = EQ_REG[act]; if (!R) throw { message: 'action_inconnue' };
+    if (R[0].indexOf(role === 'administrateur' ? 'A' : 'M') < 0) throw { message: 'interdit' };
+    if (!aalOk()) throw { message: 'mfa_requise' };
+    if (R[1] && R[2] && String(p.motif || '').trim().length < 3) throw { message: 'motif_requis' };
+    var r = EQ_FN[act](p || {}, M); persist(); return r;
+  }
+  function eqNoter(action, type, cible, avant, apres, motif, inverse) {
+    var M = EQ(), id = M.journal.reduce(function (x, e) { return Math.max(x, e.id); }, 0) + 1;
+    M.journal.unshift({ id: id, at: Date.now(), admin: uid(), par: monNom(), role: M.role, origine: 'panneau', action: action, cible_type: type, cible: cible == null ? null : String(cible),
+      avant: clone(avant === undefined ? null : avant), apres: clone(apres === undefined ? null : apres), motif: String(motif || '').trim() || null, annule_id: db.eqAnnule || null, inverse: inverse || null });
+    return id;
+  }
+  var eqVueJ = function (e) { var x = clone(e), par = EQ().journal.filter(function (y) { return y.annule_id === e.id; })[0]; x.annulee_par = par ? par.id : null; x.annulable = !!e.inverse && !par; delete x.inverse; return x; };
+  var eqJ = function (id) { var j = EQ().joueurs.filter(function (x) { return x.id === id; })[0]; if (!j) throw { message: 'joueur_inconnu' }; return j; };
+  var eqBlocActif = function (b) { return !b.leve_at && (+b.fin === -1 || +b.fin > Date.now()); };
+  var eqBlocVue = function (b) { return { id: b.id, actif: eqBlocActif(b), acces: b.acces, salon: b.salon || null, fin: +b.fin }; };
+  function eqVue(j) { var M = EQ(), x = clone(j); x.blocages = M.blocages.filter(function (b) { return b.user === j.id && eqBlocActif(b); }).map(function (b) { return { id: b.id, acces: b.acces, salon: b.salon || null, fin: +b.fin }; });
+    x.role = eqRole(j.id); x.deconnecte_at = (M.deconnexions.filter(function (d) { return d.user === j.id; })[0] || {}).at || null; x.susp = j.susp || null; x.excl = j.excl || null; x.bot = !!j.bot; x.test = !!j.test; return x; }
+  function eqFiche(id) { var M = EQ(), j = eqJ(id);
+    return { j: eqVue(j), blocages: M.blocages.filter(function (b) { return b.user === id; }).slice().reverse().map(function (b) { return { id: b.id, acces: b.acces, salon: b.salon || null, debut: b.debut, fin: +b.fin, motif: b.motif, par: b.par, leve_at: b.leve_at || null, leve_par: b.leve_par || null, leve_motif: b.leve_motif || null, actif: eqBlocActif(b) }; }),
+      deconnexions: M.deconnexions.filter(function (d) { return d.user === id; }).map(function (d) { return { id: d.id, at: d.at, motif: d.motif, par: d.par }; }),
+      sessions: clone((M.sessions || {})[id] || []), journal: M.journal.filter(function (e) { return e.cible_type === 'joueur' && e.cible === id; }).slice(0, 20).map(eqVueJ) }; }
+  function eqCible(id, sensible) { var M = EQ(); eqJ(id); if (id === uid()) throw { message: 'interdit' }; var r = eqRole(id);
+    if (r && M.role !== 'administrateur') throw { message: 'interdit' }; if (sensible && r === 'administrateur') throw { message: 'interdit' }; }
+  var eqReg = function (cle) { var r = EQ().reglages.filter(function (x) { return x.cle === cle; })[0]; if (!r) throw { message: 'reglage_inconnu' }; return r; };
+  function eqEcrire(cle, v) { var M = EQ(), r = eqReg(cle), S = siteEtat(); r.valeur = clone(v); r.maj_at = Date.now(); r.maj_par = uid(); S.rev++;
+    if (r.public) { S.v[cle] = clone(v); if (cle !== 'site.annonce' && cle !== 'site.maintenance' && cle !== 'site.maintenance_message') window.__fakeSB.emit('site', 'cfg', { cle: cle, v: clone(v), rev: S.rev }); }
+    return S.rev; }
+  var DUREES_MS = { '1h': 3600e3, '24h': 864e5, '7j': 7 * 864e5, '30j': 30 * 864e5, permanent: -1 };
+  var SALON_RE = /^(general|vip|blitz|dm|m:[a-z0-9-]{1,40}|clan:[a-z0-9]{1,20})$/;
+  var EQ_FN = {
+    tableau: function (p, M) { var vrais = M.joueurs.filter(function (j) { return !j.bot; }), S = siteEtat();
+      return { inscrits: vrais.length, inscrits_7j: 1, actifs_24h: vrais.length, actifs_7j: vrais.length, bots: 10000, marches_ouverts: 27, volume_total: 1234567, mises_24h: 340.5, positions: 3,
+        messages_24h: M.msgs.length, soldes: vrais.reduce(function (s, j) { return s + (+j.balance || 0); }, 0), base_mo: 80, bots_cfg: clone(M.bots), present: true,
+        equipe: M.membres.filter(function (m) { return m.actif; }).length, blocages_actifs: M.blocages.filter(eqBlocActif).length, maintenance: !!S.maintenance.actif, annonce: clone(S.annonce),
+        journal: { n: M.journal.length, tete: 'a1b2c3d4e5f60718293a4b5c6d7e8f90' } }; },
+    reglages_lire: function (p, M) { return { reglages: clone(M.reglages.filter(function (r) { return !p.categorie || r.categorie === p.categorie; })), bots: clone(M.bots), rev: siteEtat().rev }; },
+    reglage_modifier: function (p, M) { var r = eqReg(p.cle), v = p.valeur;
+      if (r.dedie || r.type === 'json') throw { message: 'reglage_dedie' }; if (!r.applique) throw { message: 'reglage_inactif' }; if (!('valeur' in p)) throw { message: 'reglage_invalide' };
+      var hors = function (n) { return (r.min != null && n < r.min) || (r.max != null && n > r.max); };
+      if (r.type === 'nombre' || r.type === 'entier') { if (v === null) { if (!r.facultatif) throw { message: 'reglage_invalide' }; } else if (typeof v !== 'number' || hors(v) || (r.type === 'entier' && v !== Math.trunc(v))) throw { message: 'reglage_invalide' }; }
+      else if (r.type === 'booleen') { if (typeof v !== 'boolean') throw { message: 'reglage_invalide' }; }
+      else if (r.type === 'liste') { if (!Array.isArray(v) || !v.length || v.length > 10 || v.some(function (x) { return typeof x !== 'number' || hors(x); }) || new Set(v).size !== v.length) throw { message: 'reglage_invalide' }; }
+      if (JSON.stringify(v) === JSON.stringify(r.valeur)) throw { message: 'reglage_inchange' };
+      var avant = clone(r.valeur), num = function (k) { var x = M.reglages.filter(function (y) { return y.cle === k; })[0]; return x ? (k === r.cle ? v : x.valeur) : null; };
+      var paires = [['paris.mise_min', 'paris.mise_max'], ['eclair.mise_min', 'eclair.mise_max'], ['duels.mise_min', 'duels.mise_max'], ['stacks.buyin_min', 'stacks.buyin_max'], ['combines.mise_min', 'combines.mise_max'], ['depots.fiat_min', 'depots.fiat_max'], ['depots.fiat_max', 'depots.max']];
+      if (paires.some(function (q) { var a = num(q[0]), b = num(q[1]); return typeof a === 'number' && typeof b === 'number' && a > b; })) throw { message: 'reglage_incoherent' };
+      var rev = eqEcrire(r.cle, v), j = eqNoter('reglage_modifier', 'reglage', r.cle, { valeur: avant }, { valeur: clone(v) }, p.motif, { action: 'reglage_modifier', p: { cle: r.cle, valeur: avant } });
+      return { reglage: clone(r), rev: rev, journal: j }; },
+    equipe_liste: function (p, M) { return { membres: clone(M.membres) }; },
+    equipe_ajouter: function (p, M) { if (['administrateur', 'moderateur'].indexOf(p.role) < 0) throw { message: 'role_invalide' };
+      var j = p.id ? M.joueurs.filter(function (x) { return x.id === p.id; })[0] : M.joueurs.filter(function (x) { return String(x.email).toLowerCase() === String(p.email || '').trim().toLowerCase(); })[0];
+      if (!j) throw { message: 'joueur_inconnu' }; if (j.bot || j.test || j.confirme === false || !j.email) throw { message: 'compte_refuse' }; if (eqRole(j.id)) throw { message: 'deja_membre' };
+      M.membres = M.membres.filter(function (m) { return m.id !== j.id; }); M.membres.push({ id: j.id, n: j.n, email: j.email, role: p.role, actif: true, origine: 'equipe', ajoute_at: Date.now(), retire_at: null, facteurs: 0 });
+      eqNoter('equipe_ajouter', 'membre', j.id, { role: null }, { role: p.role }, p.motif, { action: 'equipe_retirer', p: { id: j.id } }); return { membres: clone(M.membres) }; },
+    equipe_retirer: function (p, M) { var m = M.membres.filter(function (x) { return x.id === p.id && x.actif; })[0]; if (!m) throw { message: 'membre_inconnu' };
+      if (m.role === 'administrateur' && M.membres.filter(function (x) { return x.actif && x.role === 'administrateur'; }).length <= 1) throw { message: 'dernier_administrateur' };
+      m.actif = false; m.retire_at = Date.now(); eqNoter('equipe_retirer', 'membre', m.id, { role: m.role }, { role: null }, p.motif, { action: 'equipe_ajouter', p: { id: m.id, role: m.role } }); return { membres: clone(M.membres) }; },
+    equipe_role: function (p, M) { var m = M.membres.filter(function (x) { return x.id === p.id && x.actif; })[0]; if (!m) throw { message: 'membre_inconnu' };
+      if (['administrateur', 'moderateur'].indexOf(p.role) < 0) throw { message: 'role_invalide' }; if (p.role === m.role) throw { message: 'role_inchange' };
+      if (m.role === 'administrateur' && M.membres.filter(function (x) { return x.actif && x.role === 'administrateur'; }).length <= 1) throw { message: 'dernier_administrateur' };
+      var avant = m.role; m.role = p.role; eqNoter('equipe_role', 'membre', m.id, { role: avant }, { role: p.role }, p.motif, { action: 'equipe_role', p: { id: m.id, role: avant } }); return { membres: clone(M.membres) }; },
+    journal_lire: function (p, M) { var n = Math.min(200, Math.max(1, +p.n || 50)), adm = p.admin || null;
+      if (M.role !== 'administrateur' && !p.joueur) adm = uid();
+      var L = M.journal.filter(function (e) { return (!adm || e.admin === adm) && (!p.joueur || (e.cible_type === 'joueur' && e.cible === p.joueur)) && (!p.action || e.action === p.action)
+        && (!p.du || e.at >= +p.du) && (!p.au || e.at < +p.au) && (!p.avant || e.id < +p.avant); });
+      var page = L.slice(0, n); return { entrees: page.map(eqVueJ), suite: page.length === n ? page[page.length - 1].id : null }; },
+    journal_csv: function (p, M) { var L = M.journal.slice().reverse(), q = function (t) { return '"' + String(t == null ? '' : t).replace(/"/g, '""') + '"'; };
+      var corps = L.map(function (e) { return [e.id, new Date(e.at).toISOString(), '', e.par, e.role, e.action, e.cible_type, e.cible, e.motif, JSON.stringify(e.avant), JSON.stringify(e.apres), e.annule_id, e.origine, 'ab12'].map(q).join(','); }).join('\r\n');
+      return { csv: '﻿"id","date_utc","date_paris","qui","role","action","cible_type","cible","motif","avant","apres","annule_id","origine","empreinte"\r\n' + (corps ? corps + '\r\n' : ''), lignes: L.length, tronque: false, nom: 'wimoro-journal-20261119.csv' }; },
+    journal_verifier: function (p, M) { return { ok: true, n: M.journal.length, tete: 'a1b2c3d4e5f60718293a4b5c6d7e8f90', rompue: null }; },
+    journal_annuler: function (p, M) { var e = M.journal.filter(function (x) { return x.id === +p.id; })[0]; if (!e) throw { message: 'entree_inconnue' };
+      if (!e.inverse) throw { message: 'non_annulable' }; if (M.journal.some(function (x) { return x.annule_id === e.id; })) throw { message: 'deja_annule' };
+      if (M.role !== 'administrateur' && e.admin !== uid()) throw { message: 'interdit' };
+      if (e.cible_type === 'reglage' && e.action === 'reglage_modifier' && JSON.stringify(eqReg(e.cible).valeur) !== JSON.stringify(e.apres.valeur)) throw { message: 'deja_modifie' };
+      db.eqAnnule = e.id; try { var p2 = clone(e.inverse.p || {}); p2.motif = 'Annulation de l’entrée n° ' + e.id + ' : ' + String(p.motif || '').trim(); var r = eqPorte(e.inverse.action, p2); } finally { db.eqAnnule = null; }
+      r = r || {}; r.annule = e.id; return r; },
+    joueurs_chercher: function (p, M) { var q = String(p.q || '').trim().toLowerCase();
+      var L = M.joueurs.filter(function (j) { return q ? (j.id === q || String(j.n).toLowerCase().indexOf(q) >= 0 || String(j.email || '').toLowerCase().indexOf(q) >= 0) : !j.bot; });
+      return { joueurs: L.slice(0, 30).map(eqVue) }; },
+    joueur_fiche: function (p) { return eqFiche(p.id); },
+    joueur_activite: function (p, M) { var id = p.id; eqJ(id); var n = Math.min(200, Math.max(1, +p.n || 50)), av = +p.avant || Infinity, T = Array.isArray(p.types) ? p.types : null;
+      var L = [].concat((M.sessions[id] || []).map(function (s) { return { t: 'connexion', at: s.cree, d: { appareil: s.appareil } }; }),
+        M.ledger.filter(function (x) { return x.user === id; }).map(function (x) { return { t: 'argent', at: x.at, d: { k: x.k, montant: x.montant, solde: x.solde, ref: x.ref || null } }; }),
+        M.msgs.filter(function (m) { return m.u === id && !/^dm:/.test(m.room); }).map(function (m) { return { t: 'message', at: m.at, d: { id: m.id, salon: m.room, k: m.k || 'msg', texte: m.text, source: m.source || 'joueur' } }; }),
+        M.journal.filter(function (e) { return e.cible_type === 'joueur' && e.cible === id; }).map(function (e) { return { t: 'equipe', at: e.at, d: eqVueJ(e) }; }));
+      L = L.filter(function (x) { return x.at < av && (!T || T.indexOf(x.t) >= 0); }).sort(function (a, b) { return b.at - a.at; });
+      var page = L.slice(0, n); return { evenements: page, suite: page.length === n ? page[page.length - 1].at : null }; },
+    joueur_solde: function (p, M) { eqCible(p.id, false); var j = eqJ(p.id), d = Math.round((+p.delta || 0) * 100) / 100;
+      if (!d || Math.abs(d) > 1e7) throw { message: 'montant_invalide' }; if (M.role === 'moderateur' && Math.abs(d) > M.modMax) throw { message: 'plafond_moderateur' };
+      var avant = +j.balance; if (avant + d < 0) throw { message: 'solde_negatif' }; j.balance = Math.round((avant + d) * 100) / 100;
+      M.ledger.push({ user: j.id, at: Date.now(), k: 'ajustement_admin', montant: d, solde: j.balance, ref: String(p.motif || '').slice(0, 120) });
+      window.__fakeSB.emit('joueur:' + j.id, 'etat', {});
+      eqNoter('joueur_solde', 'joueur', j.id, { solde: avant }, { solde: j.balance, delta: d }, p.motif, { action: 'joueur_solde', p: { id: j.id, delta: -d } }); return eqFiche(j.id); },
+    joueur_rang: function (p, M) { eqCible(p.id, false); var j = eqJ(p.id), t = +p.t, d = +p.d; if (!(t >= 0 && t <= 8 && d >= 0 && d <= 2)) throw { message: 'rang_invalide' };
+      var avant = { t: j.t, d: j.d, xp: j.xp }; j.t = t; j.d = t === 8 ? 0 : d; j.xp = Math.max(j.xp || 0, [0, 600, 2000, 5000, 11000, 22000, 40000, 70000, 120000][t] + d * 200);
+      eqNoter('joueur_rang', 'joueur', j.id, avant, { t: j.t, d: j.d, xp: j.xp }, p.motif, null); return eqFiche(j.id); },
+    joueur_kyc: function (p, M) { eqCible(p.id, false); var j = eqJ(p.id); if (typeof p.ok !== 'boolean') throw { message: 'requete' }; if (!!j.kyc === p.ok) throw { message: 'kyc_inchange' };
+      var avant = !!j.kyc; j.kyc = p.ok; j.kyc_at = p.ok ? Date.now() : null; eqNoter('joueur_kyc', 'joueur', j.id, { kyc: avant }, { kyc: p.ok }, p.motif, { action: 'joueur_kyc', p: { id: j.id, ok: avant } }); return eqFiche(j.id); },
+    joueur_bloquer: function (p, M) { eqCible(p.id, true); var j = eqJ(p.id);
+      if (['site', 'chat', 'paris', 'depots', 'retraits', 'creation', 'clans'].indexOf(p.acces) < 0) throw { message: 'acces_invalide' };
+      var salon = String(p.salon || '').trim() || null; if (salon && (p.acces !== 'chat' || !SALON_RE.test(salon))) throw { message: 'salon_invalide' };
+      var fin; if (db.eqAnnule && p.fin != null) fin = +p.fin; else { if (!(p.duree in DUREES_MS)) throw { message: 'duree_invalide' }; fin = DUREES_MS[p.duree] === -1 ? -1 : Date.now() + DUREES_MS[p.duree]; }
+      var b = { id: ++M.seq, user: j.id, acces: p.acces, salon: salon, debut: Date.now(), fin: fin, motif: String(p.motif || ''), par: monNom() }; M.blocages.push(b);
+      window.__fakeSB.emit('joueur:' + j.id, 'bloc', { id: b.id, acces: b.acces, salon: b.salon, fin: b.fin });
+      eqNoter('joueur_bloquer', 'joueur', j.id, { id: b.id, actif: false }, eqBlocVue(b), p.motif, { action: 'joueur_debloquer', p: { id: b.id } });
+      var r = eqFiche(j.id); r.blocage = b.id; return r; },
+    joueur_debloquer: function (p, M) { var b = M.blocages.filter(function (x) { return x.id === +p.id; })[0]; if (!b) throw { message: 'blocage_inconnu' }; if (b.leve_at) throw { message: 'deja_leve' };
+      eqCible(b.user, false); var avant = eqBlocVue(b); b.leve_at = Date.now(); b.leve_par = monNom(); b.leve_motif = String(p.motif || '');
+      window.__fakeSB.emit('joueur:' + b.user, 'debloc', { id: b.id, acces: b.acces, salon: b.salon });
+      eqNoter('joueur_debloquer', 'joueur', b.user, avant, eqBlocVue(b), p.motif, +b.fin === -1 || +b.fin > Date.now() ? { action: 'joueur_bloquer', p: { id: b.user, acces: b.acces, salon: b.salon, fin: +b.fin } } : null);
+      var r = eqFiche(b.user); r.blocage = b.id; return r; },
+    joueur_deconnecter: function (p, M) { eqCible(p.id, true); var j = eqJ(p.id), d = { id: ++M.seq, user: j.id, at: Date.now(), par: monNom(), motif: String(p.motif || '').trim() || null };
+      M.deconnexions.unshift(d); window.__fakeSB.emit('joueur:' + j.id, 'deco', { at: d.at });
+      eqNoter('joueur_deconnecter', 'joueur', j.id, null, { deconnexion: d.id, at: d.at }, p.motif, null); return eqFiche(j.id); },
+    chat_messages: function (p, M) { var n = Math.min(200, Math.max(1, +p.n || 80));
+      var L = M.msgs.filter(function (m) { return !/^dm:/.test(m.room) && (!p.salon || m.room === p.salon) && (!p.joueur || m.u === p.joueur) && (!p.avant || m.id < +p.avant); }).sort(function (a, b) { return b.id - a.id; });
+      return { msgs: clone(L.slice(0, n)).map(function (m) { m.source = m.source || 'joueur'; return m; }) }; },
+    chat_supprimer: function (p, M) { var m = M.msgs.filter(function (x) { return x.id === +p.id; })[0]; if (!m || /^dm:/.test(m.room)) throw { message: 'message_inconnu' }; if (m.source === 'masque') throw { message: 'deja_masque' };
+      m.source = 'masque'; eqNoter('chat_supprimer', 'joueur', m.u, { id: m.id, source: 'joueur' }, { id: m.id, source: 'masque', salon: m.room, texte: m.text }, p.motif, { action: 'chat_restaurer', p: { id: m.id } });
+      return { message: { id: m.id, room: m.room, source: 'masque' } }; },
+    chat_restaurer: function (p, M) { var m = M.msgs.filter(function (x) { return x.id === +p.id; })[0]; if (!m || m.source !== 'masque') throw { message: 'message_inconnu' };
+      m.source = 'joueur'; eqNoter('chat_restaurer', 'joueur', m.u, { id: m.id, source: 'masque' }, { id: m.id, source: 'joueur', salon: m.room }, p.motif, { action: 'chat_supprimer', p: { id: m.id } });
+      return { message: { id: m.id, room: m.room, source: 'joueur' } }; },
+    salon_regler: function (p, M) { var s = String(p.salon || '').trim(), lent = +p.lent || 0, ferme = p.ferme === true;
+      if (!/^(general|vip|blitz|m:[a-z0-9-]{1,40}|clan:[a-z0-9]{1,20})$/.test(s)) throw { message: 'salon_invalide' }; if (lent !== Math.trunc(lent) || lent < 0 || lent > 300) throw { message: 'lent_invalide' };
+      var r = eqReg('chat.salons'), avant = clone(r.valeur || {}), apres = clone(avant), old = avant[s] || { lent: 0, ferme: false };
+      if (!lent && !ferme) delete apres[s]; else apres[s] = { lent: lent, ferme: ferme };
+      if (JSON.stringify(apres) === JSON.stringify(avant)) throw { message: 'reglage_inchange' };
+      eqEcrire('chat.salons', apres); eqNoter('salon_regler', 'reglage', 'chat.salons', { valeur: avant }, { valeur: apres }, p.motif, { action: 'salon_regler', p: { salon: s, lent: +old.lent || 0, ferme: !!old.ferme } });
+      return { salons: apres }; },
+    mots_interdits: function (p, M) { if (!Array.isArray(p.mots) || p.mots.length > 500 || p.mots.some(function (x) { return typeof x !== 'string'; })) throw { message: 'mots_invalides' };
+      var mots = Array.from(new Set(p.mots.map(function (x) { return x.trim().toLowerCase(); }).filter(Boolean))).sort(); if (mots.some(function (x) { return x.length < 2 || x.length > 40; })) throw { message: 'mots_invalides' };
+      var r = eqReg('chat.mots_interdits'), rp = eqReg('chat.mots_prives'), prives = typeof p.prives === 'boolean' ? p.prives : !!rp.valeur, avant = { valeur: clone(r.valeur), prives: !!rp.valeur };
+      if (JSON.stringify(mots) === JSON.stringify(r.valeur) && prives === !!rp.valeur) throw { message: 'reglage_inchange' };
+      eqEcrire('chat.mots_interdits', mots); eqEcrire('chat.mots_prives', prives); siteEtat().mots = mots.slice();
+      eqNoter('mots_interdits', 'reglage', 'chat.mots_interdits', avant, { valeur: mots, prives: prives }, p.motif, { action: 'mots_interdits', p: { mots: avant.valeur, prives: avant.prives } });
+      return { mots: mots, prives: prives }; },
+    clan_renommer: function (p, M) { var c = (db.clans || []).filter(function (x) { return x.id === p.id; })[0]; if (!c) throw { message: 'clan_inconnu' }; if (M.dissous[c.id]) throw { message: 'clan_indisponible' };
+      var nom = String(p.nom || '').trim(); if (nom.length < 3 || nom.length > 28 || /[<>"`\\]/.test(nom)) throw { message: 'clan_nom_invalide' }; if (nom === c.name) throw { message: 'reglage_inchange' };
+      var avant = c.name; c.name = nom; eqNoter('clan_renommer', 'clan', c.id, { nom: avant }, { nom: nom }, p.motif, { action: 'clan_renommer', p: { id: c.id, nom: avant } });
+      return { clan: { id: c.id, nom: nom, tag: c.tag } }; },
+    clan_dissoudre: function (p, M) { var c = (db.clans || []).filter(function (x) { return x.id === p.id; })[0]; if (!c) throw { message: 'clan_inconnu' }; if (M.dissous[c.id]) throw { message: 'deja_dissous' };
+      var n = (c.members || []).length; M.dissous[c.id] = true; c.members = [];
+      eqNoter('clan_dissoudre', 'clan', c.id, { dissous: false, membres: n }, { dissous: true, membres_sortis: n }, p.motif, null);
+      return { clan: { id: c.id, nom: c.name, tag: c.tag, dissous: true, membres_sortis: n } }; },
+    annonce_publier: function (p, M) { var t = p.textes || {}; if (typeof t !== 'object' || String(t.fr || '').trim().length < 3 || ['fr', 'en', 'he'].some(function (k) { return t[k] != null && String(t[k]).length > 280; })) throw { message: 'annonce_invalide' };
+      var ton = p.ton || 'info'; if (['info', 'alerte', 'succes'].indexOf(ton) < 0) throw { message: 'annonce_invalide' }; if (p.fin != null && +p.fin <= Date.now()) throw { message: 'date_invalide' };
+      var S = siteEtat(), avant = clone(S.annonce), a = { id: S.rev + 1, t: clone(t), ton: ton, fin: p.fin == null ? null : +p.fin, at: Date.now() };
+      eqEcrire('site.annonce', a); S.annonce = a; window.__fakeSB.emit('site', 'annonce', { annonce: clone(a), rev: S.rev });
+      eqNoter('annonce_publier', 'reglage', 'site.annonce', { valeur: avant }, { valeur: a }, p.motif, avant ? { action: 'annonce_publier', p: { textes: avant.t, ton: avant.ton, fin: avant.fin } } : { action: 'annonce_retirer', p: {} });
+      return { annonce: a }; },
+    annonce_retirer: function (p, M) { var S = siteEtat(), avant = clone(S.annonce); if (!avant) throw { message: 'annonce_absente' };
+      eqEcrire('site.annonce', null); S.annonce = null; window.__fakeSB.emit('site', 'annonce', { annonce: null, rev: S.rev });
+      eqNoter('annonce_retirer', 'reglage', 'site.annonce', { valeur: avant }, { valeur: null }, p.motif, { action: 'annonce_publier', p: { textes: avant.t, ton: avant.ton, fin: avant.fin } }); return { annonce: null }; },
+    maintenance: function (p, M) { if (typeof p.actif !== 'boolean') throw { message: 'requete' }; var S = siteEtat(), avant = clone(S.maintenance), msg = 'message' in p ? (p.message || null) : avant.message;
+      if (p.actif === !!avant.actif && JSON.stringify(msg) === JSON.stringify(avant.message)) throw { message: 'reglage_inchange' };
+      S.maintenance = { actif: p.actif, message: msg }; eqEcrire('site.maintenance', p.actif); eqEcrire('site.maintenance_message', msg);
+      window.__fakeSB.emit('site', 'maint', { actif: p.actif, message: clone(msg), rev: S.rev });
+      eqNoter('maintenance', 'reglage', 'site.maintenance', { valeur: !!avant.actif, message: avant.message }, { valeur: p.actif, message: msg }, p.motif, { action: 'maintenance', p: { actif: !!avant.actif, message: avant.message } });
+      return { maintenance: clone(S.maintenance) }; },
+    activite_simulee: function (p, M) { var avant = clone(M.bots), v = clone(M.bots);
+      if (db.eqAnnule && p.remplacer) v = clone(p.remplacer); else {
+        if ('actif' in p) v.actif = p.actif !== false;
+        [['intensite', 3], ['chat', 3], ['rappel', 0.2]].forEach(function (k) { if (k[0] in p) { var n = +p[k[0]]; if (!(n >= 0 && n <= k[1])) throw { message: 'montant_invalide' }; v[k[0]] = n; } }); }
+      if (JSON.stringify(v) === JSON.stringify(avant)) throw { message: 'reglage_inchange' };
+      M.bots = v; eqNoter('activite_simulee', 'bots', 'bots', { bots: avant }, { bots: v }, p.motif, { action: 'activite_simulee', p: { remplacer: avant } }); return { bots: clone(v) }; }
+  };
 
   /* ----- Marchés : le moteur est celui de js/engine.js, dont le serveur est le portage (parité vérifiée par tests/sql/moteur.spec.mjs) ----- */
   var r2 = function (x) { return Math.round(x * 100) / 100; }, r6 = function (x) { return Math.round(x * 1e6) / 1e6; }, r8 = function (x) { return Math.round(x * 1e8) / 1e8; };
@@ -810,9 +1063,10 @@
         if (force !== undefined) { resolve(force && force.error ? { data: null, error: force.error } : { data: clone(force), error: null }); return; }
         if (!RPC[name]) { resolve({ data: null, error: { message: 'Could not find the function public.' + name, code: 'PGRST202' } }); return; }
         if (!uid() && !SANS_SESSION[name]) { resolve({ data: null, error: { message: 'permission denied for function ' + name, code: '42501' } }); return; }
-        if (uid() && !SANS_SESSION[name] && name !== 'api_present') { var x = (db.etats[uid()].rg || {}).excl; if (x === -1 || x > Date.now()) { resolve({ data: null, error: { message: 'exclu', code: 'P0001', details: String(x) } }); return; } }
-        try { var d = RPC[name](args || {}); persist(); resolve({ data: d === undefined ? null : d, error: null }); }
-        catch (e) { resolve({ data: null, error: { message: e.message || String(e), code: 'P0001' } }); }
+        if (uid() && !SANS_SESSION[name] && name !== 'api_present') { var x = (db.etats[uid()] && db.etats[uid()].rg || {}).excl; if (x === -1 || x > Date.now()) { resolve({ data: null, error: { message: 'exclu', code: 'P0001', details: String(x) } }); return; } }
+        var refus = gardeJoueur(name, args || {}); if (refus) { resolve({ data: null, error: refus }); return; }       /* Partie E : blocages, maintenance, règles du chat */
+        try { var d = RPC[name](args || {}); if (name === 'api_chat_send') { db.dernierMsg = db.dernierMsg || {}; db.dernierMsg[(args || {}).p_room] = Date.now(); } persist(); resolve({ data: d === undefined ? null : d, error: null }); }
+        catch (e) { resolve({ data: null, error: { message: e.message || String(e), code: 'P0001', details: e.details } }); }
       }, CFG.latence || 3);
     });
   }
@@ -836,7 +1090,7 @@
   } };
 
   /* ----- Authentification ----- */
-  var ouvrir = function (id, em, pseudo) { db.session = { user: { id: id, email: em } }; if (!db.etats[id]) db.etats[id] = etatNeuf(id, em, pseudo || em.split('@')[0], false); persist(); fireAuth('SIGNED_IN'); };
+  var ouvrir = function (id, em, pseudo) { db.session = { user: { id: id, email: em } }; db.decoAt = null; db.aal = 'aal1';   /* une session ouverte après une déconnexion forcée est acceptée */ if (!db.etats[id]) db.etats[id] = etatNeuf(id, em, pseudo || em.split('@')[0], false); persist(); fireAuth('SIGNED_IN'); };
   var auth = {
     getSession: function () { rec('auth', 'getSession'); return Promise.resolve({ data: { session: clone(db.session) }, error: null }); },
     onAuthStateChange: function (cb) { authCbs.push(cb); return { data: { subscription: { unsubscribe: function () { authCbs = authCbs.filter(function (x) { return x !== cb; }); } } } }; },
@@ -867,6 +1121,23 @@
       var a = db.comptes[String(p.email).toLowerCase()];
       if (!a || p.token !== (CFG.otp || '123456')) return Promise.resolve({ data: {}, error: { message: 'Token has expired or is invalid', code: 'otp_expired' } });
       ouvrir(a.id, String(p.email).toLowerCase(), a.pseudo); return Promise.resolve({ data: { session: clone(db.session) }, error: null }); },
+    /* double authentification (facteur TOTP de Supabase Auth) : le code accepté est CFG.totp (123456 par défaut) */
+    mfa: {
+      listFactors: function () { rec('auth', 'mfa.listFactors'); if (!db.session) return Promise.resolve({ data: null, error: { message: 'not authenticated' } }); if (CFG.equipe) EQ();
+        var f = clone(db.mfa || []); return Promise.resolve({ data: { all: f, totp: f.filter(function (x) { return x.status === 'verified'; }), phone: [], webauthn: [] }, error: null }); },
+      getAuthenticatorAssuranceLevel: function () { rec('auth', 'mfa.aal'); if (CFG.equipe) EQ();
+        return Promise.resolve({ data: { currentLevel: db.aal || 'aal1', nextLevel: verifies() ? 'aal2' : (db.aal || 'aal1'), currentAuthenticationMethods: [] }, error: null }); },
+      enroll: function (o) { rec('auth', 'mfa.enroll', { factorType: o && o.factorType, friendlyName: o && o.friendlyName }); db.mfa = db.mfa || [];
+        if ((db.mfa || []).some(function (x) { return x.friendly_name === o.friendlyName; })) return Promise.resolve({ data: null, error: { message: 'A factor with the friendly name already exists', code: 'mfa_factor_name_conflict' } });
+        var id = 'f' + (db.seq++); db.mfa.push({ id: id, factor_type: 'totp', status: 'unverified', friendly_name: o.friendlyName }); persist();
+        return Promise.resolve({ data: { id: id, type: 'totp', friendly_name: o.friendlyName, totp: { qr_code: 'data:image/svg+xml;utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="21" height="21"><rect width="7" height="7"/><rect x="14" width="7" height="7"/><rect y="14" width="7" height="7"/></svg>', secret: 'JBSWY3DPEHPK3PXP', uri: 'otpauth://totp/Wimoro?secret=JBSWY3DPEHPK3PXP' } }, error: null }); },
+      challenge: function (o) { rec('auth', 'mfa.challenge', { factorId: o.factorId }); return Promise.resolve({ data: { id: 'c' + (db.seq++), type: 'totp', expires_at: Math.round(Date.now() / 1000) + 300 }, error: null }); },
+      verify: function (o) { rec('auth', 'mfa.verify', { factorId: o.factorId, code: o.code });
+        if (String(o.code) !== String(CFG.totp || '123456')) return Promise.resolve({ data: null, error: { message: 'Invalid TOTP code entered', code: 'mfa_verification_failed' } });
+        var f = (db.mfa || []).filter(function (x) { return x.id === o.factorId; })[0]; if (!f) return Promise.resolve({ data: null, error: { message: 'Factor not found', code: 'mfa_factor_not_found' } });
+        f.status = 'verified'; db.aal = 'aal2'; persist(); fireAuth('MFA_CHALLENGE_VERIFIED'); return Promise.resolve({ data: { access_token: 'aal2', expires_in: 3600 }, error: null }); },
+      unenroll: function (o) { rec('auth', 'mfa.unenroll', { factorId: o.factorId }); db.mfa = (db.mfa || []).filter(function (x) { return x.id !== o.factorId; }); persist(); return Promise.resolve({ data: { id: o.factorId }, error: null }); }
+    },
     updateUser: function (p) { rec('auth', 'updateUser', Object.keys(p || {}));
       if (!db.session) return Promise.resolve({ data: {}, error: { message: 'not authenticated' } });
       if (p.password) { var c = db.comptes[db.session.user.email]; if (c) c.password = p.password; persist(); }
@@ -911,6 +1182,18 @@
       m.fc = (m.fc | 0) + 1; e.me.xp += 20; e.me.followed = (e.me.followed | 0) + 1;
       var n = notif('users', 'mise_suivie', { u: 'bot-suiveur', n: nom || 'karim', m: m.bet.m, id: m.id, room: salon }, salon.indexOf('m:') === 0 ? '#marche-' + salon.slice(2) : '#chat').n; persist();
       window.__fakeSB.emit('salon:' + salon, 'fc', { id: m.id, fc: m.fc }); window.__fakeSB.emit('joueur:' + uid(), 'notif', { n: n }); return m.fc; },
+    /** Partie E — l'équipe bloque un accès du joueur connecté (diffusé sur son sujet privé si `diffuser`) */
+    bloquer: function (acces, salon, fin, diffuser) { blocsJoueur(); var b = { id: 500 + (db.seq++), acces: acces, salon: salon || null, fin: fin == null ? -1 : +fin }; db.blocsJoueur.push(b); persist();
+      if (diffuser !== false) window.__fakeSB.emit('joueur:' + uid(), 'bloc', clone(b)); return b.id; },
+    debloquer: function (id) { var b = (db.blocsJoueur || []).filter(function (x) { return x.id === id; })[0]; if (!b) return 0; db.blocsJoueur = db.blocsJoueur.filter(function (x) { return x.id !== id; }); persist();
+      return window.__fakeSB.emit('joueur:' + uid(), 'debloc', { id: b.id, acces: b.acces, salon: b.salon }); },
+    /** un réglage public change (comme reglage_modifier) : api_site le rend, et « cfg » part sur le sujet « site » */
+    reglage: function (cle, v) { var S = siteEtat(); S.v[cle] = clone(v); S.rev++; persist(); return window.__fakeSB.emit('site', 'cfg', { cle: cle, v: clone(v), rev: S.rev }); },
+    annonce: function (a) { var S = siteEtat(); S.rev++; S.annonce = a ? Object.assign({ id: S.rev, ton: 'info', fin: null, at: Date.now() }, clone(a)) : null; persist(); return window.__fakeSB.emit('site', 'annonce', { annonce: clone(S.annonce), rev: S.rev }); },
+    maintenance: function (actif, message) { var S = siteEtat(); S.rev++; S.maintenance = { actif: !!actif, message: message || null }; persist(); return window.__fakeSB.emit('site', 'maint', { actif: !!actif, message: message || null, rev: S.rev }); },
+    /** déconnexion forcée : les appels suivants sont refusés (« session ») et « deco » part sur le sujet privé du joueur */
+    deconnecter: function () { db.decoAt = Date.now(); persist(); return window.__fakeSB.emit('joueur:' + uid(), 'deco', { at: db.decoAt }); },
+    equipe: function () { return EQ(); },
     /** diffuse l'état actuel de marchés, comme un tick du serveur */
     tick: function (ids, extra) { var d = { t: Date.now(), m: marchesDe(ids || Object.keys(db.marches)) }; for (var k in extra || {}) d[k] = extra[k]; return window.__fakeSB.emit('marches', 'tick', d); }
   };

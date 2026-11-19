@@ -78,10 +78,10 @@ function rgLimiteEffets(k,v,r){
  render(false);}
 
 /* ---------- Export : données ---------- */
-function histKind(h){return h.k==='duel'?_t("Duel"):h.k==='blitz'?_t("Blitz Royale"):h.k==='serie'?_t("La Série"):h.k==='flash'?_t("Pari éclair"):h.k==='sell'?(h.via==='stop'?_t("Stop loss"):h.via==='tp'?_t("Take profit"):h.via==='limit'?_t("Vente limite"):h.via==='copy'?`${_t("Copie de {0}",[h.of||''])}`:_t("Revente")):_t("Marché réglé");}
+function histKind(h){return h.k==='ajustement_admin'?_t("Ajustement admin"):h.k==='duel'?_t("Duel"):h.k==='blitz'?_t("Blitz Royale"):h.k==='serie'?_t("La Série"):h.k==='flash'?_t("Pari éclair"):h.k==='sell'?(h.via==='stop'?_t("Stop loss"):h.via==='tp'?_t("Take profit"):h.via==='limit'?_t("Vente limite"):h.via==='copy'?`${_t("Copie de {0}",[h.of||''])}`:_t("Revente")):_t("Marché réglé");}
 function exportData(){const pf=portfolio(),r=myRank();
  const byAt=(a,b)=>(b.at||0)-(a.at||0);
- const hist=(S.me.history||[]).slice().sort(byAt).map(h=>[fmtDT(h.at),histKind(h),h.m&&MK[h.m]?MK[h.m].q:h.q,h.k==='flash'?(h.eq?_t("Égalité"):h.s==='oui'?_t("Haut"):_t("Bas")):(h.s==='oui'?_t("Oui"):_t("Non")),Math.round(h.pnl*100)/100]);
+ const hist=(S.me.history||[]).slice().sort(byAt).map(h=>[fmtDT(h.at),histKind(h),h.m&&MK[h.m]?MK[h.m].q:h.q,h.k==='ajustement_admin'?'':h.k==='flash'?(h.eq?_t("Égalité"):h.s==='oui'?_t("Haut"):_t("Bas")):(h.s==='oui'?_t("Oui"):_t("Non")),Math.round(h.pnl*100)/100]);
  const pos=(S.me.positions||[]).map(p=>{const m=MK[p.m];return [m?m.q:p.m,p.s==='oui'?_t("Oui"):_t("Non"),Math.round(p.sh*100)/100,Math.round(p.avg*10)/10,Math.round(posValue(p)*100)/100,Math.round(posPnl(p)*100)/100];});
  const ords=(S.me.orders||[]).slice().sort(byAt).map(o=>{const m=MK[o.m];return [fmtDT(o.at),m?m.q:o.m,o.s==='oui'?_t("Oui"):_t("Non"),o.k==='buy'?_t("Achat limite"):_t("Vente limite"),o.lp,o.k==='buy'?Math.round(o.init*100)/100:Math.round(o.init*100)/100,o.status==='open'?_t("En attente"):o.status==='filled'?_t("Exécuté"):_t("Annulé")];});
  const flows=[...(S.me.deps||[]).map(d=>({at:d.at,r:[fmtDT(d.at),d.label?depLabel(d.label):_t("Dépôt"),d.label?'Wimoro':(d.net||d.coin),Math.round(d.usd*100)/100]})),...(S.me.wds||[]).map(w=>({at:w.at,r:[fmtDT(w.at),_t("Retrait"),w.net||'',-Math.round(w.amt*100)/100]}))].sort(byAt).map(x=>x.r);

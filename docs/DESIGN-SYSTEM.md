@@ -11,7 +11,7 @@ Il s'adresse à toute équipe qui reprend le front. Le site reste statique : auc
 | `css/base.css` | remise à zéro, typographie, mise en page, classes utilitaires | rarement |
 | `css/components.css` | navigation, boutons, champs, cartes, onglets, listes, badges, fenêtres, notifications | ajouter ou modifier un composant commun |
 | `css/screens.css` | ce qui est propre à un écran | travailler un écran |
-| `css/admin.css` | panel d'administration | — |
+| `css/admin.css` | panel d'administration (`admin.html` charge aussi `base.css` et `components.css` : mêmes boutons, champs, cartes, fenêtres ; ses largeurs propres sont les variables `--adm-…` de `tokens.css`) | mise en page du panel |
 | `js/refonte.js` | sous-navigations, écran Portefeuille, profil, sections repliables | structure des écrans |
 | `js/i18n-4.js` | traductions (anglais, hébreu) des textes ajoutés par la refonte | tout nouveau texte |
 

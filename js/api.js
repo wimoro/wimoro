@@ -148,6 +148,41 @@ const API=(()=>{
  /* après un lien de récupération (événement « recuperation ») ou depuis le profil */
  async function updatePassword(nouveau){await lib();const u=await sb.auth.updateUser({password:nouveau});if(u.error)throw err(authErr(u.error),u.error);}
 
+ /* ----- Double authentification de l'équipe (code à six chiffres d'une application, facteur TOTP de Supabase Auth) -----
+    Une session validée par le code passe au niveau aal2 ; le serveur l'exige des membres qui ont enrôlé un code
+    (réponse « mfa_requise »). La connexion des joueurs n'est pas touchée. */
+ const mfaErr=e=>{const m=String(e&&e.message||''),c=String(e&&e.code||'');
+  if(c==='mfa_verification_failed'||c==='mfa_challenge_expired'||/invalid totp|code.*(invalid|expired)|challenge.*expired/i.test(m))return 'code_invalide';
+  if(c==='mfa_factor_name_conflict'||/friendly name/i.test(m))return 'mfa_nom_pris';
+  if(c==='mfa_verification_rejected'||/too many/i.test(m)||c==='over_request_rate_limit')return 'trop_de_tentatives';
+  if(c==='insufficient_aal')return 'mfa_requise';
+  return authErr(e);};
+ const mfa=async(fn,args)=>{await lib();let r;try{r=await sb.auth.mfa[fn](args);}catch(e){throw err('reseau',e);}if(r.error)throw err(mfaErr(r.error),r.error);return r.data;};
+ /* facteurs du compte : all (vérifiés ou non), totp (vérifiés seulement) */
+ const mfaFacteurs=()=>mfa('listFactors');
+ /* niveau de la session : currentLevel (aal1 ou aal2) et nextLevel (aal2 dès qu'un code est vérifié) */
+ const mfaNiveau=()=>mfa('getAuthenticatorAssuranceLevel');
+ /* nouveau code : l'image du QR code (SVG en data URL, réencodée pour une balise img), la clé à saisir à la main et l'adresse otpauth */
+ async function mfaEnroler(nom){const d=await mfa('enroll',{factorType:'totp',friendlyName:nom||undefined});const t=d.totp||{};let qr=String(t.qr_code||'');
+  const brut=qr.match(/^data:image\/svg\+xml;utf-8,([\s\S]*)$/);if(brut)qr='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(brut[1]);
+  return {id:d.id,qr,secret:t.secret||'',uri:t.uri||''};}
+ const mfaDefi=id=>mfa('challenge',{factorId:id}).then(d=>d.id);
+ /* vérifie le code : la session passe au niveau aal2 (le client garde la nouvelle session) */
+ async function mfaVerifier(id,defi,code){await mfa('verify',{factorId:id,challengeId:defi||await mfaDefi(id),code:String(code||'').replace(/\D/g,'')});return true;}
+ /* retire un facteur (un enrôlement abandonné, jamais vérifié, gênerait le suivant) */
+ const mfaRetirer=id=>mfa('unenroll',{factorId:id});
+
+ /* ----- Réglages publics du site, annonce, maintenance : api_site(), lisible par tous -----
+    Avec une session, par le client ; sans session, par une lecture REST directe avec la clé publique (en-tête apikey
+    seul), sans charger la bibliothèque : un visiteur ne dépend toujours d'aucun service extérieur pour s'afficher. */
+ async function site(){
+  if(sb)return call('api_site');
+  let r;try{r=await delai(fetch(BACK+'/rest/v1/rpc/api_site',{method:'POST',headers:{apikey:CLE,'Content-Type':'application/json'},body:'{}',cache:'no-store'}),DELAI);}
+  catch(e){throw err(e&&e.code==='delai'?'delai':'reseau',e);}
+  if(!r.ok)throw err('serveur');
+  return r.json();
+ }
+
  /* ----- Temps réel : diffusion par sujet. On ne s'abonne qu'à ce qui est à l'écran. ----- */
  async function subscribe(sujet,fnc,prive){
   await lib();if(canaux[sujet])return;
@@ -162,6 +197,7 @@ const API=(()=>{
   pret,on,emit,call,fn,
   get mode(){return mode;},get uid(){return uid;},get email(){return email;},
   signIn,signUp,signOut,resendConfirmation,resetRequest,resetConfirm,updatePassword,
+  mfaFacteurs,mfaNiveau,mfaEnroler,mfaDefi,mfaVerifier,mfaRetirer,site,
   subscribe,unsubscribe,topics:()=>Object.keys(canaux),
   /* État complet du joueur (profil, solde, positions, historique, notifications, préférences…) */
   loadState:()=>call('api_state'),

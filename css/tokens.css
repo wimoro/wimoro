@@ -210,3 +210,16 @@
 @media (prefers-reduced-motion:reduce){
   :root{--dur-1:1ms;--dur-2:1ms;--dur-3:1ms}
 }
+
+/* Panneau d'administration (admin.html, css/admin.css) : ses largeurs propres, la famille de la clé de double
+   authentification (à recopier caractère par caractère) et le point orange du logo. Rien d'autre ne les lit. */
+:root{
+  --adm-nav:264px;              /* menu latéral, sur ordinateur */
+  --adm-page:1200px;            /* largeur maximale du contenu */
+  --adm-recherche:560px;        /* champ de recherche du bandeau */
+  --adm-champ:200px;            /* largeur d'un champ court (montant, date, durée) */
+  --adm-chiffre:200px;          /* largeur minimale d'une carte de chiffre */
+  --adm-porte:480px;            /* fenêtre de connexion, d'accès refusé, de double authentification */
+  --font-code:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  --logo-point:#F59A0B;         /* le point du logo (celui de index.html) */
+}

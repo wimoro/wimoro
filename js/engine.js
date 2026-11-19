@@ -40,7 +40,24 @@ function beRoom(g){return Math.max(0,g.pool.o+g.pool.n-(g.pool.eProm||0));}
 /* Barème public de Polymarket (docs.polymarket.com/trading/fees, nov. 2026) : frais = parts × taux × p × (1 − p) */
 const PM_RATE={'Crypto':.07,'Football':.05,'Sport':.05,'Sport live':.05,'Tech et IA':.04,'Économie':.05,'Culture':.05,'Météo':.05,'Bourse':.04,'Matières':.04,'Devises':.04};
 const pmRate=cat=>PM_RATE[cat]!==undefined?PM_RATE[cat]:.05;
-const wmRate=(cat,disc)=>pmRate(cat)*ENG.PM_K*(disc?ENG.RANK_DISC:1);
+/* Frais des paris sur les marchés : ceux du serveur (wm.fee_rate), lus dans ses réglages publics (api_site, puis l'événement
+   « cfg » du sujet « site »). Taux de la catégorie × multiplicateur × remise du rang Diamant. Valeurs par défaut : les
+   constantes ci-dessus, égales à celles du serveur ; tant qu'aucun réglage n'arrive, rien ne change. */
+const REG_CAT={'Crypto':'crypto','Football':'football','Politique':'politique','Tech et IA':'tech_ia','Économie':'economie','Culture':'culture','Météo':'meteo','Sport':'sport','Sport live':'sport_live','Bourse':'bourse','Matières':'matieres','Devises':'devises'};
+const ENG_REG_DEF={k:ENG.PM_K,remise:ENG.RANK_DISC,defaut:.05,taux:Object.assign({},PM_RATE,{'Politique':.05})};
+const ENG_REG=JSON.parse(JSON.stringify(ENG_REG_DEF));
+/* taux d'un barème donné (le barème en vigueur, ou un brouillon du panneau d'administration) */
+const regRate=(reg,cat,disc)=>{const t=reg.taux[cat];return (typeof t==='number'?t:reg.defaut)*reg.k*(disc?reg.remise:1);};
+const wmRate=(cat,disc)=>regRate(ENG_REG,cat,disc);
+/* Applique des réglages du serveur ({clé: valeur}) ; une valeur absente ou d'un autre type garde la précédente.
+   Rend vrai si les frais ont changé (l'écran recalcule alors les aperçus ouverts). */
+function engReglages(v){if(!v||typeof v!=='object')return false;const avant=JSON.stringify(ENG_REG),n=x=>typeof x==='number'&&isFinite(x)&&x>=0;
+ if(n(v['frais.k']))ENG_REG.k=v['frais.k'];if(n(v['frais.remise_rang']))ENG_REG.remise=v['frais.remise_rang'];if(n(v['frais.taux.defaut']))ENG_REG.defaut=v['frais.taux.defaut'];
+ for(const cat in REG_CAT){const x=v['frais.taux.'+REG_CAT[cat]];if(n(x))ENG_REG.taux[cat]=x;}
+ return JSON.stringify(ENG_REG)!==avant;}
+/* Frais éclair, Série et Blitz : calculés par le moteur éclair du serveur avec ses propres constantes (js/moteur-eclair.js,
+   copie conforme dans l'Edge Function « eclair »), qui ne lit pas encore les réglages : l'aperçu garde donc ces constantes. */
+const eclairRate=(cat,disc)=>pmRate(cat)*ENG.PM_K*(disc?ENG.RANK_DISC:1);
 const engClamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 
 /* ---------- Carnet ---------- */
@@ -67,9 +84,10 @@ function bookSell(m,side,sh){
   return {sh:s,pro,first:B0,avg:s>0?pro/s:B0,mid0:mid,mid1:mid-s/D,cap,full:sh<=cap+1e-9};
 }
 
-/* Devis d'achat : `total` = ce que le joueur débite, frais compris. Frais = coût · taux · (1 − prix moyen). */
-function quoteBuy(m,side,total,disc){
-  const th=wmRate(m.cat,disc);let a=total/(1+th/2),r=bookBuy(m,side,a);
+/* Devis d'achat : `total` = ce que le joueur débite, frais compris. Frais = coût · taux · (1 − prix moyen).
+   `taux` (facultatif) : un taux donné, pour comparer deux barèmes (exemple chiffré du panneau d'administration). */
+function quoteBuy(m,side,total,disc,taux){
+  const th=typeof taux==='number'?taux:wmRate(m.cat,disc);let a=total/(1+th/2),r=bookBuy(m,side,a);
   for(let i=0;i<12;i++){r=bookBuy(m,side,a);const fee=r.cost*th*(1-r.avg);const na=Math.max(0,total-fee);if(Math.abs(na-a)<1e-10){a=na;break;}a=na;}
   r=bookBuy(m,side,a);const fee=r.cost*th*(1-r.avg),totalFee=r.cost+fee;
   const capFee=r.maxCost*th*(1-(r.cap>0?r.maxCost/r.cap:r.first));
@@ -111,9 +129,9 @@ function quoteSellCap(m,side,sh,pfloor){
 const flashPool=g=>g.pool.o+g.pool.n+g.pool.e;
 const poolKey=side=>side==='oui'?'o':side==='non'?'n':'e';
 /* frais prélevés à la mise : taux · (1 − part de la cagnotte déjà sur ce côté) */
-function flashFee(cat,g,side,amt,disc){const T=flashPool(g),share=T>0?g.pool[poolKey(side)]/T:.5;return amt*wmRate(cat,disc)*(1-share);}
+function flashFee(cat,g,side,amt,disc){const T=flashPool(g),share=T>0?g.pool[poolKey(side)]/T:.5;return amt*eclairRate(cat,disc)*(1-share);}
 /* gain si le côté gagne : Oui/Non = mise nette × (cagnotte / mises du côté) ; break even = mise nette × cote bloquée à la mise (beMultFair), jamais plus que la cagnotte */
 function flashPayout(g,my){const key=poolKey(my.s),T=flashPool(g),W=g.pool[key];if(W<=0)return my.net;let mult=T/W;if(my.s==='be')mult=Math.min(mult,my.mult||ENG.CAP_BE,ENG.CAP_BE);return my.net*mult;}
 
-if(typeof module!=='undefined')module.exports={ENG,PM_RATE,pmRate,wmRate,bookDepth,growLiq,bookHalf,sideMid,bookBuy,bookSell,quoteBuy,quoteSell,applyBuy,applySell,liqValue,bestAsk,bestBid,quoteBuyCap,quoteSellCap,flashPool,poolKey,flashFee,flashPayout,erf,beProb,beMultFair,beRoom};
+if(typeof module!=='undefined')module.exports={ENG,PM_RATE,pmRate,wmRate,eclairRate,regRate,engReglages,ENG_REG,ENG_REG_DEF,REG_CAT,bookDepth,growLiq,bookHalf,sideMid,bookBuy,bookSell,quoteBuy,quoteSell,applyBuy,applySell,liqValue,bestAsk,bestBid,quoteBuyCap,quoteSellCap,flashPool,poolKey,flashFee,flashPayout,erf,beProb,beMultFair,beRoom};
 

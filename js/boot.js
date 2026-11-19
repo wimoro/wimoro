@@ -41,6 +41,8 @@ async function demarrer(){
   catch(e){if(e&&e.code==='session'){await API.signOut();srvRecharger('#connexion','expire');return;}
    if(e&&e.code==='exclu'){srvExclu(e);return;}
    if(e&&e.code==='suspendu'){srvSuspendu(e);return;}             /* compte suspendu par un administrateur */                 /* compte en auto-exclusion : la connexion est refusée par le serveur */
+   if(e&&e.code==='maintenance'){S.me=guestMe();i18nStatic(document);PRET=true;document.body.classList.add('out');$('#view').innerHTML='<div class="wrap"></div>';   /* maintenance : le serveur refuse les joueurs, l'écran l'explique */
+    API.site().then(d=>{siteAppliquer(d,true);if(!MAINT)maintErreur();}).catch(()=>maintErreur());return;}
    S.me=guestMe();i18nStatic(document);PRET=true;ecranErreurServeur(e);return;}
   flashBoot();
   if(!S.me.onboarded&&location.hash!=='#bienvenue')location.replace('#bienvenue');
@@ -58,7 +60,8 @@ async function demarrer(){
  for(const t of PLAN)if(t.quand==='tous'||(t.quand==='serveur'?srv:!srv))setInterval(t.fn,t.ms);
  if(!srv){setTimeout(catchUpVotes,1200);setTimeout(botFriendRequest,45000);setTimeout(burst,9000);setTimeout(()=>{if(S.me.logged&&!duelIncoming().length)duelBotChallenge();},150000);}
  MARKETS.forEach(bookDepth);
- document.addEventListener('visibilitychange',()=>{if(!document.hidden){flashTick();if(!srv)duelTick();updateFlash(true);refreshLive();if(typeof bzRefresh==='function')bzRefresh();if(typeof serieRefresh==='function')serieRefresh();if(!XH)refreshCharts();}});
+ if(!srv)siteRelire(true);                                 /* réglages, annonce et maintenance du site (visiteur et compte démo : lecture REST, sans bibliothèque) */
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden){if(!srv)siteRelire(false);flashTick();if(!srv)duelTick();updateFlash(true);refreshLive();if(typeof bzRefresh==='function')bzRefresh();if(typeof serieRefresh==='function')serieRefresh();if(!XH)refreshCharts();}});
  /* sauvegarde immédiate quand l'onglet se ferme ou se recharge (le save() ordinaire est différé) */
  addEventListener('pagehide',()=>{if(typeof flushSave==='function')flushSave();marketsSave();});document.addEventListener('visibilitychange',()=>{if(document.hidden){if(typeof flushSave==='function')flushSave();marketsSave();}});
  if(!srv&&S.me.logged&&!S.me.welcomed)setTimeout(welcome,700);

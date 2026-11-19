@@ -4,7 +4,7 @@ import { test, expect } from '@playwright/test';
 import { ouvrir, lire, aller } from '../helpers/app.mjs';
 
 const pret = page => expect(page.locator('#view > *').first()).toBeAttached();
-const ecritures = page => lire(page, () => __fakeSB.journal().filter(c => c.kind === 'rpc' && !/^(api_state|api_markets|api_chat_history)$/.test(c.name)).map(c => c.name));
+const ecritures = page => lire(page, () => __fakeSB.journal().filter(c => c.kind === 'rpc' && !/^(api_state|api_markets|api_chat_history|api_site|api_mes_blocages)$/.test(c.name)).map(c => c.name));   // (les lectures du démarrage ne sont pas des écritures)
 
 test('B06, B14 · positions, KYC et historique viennent des tables du serveur et survivent au rechargement', async ({ page }) => {
   const etat = { me: { kyc: true, kycAt: Date.now() - 864e5, balance: 450 }, positions: [{ m: 'btc150k', s: 'oui', sh: 81.3, avg: 61.5 }], history: [{ k: 'sell', m: 'eth6000', s: 'non', win: false, pnl: -4.2, at: Date.now() - 5e6 }] };

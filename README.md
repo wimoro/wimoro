@@ -47,7 +47,7 @@ node tools/version.mjs        # met à jour l'empreinte anti-cache des fichiers 
 
 | Dossier | Contenu |
 |---|---|
-| `admin.html`, `js/admin.js` | le panel d'administration (réservé aux comptes administrateurs, contrôle fait par le serveur) |
+| `admin.html`, `js/admin.js`, `js/admin-ecrans.js`, `js/admin-reglages.js` | le panel d'administration (réservé à l'équipe, administrateurs et modérateurs ; contrôle fait par le serveur à chaque action) |
 | `index.html`, `css/`, `js/` | le site. `js/api.js` est le seul fichier qui parle à Supabase ; `js/serveur.js` porte le mode Compte |
 | `css/` | `tokens.css` (couleurs, tailles, espacements, thème clair et sombre), `base.css` (socle et mise en page), `components.css` (boutons, champs, cartes, navigation), `screens.css` (écrans), `admin.css` (panel d'administration) |
 | `js/refonte.js` | présentation de la refonte : sous-navigations (Communauté, Éclair), écran Portefeuille, profil, sections repliables |

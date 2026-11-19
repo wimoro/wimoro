@@ -60,7 +60,7 @@ test('en mode Compte, le site ne lit ni n’écrit plus rien tout seul : seuleme
   await page.clock.runFor(10 * 60000);                                      // onglet caché : plus aucun signal
   expect(await lire(page, n => __fakeSB.calls.slice(n).length, n0)).toBe(4);
   const demarrage = await lire(page, n => __fakeSB.calls.slice(0, n).map(c => c.kind + ':' + c.name), n0);
-  expect(demarrage.filter(c => c.startsWith('rpc:')).sort()).toEqual(['rpc:api_chat_history', 'rpc:api_dm_list', 'rpc:api_markets', 'rpc:api_markets', 'rpc:api_state']);   // (l'écran du chat lit aussi, une fois, la liste des messages privés)
-  //   // au démarrage : état, marchés, salon affiché, puis les marchés relus une fois l'abonnement au direct établi ; ensuite plus rien
+  expect(demarrage.filter(c => c.startsWith('rpc:')).sort()).toEqual(['rpc:api_chat_history', 'rpc:api_dm_list', 'rpc:api_markets', 'rpc:api_markets', 'rpc:api_mes_blocages', 'rpc:api_site', 'rpc:api_site', 'rpc:api_state']);   // (l'écran du chat lit aussi, une fois, la liste des messages privés)
+  //   // au démarrage : état, marchés, salon affiché, réglages du site et blocages du joueur, puis les marchés et les réglages relus une fois l'abonnement au direct établi ; ensuite plus rien
   expect(demarrage.filter(c => c.startsWith('from:'))).toEqual([]);          // plus aucun accès direct aux tables
 });

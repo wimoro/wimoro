@@ -190,9 +190,9 @@ qu'aucune autre fonction n'a bougé, qu'aucune autre ligne n'a changé, et rejou
 
 ## 9. Panneau d'administration : équipe, réglages, blocages, journal (19 nov. 2026)
 
-Côté serveur seulement ; l'écran du nouveau panneau viendra dans un autre lot (l'ancien `admin.html` et `api_admin`
-marchent comme avant). Migrations : `sauvegarde_20261119` (lot 0), `equipe_reglages_journal` et `journal_ajout_seul`
-(lot 1), `blocages_actions` et `blocages_controles_…` (lot 2), `reglages_frais_…` (lot 3), `diffusion_temps_reel` (lot 5).
+Le serveur ci-dessous ; l'écran est `admin.html` depuis la partie E (voir « L'écran et le site », en fin de section).
+Migrations : `sauvegarde_20261119` (lot 0), `equipe_reglages_journal` et `journal_ajout_seul` (lot 1), `blocages_actions`
+et `blocages_controles_…` (lot 2), `reglages_frais_…` (lot 3), `diffusion_temps_reel` (lot 5).
 Mode d'emploi (ajouter un membre, double authentification, retour arrière) : `docs/EXPLOITATION.md`, § 8.
 
 ### La porte : `api_equipe(action, paramètres)`
@@ -282,3 +282,27 @@ des 385 fonctions de `public` et `wm` (`backup_20261119.fonctions`). 40 d'entre 
 contrôle ajoutées, littéraux remplacés par leur réglage, et `wm.fee_rate`, `wm.argent`, `wm.ref_bonus` réécrites pour lire
 les réglages.
 `backup_20261119.restaurer('<signature>')` remet une fonction telle qu'elle était. Aucun client n'a accès à ce schéma.
+
+### L'écran et le site (partie E, 19 nov. 2026)
+
+- **Le panneau** : `admin.html` (une page, routes par le hash), `js/admin.js` (appels, erreurs en français, navigation,
+  recherche, confirmation avant → après avec motif, double authentification), `js/admin-ecrans.js` (accueil, joueurs,
+  chat et communauté, site, marchés, administrateurs, journal, mon compte), `js/admin-reglages.js` (frais et argent, jeux,
+  exemple chiffré calculé par `js/engine.js`), `css/admin.css` (après `base.css` et `components.css`). Tout passe par
+  `api_equipe` ; l'XP, les marchés (créer, modifier, fermer, résoudre) et la levée d'une ancienne suspension passent
+  encore par `api_admin`, qui n'a pas d'équivalent dans la nouvelle porte. La liste des clans est lue par `api_clan()`
+  (liste publique des clans de joueurs). Double authentification : `API.mfaFacteurs`, `mfaNiveau`, `mfaEnroler`,
+  `mfaDefi`, `mfaVerifier`, `mfaRetirer` (`js/api.js`) ; le panneau demande le code dès que le serveur répond `mfa_requise`.
+- **Le site** (`js/serveur.js`, « Partie E ») : `api_site()` au démarrage (par le client pour un compte ; par une lecture
+  REST avec la clé publique, sans la bibliothèque, pour un visiteur ou le compte démo, relue toutes les 3 minutes onglet
+  visible) ; un compte s'abonne au sujet `site` (`cfg`, `annonce`, `maint`, `marche`). Les frais du ticket viennent des
+  réglages (`engReglages`, `js/engine.js`) ; l'éclair, La Série et le Blitz gardent les constantes du moteur éclair tant
+  que l'Edge Function ne lit pas les siens. `api_mes_blocages()` au démarrage, puis `bloc`, `debloc`, `deco`, `etat` sur
+  `joueur:<id>`. Chaque refus (`bloque`, `suspendu`, `maintenance`, `mode_lent`, `salon_ferme`, `mot_interdit`,
+  `montant_max`, `retrait_max`, `limite_depot`, `clan_indisponible`, `trop_vite`) est dit à l'endroit bloqué.
+- **Ce qui manque côté serveur** (l'écran ne l'invente pas) : résoudre et annuler un marché par `api_equipe`, avec motif
+  (partie D ; l'ancienne résolution ne garde pas le motif) ; lister les clans de joueurs, dissous compris ; lire les mots
+  interdits pour un modérateur (le réglage n'est pas public et `reglages_lire` est réservé aux administrateurs) ;
+  réinitialiser la double authentification d'un membre (`mfa_reinitialiser`) ; ajuster l'XP ; le nombre exact de joueurs
+  en ligne ; les opérations du relevé (`balance_ledger`) dans `api_state` (l'historique du joueur montre un ajustement par
+  sa notification `admin_solde`) ; le détail `{acces, salon, fin}` d'un refus `bloque` venu de l'Edge Function `eclair`.

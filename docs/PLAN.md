@@ -517,8 +517,12 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
       déconnexion forcée, maintenance, actions sur les joueurs, le chat, les clans et le site (lot 2) ; frais et limites
       lus dans les réglages (lot 3) ; diffusion en direct sur les sujets `site`, des salons et `joueur:<id>` (lot 5).
       _Tests_ `tests/sql/sauvegarde-20261119`, `equipe`, `blocages`, `gardes`, `reglages-frais`, `diffusion`.
-- [ ] Écran du nouveau panneau, enrôlement du code de double authentification, lecture d'`api_site()` par le site
-      (annonce, maintenance, frais à jour dans l'aperçu du ticket) et des nouveaux codes d'erreur : lot de l'interface.
+- [x] Écran du nouveau panneau (partie E, branche `marches-et-admin-panel`) : une seule page `admin.html`, recherche en
+      haut, accueil, joueurs (fiche, solde, rang, KYC, blocages, déconnexion, activité), chat et communauté, frais et
+      argent (exemple chiffré), jeux, site, marchés, administrateurs, journal (CSV, vérification, annulation), mon compte
+      (double authentification). Le site lit `api_site()`, suit le sujet `site` et les événements `joueur:<id>`, et dit
+      chaque refus à l'endroit bloqué dans les trois langues. _Tests_ `tests/compte/admin.spec.mjs` (16),
+      `tests/compte/equipe-direct.spec.mjs` (10).
 - [ ] Prix du Blitz, Bet Exact, frais du pari éclair et de La Série : réglages créés mais « pas encore appliqués »,
       à brancher avec l'Edge Function `eclair`. Résolution et annulation de marchés par la nouvelle porte : lot du cycle de
       vie des marchés (l'ancien panel les fait toujours).
@@ -642,6 +646,14 @@ Pour chaque domaine : migration (tables, RPC, policies) → câblage via la pass
 | Marchés | Résoudre ou annuler un marché ne passe pas encore par la nouvelle porte. | C'est le lot du cycle de vie des marchés ; l'ancien panel le fait toujours, journalisé. |
 | Ajouter un membre avant l'écran | Par une migration de deux lignes, écrite au journal avec l'origine « migration » (`docs/EXPLOITATION.md`, § 8). | Le journal dit toujours d'où vient une décision ; pas de mot de passe d'administrateur à me confier. |
 | Diffusion en direct | Les réglages partent à la fin de la transaction, une fois chacun ; un blocage arrivé à sa fin n'envoie rien. | La maintenance écrit deux réglages : un seul message, juste. L'écran connaît la fin d'un blocage. |
+| Un seul panneau (partie E) | `admin.html` garde tout l'ancien panel ; ce qui n'a pas d'action dans la nouvelle porte (XP, marchés, levée d'une ancienne suspension) passe encore par l'ancienne. Le panel reprend les composants du site (`base.css`, `components.css`) et reste en français. | « Garde tout » ; les deux portes écrivent au même journal. Le panel ne sert qu'à l'équipe. |
+| Réglages pour un visiteur ou le compte démo | Lus par une lecture REST de `api_site()` au démarrage, puis toutes les 3 minutes onglet visible ; pas d'abonnement temps réel. Un compte connecté, lui, suit le sujet `site` en direct. | Un visiteur ne charge toujours pas la bibliothèque ; le quota temps réel et les 200 connexions simultanées restent aux joueurs. |
+| Frais de l'éclair, de La Série et du Blitz | L'aperçu garde les constantes du moteur éclair ; seuls les frais des paris sur les marchés suivent les réglages. | L'Edge Function ne lit pas encore ses réglages (« pas encore appliqués ») : l'aperçu doit rester égal à ce qu'elle prélève. |
+| Motif d'une résolution | Demandé par le panneau, envoyé, mais pas encore gardé par l'ancien serveur ; le panneau le dit. | La résolution par la nouvelle porte (avec motif au journal) arrive avec la partie D. |
+| Clans dans le panneau | Liste lue par `api_clan()` (liste publique des clans de joueurs) ; renommer et dissoudre passent par la porte. | Pas d'action d'équipe pour lister les clans ; aucune action inventée. |
+| Mots interdits et modérateur | Le modérateur ne peut pas modifier la liste depuis le panneau : il ne peut pas la lire (réglage non public, lecture réservée aux administrateurs). | Écrire une liste qu'on ne voit pas effacerait celle des autres. |
+| Ajustement admin chez le joueur | L'historique du joueur montre l'ajustement à partir de sa notification `admin_solde` ; libellé « Ajustement admin » dans les trois langues. | `api_state` n'envoie pas le relevé (`balance_ledger`) ; aucun changement de serveur dans ce lot. |
+| Fin de maintenance | L'écran du joueur se recharge seul ; un membre de l'équipe voit un bandeau au lieu de l'écran (le site demande son rôle seulement pendant une maintenance ou dans un salon réglé). | Repartir d'un état propre ; ne pas ajouter d'appel au démarrage de chaque joueur. |
 
 ## À faire par l'humain
 
@@ -657,7 +669,8 @@ Rien d'obligatoire. Le détail et les constats sont dans `docs/EXPLOITATION.md`,
 3. Facultatif : ajouter `Ton code : {{ .Token }}` au modèle d'e-mail « Reset Password ».
 4. Facultatif : protéger la branche `main` sur GitHub.
 5. Pour administrer : ouvrir <https://wimoro.com/admin.html> et se connecter avec le compte `WimoroAdmin` (le seul
-   administrateur aujourd'hui). Mode d'emploi : `docs/EXPLOITATION.md`, § 7.
+   administrateur aujourd'hui), puis activer la double authentification dans « Mon compte » et ajouter chaque partenaire
+   avec son compte personnel (écran Administrateurs). Mode d'emploi : `docs/EXPLOITATION.md`, § 7 et § 8.
 
 ## Journal
 
@@ -708,3 +721,4 @@ Rien d'obligatoire. Le détail et les constats sont dans `docs/EXPLOITATION.md`,
 | 19 nov. 2026 | Lot 2 : blocages par accès, déconnexion forcée, maintenance, règles du chat ; actions sur les joueurs, le chat, les clans, le site. 30 fonctions existantes reçoivent une ligne de contrôle. | 5 migrations `blocages_…` (empreintes identiques) ; commit `cb2416e` ; 422 tests, dont la preuve « rien d'autre n'a changé » (`gardes.spec.mjs`) |
 | 19 nov. 2026 | Lot 3 : frais et limites lus dans les réglages (72 appliqués), un changement vaut dès le pari suivant. | 4 migrations `reglages_frais_…` (empreintes identiques ; 24 définitions de production égales à celles testées) ; commit `5a6b9c3` ; 428 tests |
 | 19 nov. 2026 | Lot 5 : diffusion en direct (`site`, salons, `joueur:<id>`). Documentation (`BACKEND.md` § 9, `EXPLOITATION.md` § 8) ; retour arrière complet testé. | migration `diffusion_temps_reel` (empreinte identique) ; commit `9a0f877` ; 437 tests en local (220 sur la base) |
+| 19 nov. 2026 | Partie E : panneau d'administration complet (`admin.html`, une seule page) ; le site lit `api_site()`, suit le sujet `site` et `joueur:<id>`, et dit chaque refus à l'endroit bloqué en trois langues. Aucune migration. | branche `marches-et-admin-panel` (non poussée) ; 458 tests en local, dont `admin.spec.mjs` (16) et `equipe-direct.spec.mjs` (10) ; captures de chaque écran à 390 × 844 et 1 440 × 900 |

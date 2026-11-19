@@ -1,20 +1,38 @@
 <!doctype html>
-<html lang="fr">
+<html lang="fr" dir="ltr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
-<title>Wimoro — administration</title>
-<link rel="stylesheet" href="css/tokens.css?v=e092bbe6">
-<link rel="stylesheet" href="css/admin.css?v=1ae860b7">
+<title>Wimoro, équipe</title>
+<link rel="stylesheet" href="css/tokens.css?v=0a62f8d4">
+<link rel="stylesheet" href="css/base.css?v=fb8aadcd">
+<link rel="stylesheet" href="css/components.css?v=007ac43e">
+<link rel="stylesheet" href="css/admin.css?v=ec95da23">
 <script>try{if(localStorage.getItem("wimoro-theme")==="dark")document.documentElement.setAttribute("data-theme","dark");}catch(e){}</script>
 </head>
-<body>
-<header><b>Wimoro</b><span>Administration</span><span class="qui" id="adm-qui"></span><a href="index.html">Retour au site</a></header>
-<nav id="adm-nav" hidden></nav>
-<main id="adm-main"><p class="vide">Chargement…</p></main>
+<body class="adm">
+<a class="adm-saut" href="#adm-main" data-a="saut">Aller au contenu</a>
+<aside class="adm-nav" id="adm-nav" hidden aria-label="Sections du panneau">
+ <a class="adm-marque" href="#accueil" aria-label="Wimoro, équipe : accueil du panneau"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect class="lg-f" width="28" height="28" rx="8"/><path class="lg-w" d="M5 9l4.5 11 4.5-8.5 4.5 8.5L23 9" fill="none" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"/><circle class="lg-p" cx="23" cy="9" r="2.8" stroke-width="1.5"/></svg><b>wimoro</b><span>Équipe</span></a>
+ <nav id="adm-nav-l" aria-label="Écrans"></nav>
+ <p class="adm-nav-pied"><a class="link" href="index.html">Retour au site</a></p>
+</aside>
+<div class="adm-col">
+ <header class="adm-top">
+  <button class="adm-menu" id="adm-menu" data-a="menu" aria-label="Ouvrir le menu" aria-controls="adm-nav" hidden><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg></button>
+  <a class="adm-marque" href="#accueil" aria-label="Wimoro, équipe : accueil du panneau"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect class="lg-f" width="28" height="28" rx="8"/><path class="lg-w" d="M5 9l4.5 11 4.5-8.5 4.5 8.5L23 9" fill="none" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"/><circle class="lg-p" cx="23" cy="9" r="2.8" stroke-width="1.5"/></svg><b>wimoro</b><span>Équipe</span></a>
+  <div class="adm-search" id="adm-search" role="search" hidden><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg><input id="adm-q" type="search" placeholder="Chercher un joueur, un marché, un réglage" aria-label="Chercher un joueur, un marché, un réglage" autocomplete="off" aria-controls="adm-sres" aria-expanded="false" enterkeyhint="search"><div class="adm-sres" id="adm-sres" role="listbox" aria-label="Résultats" hidden></div></div>
+  <div class="adm-moi" id="adm-qui"></div>
+  <a class="link adm-retour" href="index.html">Retour au site</a>
+ </header>
+ <main id="adm-main" tabindex="-1"><p class="vide">Chargement…</p></main>
+</div>
 <div id="adm-msg" role="status" aria-live="polite" hidden></div>
-<script src="js/api.js?v=dd3b7ce5"></script>
-<script src="js/admin.js?v=66e22ccd"></script>
+<script src="js/api.js?v=b4ee65e0"></script>
+<script src="js/engine.js?v=9248bffa"></script>
+<script src="js/admin.js?v=37e9b90a"></script>
+<script src="js/admin-reglages.js?v=0f29a3f6"></script>
+<script src="js/admin-ecrans.js?v=0e2d0bbd"></script>
 </body>
 </html>

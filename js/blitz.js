@@ -130,7 +130,7 @@ function serieStart(gid,stake){if(!S.me.logged)return false;if(typeof rgBlocked=
  S.me.balance-=stake;S.me.played++;S.me.serie={gid,stake,stack:stake,step:0,state:'running',hist:[],at:now()};serieRoundStart(S.me.serie);updateHeader();save();gainXP(10);return true;}
 /* choisir Haut / Bas / Break even : seulement pendant la fenêtre de choix de la manche en cours */
 function seriePlay(side){const s=serieCur();if(!s||s.state!=='running'||s.choice!==null)return;if(!serieOpen(s)){toast({tone:'amber',icon:'lock',title:_t("Choix fermés"),text:`${_t("Le choix se fait dans les {0} premières secondes de la manche.",[SERIE.CHOICE_MS/1000])}`});return;}if(SRV()){srvSerieChoisir(side);return;}                       /* mode Compte : la cote et les frais sont fixés par le serveur */
- const d=GM[s.gid],M=serieMults(s.gid),rate=wmRate(d.cat,myRank().t>=5)*.5;s.choice=side;s.mult=M[side];s.fee=s.stack*rate;save();serieRefresh();}
+ const d=GM[s.gid],M=serieMults(s.gid),rate=eclairRate(d.cat,myRank().t>=5)*.5;s.choice=side;s.mult=M[side];s.fee=s.stack*rate;save();serieRefresh();}
 function serieEnd(){const s=serieCur();if(!s||s.state!=='running')return;if(SRV()){srvSerieRegler();return;}    /* mode Compte : l'issue est calculée et payée par le serveur */
  const d=GM[s.gid],g=G(s.gid);
  if(s.choice===null){s.step--;if(s.step<=0){s.state='cashed';s.endAt=now();S.me.balance+=s.stake;S.me.settled++;toast({tone:'amber',icon:'wallet',force:true,title:_t("Série annulée"),text:_t("Aucun choix dans les 30 secondes : ta mise t’est rendue."),href:'#serie'});updateHeader();save();serieRefresh();return;}
