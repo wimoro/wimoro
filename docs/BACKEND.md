@@ -393,3 +393,78 @@ avant le début de la manche). Détail : `docs/DONNEES.md` § 2.6. Côté serveu
   (`srv_eclair_reelles`), les mises marquées réglées par `reglerReel` ou rendues (`rembourses`) ; les autres exactement comme
   avant. Interrupteur allumé et manche figée réelle : la marque est ignorée (chemin du lot 7).
 - Sauvegarde : `wm.eclair_remboursements`. Aucune fonction existante n'est modifiée.
+## 11. Marchés réels (lots 8 à 12, 19 nov. 2026)
+
+Le catalogue des marchés vit sur le serveur (`wm.fiches`, détail et cycle de vie dans `docs/DONNEES.md`, § 4 à 7). Tant que
+le réglage public `catalogue.serveur` est éteint, rien de ce que lit l'écran d'avant ne change : aucune ligne n'est écrite
+dans `public.markets`, `market_live_state`, `market_groups` ni `chat_rooms` ; `api_markets`, `api_state`, l'achat, la
+vente, le chat et les bots ne voient que les 27 anciens marchés. La migration de mise en ligne
+(`supabase/migrations/a_appliquer_a_la_mise_en_ligne_catalogue.sql`, **pas encore appliquée**, `docs/EXPLOITATION.md` § 10)
+retire les anciens marchés et crée les lignes du moteur des fiches ; ensuite tout passe par le moteur existant (achat,
+vente, bots, duels, combinés, copies, chat) avec l'identifiant de la fiche (binaire) ou `<fiche>-<code>` (option).
+
+### Ce que lit l'écran
+
+- `api_catalogue(p_depuis bigint default 0, p_langue text default null)` (visiteurs compris, une lecture, ne réveille pas
+  les bots) → `{v: 1, rev, t, en_ligne, img, cats, m, x}` :
+  - `img` : préfixe des images (`https://brmwvxncyeypefsgiepf.supabase.co/storage/v1/object/public/marches/`) ;
+  - `cats` (seulement si `p_depuis` ≤ 0) : `[{id, n, ic}]` — `id` parmi crypto, bourse, economie, politique, sport, tech,
+    culture ; `n` le nom (texte si `p_langue` vaut fr, en ou he, sinon `{fr, en, he}`) ; `ic` l'icône Lucide de repli ;
+  - `m` : les fiches visibles (ouvertes, suspendues, fermées, à résoudre ; résolues ou annulées depuis moins de 3 jours),
+    triées par fin des mises ; avec `p_depuis` (une révision déjà lue), seulement celles changées depuis :
+    `{id, k: 'b'|'o', c, t: {q, s, r}, i, o, f, z, src: {n, u}, st, g, per: {m, p}, l, p, opt: [{id, c, t, p, i}], sus: {m, j},
+    res: {o, v, s, pr, at}, ann: {m, at}, rev}` — `t` question, libellé court (24 caractères au plus), critère ; `i` chemin
+    de l'image (absent : icône de la catégorie) ; `o`, `f`, `z` ouverture, fin des mises, résultat attendu (ms) ; `st` l'état
+    (ouvert, suspendu, ferme, a_resoudre, resolu, annule) ; `g` l'origine (modele, actu, sport, joueur, admin) ; `per` le
+    modèle et la période d'un marché permanent ; `l` le lien vers la donnée vivante (`{actif: 'btc'}` : lire
+    `api_live` ; `{match: {...}}`) ; `p` le prix d'un marché binaire (%), `opt[].p` celui de chaque option ;
+  - `x` : les fiches retirées depuis `p_depuis`.
+- Sujet temps réel public `site`, événement `cat` `{rev, ids}` : une fois par transaction qui change le catalogue ;
+  l'écran relit `api_catalogue(rev d'avant, langue)`. Le prix courant suit le sujet `marches` après la mise en ligne.
+- `api_credits()` (visiteurs compris) → `{img, images: [{i, credit: {titre, auteur, licence, licence_url, source, url,
+  restrictions}}]}` : la page des crédits.
+- `api_presence()` (joueur connecté) → `{ok: true}` : à appeler toutes les 60 s quand l'onglet est visible (une écriture
+  par minute au plus) ; sert le nombre exact de joueurs en ligne du panneau.
+- `api_operations(p_avant bigint default null, p_n integer default 50)` (joueur connecté) → `{operations: [{id, k, montant,
+  solde, ref, at}], suite}` : le relevé d'argent du joueur, par pages (`suite` : l'`id` à passer en `p_avant`).
+- Edge Function `eclair` : un refus `bloque` porte maintenant `{acces, salon, fin}` (fin en ms, -1 sans fin), comme les
+  fonctions SQL (à déployer avec la branche fusionnée, voir le rapport du lot).
+
+### Porte `api_equipe(action, p)` : les actions ajoutées
+
+| Action | Rôles | Paramètres | Effet |
+|---|---|---|---|
+| `marches_liste` | administrateur | `{etat?, categorie?, q?, masques?}` | les fiches, leur état, le résultat proposé, l'état de l'image ; compte par état |
+| `marche_fiche` | administrateur | `{id}` | la fiche complète (textes, règle, justification, vérifications, cotes, positions) et son journal |
+| `marche_creer` | administrateur | `{fiche: {...}, motif}` | crée une fiche (contrôles de `wm.fiche_creer`) |
+| `marche_modifier` | administrateur | `{id, textes?, categorie?, moteur_cat?, ferme_at?, resolution_at?, source?, regle?, image?, options?: [{code, noms?, image?}], attendu?, motif}` | annulable (refus `deja_modifie` si la fiche a changé) ; les titres du moteur suivent |
+| `marche_suspendre` / `marche_rouvrir` | administrateur | `{id, jusqua?, motif}` | l'un annule l'autre |
+| `marche_resoudre` | administrateur | `{id, issue, preuve, valeur?, source?, motif}` | `preuve` obligatoire (`https://…`) ; `issue` : oui, non ou code d'option ; paie |
+| `marche_annuler_apercu` / `marche_annuler` | administrateur | `{id, motif}` | aperçu (joueurs par empreinte) puis remboursement au prix d'achat |
+| `propositions_liste` | administrateur | `{etat?, n?}` | brouillons du jour et compte par état |
+| `proposition_modifier` | administrateur | `{id, brouillon: {...}}` | fusion des champs ; annulable |
+| `proposition_valider` | administrateur | `{id, brouillon?, motif}` | le marché s'ouvre |
+| `proposition_refuser` / `proposition_remettre` | administrateur | `{id, motif}` | refus annulable depuis le journal |
+| `quotidien_lancer` | administrateur | `{tache?: 'jour'|'images'|'sport'}` | une invocation de `quotidien` |
+| `clans_liste` | administrateur, modérateur | `{q?, dissous?}` | les clans de joueurs, dissous compris |
+| `mots_interdits_lire` | administrateur, modérateur | `{}` | la liste des mots interdits |
+| `joueur_xp` | administrateur, modérateur | `{id, delta, motif}` | ajuste l'XP (modérateur : ± `equipe.moderateur_xp_max`, 1 000) ; annulable |
+| `en_ligne` | administrateur, modérateur | `{}` | `{joueurs, joueurs_5min, sessions_1h, present, t}` |
+| `joueur_operations` | administrateur, modérateur | `{id, avant?, n?}` | le relevé d'argent d'un joueur |
+
+L'état des sources de la tâche quotidienne se lit avec l'action existante `sources_etat` (12 lignes de plus).
+
+### Fonctions de service et tâches
+
+- Edge Function `quotidien` (v2, sans vérification de jeton Supabase, jeton `x-wm-jeton` vérifié par `srv_jeton_ok`) :
+  `srv_quotidien_config`, `srv_quotidien_enregistrer`, `srv_sport_maj`, `srv_images_a_copier`, `srv_image_enregistrer`
+  (clé de service seulement). Modules purs `lecteurs.js`, `redaction.js`, `images.js`, testés sous Node sur des réponses
+  enregistrées (`tests/fixtures/quotidien/`, `tests/quotidien.spec.mjs`) ; images décodées et encodées par ImageScript 1.3.0.
+- Tâches : `wm-cycle` (chaque minute), `wm-ancres` (30 s), `wm-quotidien` (05:30 UTC), `wm-quotidien-reveil` (minutes 5,
+  15… 55). Étapes branchées sur le cycle : `wm.cycle_blocs` (successeurs, rattrapage, propositions), une étape en panne
+  n'arrête pas les autres.
+- Une seule fonction existante a reçu un contrôle : `srv_donnees_config` ne sert plus les sources marquées
+  `config.tache = 'quotidien'` (définition d'avant dans `backup_20261119.fonctions_lots`, lot `lot11`).
+- Migrations : `catalogue`, `catalogue_graine_1` à `_6`, `cycle_vie`, `modeles`, `modeles_graine_1` et `_2`, `quotidien`
+  (empreintes identiques à la base) ; tests `tests/sql/catalogue.spec.mjs`, `cycle.spec.mjs`, `modeles.spec.mjs`,
+  `quotidien.spec.mjs`, `mise-en-ligne.spec.mjs` (la migration de mise en ligne, sur une base chargée des 27 anciens marchés).

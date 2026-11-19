@@ -64,7 +64,8 @@ const cors = (req: Request) => {
 };
 const json = (req: Request, corps: unknown, statut = 200) =>
   new Response(JSON.stringify(corps), { status: statut, headers: { ...cors(req), "Content-Type": "application/json" } });
-const refus = (req: Request, code: string, statut = 400) => json(req, { ok: false, code, now: Date.now() }, statut);
+const refus = (req: Request, code: string, statut = 400, plus: Record<string, unknown> = {}) =>
+  json(req, { ok: false, code, now: Date.now(), ...plus }, statut);
 
 // Clés : les nouvelles (dictionnaires JSON) si elles existent, sinon les anciennes.
 const cle = (nouvelles: string, ancienne: string): string => {
@@ -76,6 +77,17 @@ const cle = (nouvelles: string, ancienne: string): string => {
 };
 // Une erreur levée par la base porte un code métier dans son message (« pause », « deja_mise »…).
 const codeDe = (message: string | undefined) => /^[a-z][a-z0-9_]{2,40}$/.test(message ?? "") ? (message as string) : "serveur";
+// Un blocage (« bloque ») porte son détail {acces, salon, fin} (fin en millisecondes, -1 sans fin) : l'écran peut dire
+// quel accès est bloqué et jusqu'à quand. Les autres refus restent tels quels.
+// deno-lint-ignore no-explicit-any
+const detailDe = (c: string, error: any): Record<string, unknown> => {
+  if (c !== "bloque") return {};
+  try {
+    const d = JSON.parse(error?.details ?? "");
+    if (d && typeof d === "object") return { acces: d.acces ?? null, salon: d.salon ?? null, fin: typeof d.fin === "number" ? d.fin : null };
+  } catch (_) { /* pas de détail lisible */ }
+  return {};
+};
 
 // L'interrupteur des cours réels, vu au dernier contexte : gardé 30 s en mémoire pour ne pas ajouter d'appel à chaque mise
 // tant qu'il est éteint (sans risque : la base refuse une mise calculée dans un mode qui n'est pas celui de la manche).
@@ -183,7 +195,7 @@ Deno.serve(async (req: Request) => {
     if (error) {
       const c = codeDe(error.message);
       if (c === "serveur") console.error("mise :", error.message);
-      return refus(req, c, c === "serveur" ? 500 : 400);
+      return refus(req, c, c === "serveur" ? 500 : 400, detailDe(c, error));
     }
     return json(req, { ok: true, now: Date.now(), ...data });
   }
@@ -257,7 +269,7 @@ Deno.serve(async (req: Request) => {
     if (!error) return { data };
     const c = codeDe(error.message);
     if (c === "serveur") console.error("%s : %s", quoi, error.message);
-    return { non: refus(req, c, c === "serveur" ? 500 : 400) };
+    return { non: refus(req, c, c === "serveur" ? 500 : 400, detailDe(c, error)) };
   };
   const actif = (gid: unknown) => { const d = ME.JEUX[String(gid ?? "")]; return d && d.kind === "dir" ? d : null; };   // la Série se joue sur un actif à trajectoire
 
@@ -292,7 +304,7 @@ Deno.serve(async (req: Request) => {
     } });
     let rc = await creer(modeDe(prevue));
     if (rc.error && codeDe(rc.error.message) === "mode_change") rc = await creer(modeDe(prevue === cj.r ? cj.r + 1 : cj.r));   // l'autre manche
-    if (rc.error) { const c = codeDe(rc.error.message); if (c === "serveur") console.error("duel éclair, création :", rc.error.message); return refus(req, c, c === "serveur" ? 500 : 400); }
+    if (rc.error) { const c = codeDe(rc.error.message); if (c === "serveur") console.error("duel éclair, création :", rc.error.message); return refus(req, c, c === "serveur" ? 500 : 400, detailDe(c, rc.error)); }
     return json(req, { ok: true, now: Date.now(), ...rc.data });
   }
 

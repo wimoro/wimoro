@@ -474,6 +474,10 @@ illisibles mise « simulé » sans marque : si les données reviennent pendant l
 | `wm-donnees` | chaque minute | `select wm.appeler('donnees', '{"tache":"boucle"}')` | réveille l'Edge Function de collecte (une invocation) ; depuis le lot 7, la même boucle écrit aussi les fixations éclair |
 | `wm-eclair-fix` (lot 7) | toutes les 10 s | `select wm.eclair_fixer()` | fige les modes des manches en cours et des deux suivantes, déclare « absentes » les fixations manquantes après le délai de grâce, garde la preuve des mises oubliées, refait la partie éclair de l'instantané (SQL seul, aucune invocation) |
 | `wm-eclair-calibrage` (lot 7) | chaque heure, à la 17ᵉ minute | `select wm.eclair_calibrer()` | fréquence observée du break even sur 48 h de vraies fixations |
+| `wm-cycle` (lot 9) | chaque minute | `select wm.cycle_tick()` | fin des suspensions, seuils « touche », fin des mises, valeurs de référence, résultats automatiques, successeurs (lot 10), propositions (lot 11) ; SQL seul |
+| `wm-ancres` (lot 10) | toutes les 30 s | `select wm.ancres_tick()` | probabilité du modèle des marchés du catalogue (cours réels) ; SQL seul |
+| `wm-quotidien` (lot 11) | chaque jour à 05:30 UTC | `select wm.appeler('quotidien', '{"tache":"jour"}')` | propositions du jour (une invocation) |
+| `wm-quotidien-reveil` (lot 11) | minutes 5, 15… 55 | `select wm.quotidien_reveil()` | réveille `quotidien` seulement s'il reste des images à copier ou un match à suivre (de 3 h avant à 6 h après le coup d'envoi) |
 
 Pour couper la collecte sans rien supprimer : le réglage `donnees.actif` à faux (`reglage_modifier`, ou une migration
 `update wm.reglages set valeur = 'false' where cle = 'donnees.actif'`) ; `wm.appeler` ne réveille alors plus la fonction,
@@ -486,8 +490,9 @@ et le site garde les dernières valeurs (qui passent à « retardées »).
 | `donnees` (lots 6 et 7) | 1 réveil par minute : 60 × 24 × 30 ; les fixations éclair tournent dans la même boucle | 43 200 (8,6 %) |
 | `eclair` (joueurs) | ≈ 170 appels par heure de jeu active × 300 à 1 000 heures ; le lot 7 n'ajoute aucune invocation (un appel de plus **à la base** par mise ou règlement, pas à une fonction) | 51 000 à 170 000 |
 | `connexion` | ≈ 50 par jour | ≈ 1 500 |
+| `quotidien` (lot 11) | 1 par jour, plus au plus 6 par heure les jours de match (une invocation suit tous les matchs) et 11 en tout pour la première copie des 83 images | 30 à ≈ 2 000 |
 | `wm-eclair-fix`, `wm-eclair-calibrage` | SQL dans la base, pas des Edge Functions | 0 |
-| **Total** | | **≈ 96 000 à 215 000 (19 à 43 %)** |
+| **Total** | | **≈ 96 000 à 217 000 (19 à 43 %)** |
 
 La boucle dure 55 s pour une durée maximale de 150 s ; elle consomme quelques centaines de millisecondes de calcul par
 réveil (limite : 2 s), l'essentiel étant de l'attente réseau. Les fixations y ajoutent environ 12 petites réponses JSON
@@ -569,11 +574,115 @@ Partie D (le nouveau front sur les vrais cours, § 2.6) :
 
 Sauvegarde : `wm.eclair_remboursements` (dans `backup_20261119.tables`, `wm.eclair_mises` l'était déjà). Aucune fonction
 existante n'est modifiée.
+Marchés réels, lots 8 à 11 (catalogue du serveur, cycle de vie, modèles, tâche quotidienne) :
+
+| Table | Contenu | Taille |
+|---|---|---|
+| `wm.cat_categories` | les 7 catégories : noms en trois langues, icône de repli, catégorie du barème des frais | 7 lignes |
+| `wm.fiches` | une fiche par marché (binaire ou à options) : textes fr, en, he (question, libellé court de 24 caractères au plus, critère), catégorie, image, ouverture, fin des mises, heure du résultat, source, règle lue par la machine, lien vers la donnée vivante, probabilité de départ et sa justification (interne), origine, modèle et période, état du cycle, suspension, résolution (issue, valeur, source, preuve), annulation, révision | 60 lignes le 19 nov. 2026 |
+| `wm.fiches_options` | les options d'un marché à options : code, noms en trois langues, probabilité de départ, image ; l'identifiant du marché du moteur est `<fiche>-<code>` | 151 lignes |
+| `wm.cat_cotes` | le prix servi tant que le moteur n'a pas de ligne (avant la mise en ligne) et la dernière probabilité du modèle | une ligne par marché |
+| `wm.images` | une ligne par fichier libre de Wikimedia Commons : état (à copier, copiée, échec, refusée), chemin dans le bucket, taille, empreinte, crédit (titre, auteur, licence, adresse) | 83 lignes |
+| `wm.sport_matchs` | les matchs vus chez une source de sport (calendrier, direct, résultat), jamais effacés | quelques lignes par jour |
+| `wm.cycle_blocs` | les étapes branchées sur le cycle (successeurs, propositions), comme `wm.suites_blocs` | 4 lignes |
+| `wm.presences` | le dernier signal de présence de chaque joueur (nouvel écran, toutes les 60 s) | une ligne par joueur |
+| `wm.modeles` | les 30 modèles des marchés permanents : famille, règle (actif, pas du seuil, volatilité, marge), gabarits en trois langues, calendrier, options | 30 lignes |
+| `wm.propositions_jour` | les brouillons : matchs du calendrier (« auto »), sujets d'actualité et successeurs (« en attente »), décisions de l'équipe | quelques dizaines par jour |
+| `wm.sources` | 12 lignes de plus, marquées `config.tache = 'quotidien'` (la collecte des cours ne les lit pas) | 32 lignes |
+
+Bucket Storage public `marches` (32 Ko au plus par fichier, PNG et JPEG) : `img/<sha256>.png|jpg`, 128 × 128, mis en
+cache un an. Sauvegardes prises avant d'écrire : copies « lot8 » à « lot11 » de `wm.reglages`, `wm.droits_liste`,
+`wm.revisions`, `wm.equipe_actions`, `wm.sources`, `cron.job` ; tables `public.market_groups`, `market_live_state`,
+`market_outcomes`, `chat_rooms`, `positions`, `wm.duels`, `wm.combos`, `wm.copies_lots` (dans `backup_20261119.tables`) ;
+définition d'avant de `srv_donnees_config` (`backup_20261119.fonctions_lots`, lot `lot11`).
 
 ## 5. Cycle de vie d'un marché
 
-*Rédigé avec le code (partie D).*
+Chaque marché du catalogue a une fiche (`wm.fiches`) et un état (`cycle`). Tant que le catalogue n'est pas en ligne
+(réglage `catalogue.serveur` éteint), les fiches n'ont aucune ligne dans le moteur (`public.markets`) : l'écran d'avant
+ne les voit pas, et tout le cycle ne s'écrit que dans `wm`. Après la mise en ligne, l'état du moteur suit la fiche.
+
+| État | Moteur | Quand |
+|---|---|---|
+| proposé | — | brouillon de `wm.propositions_jour` (match du calendrier, sujet du jour, successeur d'une édition), sans fiche |
+| `ouvert` | `open` | à la création (`wm.fiche_creer`), ou à la fin d'une suspension datée |
+| `suspendu` | `closed` | par l'équipe (`marche_suspendre`, motif, fin facultative) ; les mises sont refusées (`marche_ferme`) |
+| `ferme` | `closed` | à l'heure de fin des mises (tâche `wm-cycle`, chaque minute) ; « touche » : dès que le seuil est vu |
+| `a_resoudre` | `closed` | l'automate ne peut pas trancher : valeur trop proche du seuil (marge de la règle), donnée absente après `cycle.attente_min` (60 min), marché d'actualité ou décision humaine ; le résultat proposé est gardé (`propose`) |
+| `resolu` | `resolved` + yes/no | automatique (valeur, source, heure gardées) ou par l'équipe (issue, lien de la preuve) ; paiement par `wm.marche_regler` (1 $ par part gagnante) et `wm.marche_suites` (duels, combinés), comme l'ancien panneau |
+| `annule` | `resolved` + voided | par l'équipe (`marche_annuler`) : chaque position remboursée au prix d'achat (parts × prix moyen, écriture « annulation »), duels en jeu rendus, sélection des combinés annulée (cote recalculée, mise rendue s'il n'en reste aucune), lots des copies libérés ; les frais payés restent acquis |
+
+Résolution automatique, par type de règle :
+
+| Règle | Marchés | Valeur lue | Trop proche → équipe |
+|---|---|---|---|
+| `prix` | Bitcoin, Solana, XRP fin de mois | cours de l'anneau d'une heure à l'heure dite (± 90 s), sinon dernier cours assez proche | écart < 0,4 % |
+| `hausse` | Bitcoin de la semaine | cours de départ relevé au début, cours de fin | écart < 0,2 % |
+| `hausse_cloture` | S&P 500 de la semaine | clôtures des deux séances | écart < 0,05 % |
+| `cloture` | Nvidia, Tesla, CAC 40 | dernier cours daté de la séance (5 min avant à 45 min après la clôture) | 0,2 à 0,3 % |
+| `reference_bce` | euro / dollar | cours de référence BCE du jour (Frankfurter) | 0,05 % |
+| `touche` | Ether à 2 000 $ | plus haut des deux dernières minutes, à chaque passage : « oui » dès que le seuil est vu ; à la fin, « non » | plus haut à moins de 1 % du seuil |
+| `match` | les 9 matchs | score final d'une source de sport (`wm.sport_matchs`) : option domicile, nul ou extérieur | match reporté ou score absent 60 min après l'heure du résultat |
+| `manuel` | or (cours indicatif proposé), réunions de banques centrales, inflation, classements, élections, actualité, saisons | — | toujours : l'équipe tranche |
+
+Sans clé de sport aujourd'hui, seuls les deux matchs de Bundesliga ont un score automatique (OpenLigaDB) ; les sept
+autres passent « à résoudre » et l'équipe les tranche avec le lien du score officiel.
+
+Successeurs (lot 10) : quand une instance d'un marché permanent se ferme (ou est résolue, si le seuil suivant dépend du
+résultat), `wm.modele_suivant` crée la période suivante : seuil rond tiré du cours du moment, probabilité de départ du
+modèle (lognormale sans dérive ; barrière ; Poisson pour le football, loi normale pour la NBA), textes des gabarits en
+trois langues. Les éditions dont les candidats changent (présidentielles, Premier ministre, Starship, Game Awards,
+Oscars, Grammys) donnent un brouillon à valider. La tâche `wm-ancres` (30 s) met le prix servi au niveau du modèle avant
+la mise en ligne ; après, la valeur de référence du marché, et rapproche l'ancre des bots (au-delà de 8 points) et le prix
+(au-delà de 15 points, 30 % du chemin), sans toucher `wm.bots_tick` ni les anciens marchés.
 
 ## 6. Validation des marchés du jour et résolution
 
-*Rédigé avec le code (parties D et E).*
+**Chaque jour à 05:30 UTC** (`wm-quotidien`), l'Edge Function `quotidien` lit les calendriers (OpenLigaDB sans clé ;
+football-data.org et balldontlie avec leur clé), les gros titres (Currents avec sa clé ; sinon Wikipédia « À la une » en,
+fr, he et Hacker News), les tendances (Wikipédia, deux sites de marchés publics, usage interne jamais nommé à l'écran), et
+écrit des brouillons (`srv_quotidien_enregistrer`) :
+
+- **un match** devient une proposition « auto » : elle s'ouvre seule 48 h avant le coup d'envoi (`wm.propositions_tick`,
+  chaque minute) s'il reste une place parmi les marchés d'actualité (`catalogue.actus_max`, 30) ; `catalogue.sport_auto`
+  à faux : elle attend la validation ;
+- **un sujet d'actualité** attend toujours l'équipe : rédigé dans les trois langues par l'IA si une clé est enregistrée
+  (Groq, ou l'emplacement `GEMINI_API_KEY` ; un seul appel par jour, réponse JSON contrôlée : catégorie, longueurs, dates,
+  probabilités, source), sinon un brouillon « à rédiger » avec le titre et le lien ; les sujets exclus
+  (`quotidien.sujets_exclus` : décès, violence, santé…) sont écartés ;
+- une proposition non traitée expire (48 h, ou au coup d'envoi).
+
+**Valider** (panneau, porte `api_equipe`) : `propositions_liste` → `proposition_modifier` (fusion des champs, annulable) →
+`proposition_valider` (le marché naît par `wm.fiche_creer` : trois langues, dates, probabilités contrôlées) ou
+`proposition_refuser` (motif ; annulable depuis le journal). `quotidien_lancer` relance la tâche à la demande.
+
+**Résoudre** : la liste `marches_liste` (filtre `etat: 'a_resoudre'`) montre le résultat proposé par l'automate ;
+`marche_fiche` donne tout (critère, source, valeur relevée, journal). `marche_resoudre` exige le lien de la preuve
+(`https://…`) ; l'issue est « oui », « non » ou le code d'une option. Une résolution ne s'annule pas : en cas de doute,
+`marche_suspendre` d'abord. `marche_annuler_apercu` montre les remboursements (joueurs désignés par une empreinte) avant
+`marche_annuler`.
+
+**Images** : à la création d'une fiche, chaque fichier Commons est noté « à copier » ; `wm-quotidien-reveil` (minutes 5,
+15… 55) réveille la fonction tant qu'il en reste (8 par appel) : vignette 250 px (logo) ou 330 px (photo), licence libre
+vérifiée (domaine public, CC0, CC BY, CC BY-SA, GFDL ; jamais « fair use », NC ou ND), réduction 128 × 128 par moyenne des
+pixels, PNG (logo) ou JPEG qualité 80 (photo), moins de 15 Ko, crédit gardé et servi par `api_credits`. Sans image : l'écran
+montre l'icône de la catégorie.
+
+## 7. Les 60 marchés ouverts le 19 nov. 2026
+
+Vérifiés le 19 nov. 2026 (cours, calendriers, sondages, marchés publics, sources officielles) ; la justification de chaque
+probabilité de départ est dans la fiche (`p0_justif`, interne). « Permanent » : un modèle crée la période suivante.
+
+| Catégorie | Permanents (30) | Actualité (30) |
+|---|---|---|
+| Crypto (8) | `btc-fin-decembre-2026`, `sol-fin-novembre-2026`, `btc-semaine-2026-11-23`, `xrp-fin-decembre-2026`, `eth-2000-avant-2027` | `btc-vs-or-2026`, `strategy-vente-btc-2026`, `kraken-ipo-juin-2027` |
+| Bourse (6) | `sp500-semaine-2026-11-23`, `nvda-fin-decembre-2026`, `cac40-annee-2026`, `top-capitalisation-fin-2026`, `tsla-fin-decembre-2026` | `anthropic-prix-ipo-fin-2026` |
+| Économie (8) | `fed-decembre-2026`, `bce-decembre-2026`, `cpi-usa-novembre-2026`, `eurusd-fin-decembre-2026`, `or-fin-decembre-2026` | `shutdown-usa-decembre-2026`, `budget-france-2027`, `boe-decembre-2026` |
+| Politique (8) | `presidentielle-france-2027`, `presidentielle-usa-2028`, `approbation-trump-31-12-2026`, `lecornu-premier-ministre-31-03-2027` | `espagne-legislatives-2026`, `israel-prochain-pm`, `le-pen-liste-officielle-2027`, `taipei-maire-28-11-2026` |
+| Tech (7) | `ia-arena-texte-31-12-2026`, `cap-2e-place-fin-2026`, `starship-vol-16-avant-2027`, `app-store-top-fin-2026` | `nvidia-prochain-pdg`, `tesla-spacex-accord-fusion`, `openai-introduction-en-bourse` |
+| Jeux vidéo et culture (7) | `game-awards-2026`, `oscars-2027-meilleur-film`, `grammys-2027-album-de-l-annee` | `avengers-doomsday-premier-week-end`, `gta6-sur-pc-avant-avril-2027`, `time-personnalite-2026`, `box-office-thanksgiving-2026` |
+| Sport (16) | `ucl-winner-2026-27`, `nba-champion-2027`, `pl-winner-2026-27`, `ao-men-2027` | matchs : `pl-new-ars-2026-11-21`, `pl-liv-mun-2026-11-22`, `liga-sev-bet-2026-11-21`, `sa-ata-int-2026-11-22`, `bl-bmg-bvb-2026-11-21`, `l1-lil-lyo-2026-11-21`, `ucl-psg-rom-2026-11-25`, `bl-svw-hsv-2026-11-22`, `nba-okc-mia-2026-11-22` ; `news-jaissle-newcastle-2026`, `news-mancity-sanction-2027`, `news-sinner-ao-2027` |
+
+Les 27 anciens marchés fictifs (BCE, Bitcoin 150 000 $, Clásico, présidentielle 2027 inventée…) restent ceux de l'écran
+d'avant jusqu'à la mise en ligne ; la migration de mise en ligne les annule en remboursant chaque position au prix d'achat
+(`docs/EXPLOITATION.md`, § 10).

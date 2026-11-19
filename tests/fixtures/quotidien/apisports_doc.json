@@ -1,0 +1,44 @@
+{
+ "results": 1,
+ "response": [
+  {
+   "fixture": {
+    "id": 1208001,
+    "date": "2026-11-21T14:30:00+00:00",
+    "status": {
+     "long": "Match Finished",
+     "short": "FT",
+     "elapsed": 90
+    }
+   },
+   "league": {
+    "id": 78,
+    "name": "Bundesliga"
+   },
+   "teams": {
+    "home": {
+     "id": 163,
+     "name": "Borussia Monchengladbach"
+    },
+    "away": {
+     "id": 165,
+     "name": "Borussia Dortmund"
+    }
+   },
+   "goals": {
+    "home": 1,
+    "away": 3
+   },
+   "score": {
+    "halftime": {
+     "home": 0,
+     "away": 1
+    },
+    "fulltime": {
+     "home": 1,
+     "away": 3
+    }
+   }
+  }
+ ]
+}

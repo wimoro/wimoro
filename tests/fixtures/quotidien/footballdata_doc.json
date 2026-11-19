@@ -1,0 +1,72 @@
+{
+ "count": 2,
+ "matches": [
+  {
+   "id": 537001,
+   "utcDate": "2026-11-28T15:00:00Z",
+   "status": "TIMED",
+   "minute": null,
+   "competition": {
+    "id": 2021,
+    "code": "PL",
+    "name": "Premier League"
+   },
+   "homeTeam": {
+    "id": 57,
+    "name": "Arsenal FC",
+    "shortName": "Arsenal",
+    "tla": "ARS"
+   },
+   "awayTeam": {
+    "id": 61,
+    "name": "Chelsea FC",
+    "shortName": "Chelsea",
+    "tla": "CHE"
+   },
+   "score": {
+    "winner": null,
+    "duration": "REGULAR",
+    "fullTime": {
+     "home": null,
+     "away": null
+    },
+    "halfTime": {
+     "home": null,
+     "away": null
+    }
+   }
+  },
+  {
+   "id": 537002,
+   "utcDate": "2026-11-18T20:00:00Z",
+   "status": "FINISHED",
+   "competition": {
+    "id": 2015,
+    "code": "FL1",
+    "name": "Ligue 1"
+   },
+   "homeTeam": {
+    "id": 521,
+    "name": "Lille OSC",
+    "shortName": "Lille"
+   },
+   "awayTeam": {
+    "id": 523,
+    "name": "Olympique Lyonnais",
+    "shortName": "Lyon"
+   },
+   "score": {
+    "winner": "DRAW",
+    "duration": "REGULAR",
+    "fullTime": {
+     "home": 1,
+     "away": 1
+    },
+    "halfTime": {
+     "home": 0,
+     "away": 1
+    }
+   }
+  }
+ ]
+}

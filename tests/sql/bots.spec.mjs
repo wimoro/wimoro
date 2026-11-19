@@ -27,7 +27,14 @@ test('planification : un tick toutes les 3 secondes ; les anciennes tâches (bot
   // wm-donnees (lot 6 des données réelles, 19 nov. 2026) : réveille chaque minute l'Edge Function qui va chercher les cours
   const parNom = Object.fromEntries(jobs.map(j => [j.jobname, j]));
   // wm-eclair-fix, wm-eclair-calibrage (lot 7) : figer les modes et clore les fixations du pari éclair à cours réels ; calibrer le break even
-  expect(jobs.map(j => j.jobname).filter(n => !['wm-donnees', 'wm-eclair-calibrage', 'wm-eclair-fix'].includes(n))).toEqual(['wm-bots', 'wm-bots-chat', 'wm-copies', 'wm-purge-cron', 'wm-suivis']);
+  // wm-cycle, wm-ancres, wm-quotidien, wm-quotidien-reveil (marchés réels, lots 9 à 11) : cycle de vie du catalogue, cohérence
+  // de l'activité simulée avec les cours, tâche quotidienne ; aucune ne touche aux 27 anciens marchés
+  const NOUVELLES = ['wm-ancres', 'wm-cycle', 'wm-donnees', 'wm-eclair-calibrage', 'wm-eclair-fix', 'wm-quotidien', 'wm-quotidien-reveil'];
+  expect(jobs.map(j => j.jobname).filter(n => !NOUVELLES.includes(n))).toEqual(['wm-bots', 'wm-bots-chat', 'wm-copies', 'wm-purge-cron', 'wm-suivis']);
+  expect(parNom['wm-cycle']).toMatchObject({ schedule: '* * * * *', command: 'select wm.cycle_tick()' });
+  expect(parNom['wm-ancres']).toMatchObject({ schedule: '30 seconds', command: 'select wm.ancres_tick()' });
+  expect(parNom['wm-quotidien'].schedule).toBe('30 5 * * *');
+  expect(parNom['wm-quotidien-reveil']).toMatchObject({ schedule: '5-59/10 * * * *', command: 'select wm.quotidien_reveil()' });
   expect(parNom['wm-bots']).toMatchObject({ schedule: '3 seconds', command: 'select wm.bots_tick()' });
   expect(parNom['wm-bots-chat']).toMatchObject({ schedule: '5 seconds', command: 'select wm.bots_chat()' });
   expect(parNom['wm-copies']).toMatchObject({ schedule: '20 seconds', command: 'select wm.copies_tick()' });   // copy trading : arrêts de perte, paris des bots copiés

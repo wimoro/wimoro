@@ -56,6 +56,13 @@ test('réglages : chaque valeur par défaut est la constante en vigueur aujourd�
     // données réelles, lot 6 (19 nov. 2026) : la collecte des cours
     'donnees.actif': true, 'donnees.cadence_s': 3, 'donnees.boucle_s': 55,
     'eclair.cours_reels': false, 'eclair.secours_simule': false, 'eclair.grace_s': 120, 'eclair.pbe_max': 0.08,
+    // marchés réels, lots 8 à 11 (19 nov. 2026) : catalogue du serveur (éteint jusqu'à la mise en ligne), cycle de vie,
+    // cohérence de l'activité simulée, tâche quotidienne
+    'catalogue.serveur': false, 'cycle.actif': true, 'cycle.attente_min': 60, 'equipe.moderateur_xp_max': 1000,
+    'ancres.actif': true, 'ancres.rattrapage': 8, 'ancres.saut': 15, 'ancres.force': 0.3,
+    'quotidien.actif': true, 'quotidien.ia': true, 'catalogue.actus_max': 30, 'catalogue.sport_auto': true,
+    'quotidien.sujets_exclus': ['mort', 'meurt', 'décès', 'décédé', 'tué', 'attentat', 'otage', 'victime', 'cancer', 'hospitalisé', 'killed', 'dies', 'dead', 'death',
+      'attack', 'shooting', 'murder', 'hostage', 'terror', 'suicide', 'hospital', 'נהרג', 'נרצח', 'פיגוע', 'מת', 'חטוף'],
   };
   const lignes = await q(db, 'select cle, categorie, libelle, explication, valeur, defaut, min, max, maj_at from wm.reglages order by cle');
   expect(Object.fromEntries(lignes.map(l => [l.cle, l.valeur]))).toEqual(ATTENDU);

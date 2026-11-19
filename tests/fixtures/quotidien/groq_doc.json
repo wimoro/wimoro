@@ -1,0 +1,15 @@
+{
+ "id": "chatcmpl-doc",
+ "object": "chat.completion",
+ "model": "openai/gpt-oss-120b",
+ "choices": [
+  {
+   "index": 0,
+   "finish_reason": "stop",
+   "message": {
+    "role": "assistant",
+    "content": "{\"marches\":[{\"sujet_url\":\"https://www.example.org/budget-senat\",\"categorie\":\"economie\",\"ferme_at\":\"2026-12-29T23:00:00Z\",\"resolution_at\":\"2027-01-01T09:00:00Z\",\"p0\":40,\"source\":{\"nom\":\"Légifrance\",\"url\":\"https://www.legifrance.gouv.fr\"},\"p0_justif\":\"Deux budgets précédents adoptés après le 31 décembre.\",\"textes\":{\"fr\":{\"q\":\"La loi de finances 2027 sera-t-elle publiée au Journal officiel avant le 31 décembre 2026 ?\",\"court\":\"Budget 2027 publié ?\",\"critere\":\"OUI si la loi de finances pour 2027 est publiée au Journal officiel au plus tard le 31/12/2026 à 23:59 heure de Paris ; sinon NON.\"},\"en\":{\"q\":\"Will the 2027 budget law be published in the Journal officiel before December 31, 2026?\",\"court\":\"Budget 2027 published?\",\"critere\":\"YES if the 2027 budget law is published in the Journal officiel by 31/12/2026 at 23:59 Paris time; otherwise NO.\"},\"he\":{\"q\":\"האם חוק התקציב לשנת 2027 יפורסם ברשומות לפני 31 בדצמבר 2026?\",\"court\":\"תקציב 2027 יפורסם?\",\"critere\":\"כן אם חוק התקציב לשנת 2027 יפורסם ברשומות עד 31.12.2026 בשעה 23:59 שעון פריז; אחרת לא.\"}}},{\"sujet_url\":\"https://www.example.org/mauvais\",\"categorie\":\"meteo\",\"ferme_at\":\"2026-12-01T00:00:00Z\",\"p0\":50,\"source\":{\"nom\":\"x\",\"url\":\"https://x.example\"},\"textes\":{\"fr\":{\"q\":\"Question ?\",\"court\":\"x\",\"critere\":\"y\"}}},{\"sujet_url\":\"https://www.example.org/balise\",\"categorie\":\"tech\",\"ferme_at\":\"2026-12-20T00:00:00Z\",\"p0\":50,\"source\":{\"nom\":\"Source\",\"url\":\"https://www.example.org/s\"},\"textes\":{\"fr\":{\"q\":\"<b>Une question piégée</b> par une balise ?\",\"court\":\"Piège\",\"critere\":\"Un critère assez long pour passer.\"},\"en\":{\"q\":\"A trapped question with a tag?\",\"court\":\"Trap\",\"critere\":\"A criterion long enough to pass.\"},\"he\":{\"q\":\"שאלה מלכודת עם תג?\",\"court\":\"מלכודת\",\"critere\":\"קריטריון ארוך מספיק כדי לעבור.\"}}}]}"
+   }
+  }
+ ]
+}

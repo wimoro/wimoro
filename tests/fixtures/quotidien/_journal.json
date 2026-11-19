@@ -1,0 +1,97 @@
+{
+  "enregistre_le": "2026-11-19T19:48:45.469Z",
+  "ua": "WimoroBot/1.0 (https://wimoro.com)",
+  "appels": [
+    {
+      "nom": "wikipedia_en.json",
+      "url": "https://en.wikipedia.org/api/rest_v1/feed/featured/2026/11/19",
+      "statut": 200,
+      "octets": 9170,
+      "ms": 320
+    },
+    {
+      "nom": "wikipedia_fr.json",
+      "url": "https://fr.wikipedia.org/api/rest_v1/feed/featured/2026/11/19",
+      "statut": 200,
+      "octets": 7409,
+      "ms": 291
+    },
+    {
+      "nom": "wikipedia_he.json",
+      "url": "https://he.wikipedia.org/api/rest_v1/feed/featured/2026/11/19",
+      "statut": 200,
+      "octets": 11986,
+      "ms": 294
+    },
+    {
+      "nom": "hackernews.json",
+      "url": "https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage=30",
+      "statut": 200,
+      "octets": 41304,
+      "ms": 377
+    },
+    {
+      "nom": "tendances_a.json",
+      "url": "https://gamma-api.polymarket.com/events?closed=false&order=volume24hr&ascending=false&limit=20",
+      "statut": 200,
+      "octets": 3438,
+      "ms": 90
+    },
+    {
+      "nom": "tendances_b.json",
+      "url": "https://api.manifold.markets/v0/search-markets?sort=24-hour-vol&filter=open&limit=20",
+      "statut": 200,
+      "octets": 3043,
+      "ms": 637
+    },
+    {
+      "nom": "openligadb_groupe.json",
+      "url": "https://api.openligadb.de/getcurrentgroup/bl1",
+      "statut": 200,
+      "octets": 62,
+      "ms": 267
+    },
+    {
+      "nom": "openligadb_journee.json",
+      "url": "https://api.openligadb.de/getmatchdata/bl1/2026/10",
+      "statut": 200,
+      "octets": 7816,
+      "ms": 174
+    },
+    {
+      "nom": "openligadb_match.json",
+      "url": "https://api.openligadb.de/getmatchdata/83242",
+      "statut": 200,
+      "octets": 900,
+      "ms": 175
+    },
+    {
+      "nom": "commons_bitcoin.json",
+      "url": "https://commons.wikimedia.org/w/api.php?action=query&format=json&formatversion=1&prop=imageinfo&iiprop=url|mime|size|extmetadata&iiurlwidth=250&titles=File%3ABitcoin.svg",
+      "statut": 200,
+      "octets": 2810,
+      "ms": 206
+    },
+    {
+      "nom": "commons_nyse.json",
+      "url": "https://commons.wikimedia.org/w/api.php?action=query&format=json&formatversion=1&prop=imageinfo&iiprop=url|mime|size|extmetadata&iiurlwidth=250&titles=File%3ANYSE127.jpg",
+      "statut": 200,
+      "octets": 2938,
+      "ms": 67
+    },
+    {
+      "nom": "commons_atalanta.json",
+      "url": "https://commons.wikimedia.org/w/api.php?action=query&format=json&formatversion=1&prop=imageinfo&iiprop=url|mime|size|extmetadata&iiurlwidth=250&titles=File%3AAtalanta%20BC.png",
+      "statut": 200,
+      "octets": 2696,
+      "ms": 67
+    },
+    {
+      "nom": "commons_absent.json",
+      "url": "https://commons.wikimedia.org/w/api.php?action=query&format=json&formatversion=1&prop=imageinfo&iiprop=url|mime|size|extmetadata&iiurlwidth=250&titles=File%3AAtalanta%20BC%20logo.svg",
+      "statut": 200,
+      "octets": 124,
+      "ms": 68
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+ "status": "ok",
+ "news": [
+  {
+   "id": "a1",
+   "title": "Le Sénat adopte le budget 2027 en première lecture",
+   "description": "…",
+   "url": "https://www.example.org/budget-senat",
+   "author": "Rédaction",
+   "image": "None",
+   "language": "fr",
+   "category": [
+    "politics"
+   ],
+   "published": "2026-11-19 09:12:00 +0000"
+  },
+  {
+   "id": "a2",
+   "title": "Un otage libéré après six mois",
+   "description": "…",
+   "url": "https://www.example.org/otage",
+   "author": "Rédaction",
+   "image": "None",
+   "language": "fr",
+   "category": [
+    "world"
+   ],
+   "published": "2026-11-19 08:00:00 +0000"
+  }
+ ]
+}
