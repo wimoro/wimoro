@@ -48,7 +48,7 @@ function proRooms(){for(const id in S.rooms){const r=S.rooms[id];if(r.msgs.some(
 function proShareH(){const sh=PV.share,s=sh.snap,m=MK[s.m],mc=typeof myClan==='function'?myClan():null,fr=friendsOf(),dmOk=can('dm'),D=sh.dst;
  const opt=(k,icn,title,sub)=>`<button class="psh-o${D[k]?' on':''}" data-a="pro-sh-dst" data-v="${k}" role="checkbox" aria-checked="${!!D[k]}"><span class="psh-i">${icn}</span><span class="psh-t"><b>${title}</b><small>${sub}</small></span><i class="psh-ck" aria-hidden="true">${ic('check',13,'#fff',3)}</i></button>`;
  return `<div class="md pro-sh"><div class="md-h"><div><h3>${_t('Partager mon analyse')}</h3><p>${esc(m.short)} · ${esc(pivLong(s.iv))} · ${proCountsTxt(s)}</p></div><button class="x" data-a="close" aria-label="${esc(_t('Fermer'))}">${ic('x')}</button></div>
-  <div class="psh-pv" dir="ltr">${innerWidth<=760?proSnapSvg(s,360,230):proSnapSvg(s,560,290)}</div>
+  <div class="psh-pv" dir="ltr">${innerWidth<=879?proSnapSvg(s,360,230):proSnapSvg(s,560,290)}</div>
   <p class="psh-note">${_t('C’est un instantané : si le prix bouge ensuite, ton analyse publiée ne change pas.')}</p>
   <label class="psh-c"><span>${_t('Ton commentaire (facultatif)')}</span><textarea data-psh-txt maxlength="280" rows="2" placeholder="${esc(_t('Explique ta lecture du marché'))}">${esc(sh.txt||'')}</textarea></label>
   <div class="psh-d" role="group" aria-label="${esc(_t('Où partager'))}"><div class="psh-dt">${_t('Où la partager ?')}</div>

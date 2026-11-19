@@ -3,7 +3,8 @@
 
 /* ---------- Remise à zéro ---------- */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{-webkit-text-size-adjust:100%;text-size-adjust:100%;scroll-padding-top:calc(var(--bar-h) + var(--sp-4))}
+/* scroll-padding : un élément amené à l'écran (clavier, lien d'ancre) ne finit jamais sous l'en-tête ni sous les barres du bas */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;scroll-padding-top:calc(var(--bar-h) + var(--sp-4));scroll-padding-bottom:calc(var(--bas) + var(--mbar-h) + var(--sp-3))}
 body{font-family:var(--font);font-size:var(--fs-3);line-height:var(--lh);color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;min-height:100vh;min-height:100dvh}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;text-align:inherit}
 input,select,textarea{font:inherit;color:inherit}
@@ -49,8 +50,14 @@ h1,h2,h3,h4{font-size:inherit;font-weight:var(--fw-bold);line-height:var(--lh-sn
 /* ---------- Visibilité ---------- */
 .hide{display:none!important}
 .vhid{position:absolute!important;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
-body.out .only-in{display:none!important}
+/* État du compte : inconnu tant que le site démarre (ni « in » ni « out » sur <body>), puis l'un ou l'autre, jamais les deux.
+   Pendant le démarrage, l'en-tête montre un bloc neutre (.sk) à la place du solde ou des boutons de connexion. */
+body:not(.in) .only-in{display:none!important}
 body:not(.out) .only-out{display:none!important}
+.sk{display:none;inline-size:112px;block-size:32px;border-radius:var(--r-pill);background:var(--fill)}
+body:not(.in):not(.out) .sk{display:block}
+/* Les libellés de départ sont en anglais : dans une autre langue, ils restent invisibles (place gardée) jusqu'à leur traduction. */
+html:not([lang=en]):not(.tr) [data-t]{visibility:hidden}
 .sm-only{display:none}
 html.lock,html.lock body{overflow:hidden}
 html.lock body{padding-inline-end:var(--sbw,0px)}
@@ -58,7 +65,7 @@ html.lock body{padding-inline-end:var(--sbw,0px)}
 /* Les classes utilitaires (t-1, mt-2, w-full…) sont à la fin de screens.css : elles doivent l'emporter sur tout le reste. */
 
 /* ---------- Écrans larges ---------- */
-@media (min-width:761px){
+@media (min-width:880px){
   :root{--gutter:24px}
   .wrap{padding-block:var(--sp-8) var(--sp-16)}
   .col{gap:var(--sp-6)}
@@ -69,8 +76,8 @@ html.lock body{padding-inline-end:var(--sbw,0px)}
 }
 
 /* ---------- Téléphone ---------- */
-@media (max-width:760px){
-  body{padding-bottom:calc(var(--tab-h) + var(--safe-b))}
+@media (max-width:879px){
+  body{padding-bottom:var(--bas)}
   .lg-only{display:none}
   .sm-only{display:inline}
   .hbtns{width:100%}

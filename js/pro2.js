@@ -60,7 +60,7 @@ function proA(){if(PV.snap)return proSnapA(PV.snap);return proAgg(PV.D,PV.st.iv=
 const proHasVol=A=>{for(let i=Math.max(0,A.n-400);i<A.n;i++)if(A.v[i]>0)return true;return false;};
 function proClamp(A){const tot=A.n,pw=Math.max(120,PV.W-56),maxN=Math.max(12,Math.min(tot+8,Math.floor(pw/1.2))),minN=Math.min(8,Math.max(2,tot));PV.vn=clamp(PV.vn,minN,maxN);
  PV.end=PV.snap?clamp(PV.end,Math.min(tot,PV.vn*.5),tot+3):clamp(PV.end,Math.min(tot,PV.vn*.4),tot+PV.vn*.5);}
-function proViewInit(fit){const A=proA(),tot=A.n,def=innerWidth>760?140:70;
+function proViewInit(fit){const A=proA(),tot=A.n,def=innerWidth>879?140:70;
  if(PV.snap){PV.vn=PV.snap.vn;PV.end=PV.snap.end;PV.follow=false;return;}
  const st=PV.st;if(fit||st.iv==='max'&&!st.n){PV.vn=tot+6;PV.end=tot+3;PV.follow=true;st.off=3;st.n=Math.round(PV.vn);return;}
  PV.vn=st.n>0?st.n:Math.min(def,tot+6);PV.end=tot+st.off;PV.follow=st.off>=0;}

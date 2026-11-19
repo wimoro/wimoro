@@ -12,7 +12,13 @@ I18N_ADD("en",{
 "Duel : un défi à deux sur un marché. Les deux mises sont bloquées, le gagnant prend tout.":"Duel: a one-on-one challenge on a market. Both stakes are locked and the winner takes all.",
 "Détail du pari":"Bet details",
 "Parie sur ce qui va arriver":"Bet on what happens next",
-"Choisis un marché, réponds Oui ou Non, et gagne si tu as vu juste. Ici, tout l’argent est fictif.":"Pick a market, answer Yes or No, and win if you called it right. All the money here is play money."
+"Choisis un marché, réponds Oui ou Non, et gagne si tu as vu juste. Ici, tout l’argent est fictif.":"Pick a market, answer Yes or No, and win if you called it right. All the money here is play money.",
+"Wimoro : marchés de prédiction. Parie par Oui ou par Non sur l’actualité, le sport et la crypto, joue des paris éclair de 45 secondes, discute en direct et défie tes amis.":"Wimoro: prediction markets. Bet Yes or No on news, sports and crypto, play 45-second flash bets, chat live and challenge your friends.",
+"Discute en direct avec les autres joueurs":"Chat live with other players",
+"Rejoins une équipe et joue avec elle":"Join a team and play together",
+"Vois les mises de tes amis en direct":"See your friends’ bets live",
+"Compare-toi aux meilleurs joueurs de la saison":"See how you rank against the season’s best players",
+"Copie automatiquement les paris d’un joueur":"Automatically copy a player’s bets"
 });
 I18N_ADD("he",{
 "Portefeuille":"ארנק",
@@ -25,5 +31,11 @@ I18N_ADD("he",{
 "Duel : un défi à deux sur un marché. Les deux mises sont bloquées, le gagnant prend tout.":"דו-קרב: אתגר של אחד על אחד על שוק. שני ההימורים ננעלים והמנצח לוקח הכול.",
 "Détail du pari":"פרטי ההימור",
 "Parie sur ce qui va arriver":"מהמרים על מה שיקרה",
-"Choisis un marché, réponds Oui ou Non, et gagne si tu as vu juste. Ici, tout l’argent est fictif.":"בוחרים שוק, עונים כן או לא, ומרוויחים אם צדקתם. כל הכסף כאן פיקטיבי."
+"Choisis un marché, réponds Oui ou Non, et gagne si tu as vu juste. Ici, tout l’argent est fictif.":"בוחרים שוק, עונים כן או לא, ומרוויחים אם צדקתם. כל הכסף כאן פיקטיבי.",
+"Wimoro : marchés de prédiction. Parie par Oui ou par Non sur l’actualité, le sport et la crypto, joue des paris éclair de 45 secondes, discute en direct et défie tes amis.":"Wimoro: שוקי תחזיות. מהמרים כן או לא על חדשות, ספורט וקריפטו, משחקים הימורי בזק של 45 שניות, מדברים בצ׳אט חי ומאתגרים חברים.",
+"Discute en direct avec les autres joueurs":"מדברים בזמן אמת עם שחקנים אחרים",
+"Rejoins une équipe et joue avec elle":"מצטרפים לקבוצה ומשחקים יחד",
+"Vois les mises de tes amis en direct":"רואים את ההימורים של החברים בזמן אמת",
+"Compare-toi aux meilleurs joueurs de la saison":"משווים את עצמכם לשחקנים הטובים של העונה",
+"Copie automatiquement les paris d’un joueur":"מעתיקים אוטומטית את ההימורים של שחקן"
 });

@@ -2764,7 +2764,6 @@ I18N_ADD("en",{
 "Pour l’instant : {0} · gain si ça se retourne : {1}":"Right now: {0} · payout if it turns around: {1}",
 "gagnant":"winning",
 "perdant":"losing",
-"Wimoro : marchés de prédiction, pari éclair, live chat, clans et duels entre amis, KYC et rangs de Fer à Radiant. Démo cliquable.":"Wimoro: prediction markets, flash bets, live chat, clans and duels between friends, KYC and ranks from Iron to Radiant. Clickable demo."
 });
 /* Version 20 (catalogue appliqué) */
 I18N_ADD("en",{

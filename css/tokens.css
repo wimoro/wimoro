@@ -97,11 +97,13 @@
 
   /* Mise en page */
   --page:1200px;                /* largeur utile maximale */
-  --gutter:16px;                /* marge latérale de page (24 puis 32 px sur écran large, voir base.css) */
+  --gutter:clamp(16px,4vw,24px);  /* marge latérale de page : fluide sur téléphone et tablette, 24 puis 32 px sur écran large (base.css) */
   --bar-h:56px;                 /* hauteur de l'en-tête */
   --tab-h:56px;                 /* hauteur de la barre d'onglets du bas */
   --tap:44px;                   /* cible tactile minimale */
   --safe-b:env(safe-area-inset-bottom,0px);
+  --bas:var(--safe-b);          /* place prise en bas de l'écran : la zone sûre seule, ou la barre d'onglets + la zone sûre (880 px et moins) */
+  --mbar-h:67px;                /* hauteur de la barre d'achat fixe d'un marché, sur téléphone */
 
   /* Anciens noms, encore lus par le JavaScript (graphiques du Mode Pro, images générées, styles en ligne). */
   --w:var(--surface);
@@ -167,6 +169,12 @@
 /* Hébreu : les familles système qui dessinent bien l'hébreu passent devant. */
 :root[lang="he"]{
   --font:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans Hebrew","Arial Hebrew",Roboto,Arial,sans-serif;
+}
+
+/* Barre d'onglets du bas : présente jusqu'à 879 px de large (téléphones, tablettes en portrait). Tout ce qui se pose
+   en bas de l'écran (barre d'achat, zone de pari Éclair, combiné en cours, barre d'enregistrement) part de --bas. */
+@media (max-width:879px){
+  :root{--bas:calc(var(--tab-h) + var(--safe-b))}
 }
 
 /* « Réduire les animations » : tout devient instantané, sans rien cacher. */

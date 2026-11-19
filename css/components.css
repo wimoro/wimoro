@@ -4,20 +4,22 @@
 /* ====================================================================== En-tête */
 .top{position:sticky;top:0;z-index:40;background:var(--bar);-webkit-backdrop-filter:saturate(1.6) blur(16px);backdrop-filter:saturate(1.6) blur(16px);border-bottom:1px solid var(--line)}
 .top-in{max-width:var(--page);margin-inline:auto;height:var(--bar-h);padding-inline:var(--gutter);display:flex;align-items:center;gap:var(--sp-4);min-width:0}
-.logo{display:flex;align-items:center;gap:var(--sp-2);flex:none;min-height:var(--tap)}
-.logo b{font-size:var(--fs-4);font-weight:var(--fw-bold);letter-spacing:var(--track-title);line-height:1}
+/* Le nom « wimoro » s'efface en entier quand la place manque : il passe sur une seconde ligne, hors du cadre du logo.
+   Aucun palier à régler, quelles que soient la langue et la longueur du solde, et le texte n'est jamais coupé. */
+.logo{display:flex;flex-wrap:wrap;align-items:center;align-content:flex-start;column-gap:var(--sp-2);row-gap:var(--sp-6);box-sizing:content-box;height:28px;padding-block:var(--sp-2);overflow:hidden;flex:0 1 auto;min-width:28px}
+.logo svg,.logo b{flex:none}
+.logo b{font-size:var(--fs-4);font-weight:var(--fw-bold);letter-spacing:var(--track-title);line-height:28px}
 .nav{display:flex;gap:var(--sp-1);flex:none}
 .nav a{display:inline-flex;align-items:center;min-height:36px;padding-inline:var(--sp-3);border-radius:var(--r-sm);font-size:var(--fs-2);font-weight:var(--fw-medium);color:var(--text-3);white-space:nowrap;transition:color var(--dur-1) var(--ease),background var(--dur-1) var(--ease)}
 .nav a.on{color:var(--text);background:var(--fill)}
 @media (hover:hover){.nav a:hover{color:var(--text)}}
-.right{margin-inline-start:auto;display:flex;align-items:center;gap:var(--sp-2);min-width:0}
+.right{margin-inline-start:auto;display:flex;align-items:center;gap:var(--sp-2);flex:none}
 .right>*{flex:none}
 .bal{display:flex;align-items:baseline;gap:var(--sp-2);min-height:40px;padding-inline:var(--sp-3);border-radius:var(--r-md);background:var(--fill);align-items:center;transition:background var(--dur-1) var(--ease)}
 .bal small{font-size:var(--fs-1);color:var(--text-3)}
 .bal .num{font-size:var(--fs-3)}
 @media (hover:hover){.bal:hover{background:var(--fill-2)}}
 .bell,.thm,.lgb,.hs-btn{position:relative;width:40px;height:40px;border-radius:var(--r-md);display:grid;place-items:center;color:var(--text-2);transition:background var(--dur-1) var(--ease)}
-.bell::after,.thm::after,.lgb::after,.hs-btn::after{content:'';position:absolute;inset:-2px}
 @media (hover:hover){.bell:hover,.thm:hover,.lgb:hover,.hs-btn:hover{background:var(--fill)}}
 .hs-btn{display:none}
 .bell i{position:absolute;top:4px;inset-inline-end:2px;min-width:16px;height:16px;padding-inline:var(--sp-1);border-radius:var(--r-pill);background:var(--accent-bg);color:var(--on-color);font-size:var(--fs-1);font-weight:var(--fw-bold);font-style:normal;line-height:16px;text-align:center;box-shadow:0 0 0 2px var(--surface)}
@@ -64,7 +66,6 @@
 .btn:active{transform:scale(.98)}
 .btn[disabled],.btn[aria-disabled="true"]{opacity:.4;pointer-events:none}
 .btn.sm{min-height:36px;padding-inline:var(--sp-3);border-radius:var(--r-sm);font-size:var(--fs-2)}
-.btn.sm::after{content:'';position:absolute;inset:-4px 0}
 .btn.lg{min-height:52px;padding-inline:var(--sp-5);font-weight:var(--fw-bold)}
 .btn.full{width:100%}
 /* action principale : une seule par écran */
@@ -91,7 +92,6 @@
 .btn[data-a="watch"][aria-pressed="true"] svg{fill:currentColor}
 /* bouton de fermeture d'une fenêtre */
 .x{position:relative;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;flex:none;background:var(--fill);color:var(--text-2);transition:background var(--dur-1) var(--ease)}
-.x::after{content:'';position:absolute;inset:-6px}
 @media (hover:hover){.x:hover{background:var(--fill-2)}}
 /* petite étiquette de verrou posée dans un bouton ou une ligne */
 .lk{display:inline-flex;align-items:center;gap:var(--sp-1);font-size:var(--fs-1);font-weight:var(--fw-medium);padding:2px 6px;border-radius:var(--r-xs);background:color-mix(in srgb,currentColor 12%,transparent);white-space:nowrap;cursor:pointer}
@@ -106,11 +106,9 @@
 .ph>.utabs{flex:1;margin-bottom:0}
 .seg{display:inline-flex;padding:2px;gap:2px;background:var(--fill-2);border-radius:var(--r-sm);flex:none}
 .seg button,.seg a{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:32px;padding-inline:var(--sp-3);border-radius:6px;font-size:var(--fs-2);font-weight:var(--fw-medium);color:var(--text-2);white-space:nowrap;transition:background var(--dur-1) var(--ease),color var(--dur-1) var(--ease)}
-.seg button::after,.seg a::after{content:'';position:absolute;inset:-6px 0}
 .seg .on{background:var(--surface);color:var(--text);box-shadow:var(--shadow-1)}
 .chips{display:flex;flex-wrap:wrap;gap:var(--sp-2)}
 .chip{position:relative;display:inline-flex;align-items:center;gap:6px;min-height:36px;padding-inline:var(--sp-4);border-radius:var(--r-pill);background:var(--fill);color:var(--text-2);font-size:var(--fs-2);font-weight:var(--fw-medium);cursor:pointer;-webkit-user-select:none;user-select:none;transition:background var(--dur-1) var(--ease),color var(--dur-1) var(--ease)}
-.chip::after{content:'';position:absolute;inset:-4px 0}
 .chip.lg{min-height:var(--tap);font-size:var(--fs-3)}
 .chip.on,.chip:has(input:checked){background:var(--accent-soft);color:var(--accent)}
 .chip input{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px}
@@ -238,30 +236,33 @@
 @keyframes w-toast-out{to{opacity:0;transform:translateY(-8px)}}
 
 /* ====================================================================== Écrans larges */
-@media (min-width:761px){
+@media (min-width:880px){
   .pad{padding:var(--sp-6)}
 }
-@media (min-width:761px) and (max-width:1100px){
+@media (min-width:880px) and (max-width:1100px){
   .hsearch{display:none}
   .hs-btn{display:grid}
   .bal small{display:none}
   .top-in{gap:var(--sp-3)}
   .nav a{padding-inline:var(--sp-2)}
 }
-@media (min-width:761px) and (max-width:880px){
-  .logo b{display:none}
-}
 
-/* ====================================================================== Téléphone */
-@media (max-width:760px){
+/* ====================================================================== Téléphone et tablette en portrait (879 px et moins)
+   En-tête : logo, recherche, puis le solde et les notifications (connecté) ou la langue, le thème et « S'inscrire » (visiteur).
+   Les cinq destinations sont dans la barre d'onglets du bas ; son cinquième onglet est le profil, ou la connexion. */
+@media (max-width:879px){
   .top{position:static}
   .top-in{gap:var(--sp-2)}
-  .nav,.me-av,.bal small,.hsearch{display:none}
+  .nav,.me-av,.bal small,.hsearch,.right .login{display:none}
   .hs-btn{display:grid}
   .right{gap:var(--sp-1)}
   body:not(.out) .top .thm{display:none}
-  .tabbar{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));position:fixed;bottom:0;inset-inline:0;z-index:40;background:var(--bar);-webkit-backdrop-filter:saturate(1.6) blur(16px);backdrop-filter:saturate(1.6) blur(16px);border-top:1px solid var(--line);padding-bottom:var(--safe-b);padding-inline:max(var(--sp-1),env(safe-area-inset-left)) max(var(--sp-1),env(safe-area-inset-right))}
-  .tabbar a{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:var(--tab-h);font-size:var(--fs-1);font-weight:var(--fw-medium);color:var(--text-3);transition:color var(--dur-1) var(--ease)}
+  .tabbar{display:flex;position:fixed;bottom:0;inset-inline:0;z-index:40;background:var(--bar);-webkit-backdrop-filter:saturate(1.6) blur(16px);backdrop-filter:saturate(1.6) blur(16px);border-top:1px solid var(--line);padding-bottom:var(--safe-b);padding-inline:max(var(--sp-1),env(safe-area-inset-left)) max(var(--sp-1),env(safe-area-inset-right))}
+  /* cinq onglets de même largeur ; un libellé plus long que sa part (petit écran, langue longue) garde sa largeur et les autres se partagent le reste */
+  .tabbar>*{flex:1 1 0;min-width:min-content}
+  .tab5{display:flex}
+  .tab5>a{flex:1 1 auto}
+  .tabbar a{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:var(--tab-h);padding-inline:2px;font-size:var(--fs-1);font-weight:var(--fw-medium);color:var(--text-3);white-space:nowrap;transition:color var(--dur-1) var(--ease)}
   .tabbar a.on{color:var(--accent)}
   .tabbar a .dotn{position:absolute;top:8px;inset-inline-start:calc(50% + 6px);width:8px;height:8px;border-radius:50%;background:var(--accent-bg);box-shadow:0 0 0 2px var(--surface)}
   .tabs{gap:var(--sp-5)}
@@ -273,8 +274,9 @@
   .toasts,html.lock .toasts{top:calc(var(--sp-2) + env(safe-area-inset-top));inset-inline:var(--sp-3);align-items:stretch}
   .toast{width:auto}
 }
-@media (max-height:480px) and (max-width:1000px) and (orientation:landscape){
-  .tabbar a{font-size:0;gap:0;min-height:40px}
+/* téléphone en paysage : barre plus basse (--tab-h passe à 44 px), l'icône et le libellé côte à côte */
+@media (max-height:480px) and (max-width:879px) and (orientation:landscape){
+  .tabbar a{flex-direction:row;gap:var(--sp-2)}
 }
 
 /* ====================================================================== Sous-navigation d'une destination, aide, lignes de menu */
@@ -287,7 +289,11 @@
 .mrow+.mrow{border-top:1px solid var(--line)}
 .mrow-i{color:var(--text-3);display:grid;place-items:center}
 .mrow-t{flex:1;min-width:0}
-.mrow-v{color:var(--text-3);font-size:var(--fs-2)}
+.mrow-v{color:var(--text-3);font-size:var(--fs-2);white-space:nowrap}
+/* ligne à deux niveaux : un libellé et sa ligne d'explication (page d'entrée Communauté) */
+.mrow-2{padding-block:var(--sp-4);gap:var(--sp-4)}
+.mrow-2 .mrow-t b{display:block;font-weight:var(--fw-medium)}
+.mrow-2 .mrow-t small{display:block;margin-top:2px;font-size:var(--fs-2);line-height:1.4;color:var(--text-3)}
 .mrow-c{color:var(--text-4);display:grid}
 [dir=rtl] .mrow-c svg{transform:scaleX(-1)}
 @media (hover:hover){.mrow:hover{background:var(--fill)}}
@@ -304,14 +310,35 @@
 .repli-t{display:flex;align-items:center;justify-content:space-between;cursor:pointer;-webkit-user-select:none;user-select:none}
 .repli.plie>.repli-t{margin-bottom:0}
 .repli.plie>:not(.repli-t){display:none}
-@media (max-width:760px){
+@media (max-width:879px){
   .subnav{gap:var(--sp-4)}
   .subnav a{font-size:var(--fs-2)}
 }
 
 /* ====================================================================== Cibles tactiles : zone d'appui élargie sans changer la mise en page */
 .link,.lk,.sw{position:relative}
-a.link::before,button.link::before,.lk::after,.sw::after{content:'';position:absolute;inset:-12px -4px}
 .repli-t{min-height:var(--tap)}
 /* le bouton qui porte l'état (aria-expanded) : l'en-tête entier reste cliquable à la souris */
 .repli-b{flex:none;display:grid;place-items:center;width:var(--tap);height:var(--tap);margin-inline-end:calc(-1*var(--sp-3))}
+
+/* ====================================================================== Écrans tactiles : 44 px au moins pour chaque commande
+   Une seule règle. Les commandes dessinées plus petites que 44 px (pastilles, liens de liste, petits boutons) gardent leur
+   dessin et reçoivent une zone d'appui de 44 × 44 px centrée sur elles ; celles qui sont déjà plus grandes ne changent pas.
+   Les champs, les listes déroulantes et les boutons principaux, eux, mesurent vraiment 44 px. */
+@media (pointer:coarse){
+  :where(.bal,.nav a,.subnav a,.tabs button,.tabs a,.seg button,.seg a,.chip,.chipl,.gchip,.fpill,.mobrooms button,.reacts button,.add,.ibtn,.oem,.ob-sw button,.btn.sm,.bm,.frl,.x,.thm,.lgb,.bell,.hs-btn,.bellt,.fhelp,.send,a.av,.chart button.pin,.un,.ctg,.mlink,.pf-meta a,.crumbs a,.nitem .nx,.toast .tx,a.link,button.link,.lk,.sw,.kvs a,.hq,.stp,.pro-back,.pro-zoom button,.pro-hint button){position:relative}
+  :is(.bal,.nav a,.subnav a,.tabs button:not(.has),.tabs a,.seg button,.seg a,.chip,.chipl,.gchip,.fpill:not(.has),.mobrooms button,.reacts button,.add,.ibtn,.oem,.ob-sw button,.btn.sm,.bm,.frl,.x,.thm,.lgb,.bell,.hs-btn,.bellt,.fhelp,.send,a.av,.chart button.pin,.un,.ctg,.mlink,.pf-meta a,.crumbs a,.nitem .nx,.toast .tx,a.link,button.link,.lk,.sw,.kvs a,.hq,.stp,.pro-back,.pro-zoom button,.pro-hint button)::after,
+  :is(.fpill.has,.tabs button.has)::before{content:'';position:absolute;top:50%;left:50%;width:max(100%,var(--tap));height:max(100%,var(--tap));transform:translate(-50%,-50%)}
+  /* Une commande qui rogne son contenu (avatar rond, lien à points de suspension) ne peut pas porter de zone élargie :
+     elle grandit vraiment, par sa hauteur minimale ou par une marge intérieure qui ne déplace rien. */
+  a.av.av-img{overflow:visible}
+  .btn:not(.sm),.fra .btn.sm,button.link{min-height:var(--tap)}
+  .btn{min-width:var(--tap)}
+  input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=hidden]),select,textarea,.sort select{min-height:var(--tap)}
+  .seg button,.seg a,.room,.umenu .ui,.sres a{min-height:var(--tap)}
+  .row .q,.dc-q{display:flex;align-items:center;min-height:var(--tap)}
+  .ol a,.cb-lt a,.an-m{padding-block:12px;margin-block:-12px}
+  .gchips{gap:var(--sp-3) var(--sp-2)}
+  .gchip{min-height:32px}
+  .logo{padding-inline:var(--sp-2);margin-inline:calc(-1*var(--sp-2))}
+}

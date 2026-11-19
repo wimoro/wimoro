@@ -69,13 +69,17 @@ function icu(s,args){
 }
 function icuOpts(src){const o={};let i=0;while(i<src.length){while(i<src.length&&/\s/.test(src[i]))i++;let k='';while(i<src.length&&src[i]!=='{'&&!/\s/.test(src[i])){k+=src[i];i++;}while(i<src.length&&/\s/.test(src[i]))i++;if(src[i]!=='{')break;let d=0,j=i;for(;j<src.length;j++){if(src[j]==='{')d++;else if(src[j]==='}'){d--;if(d===0)break;}}o[k]=src.slice(i+1,j);i=j+1;}return o;}
 
-/* ---------- Textes statiques de la page (en-tête, barre d'onglets) ---------- */
+/* ---------- Textes statiques de la page (en-tête, barre d'onglets, description) ----------
+   Le HTML de départ est écrit dans la langue par défaut (anglais). Chaque texte y porte sa clé française :
+   data-t pour le contenu d'un élément, data-t-<attribut> pour un attribut (aria-label, title, placeholder, content).
+   Appelée dès que les catalogues sont chargés (index.html), puis au démarrage : le résultat est le même à chaque appel.
+   La classe « tr » posée sur <html> lève le masquage des libellés pour les langues autres que l'anglais (css/base.css). */
+const I18N_ATTRS=['placeholder','aria-label','title','alt','content'];
 function i18nStatic(root){
- if(LANG==='fr'||!root)return;
- const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;const todo=[];
- while((n=w.nextNode()))todo.push(n);
- for(const tn of todo){const v=tn.nodeValue,k=v.trim();if(!k)continue;const tr=I18N[LANG][k];if(tr!==undefined)tn.nodeValue=v.replace(k,tr);}
- for(const el of root.querySelectorAll('[placeholder],[aria-label],[title],[alt]'))for(const at of ['placeholder','aria-label','title','alt']){const v=el.getAttribute(at);if(v&&I18N[LANG][v]!==undefined)el.setAttribute(at,I18N[LANG][v]);}
+ if(!root)return;
+ for(const el of root.querySelectorAll('[data-t]'))el.textContent=_t(el.getAttribute('data-t'));
+ for(const at of I18N_ATTRS)for(const el of root.querySelectorAll('[data-t-'+at+']'))el.setAttribute(at,plain(_t(el.getAttribute('data-t-'+at))));
+ document.documentElement.classList.add('tr');
 }
 /* Les nombres restent lisibles de gauche à droite dans un texte hébreu. */
 const bidi=s=>RTL?'⁦'+s+'⁩':s;

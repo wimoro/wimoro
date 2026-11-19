@@ -14,7 +14,7 @@
 /* items : [clé, adresse, libellé, compteur facultatif]. La classe .hubsw fait poser aria-current par ariaOne (views.js). */
 function sousNavH(label,items,cur){return `<nav class="tabs subnav hubsw" aria-label="${label}">${items.map(([k,href,txt,n])=>`<a class="${k===cur?'on':''}" href="${href}">${txt}${n?` <span class="cnt2">${n}</span>`:''}</a>`).join('')}</nav>`;}
 function comNavH(cur){const n=S.me.logged&&typeof fIn==='function'?fIn().length:0;
- return sousNavH(_t("Communauté"),[['chat','#chat',_t("Chat")],['clans','#clans',_t("Clans")],['classement','#classement',_t("Classement")],['amis','#amis',_t("Amis"),n],['copie','#copie',_t("Copies")]],cur);}
+ return sousNavH(_t("Communauté"),[['chat','#chat',_t("Live chat")],['clans','#clans',_t("Clans")],['amis','#amis',_t("Amis"),n],['classement','#classement',_t("Classement")],['copie','#copie',_t("Copy trading")]],cur);}
 /* remplace la bascule « Clans / Joueurs » de clans.js : même fonction, cinq entrées */
 function hubSwH(on){return comNavH(on==='clans'?'clans':'classement');}
 /* une ligne d'explication par mode de jeu, à la première rencontre */
@@ -36,9 +36,19 @@ habiller('copie',()=>comNavH('copie'),true);
 habiller('duels',()=>jeuxNavH('duels'),true);
 
 /* ===================== Lignes de menu ===================== */
+/* o.sub : une ligne d'explication sous le libellé ; o.val : une valeur à droite ; o.n : un compteur */
 function ligneH(icone,texte,o){o=o||{};const fin=`${o.val?`<span class="mrow-v">${o.val}</span>`:''}${o.n?`<span class="cnt2">${o.n}</span>`:''}${o.plat?'':`<span class="mrow-c">${ic('right',16)}</span>`}`;
- const corps=`<span class="mrow-i">${ic(icone,20)}</span><span class="mrow-t">${texte}</span>${fin}`;
- return o.a?`<button class="mrow${o.cls?' '+o.cls:''}" data-a="${o.a}">${corps}</button>`:`<a class="mrow" href="${o.href}">${corps}</a>`;}
+ const corps=`<span class="mrow-i">${ic(icone,20)}</span><span class="mrow-t">${o.sub?`<b>${texte}</b><small>${o.sub}</small>`:texte}</span>${fin}`;
+ const cls=`mrow${o.sub?' mrow-2':''}${o.cls?' '+o.cls:''}`;
+ return o.a?`<button class="${cls}" data-a="${o.a}">${corps}</button>`:`<a class="${cls}" href="${o.href}">${corps}</a>`;}
+
+/* ===================== Communauté : la page d'entrée ===================== */
+/* Cinq entrées, une ligne d'explication chacune : chaque section est à un geste. Les chiffres sont ceux des écrans visés
+   (joueurs connectés du chat, demandes d'amis reçues) ; [data-online] est tenu à jour par le minuteur de boot.js. */
+function vCommunaute(){const demandes=S.me.logged&&typeof fIn==='function'?fIn().length:0;
+ return `<div class="wrap hub"><h1 class="ptitle">${_t("Communauté")}</h1>
+ <section class="pn menu-l">${ligneH('chat',_t("Live chat"),{href:'#chat',sub:_t("Discute en direct avec les autres joueurs"),val:`<span class="num" data-online>${F.int(S.online)}</span> ${_t("connectés")}`})}${ligneH('shield',_t("Clans"),{href:'#clans',sub:_t("Rejoins une équipe et joue avec elle")})}${ligneH('users',_t("Amis"),{href:'#amis',sub:_t("Vois les mises de tes amis en direct"),n:demandes})}${ligneH('trophy',_t("Classement"),{href:'#classement',sub:_t("Compare-toi aux meilleurs joueurs de la saison")})}${ligneH('copy',_t("Copy trading"),{href:'#copie',sub:_t("Copie automatiquement les paris d’un joueur")})}</section></div>`;}
+VIEWS.communaute=vCommunaute;TITLES.communaute=_t("Communauté");
 
 /* ===================== Portefeuille ===================== */
 function vWallet(){const pf=portfolio(),t=S.ui.ptab==='history'?'history':'positions',nc=typeof combosAll==='function'?combosAll().filter(c=>c.status==='open').length:0;
@@ -59,7 +69,7 @@ ACT.ptab=a=>{const v=a.dataset.v,ou=v==='positions'||v==='history'?'portefeuille
 function bigsBlocH(){return `<section class="pn pad"><div class="ph"><div><div class="h2">${_t("Grosses mises en direct")}</div><div class="sub">${_t("Les plus gros paris de la dernière heure")}</div></div></div><div class="bigs" data-bigs>${bigsH()}</div></section>`;}
 
 /* ===================== Accueil : Wimoro en une phrase, pour un visiteur ===================== */
-function introH(){return `<section class="intro"><h2 class="ptitle">${_t("Parie sur ce qui va arriver")}</h2><p class="plead">${_t("Choisis un marché, réponds Oui ou Non, et gagne si tu as vu juste. Ici, tout l’argent est fictif.")}</p><div class="hbtns"><a class="btn b-pri lg" href="#inscription">${_t("Créer un compte")}</a><button class="btn b-ink lg" data-a="demo-login">${_t("Explorer avec le compte démo")}</button></div></section>`;}
+function introH(){return `<section class="intro"><h2 class="ptitle">${_t("Parie sur ce qui va arriver")}</h2><p class="plead">${_t("Choisis un marché, réponds Oui ou Non, et gagne si tu as vu juste. Ici, tout l’argent est fictif.")}</p><div class="hbtns"><a class="btn b-pri lg" href="#inscription">${_t("S’inscrire")}</a><button class="btn b-ink lg" data-a="demo-login">${_t("Explorer avec le compte démo")}</button></div></section>`;}
 {const v=VIEWS.accueil;VIEWS.accueil=a=>{const h=v(a);return S.me.logged?h:enTete(h,introH());};}
 
 /* ===================== Sections repliables : l'essentiel d'abord, le détail à la demande =====================

@@ -203,7 +203,7 @@ function flashAlert(){const d=SPOT();if(S.me.fmute)return;const al=S.me.falerts|
    - Courbe lissée (moyenne sur 3 points), précédée en gris des 10 dernières secondes de la manche d'avant.
    - Zone break even d'au moins 6 px de haut ; les étiquettes « Départ » et « Zone break even » sont posées au-dessus du graphique (CSS). */
 let FCPX=0,FCPXT=0;
-function fChartPx(){const t=Date.now();if(t-FCPXT>1500){FCPXT=t;const e=$('.fl-chart:not(.spark) svg'),h=e?e.getBoundingClientRect().height:0;FCPX=h>20?h:(innerWidth<=760?112:200);}return FCPX;}
+function fChartPx(){const t=Date.now();if(t-FCPXT>1500){FCPXT=t;const e=$('.fl-chart:not(.spark) svg'),h=e?e.getBoundingClientRect().height:0;FCPX=h>20?h:(innerWidth<=879?112:200);}return FCPX;}
 function flashChart(sp,d,ov){const f=ov||src(d),a=f.path,st=f.start,DUR=ov&&ov.dur||FDUR,W=600,H=sp?44:200,NT=DUR/250,ev=d.kind==='event',sd=ev?null:(d.kind==='vol'?GM.btc:d);
  const pre=!ov&&!sp&&sd?fTail(sd):[],NP=pre.length,bd=d.kind==='vol'?[st*(1+FVOL),st*(1-FVOL)]:[];let mn,mx;
  if(ev){mn=Math.min(st,...a);mx=Math.max(st,...a);const pad=(mx-mn)*.12||1;mn-=pad;mx+=pad;}

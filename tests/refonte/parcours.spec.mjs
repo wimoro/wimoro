@@ -3,7 +3,7 @@
 import { test, expect } from '@playwright/test';
 import { ouvrir, lire, fermerRang, debutManche } from '../helpers/app.mjs';
 
-const DESTINATIONS = [['accueil', '#accueil'], ['eclair', '#eclair'], ['portefeuille', '#portefeuille'], ['chat', '#chat'], ['profil', '#profil']];
+const DESTINATIONS = [['accueil', '#accueil'], ['eclair', '#eclair'], ['portefeuille', '#portefeuille'], ['communaute', '#communaute'], ['profil', '#profil']];
 const url = h => new RegExp(h.replace('#', '#') + '(\\b|$)');
 
 /** Ouvre le compte démo puis ferme la fenêtre « Bienvenue » (elle s'ouvre 700 ms après le démarrage, sauf horloge figée). */
@@ -37,7 +37,8 @@ test('1 · téléphone : les 5 onglets de la barre du bas @mobile', async ({ pag
   test.skip(!test.info().project.use.isMobile, 'téléphone seulement');
   const { erreurs } = await demo(page, { hash: '#accueil' });
   await fermerRang(page);
-  const liens = page.locator('nav.tabbar a[data-nav]');
+  // le cinquième onglet existe en deux versions (profil, connexion) : une seule est affichée
+  const liens = page.locator('nav.tabbar a[data-nav]').locator('visible=true');
   await expect(liens).toHaveCount(5);
   for (const [, href] of DESTINATIONS) {
     const lien = page.locator(`nav.tabbar a[href="${href}"]`);
@@ -223,10 +224,11 @@ const CHEMINS = [
   ['creer', [NAV('#profil'), '[data-a="ptab"][data-v="mine"]', 'a[href="#creer"]']],
   ['depot', [NAV('#portefeuille'), '.wal-a a[href="#depot"]']],
   ['retrait', [NAV('#portefeuille'), '.wal-a a[href="#retrait"]']],
-  ['amis', [NAV('#chat'), SOUS('#amis')]],
-  ['copie', [NAV('#chat'), SOUS('#copie')]],
-  ['clans', [NAV('#chat'), SOUS('#clans')]],
-  ['classement', [NAV('#chat'), SOUS('#classement')]],
+  ['chat', [NAV('#communaute'), '.hub a[href="#chat"]']],
+  ['amis', [NAV('#communaute'), '.hub a[href="#amis"]']],
+  ['copie', [NAV('#communaute'), '.hub a[href="#copie"]']],
+  ['clans', [NAV('#communaute'), '.hub a[href="#clans"]']],
+  ['classement', [NAV('#communaute'), '.hub a[href="#classement"]']],
   ['blitz', [NAV('#eclair'), SOUS('#blitz')]],
   ['serie', [NAV('#eclair'), SOUS('#serie')]],
 ];

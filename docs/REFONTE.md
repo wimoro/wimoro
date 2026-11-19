@@ -23,6 +23,44 @@ puis `git log --oneline refonte-design`.** Le suivi de la réparation du back re
 | 7. Nettoyage | fait (`css/main.css` et code mort retirés) |
 | 8. Vérification et livraison | fait : pull request ouverte, non fusionnée ; rien n'est en ligne |
 
+## SECONDE PASSE (demandée le 19 nov. 2026) — à lire en premier
+
+Le propriétaire a mis la première version en prévisualisation et demande une seconde passe sur la même branche
+(`refonte-design`, pull request n° 29). Mêmes règles : unslop et ECC réellement utilisés, back-end intouché, aucune
+fonction ajoutée ni retirée, rien sur `main`, tout d'une traite, réponses en français simple.
+
+### A. Défauts signalés par le propriétaire
+| N° | Défaut | État |
+|---|---|---|
+| 1 | En-tête : le HTML de départ contient un solde fictif (« 248,50 $ »), un avatar (« D ») et les boutons de connexion en même temps. Attendu : état neutre (squelette) avant le chargement, puis connecté OU déconnecté, sans clignotement | à faire |
+| 2 | Libellés doublés « Se connecter » / « Connexion », « Créer un compte » / « S'inscrire ». Un seul libellé par action, partout, à toutes les tailles | à faire |
+| 3 | Montants : un seul format par langue, par une fonction unique (soldes, mises, gains, cotes, pourcentages) | à faire |
+| 4 | Langue : la langue par défaut du code est l'anglais (`js/i18n.js`) ; le HTML de départ (lang, titre, description, textes visibles avant JavaScript) doit la respecter ; aucun texte dans une seule langue | à faire |
+| 5 | Métadonnées et message sans JavaScript : ils parlent de « démo ». Dire où, proposer une formulation produit, lister les changements | à faire |
+| 6 | Onglet Communauté : il ouvre le chat. En faire une page d'entrée : chat, clans, amis, classement, copy trading en un geste | à faire |
+
+### B. Travail demandé ensuite
+1. **Revue critique écran par écran** (ordre : Profil, Accueil, fiche marché et ticket, Éclair, Portefeuille, puis le
+   reste de l'inventaire) : captures 390 × 844 et 1440 × 900, clair et sombre, connecté et déconnecté ; audit unslop sur
+   la capture ; juger (action principale visible en premier ? nombre de chiffres et de blocs sans dérouler ? texte
+   coupé, débordement, alignement, contraste ? uniquement les variables et composants du système ?) ; corriger ;
+   recapturer ; comparer. Cohérence d'ensemble ; sombre aussi soigné que le clair ; états vides, de chargement, d'erreur.
+2. **Responsive (priorité de la passe)** : largeurs 320, 360, 390, 430, 768, 1024, 1280, 1440, 1920 et paysage 844 × 390.
+   Aucun défilement horizontal ; aucun texte coupé ou trop petit (16 px au moins pour le texte courant et les champs
+   sur mobile) ; cibles de 44 px ; la barre d'onglets ne masque rien et respecte les zones sûres ; fenêtres, panneaux
+   et ticket tiennent dans l'écran, clavier ouvert compris ; tableaux, listes et graphiques s'adaptent ; libellés longs
+   dans les trois langues ; pas d'étirement sur grand écran ; balayer de 320 à 1920 px pour trouver les largeurs qui
+   cassent. Préférer les mises en page fluides (grilles, flex, clamp, requêtes de conteneur).
+3. **Revue de design avec un regard neuf** : hiérarchie, respiration, typographie, couleur, finition, cohérence,
+   sobriété. Classer en gênant / perfectible / détail ; corriger les deux premiers niveaux ; lister les détails.
+4. **Vérification et livraison** : rejouer les parcours critiques sans erreur de console ; reprendre le tableau de
+   non-régression ; faire relire le diff par `code-reviewer` et `security-reviewer` ; pousser sur la même branche ; bilan
+   court : (1) défauts par écran avec capture et correction, (2) grille de captures par écran à 320, 390, 768 et
+   1440 px, (3) détails restants, (4) non vérifié, (5) skills, agents et commandes réellement utilisés.
+
+### C. Journal de la seconde passe
+- (à remplir au fil de l'eau : ce qui est fait, les défauts trouvés par écran, les décisions)
+
 ## Reprise (mis à jour à chaque étape)
 
 **Où j'en suis** : la refonte est livrée dans une pull request, non fusionnée. Rien n'est en ligne. Les étapes 0 à 8

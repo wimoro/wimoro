@@ -22,7 +22,7 @@ const F={
  usd:v=>money(NB(nf2.format(v))),
  usd0:v=>v===Infinity?_t('Illimitée'):money(NB(nf0.format(Math.round(v)))),
  /* C10 : le solde n'est jamais arrondi vers le haut. Centimes tant que la place le permet ; dans l'en-tête mobile, à partir de 100 000 $, tronqué à l'unité. */
- bal:(v,full)=>{const c=Math.floor(v*100+1e-6)/100;return full||innerWidth>760||Math.abs(c)<1e5?money(NB(nf2.format(c))):money(NB(nf0.format(Math.floor(c))));},
+ bal:(v,full)=>{const c=Math.floor(v*100+1e-6)/100;return money(NB(nf2.format(c)));}   /* un seul format par langue, centimes compris, à toutes les tailles d'écran */,
  signed:v=>bidi((v>=-0.004?'+':'−')+plain(money(NB(nf2.format(Math.abs(v)))))),
  pct:p=>unit(Math.round(p),'%'),
  mult:p=>{const x=100/Math.max(1,p);return bidi('×'+NB((x>=10?nf1:nf2).format(x)));},

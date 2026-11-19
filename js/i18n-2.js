@@ -2763,7 +2763,6 @@ I18N_ADD("he",{
 "Pour l’instant : {0} · gain si ça se retourne : {1}":"כרגע: {0} · רווח אם זה יתהפך: {1}",
 "gagnant":"מנצח",
 "perdant":"מפסיד",
-"Wimoro : marchés de prédiction, pari éclair, live chat, clans et duels entre amis, KYC et rangs de Fer à Radiant. Démo cliquable.":"Wimoro: שוקי תחזיות, הימור בזק, צ׳אט חי, קלאנים ודו-קרבות בין חברים, KYC ודרגות מברזל ועד זוהר. הדגמה לחיצה."
 });
 /* Version 20 (catalogue appliqué) */
 I18N_ADD("he",{
