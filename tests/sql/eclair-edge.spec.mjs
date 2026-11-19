@@ -2,7 +2,7 @@
 // base embarquée : Deno.serve et le client Supabase sont remplacés par des doublures qui appellent les vraies fonctions
 // srv_… de PGlite. Couvre le lot 7 côté serveur : interrupteur éteint (comme avant), mise à cours réels (avec la reprise
 // « mode_change » quand l'interrupteur vient de changer), règlement sur les fixations, manche annulée et mise rendue, jeu
-// en pause, duel réglé sur les fixations. Aucun réseau.
+// en pause, duel réglé sur les fixations ; refus « bloque » avec son détail (marchés réels, lot 9). Aucun réseau.
 import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
 import vm from 'node:vm';
@@ -26,7 +26,7 @@ function edge() {
     const cles = Object.keys(args || {}), objet = v => v !== null && typeof v === 'object';
     const sql = `select public.${nom}(${cles.map((k, i) => `${k} => $${i + 1}${objet(args[k]) ? '::jsonb' : ''}`).join(', ')}) as r`;
     try { return { data: (await q(db, sql, cles.map(k => (objet(args[k]) ? JSON.stringify(args[k]) : args[k]))))[0].r, error: null }; }
-    catch (e) { return { data: null, error: { message: e.message } }; }
+    catch (e) { return { data: null, error: { message: e.message, details: e.detail ?? null } }; }   // comme PostgREST : le détail dans « details »
   };
   const createClient = () => ({ rpc, auth: { getUser: async jeton => (jeton ? { data: { user: { id: jeton } }, error: null } : { data: null, error: { message: 'session' } }) } });
   new Function('Deno', 'createClient', src)(Deno, createClient);
@@ -147,4 +147,21 @@ test('duel à cours réels : créé dans le mode de sa manche, réglé sur les f
   expect(etats[0]).toMatchObject({ etat: 'regle', gagnant: 'oui' });                       // le Bitcoin a monté : « oui » gagne
   expect(etats[1].etat).toBe('void');
   expect((await q(db, 'select balance::float8 as b from public.user_stats where user_id = $1', [u]))[0].b).toBeGreaterThan(s0 + 10);
+});
+
+test('joueur bloqué pour les paris : la mise est refusée « bloque » avec le détail {acces, salon, fin} ; un refus ordinaire n’en a pas', async () => {
+  const u = await creerJoueur(db, 'bloque_eclair', 200); await solde(u);
+  await interrupteur(false);
+  await q(db, `insert into wm.blocages (user_id, acces, debut_at, fin_at, motif) values ($1, 'paris', now() - interval '1 minute', now() + interval '2 hours', 'essai')`, [u]);
+  const fin = Number((await q(db, 'select wm.en_ms(fin_at) as f from wm.blocages where user_id = $1', [u]))[0].f);
+  const rep = await appeler(u, { action: 'bet', gid: 'btc', side: 'oui', amt: 10, key: randomUUID() });
+  expect(rep).toMatchObject({ statut: 400, ok: false, code: 'bloque', acces: 'paris', salon: null, fin });
+  // sans fin : -1
+  await q(db, 'update wm.blocages set fin_at = null where user_id = $1', [u]);
+  expect(await appeler(u, { action: 'bet', gid: 'btc', side: 'oui', amt: 10, key: randomUUID() })).toMatchObject({ code: 'bloque', acces: 'paris', fin: -1 });
+  // un autre refus de la base garde sa forme d'avant (ici : solde insuffisant)
+  await q(db, 'update wm.blocages set leve_at = now() where user_id = $1', [u]);
+  const r2 = await appeler(u, { action: 'bet', gid: 'btc', side: 'oui', amt: 5000, key: randomUUID() });
+  expect(r2.ok).toBe(false);
+  expect(Object.keys(r2).sort()).toEqual(['code', 'now', 'ok', 'statut']);
 });
