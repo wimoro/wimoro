@@ -3020,6 +3020,9 @@ body.out:has(.jx .b-pri) .top .signup{display:none}
      au moins) plutôt que le bouton bleu à 40 % d'opacité (2:1). Rangs passés : la tuile n'est plus atténuée, seul son
      emblème l'est (les « 0 XP », « 300 XP » passaient sous 4,5:1). */
   .btn[disabled],.btn[aria-disabled="true"]{opacity:1;background:var(--btn-off-bg);color:var(--btn-off-text);box-shadow:none}
+  /* choix Haut / Bas / Break even fermés (Éclair, Blitz, Série) : mêmes couleurs, les prix restent lisibles ; le choix
+     déjà fait (.on) garde sa couleur */
+  .fsd[disabled]:not(.on){opacity:1;background:var(--btn-off-bg);color:var(--btn-off-text)}
   .tier.past{opacity:1}
   .tier.past .emb{opacity:.75}
 
@@ -3119,8 +3122,156 @@ body.out:has(.jx .b-pri) .top .signup{display:none}
   .cbs-vide{padding-block:var(--sp-6)}
   .cbs .calc{margin-block:var(--sp-4)}
   @media (hover:hover){.cbt-m:hover{text-decoration:underline}.cbt-r:hover{background:var(--fill)}}
+
+  /* ---------- Blitz Royale (js/blitz.js, bzSalleOrdiH, bzEtapesH) ----------
+     La salle d'attente en deux colonnes : la règle, le compte à rebours et le bouton à gauche ; la cagnotte, les inscrits
+     et le prime time sur un panneau à droite. La règle en une bande de cinq étapes. Le chat prend la hauteur de ses
+     messages (jusqu'à celle de l'écran, sans être coupé en bas) ; son bouton d'envoi reste neutre : un seul bouton bleu. */
+  .bzo{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:var(--col-gap);align-items:stretch}
+  .bzo-g{display:flex;flex-direction:column;align-items:flex-start;gap:var(--sp-4);min-width:0}
+  .jx .bzo h1{margin:0}
+  .bzo-cd small,.bzo-pot small,.bzo-kv small{display:block;font-size:var(--fs-2);color:var(--text-3)}
+  .bzo-cd b,.bzo-pot b{font-size:var(--fs-titre);line-height:var(--lh-tight)}
+  .bzo-g>.btn{margin-top:auto;padding-inline:var(--sp-12)}
+  .bzo-g>.bzme{margin:auto 0 0}
+  .bzo-d{display:flex;flex-direction:column;gap:var(--sp-4);padding:var(--sp-5);border-radius:var(--r-md);background:var(--fill)}
+  .bzo-pot em{display:block;font-style:normal;font-size:var(--fs-2);color:var(--text-2)}
+  .bzo-kv{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp-4)}
+  .bzo-kv b{font-size:var(--fs-4)}
+  .bzo-d .bzpl{margin:0}
+  .bzo-prime{display:flex;align-items:center;gap:var(--sp-2);margin-top:auto;font-size:var(--fs-2);color:var(--text-2)}
+  .jx-bande{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:var(--sp-3);counter-reset:s}
+  .jx-bande li{list-style:none;display:flex;flex-direction:column;align-items:flex-start;gap:var(--sp-2);padding:var(--sp-3) var(--sp-4);border-radius:var(--r-md);background:var(--fill);font-size:var(--fs-2);line-height:var(--lh-snug);color:var(--text)}
+  .jx-bande li::before{counter-increment:s;content:counter(s);display:grid;place-items:center;width:var(--sp-6);height:var(--sp-6);border-radius:var(--r-md);background:var(--surface);font-size:var(--fs-1);font-weight:var(--fw-bold)}
+  .jx-regles{margin-top:var(--sp-5)}
+  .jx-regles .steps{margin-top:var(--sp-3)}
+  .jx-blitz .rail-fixe>.chat{height:auto;min-height:calc(var(--rail) * .9);max-height:calc(100vh - var(--bar-h) - var(--sp-8) - var(--tap) - var(--sp-4) - var(--sp-6))}
+  .jx-blitz .cin .send{background:var(--fill-2);color:var(--text)}
+  @media (hover:hover){.jx-blitz .cin .send:hover{background:var(--line-2)}}
+
+  /* ---------- La Série (js/blitz.js, serieEchelleH, serieMoiH) ----------
+     Sous les réglages, l'échelle des 12 manches (le stack qui grossit pour la mise choisie, la 8e en valeur, comme la
+     ligne de projection) ; les mises à la largeur de leur texte ; « Tes séries » sous le classement du jour. */
+  .jx-serie .sr-cfg .presets{display:flex;flex-wrap:wrap;gap:var(--sp-2)}
+  .jx-serie .sr-cfg .presets .btn{flex:none;min-width:calc(var(--sp-16) + var(--sp-2));padding-inline:var(--sp-3)}
+  .sr-ech{margin-top:var(--sp-6);padding-top:var(--sp-5);border-top:1px solid var(--line)}
+  .sr-ech-h{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:var(--sp-1) var(--sp-4);margin-bottom:var(--sp-3)}
+  .sr-ech-h b{font-size:var(--fs-3)}
+  .sr-ech-h small{font-size:var(--fs-2);color:var(--text-3)}
+  .sr-ech ol{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:var(--sp-1)}
+  .sr-ech li{list-style:none;display:flex;flex-direction:column;align-items:center;gap:var(--sp-1);min-width:0;padding:var(--sp-2) var(--sp-1);border-radius:var(--r-sm);background:var(--fill)}
+  .sr-ech li small{font-size:var(--fs-1);color:var(--text-3)}
+  .sr-ech li b{font-size:var(--fs-1);font-weight:var(--fw-bold);white-space:nowrap}
+  .sr-ech li.cle{background:var(--yes-soft)}
+  .sr-ech li.cle b{color:var(--yes)}
+  .sr-moi .cp-kpis .num{font-size:var(--fs-4)}
+
+  /* ---------- Fiche d'un marché : « Défier », « Partager », « Suivre » sur la ligne du titre (ils flottaient 40 px plus bas) ---------- */
+  .mtop{align-items:center}
+
+  /* ---------- Marché à plusieurs issues (js/groups.js, vGroup) ----------
+     « Ouverture » et « Maintenant » calés sur les bords réels de la courbe (la marge de 48 px est celle des graduations du
+     graphique Oui/Non, absentes ici). Les lignes des issues sont un tableau : la petite courbe, le volume et les participants
+     comblent la zone vide (dès que le tableau a la place), la variation sur 24 h a sa colonne. Le ticket de la colonne de
+     droite porte le nom de l'issue choisie ; la ligne choisie est marquée. */
+  .gchart+.xax{margin-inline-end:0}
+  .orows{container-type:inline-size}
+  .orows-o,.orow-o{grid-template-columns:40px minmax(0,1fr) 72px 64px 56px 184px;column-gap:var(--sp-3)}
+  .orows-o>:first-child{grid-column:span 2}
+  .orows-o>:nth-child(2),.orows-o>:nth-child(4),.orow-o>.o-sp,.orow-o>.o-pp{display:none}
+  .orows-o .r,.orow-o>.o-vol,.orow-o>.o-pp,.orow-o>.o-d{text-align:end}
+  .orow-o{position:relative;padding-block:var(--sp-3)}
+  .orow-o .ol{gap:var(--sp-2)}
+  .orow-o .opv{align-items:flex-end}
+  .orow-o>.o-vol,.orow-o>.o-pp{font-size:var(--fs-2);color:var(--text-2)}
+  .orow-o>.o-d{font-size:var(--fs-2)}
+  .orow-o>.o-sp svg{display:block;width:100%;height:32px}
+  .orow-o .acts{padding-top:0}
+  .orow-o.sel::before{content:'';position:absolute;inset-block:var(--sp-2);inset-inline-start:0;width:3px;border-radius:var(--r-xs);background:var(--accent-bg)}
+  @container (min-width:880px){
+    .orows-o,.orow-o{grid-template-columns:40px minmax(0,1fr) 120px 72px 88px 64px 56px 184px}
+    .orows-o>:nth-child(2),.orows-o>:nth-child(4),.orow-o>.o-sp,.orow-o>.o-pp{display:block}
+  }
+  .gtk-h{display:flex;align-items:center;gap:var(--sp-2);margin-bottom:calc(-1 * var(--sp-6));padding:var(--sp-5) var(--sp-6) 0;border-radius:var(--r-lg) var(--r-lg) 0 0;background:var(--surface);font-size:var(--fs-2);color:var(--text-3)}
+  .gtk-h i{flex:none;width:10px;height:10px;border-radius:50%}
+  .gtk-h b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--fs-3);color:var(--text)}
+  .a-side .gtk{border-start-start-radius:0;border-start-end-radius:0}
+
+  /* ---------- Amis (js/auth.js, vFriends ; cartes : section [communaute]) ----------
+     Les demandes reçues en liste compacte dans une carte (une ligne chacune ; « Accepter » plein, « Refuser » en texte) ;
+     les amis en cartes qui remplissent la ligne dès qu'il y en a trois ; la dernière mise d'un ami passe sur deux lignes
+     au lieu d'être coupée. */
+  .frw .frs.pn:has([data-a="fr-accept"]){display:block;padding:var(--sp-6);background:var(--surface)}
+  .frw .frs:has([data-a="fr-accept"])>.frow{flex-direction:row;align-items:center;gap:var(--sp-4);padding:var(--sp-3) 0;border-radius:0;background:none;border-top:1px solid var(--line);container-type:normal}
+  .frw .frs:has([data-a="fr-accept"])>.ph+.frow{border-top:0}
+  .frw .frs:has([data-a="fr-accept"])>.frow .frl{flex:1;flex-direction:row;align-items:center;padding-inline-end:0}
+  .frw .frs:has([data-a="fr-accept"])>.frow .fra{display:flex;gap:var(--sp-2);margin:0}
+  .frw .frs:has([data-a="fr-accept"])>.frow .fra .btn{min-width:calc(var(--sp-16) + var(--sp-8));padding-inline:var(--sp-4)}
+  .frw .fra [data-a="fr-decline"]{background:none;box-shadow:none;color:var(--text-2)}
+  .frw .frs.pn:has(>.frow:nth-child(4)){grid-template-columns:repeat(auto-fit,minmax(var(--carte-min),1fr))}
+  .frw .frx-q{white-space:normal;overflow:visible;text-overflow:clip;text-wrap:balance}
+  @media (hover:hover){.frw .fra [data-a="fr-decline"]:hover{background:var(--fill);color:var(--text)}}
+
+  /* ---------- Fiche d'un joueur (js/views.js, vPlayer, jBetsTableH) ----------
+     Ses mises en cours en tableau, « Suivre » neutre ; les chiffres de la saison resserrés à gauche au lieu d'être semés
+     sur toute la largeur. */
+  .jbt-h,.jbt-r{display:grid;grid-template-columns:minmax(0,1fr) 64px 80px 104px 96px 96px;align-items:center;column-gap:var(--sp-4)}
+  .jbt-h{min-height:var(--sp-10);font-size:var(--fs-1);color:var(--text-3);box-shadow:inset 0 -1px 0 var(--line)}
+  .jbt-r{min-height:60px;padding-block:var(--sp-2);border-top:1px solid var(--line);font-size:var(--fs-2)}
+  .jbt-h+.jbt-r{border-top:0}
+  .jbt .r{text-align:end}
+  .jbt-m{min-width:0;font-size:var(--fs-3);font-weight:var(--fw-medium);color:var(--text);text-wrap:balance}
+  @media (hover:hover){.jbt-m:hover{text-decoration:underline}}
+
+  /* ---------- Copy trading (js/copy.js, copyOrdiH) ----------
+     Les joueurs à copier en tableau (on compare avant de choisir) ; à droite, « Mes copies » puis « Tes copieurs ».
+     Les règles « cartes » de la section [communaute] (.cpx-pick, .cpx-mine) ne servent plus sur ordinateur. */
+  .cptr [data-copyroot]>.cpx-d{grid-column:2;grid-row:1}
+  .cpx-tab{padding:0;overflow:clip;container-type:inline-size}
+  .cpx-tete{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--sp-4);padding:var(--sp-5) var(--sp-6) var(--sp-3)}
+  .cpx-vide{padding:0 var(--sp-6) var(--sp-6)}
+  .cpt-h,.cpt-r{display:grid;grid-template-columns:minmax(0,1fr) 128px 132px 112px 64px 80px 112px;align-items:center;column-gap:var(--sp-4);padding-inline:var(--sp-6)}
+  .cpt-h{min-height:var(--sp-10);font-size:var(--fs-1);color:var(--text-3);box-shadow:inset 0 -1px 0 var(--line),inset 0 1px 0 var(--line)}
+  .cpt-r{min-height:60px;border-top:1px solid var(--line);font-size:var(--fs-2);cursor:pointer;transition:background var(--dur-1) var(--ease)}
+  .cpt-h+.cpt-r{border-top:0}
+  .cpt-h .r,.cpt-r .r{text-align:end}
+  .cpt-n{display:flex;align-items:center;gap:var(--sp-3);min-width:0;color:var(--text)}
+  .cpt-n b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--fs-3);font-weight:var(--fw-medium)}
+  .cpt-r .num{font-size:var(--fs-3)}
+  .cpt-r .cp-chip{margin:0}
+  .cpx-d .cp-row{padding:var(--sp-4) 0;border-radius:0;background:none}
+  @container (max-width:760px){
+    .cpt-h,.cpt-r{grid-template-columns:minmax(0,1fr) 72px 96px 72px 104px}
+    .cpt-h>:nth-child(2),.cpt-r>:nth-child(2),.cpt-h>:nth-child(5),.cpt-r>:nth-child(5),.cpt-r .cp-chip{display:none}
+  }
+  @media (hover:hover){.cpt-r:hover{background:var(--fill)}.cpt-n:hover b{text-decoration:underline}}
+
+  /* ---------- Inscription (js/auth.js, vSignup) ----------
+     Un formulaire plus serré : l'aide d'un champ n'apparaît qu'au focus ou dès qu'il est rempli (ses messages de validation
+     restent donc visibles), le code de parrainage est replié, les deux cases sont rapprochées. « S'inscrire »,
+     l'inscription par portefeuille et « Se connecter » tiennent dans 900 px de haut. */
+  .auth-main:has([data-form="signup"]){padding-block:var(--sp-8)}
+  form[data-form="signup"]{gap:var(--sp-3);margin-top:var(--sp-4)}
+  form[data-form="signup"] .field:not(:focus-within):has(input:placeholder-shown)>:is(.sub,.strength){display:none}
+  form[data-form="signup"] .chk{min-height:var(--sp-8)}
+  .su-ref{border-top:0}
+  .su-ref summary{justify-content:flex-start;min-height:var(--sp-8);font-size:var(--fs-2);color:var(--accent)}
+  .su-ref[open] summary{margin-bottom:var(--sp-2)}
+  @media (hover:hover){.su-ref summary:hover{text-decoration:underline}}
+  .auth-card:has([data-form="signup"]) .orl{margin-block:var(--sp-3)}
+  .auth-card:has([data-form="signup"]) .orl+.btn+.sub{margin-top:var(--sp-4)}
 }
 @media (min-width:1280px){
+  /* Créer un pari : les étapes sur deux colonnes (la question en tête ; clôture et résolution à gauche ; cote de départ
+     et publication à droite) : tout le formulaire tient à 1 440 × 900 */
+  form[data-form="create"]{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);grid-template-areas:'s1 s1' 's2 s3' 's2 s4';gap:var(--col-gap);align-items:start}
+  form[data-form="create"]>section{margin:0}
+  form[data-form="create"]>section:nth-of-type(1){grid-area:s1}
+  form[data-form="create"]>section:nth-of-type(2){grid-area:s2}
+  form[data-form="create"]>section:nth-of-type(3){grid-area:s3}
+  form[data-form="create"]>section:nth-of-type(4){grid-area:s4}
+  .jw .pf-stats{grid-template-columns:repeat(5,auto);justify-content:start;column-gap:var(--sp-16)}
+  .sr-ech ol{grid-template-columns:repeat(12,minmax(0,1fr))}
   .refo{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:var(--sp-10)}
   .refo-how{padding-inline-start:var(--sp-10);border-inline-start:1px solid var(--line)}
 }
@@ -3130,6 +3281,13 @@ body.out:has(.jx .b-pri) .top .signup{display:none}
   .g-side:has(.rg-lims)>.col:first-child{grid-template-columns:minmax(0,1fr)}
   .rg-lim-f{flex-wrap:wrap}
   .rg-lim-f .btn{flex:1 1 100%}
+  /* fiche d'un joueur : le tableau garde le marché, le côté, la mise et « Suivre » */
+  .jbt-h,.jbt-r{grid-template-columns:minmax(0,1fr) 56px 72px 88px}
+  .jbt-h>:nth-child(4),.jbt-h>:nth-child(5),.jbt-r>:nth-child(4),.jbt-r>:nth-child(5){display:none}
+  /* Blitz : la salle d'attente et la bande des étapes s'empilent */
+  .bzo{grid-template-columns:minmax(0,1fr)}
+  .jx-bande{grid-template-columns:minmax(0,1fr)}
+  .jx-bande li{flex-direction:row;align-items:center}
   /* combinés : le bandeau sur deux lignes, le tableau garde ses colonnes utiles */
   .cbo-h{grid-template-columns:minmax(0,1fr) auto;row-gap:var(--sp-3)}
   .cbo:not(.open) .cbo-h{grid-template-columns:minmax(0,1fr) auto}
