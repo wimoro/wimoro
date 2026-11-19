@@ -319,7 +319,7 @@ I18N_ADD("en",{
 "Clôture":"Closes",
 "Clôture : <b>{0}</b>":"Closes: <b>{0}</b>",
 "Clôture aujourd’hui":"Closes today",
-"Clôture dans {0} j":"Closes in {0}d",
+"Clôture dans {0} j":"Closes in {0} d",
 "Clôture et résolution":"Closing and resolution",
 "Clôture proche":"Closing soon",
 "Code de parrainage (facultatif)":"Referral code (optional)",
@@ -596,8 +596,8 @@ I18N_ADD("en",{
 "Gagné ":"Won ",
 "Gagné : ":"Won: ",
 "Gagné, +40 XP.":"Won, +40 XP.",
-"Gain si {0}":"Payout if {0}",
-"Gain si {0}, tout exécuté":"Payout if {0}, fully filled",
+"Gain si {0}":"Profit if {0}",
+"Gain si {0}, tout exécuté":"Profit if {0}, fully filled",
 "Gains éclair":"Flash winnings",
 "gamblingtherapy.org":"gamblingtherapy.org",
 "GG à ceux qui ont suivi lea hier soir.":"GG to those who followed lea last night.",
@@ -928,7 +928,7 @@ I18N_ADD("en",{
 "Mouvement : {0} % (seuil {1} %)":"Move: {0}% (threshold {1}%)",
 "Moyen":"Medium",
 "Moyen de paiement":"Payment method",
-"Moyen de {0}":"Method of {0}",
+"Moyen de {0}":"{0, select, deposit{Deposit method} withdrawal{Withdrawal method} other{Method of {0}}}",
 "Moyenne":"Average",
 "Météo":"Weather",
 "Météo et culture.":"Weather and culture.",
@@ -1709,7 +1709,7 @@ I18N_ADD("en",{
 "{0} pour ton ami à son inscription, {0} pour toi à son premier pari.":"{0} for your friend when they sign up, {0} for you on their first bet.",
 "{0} pour, {1} contre":"{0} for, {1} against",
 "{0} Profil privé":"{0} Private profile",
-"{0} Profil {1}":"{0} {1} profile",
+"{0} Profil {1}":"{0} {1, select, public{Public profile} private{Private profile} other{{1} profile}}",
 "{0} Retirer":"{0} Withdraw",
 "{0} retiré de tes amis":"{0} removed from your friends",
 "{0} Rotation":"{0} Rotation",
@@ -2427,7 +2427,7 @@ I18N_ADD("en",{
 "Chat du clan":"Clan chat",
 "{0} membres":"{0, plural, one{# member} other{# members}}",
 "{0} · {1} pts{2}":"{0} · {1} pts{2}",
-"· compte dans {0} j":"· counts in {0}d",
+"· compte dans {0} j":"· counts in {0} d",
 "Nommer officier":"Make officer",
 "Exclure":"Kick",
 "{0} Inviter un ami":"{0} Invite a friend",
@@ -2510,7 +2510,7 @@ I18N_ADD("en",{
 "maxou a misé 200 $ sur Barça au Clásico.":"maxou bet $200 on Barça in the Clásico."
 });
 I18N_ADD("en",{
-"{0} j {1} h":"{0}d {1}h",
+"{0} j {1} h":"{0} d {1} h",
 "+{0} joueurs":"+{0} players",
 "<b>Combiné ×{0}</b>":"<b>Parlay ×{0}</b>",
 "<b>Volume de la manche éclair</b>":"<b>Flash round volume</b>",
@@ -2666,7 +2666,7 @@ I18N_ADD("en",{
 "Aucun vrai paiement, aucune donnée bancaire demandée.":"No real payment, no bank details requested.",
 "Aucune donnée bancaire n’est demandée.":"No bank details are requested.",
 "Chaque pari rapporte de l’XP et te fait monter, de Fer à Radiant.":"Every bet earns XP and moves you up, from Iron to Radiant.",
-"Dans {0} j":"In {0}d",
+"Dans {0} j":"In {0} d",
 "Dans {0} mois":"In {0, plural, one{# month} other{# months}}",
 "Entre le code à 6 chiffres reçu par e-mail.":"Enter the 6-digit code we emailed you.",
 "Envoi de {0}":"Sending {0}",
@@ -2764,7 +2764,6 @@ I18N_ADD("en",{
 "Pour l’instant : {0} · gain si ça se retourne : {1}":"Right now: {0} · payout if it turns around: {1}",
 "gagnant":"winning",
 "perdant":"losing",
-"Wimoro : marchés de prédiction, pari éclair, live chat, clans et duels entre amis, KYC et rangs de Fer à Radiant. Démo cliquable.":"Wimoro: prediction markets, flash bets, live chat, clans and duels between friends, KYC and ranks from Iron to Radiant. Clickable demo."
 });
 /* Version 20 (catalogue appliqué) */
 I18N_ADD("en",{

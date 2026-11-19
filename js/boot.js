@@ -41,7 +41,7 @@ async function demarrer(){
   catch(e){if(e&&e.code==='session'){await API.signOut();srvRecharger('#connexion','expire');return;}
    if(e&&e.code==='exclu'){srvExclu(e);return;}
    if(e&&e.code==='suspendu'){srvSuspendu(e);return;}             /* compte suspendu par un administrateur */                 /* compte en auto-exclusion : la connexion est refusée par le serveur */
-   S.me=guestMe();i18nStatic(document.body);PRET=true;ecranErreurServeur(e);return;}
+   S.me=guestMe();i18nStatic(document);PRET=true;ecranErreurServeur(e);return;}
   flashBoot();
   if(!S.me.onboarded&&location.hash!=='#bienvenue')location.replace('#bienvenue');
  }else{
@@ -52,7 +52,7 @@ async function demarrer(){
   if(S.me.logged&&!S.me.onboarded&&location.hash!=='#bienvenue')location.replace('#bienvenue');
   for(let i=0;i<5;i++)pushBig(true);
  }
- i18nStatic(document.body);const md=document.querySelector('meta[name=description]');if(md&&LANG!=='fr'&&I18N[LANG][md.content])md.content=I18N[LANG][md.content];
+ i18nStatic(document);
  if(!srv){if(typeof duelSeed==='function'){duelSeed();duelLinkBoot();}if(typeof clanSeed==='function')clanSeed();if(typeof comboSeed==='function')comboSeed();if(typeof proBoot==='function')proBoot();}
  PRET=true;updateHeader();render(true);navMark();
  for(const t of PLAN)if(t.quand==='tous'||(t.quand==='serveur'?srv:!srv))setInterval(t.fn,t.ms);

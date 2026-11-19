@@ -10,22 +10,22 @@
  *                     donc retrouvée après un rechargement. Les indicateurs sont limités par le rang (proSlots), les tracés non.
  * ===================================================================================== */
 Object.assign(ICP,{
- back:'<path d="M19 12H5"/><path d="m11 6-6 6 6 6"/>',
- expand:'<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',
- cursor:'<path d="M5 3l14 7-6 2-2 6Z"/>',
- trend:'<path d="M5 18 19 6"/><circle cx="5" cy="18" r="1.7"/><circle cx="19" cy="6" r="1.7"/>',
- hline:'<path d="M3 12h18"/><circle cx="12" cy="12" r="1.9"/>',
- vline:'<path d="M12 3v18"/><circle cx="12" cy="12" r="1.9"/>',
- rect:'<rect x="4" y="6" width="16" height="12" rx="1.5"/>',
- arrow:'<path d="M5 19 19 5"/><path d="M10 5h9v9"/>',
- text:'<path d="M5 7V5h14v2M12 5v14M9 19h6"/>',
- flag:'<path d="M5 21V4"/><path d="M5 4h13l-3 4 3 4H5"/>',
- eyeOff:'<path d="M3 3l18 18"/><path d="M10.6 5.2A9.6 9.6 0 0 1 12 5c5.5 0 9 7 9 7a15 15 0 0 1-2.6 3.3M6.2 6.6C3.9 8.3 3 12 3 12s3.5 7 9 7c1.3 0 2.5-.3 3.6-.8"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>',
- trash:'<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/>',
- sliders:'<path d="M4 6h8M18 6h2M4 12h2M12 12h8M4 18h10"/><circle cx="15" cy="6" r="2.2"/><circle cx="9" cy="12" r="2.2"/><circle cx="17" cy="18" r="2.2"/>',
- pencil:'<path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 0 1 3 3L8 19Z"/><path d="m14.5 6.5 3 3"/>',
- tonow:'<path d="M5 6l7 6-7 6"/><path d="M19 5v14"/>',
- image:'<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><circle cx="9" cy="10" r="1.6"/><path d="m5 17 4.5-4.5 3.5 3.5 2.5-2.5L20 18"/>'
+ back:'<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>',
+ expand:'<path d="m15 15 6 6"/><path d="m15 9 6-6"/><path d="M21 16v5h-5"/><path d="M21 8V3h-5"/><path d="M3 16v5h5"/><path d="m3 21 6-6"/><path d="M3 8V3h5"/><path d="M9 9 3 3"/>',
+ cursor:'<path d="M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z"/>',
+ trend:'<path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/>',
+ hline:'<path d="M5 12h14"/>',
+ vline:'<path d="M4 4v16"/>',
+ rect:'<rect width="20" height="12" x="2" y="6" rx="2"/>',
+ arrow:'<path d="M13 5H19V11"/><path d="M19 5L5 19"/>',
+ text:'<path d="M12 4v16"/><path d="M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2"/><path d="M9 20h6"/>',
+ flag:'<path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"/>',
+ eyeOff:'<path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/>',
+ trash:'<path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+ sliders:'<path d="M10 5H3"/><path d="M12 19H3"/><path d="M14 3v4"/><path d="M16 17v4"/><path d="M21 12h-9"/><path d="M21 19h-5"/><path d="M21 5h-7"/><path d="M8 10v4"/><path d="M8 12H3"/>',
+ pencil:'<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/>',
+ tonow:'<path d="m6 17 5-5-5-5"/><path d="m13 17 5-5-5-5"/>',
+ image:'<rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>'
 });
 const PV={open:false,id:null,snap:null,st:null,D:null,tool:'cursor',sel:null,pend:null,hover:null,panel:'',want:null,L:null,M:null,raf:0,ptrs:new Map(),g:null,tools:true,pushed:false,vn:120,end:0,follow:true,W:0,H:0,legKey:'',timer:0,from:null,arm:0};
 const PTOOL=['cursor'].concat(PDRAW);
@@ -60,7 +60,7 @@ function proA(){if(PV.snap)return proSnapA(PV.snap);return proAgg(PV.D,PV.st.iv=
 const proHasVol=A=>{for(let i=Math.max(0,A.n-400);i<A.n;i++)if(A.v[i]>0)return true;return false;};
 function proClamp(A){const tot=A.n,pw=Math.max(120,PV.W-56),maxN=Math.max(12,Math.min(tot+8,Math.floor(pw/1.2))),minN=Math.min(8,Math.max(2,tot));PV.vn=clamp(PV.vn,minN,maxN);
  PV.end=PV.snap?clamp(PV.end,Math.min(tot,PV.vn*.5),tot+3):clamp(PV.end,Math.min(tot,PV.vn*.4),tot+PV.vn*.5);}
-function proViewInit(fit){const A=proA(),tot=A.n,def=innerWidth>760?140:70;
+function proViewInit(fit){const A=proA(),tot=A.n,def=innerWidth>879?140:70;
  if(PV.snap){PV.vn=PV.snap.vn;PV.end=PV.snap.end;PV.follow=false;return;}
  const st=PV.st;if(fit||st.iv==='max'&&!st.n){PV.vn=tot+6;PV.end=tot+3;PV.follow=true;st.off=3;st.n=Math.round(PV.vn);return;}
  PV.vn=st.n>0?st.n:Math.min(def,tot+6);PV.end=tot+st.off;PV.follow=st.off>=0;}
@@ -104,7 +104,7 @@ function proTopH(){const snap=PV.snap,id=PV.id,m=MK[id];
   <button class="btn b-ink sm pro-shareb" data-a="pro-share">${ic('share',15,'currentColor')}<span class="pro-l">${_t('Partager mon analyse')}</span><span class="pro-s">${_t('Partager')}</span></button>`;}
 const proHasPos=id=>!!(S.me.logged&&S.me.positions.some(p=>p.m===id));
 /* acheter et vendre restent à un appui : le ticket d'achat habituel s'ouvre par-dessus, « Vendre » ramène au ticket de la page en mode vente */
-const proBuyH=(id,m)=>`<button class="btn b-oui sm" data-a="bet" data-m="${id}" data-s="oui">${_t('Oui')} <span data-mc="${id}">${F.c(m.p)}</span></button><button class="btn b-non sm" data-a="bet" data-m="${id}" data-s="non">${_t('Non')} <span data-mcn="${id}">${F.c(100-m.p)}</span></button>${proHasPos(id)?`<button class="btn b-white sm pro-sellb" data-a="pro-sell">${_t('Vendre')}</button>`:''}`;
+const proBuyH=(id,m)=>`<button class="btn b-yes sm" data-a="bet" data-m="${id}" data-s="oui">${_t('Oui')} <span data-mc="${id}">${F.c(m.p)}</span></button><button class="btn b-no sm" data-a="bet" data-m="${id}" data-s="non">${_t('Non')} <span data-mcn="${id}">${F.c(100-m.p)}</span></button>${proHasPos(id)?`<button class="btn b-white sm pro-sellb" data-a="pro-sell">${_t('Vendre')}</button>`:''}`;
 function proBarH(){const snap=PV.snap;
  if(snap){const nI=snap.inds.length,nD=snap.dr.length;return `<div class="pro-scroll"><span class="pro-tag">${esc(pivLong(snap.iv))}</span><span class="pro-tag">${snap.type==='bougies'?_t('Bougies'):_t('Courbe')}</span><span class="pro-tag">${snap.side==='non'?_t('Prix du Non'):_t('Prix du Oui')}</span>${snap.p!==null?`<span class="pro-tag">${_t('Oui à {0} au moment du partage',[plain(F.pct(snap.p))])}</span>`:''}<span class="pro-tag">${_t('{0, plural, =0{Aucun indicateur} one{# indicateur} other{# indicateurs}}',[nI])}</span><span class="pro-tag">${_t('{0, plural, =0{Aucun tracé} one{# tracé} other{# tracés}}',[nD])}</span></div>`;}
  const st=PV.st,D=PV.D;

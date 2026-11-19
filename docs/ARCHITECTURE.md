@@ -1,6 +1,6 @@
 # Architecture du front
 
-Le site est une page unique (`index.html`) et 27 fichiers JavaScript chargés dans l'ordre, sans framework ni étape de
+Le site est une page unique (`index.html`) et 29 fichiers JavaScript chargés dans l'ordre, sans framework ni étape de
 construction. Ce document explique comment les deux modes cohabitent sans se mélanger.
 
 ## 1. Deux modes, un seul interrupteur
@@ -18,8 +18,12 @@ Le mode est connu **avant le premier rendu** : `boot.js` attend `API.pret` (le c
 ## 2. Ordre de chargement
 
 ```
-i18n ×4  →  api.js  →  core, engine, moteur-eclair, views, auth, …, demo  →  serveur.js  →  boot.js
+i18n ×5  →  api.js  →  core, engine, moteur-eclair, views, auth, …, demo  →  refonte.js  →  serveur.js  →  boot.js
 ```
+
+- Feuilles de style, dans l'ordre : `css/tokens.css` → `base.css` → `components.css` → `screens.css` (`index.html`).
+- Traductions : `js/i18n.js`, puis `i18n-1.js` à `i18n-4.js` (`i18n-4.js` porte les textes ajoutés par la refonte).
+- `js/refonte.js` vient juste après `demo.js` et avant `serveur.js`.
 
 - `js/api.js` — **la seule passerelle vers le back**. Seul fichier à toucher le client Supabase (version 2.118.0, figée
   dans `js/vendor/`, chargée seulement si nécessaire). Il expose `API.call(nom, arguments)` pour les fonctions du
@@ -106,3 +110,10 @@ Toute chaîne passe par `_t()` et possède ses entrées anglaise et hébraïque 
 ajouts). Le serveur n'envoie jamais de phrase : il envoie un **code et des paramètres** (notifications, erreurs),
 traduits chez le lecteur (`NOTIF_T`, `ERR_TXT` dans `js/serveur.js`). `tests/i18n.spec.mjs` vérifie qu'aucune chaîne
 n'est orpheline.
+
+## 9. Présentation
+
+- Cinq destinations, dans l'en-tête et dans la barre d'onglets du téléphone, portées par l'attribut `data-nav` (`index.html`) : Marchés (`#accueil`), Éclair (`#eclair`), Portefeuille (`#portefeuille`), Communauté (`#chat`), Profil (`#profil`).
+- Sous-navigations dans `js/refonte.js` : `comNavH` (Chat, Clans, Classement, Amis, Copies) et `jeuxNavH` (Éclair, Blitz Royale, La Série, Duels).
+- Thème clair par défaut. Le thème sombre est activé par `:root[data-theme="dark"]`, défini dans `css/tokens.css` (`components.css` ne fait que choisir l'icône soleil ou lune).
+- Détails et règles : [DESIGN-SYSTEM.md](DESIGN-SYSTEM.md).

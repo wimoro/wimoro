@@ -87,7 +87,7 @@ test('le joueur copié vend : la copie vend aussi, en direct ; un refus du serve
   await page.evaluate(() => { window.__FAKE_SB__.rpc = { api_copy_set: { error: { message: 'copie_indisponible', code: 'P0001' } } }; });
   await page.evaluate(id => copyManage(id), (await copies(page))[0].id);
   await page.locator('[data-a="cp-pause"]').click();
-  await expect(toast(page, 'This player cannot be copied right now.')).toBeVisible();
+  await expect(toast(page, 'This player cannot be copied right now')).toBeVisible();
   expect((await copies(page))[0].status).toBe('active');
   expect(erreurs).toEqual([]);
 });

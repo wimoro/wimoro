@@ -227,7 +227,7 @@ function proPaint(G,M){const W=M.W,H=M.H,A=M.A,Sr=proSerie(A,M.side),cmp=!!M.com
  G.segs(gl,'rule',1,.9);
  const vl=[],tl=[];if(!M.noAxis){const want=(cmp?64:92)/cw*A.ms;let ts=PTSTEP[PTSTEP.length-1];for(const s of PTSTEP)if(s>=want){ts=s;break;}
   const tz=-new Date(T(M.end)).getTimezoneOffset()*6e4;
-  for(let t=Math.ceil((T(start)+tz)/ts)*ts-tz;t<=T(M.end);t+=ts){const X0=X(t);if(X0<24||X0>pw-24)continue;vl.push(X0,0,X0,H-padB);tl.push([X0,ts>=864e5||hhmm(t)==='00:00'?proDate(t):hhmm(t)]);}}
+  for(let t=Math.ceil((T(start)+tz)/ts)*ts-tz;t<=T(M.end);t+=ts){const X0=X(t);if(X0<24||X0>pw-24)continue;vl.push(X0,0,X0,H-padB);tl.push([X0,ts>=864e5||new Date(t).getHours()*60+new Date(t).getMinutes()===0?proDate(t):hhmm(t)]);}}
  G.segs(vl,'rule',1,.55);
  G.clip(0,0,pw,mh);
  /* volume, en bas du volet principal */

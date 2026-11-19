@@ -48,7 +48,7 @@ function proRooms(){for(const id in S.rooms){const r=S.rooms[id];if(r.msgs.some(
 function proShareH(){const sh=PV.share,s=sh.snap,m=MK[s.m],mc=typeof myClan==='function'?myClan():null,fr=friendsOf(),dmOk=can('dm'),D=sh.dst;
  const opt=(k,icn,title,sub)=>`<button class="psh-o${D[k]?' on':''}" data-a="pro-sh-dst" data-v="${k}" role="checkbox" aria-checked="${!!D[k]}"><span class="psh-i">${icn}</span><span class="psh-t"><b>${title}</b><small>${sub}</small></span><i class="psh-ck" aria-hidden="true">${ic('check',13,'#fff',3)}</i></button>`;
  return `<div class="md pro-sh"><div class="md-h"><div><h3>${_t('Partager mon analyse')}</h3><p>${esc(m.short)} · ${esc(pivLong(s.iv))} · ${proCountsTxt(s)}</p></div><button class="x" data-a="close" aria-label="${esc(_t('Fermer'))}">${ic('x')}</button></div>
-  <div class="psh-pv" dir="ltr">${innerWidth<=760?proSnapSvg(s,360,230):proSnapSvg(s,560,290)}</div>
+  <div class="psh-pv" dir="ltr">${innerWidth<=879?proSnapSvg(s,360,230):proSnapSvg(s,560,290)}</div>
   <p class="psh-note">${_t('C’est un instantané : si le prix bouge ensuite, ton analyse publiée ne change pas.')}</p>
   <label class="psh-c"><span>${_t('Ton commentaire (facultatif)')}</span><textarea data-psh-txt maxlength="280" rows="2" placeholder="${esc(_t('Explique ta lecture du marché'))}">${esc(sh.txt||'')}</textarea></label>
   <div class="psh-d" role="group" aria-label="${esc(_t('Où partager'))}"><div class="psh-dt">${_t('Où la partager ?')}</div>
@@ -70,7 +70,8 @@ function proShareSync(){const b=$('#ov [data-a="pro-sh-send"]');if(b)b.disabled=
 /* ---------- Image d'une analyse, à partager en dehors de Wimoro ----------
    Même format et même pied que l'image d'un pari (1080 × 1350, pseudo, rang, code de parrainage) ; le graphique est dessiné par le peintre du Mode Pro,
    à partir de l'instantané : mêmes bougies, mêmes indicateurs, mêmes tracés que dans la carte publiée. Palette sombre fixe, quel que soit le thème. */
-const PRO_IMG={ink:'#F2F3F5',g2:'#C3C7CF',g3:'#9CA1AC',g4:'#767C88',rule:'#2A2F3A',soft:'#282D37',panel:'#171A20',bg:'#0F1115',oui:'#6F8BFF',non:'#F5A623',up:'#22C07A',dn:'#FF6B5E',be:'#2FBF71'};
+/* graphique de l'image : les couleurs du thème en cours, sous les noms du Mode Pro */
+const proImgPal=()=>{const P=imgPal();return {ink:P.text,g2:P.text2,g3:P.text3,g4:cssVar('--text-4'),rule:P.line,soft:P.fill,panel:P.surface,bg:P.bg,oui:P.yes,non:P.no,up:P.yes,dn:P.no,be:P.text3};};
 /* Texte dessiné dans un canevas : mêmes espaces insécables que dans la page (fixText), et retour à la ligne sur les seules espaces ordinaires
    (« 150 000 $ » ou « 31 décembre » ne sont jamais coupés en deux). */
 const proTypo=s=>LANG==='fr'?String(s).replace(/(\d) (?=[\d$%¢A-Za-zÀ-ÿ])/g,'$1\u00A0').replace(/ ([?!:;%$¢»])/g,'\u00A0$1').replace(/« /g,'«\u00A0'):String(s).replace(FIX_UNIT,'$1\u00A0');
@@ -79,39 +80,37 @@ function proWrap(ctx,text,maxW,maxLines){const words=proTypo(text).split(' ').fi
 const proSidePx=s=>s.p===null||s.p===undefined?'':s.side==='non'?_t('Non à {0}',[plain(F.pct(100-s.p))]):_t('Oui à {0}',[plain(F.pct(s.p))]);
 function proShareCanvas(s,cm){
  const W=1080,H=1350,c=document.createElement('canvas');c.width=W;c.height=H;const ctx=c.getContext('2d');
- const sg=plain(cssVar('--sg')),font=(w,px)=>`${w} ${px}px ${sg}`,t=x=>plain(String(x)),non=s.side==='non',accent=non?'#F59A0B':'#2448FF',m=MK[s.m],M_=70,sgn=RTL?-1:1;
+ const P=imgPal(),PRO_IMG=proImgPal(),sg=plain(cssVar('--sg')),font=(w,px)=>`${w} ${px}px ${sg}`,t=x=>plain(String(x)),non=s.side==='non',accent=non?P.noBg:P.yesBg,m=MK[s.m],M_=70,sgn=RTL?-1:1;
  const dir=()=>{ctx.direction=RTL?'rtl':'ltr';ctx.textAlign=RTL?'right':'left';ctx.textBaseline='alphabetic';},X=RTL?W-M_:M_,XE=RTL?M_:W-M_;
- ctx.fillStyle='#14161B';ctx.fillRect(0,0,W,H);
- const g=ctx.createRadialGradient(W*.85,H*.08,40,W*.85,H*.08,900);g.addColorStop(0,non?'rgba(245,154,11,.42)':'rgba(36,72,255,.55)');g.addColorStop(1,'rgba(20,22,27,0)');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
- const g2=ctx.createRadialGradient(W*.1,H*.97,40,W*.1,H*.97,700);g2.addColorStop(0,'rgba(36,72,255,.35)');g2.addColorStop(1,'rgba(20,22,27,0)');ctx.fillStyle=g2;ctx.fillRect(0,0,W,H);
+ ctx.fillStyle=P.bg;ctx.fillRect(0,0,W,H);
  /* en-tête : logo, et « Mon analyse » à l'opposé */
- dir();drawLogo(ctx,RTL?W-M_-56:M_,62,56);ctx.fillStyle='#fff';ctx.font=font(700,46);ctx.textBaseline='middle';ctx.fillText('wimoro',RTL?W-M_-56-16:M_+56+16,91);
- ctx.font=font(600,28);ctx.fillStyle='rgba(255,255,255,.72)';ctx.textAlign=RTL?'left':'right';ctx.fillText(t(_t('Mon analyse')),XE,91);dir();
+ dir();drawLogo(ctx,RTL?W-M_-56:M_,62,56);ctx.fillStyle=P.text;ctx.font=font(600,46);ctx.textBaseline='middle';ctx.fillText('wimoro',RTL?W-M_-56-16:M_+56+16,91);
+ ctx.font=font(600,28);ctx.fillStyle=P.text3;ctx.textAlign=RTL?'left':'right';ctx.fillText(t(_t('Mon analyse')),XE,91);dir();
  /* question du marché : deux lignes au plus */
- const q=t(m?m.q:(s.q||s.short));let qf=58,lines=[];for(const z of [58,50]){qf=z;ctx.font=font(700,z);lines=proWrap(ctx,q,W-2*M_,3);if(lines.length<=2)break;}if(lines.length>2)lines=proWrap(ctx,q,W-2*M_,2);
- const lh=Math.round(qf*1.18);let y=148+qf;ctx.fillStyle='#fff';for(const l of lines){ctx.fillText(l,X,y);y+=lh;}y+=30-lh;
+ const q=t(m?m.q:(s.q||s.short));let qf=58,lines=[];for(const z of [58,50]){qf=z;ctx.font=font(600,z);lines=proWrap(ctx,q,W-2*M_,3);if(lines.length<=2)break;}if(lines.length>2)lines=proWrap(ctx,q,W-2*M_,2);
+ const lh=Math.round(qf*1.18);let y=148+qf;ctx.fillStyle=P.text;for(const l of lines){ctx.fillText(l,X,y);y+=lh;}y+=30-lh;
  /* pastilles : période et prix au moment du partage ; date à l'opposé si elle tient */
- const chip=(label,fill,col,x)=>{ctx.font=font(700,28);const w=ctx.measureText(label).width+44;rrect(ctx,RTL?x-w:x,y,w,56,28);ctx.fillStyle=fill;ctx.fill();ctx.fillStyle=col;ctx.textBaseline='middle';ctx.fillText(label,x+sgn*22,y+29);ctx.textBaseline='alphabetic';return w;};
- let cx=X;cx+=sgn*(chip(t(pivLong(s.iv)),'rgba(255,255,255,.12)','#fff',cx)+12);const px=proSidePx(s);if(px)cx+=sgn*(chip(t(px),accent,non?'#14161B':'#fff',cx)+12);
- {const d=t(proShareDate(s.at,true));ctx.font=font(500,26);if(Math.abs(XE-cx)>ctx.measureText(d).width+16){ctx.fillStyle='rgba(255,255,255,.62)';ctx.textAlign=RTL?'left':'right';ctx.textBaseline='middle';ctx.fillText(d,XE,y+29);dir();}}
+ const chip=(label,fill,col,x)=>{ctx.font=font(600,28);const w=ctx.measureText(label).width+44;rrect(ctx,RTL?x-w:x,y,w,56,28);ctx.fillStyle=fill;ctx.fill();ctx.fillStyle=col;ctx.textBaseline='middle';ctx.fillText(label,x+sgn*22,y+29);ctx.textBaseline='alphabetic';return w;};
+ let cx=X;cx+=sgn*(chip(t(pivLong(s.iv)),P.fill,P.text,cx)+12);const px=proSidePx(s);if(px)cx+=sgn*(chip(t(px),accent,P.on,cx)+12);
+ {const d=t(proShareDate(s.at,true));ctx.font=font(500,26);if(Math.abs(XE-cx)>ctx.measureText(d).width+16){ctx.fillStyle=P.text3;ctx.textAlign=RTL?'left':'right';ctx.textBaseline='middle';ctx.fillText(d,XE,y+29);dir();}}
  y+=56+26;
  /* sous le graphique : la liste des indicateurs, puis le commentaire (deux lignes au plus) */
  const FY=H-222,legH=s.inds.length||s.dr.length?40:0;ctx.font=font(500,32);const cl=cm?proWrap(ctx,t(_t('« {0} »',[cm])),W-2*M_,2):[],cmH=cl.length*42;
  const top=y,bot=FY-40-28-(cmH?cmH+16:0)-(legH?legH+14:0),CH=bot-top,pad=18,k=2,cw=(W-100-pad*2)/k,ch=(CH-pad*2)/k;
- rrect(ctx,50,top,W-100,CH,28);ctx.fillStyle=PRO_IMG.panel;ctx.fill();ctx.strokeStyle='rgba(255,255,255,.1)';ctx.lineWidth=2;ctx.stroke();
+ rrect(ctx,50,top,W-100,CH,28);ctx.fillStyle=PRO_IMG.panel;ctx.fill();ctx.strokeStyle=P.line;ctx.lineWidth=2;ctx.stroke();
  ctx.save();ctx.translate(50+pad,top+pad);ctx.scale(k,k);proPaint(proCvG(ctx,Object.assign({font:sg},PRO_IMG)),proSnapModel(s,cw,ch,{compact:true}));ctx.restore();dir();
  if(legH){const by=bot+14+29,maxW=W-2*M_,colI=c=>PRO_IMG[c]||c,tail=s.dr.length?t(_t('{0, plural, =0{Aucun tracé} one{# tracé} other{# tracés}}',[s.dr.length])):'';
   ctx.font=font(600,26);const tailW=tail?ctx.measureText(tail).width+(s.inds.length?30:0):0;let used=0,shown=0;ctx.direction='ltr';
   for(const d of s.inds){const l=pindLab(d),w=28+ctx.measureText(l).width+26,rest=s.inds.length-shown-1,moreW=rest>0?ctx.measureText('+'+rest).width+26:0;if(shown&&used+w+moreW+tailW>maxW)break;
-   ctx.beginPath();ctx.arc(X+sgn*(used+9),by-9,9,0,Math.PI*2);ctx.fillStyle=colI(d.c);ctx.fill();ctx.fillStyle='rgba(255,255,255,.9)';ctx.fillText(l,X+sgn*(used+28),by);used+=w;shown++;}
-  if(shown<s.inds.length){const l='+'+(s.inds.length-shown);ctx.fillStyle='rgba(255,255,255,.9)';ctx.fillText(l,X+sgn*used,by);used+=ctx.measureText(l).width+26;}
-  dir();if(tail){ctx.font=font(500,26);ctx.fillStyle='rgba(255,255,255,.62)';ctx.fillText(tail,X+sgn*(used+(s.inds.length?4:0)),by);}}
- if(cl.length){ctx.font=font(500,32);ctx.fillStyle='rgba(255,255,255,.94)';let cy=bot+(legH?legH+14:0)+16+32;for(const l of cl){ctx.fillText(l,X,cy);cy+=42;}}
+   ctx.beginPath();ctx.arc(X+sgn*(used+9),by-9,9,0,Math.PI*2);ctx.fillStyle=colI(d.c);ctx.fill();ctx.fillStyle=P.text2;ctx.fillText(l,X+sgn*(used+28),by);used+=w;shown++;}
+  if(shown<s.inds.length){const l='+'+(s.inds.length-shown);ctx.fillStyle=P.text2;ctx.fillText(l,X+sgn*used,by);used+=ctx.measureText(l).width+26;}
+  dir();if(tail){ctx.font=font(500,26);ctx.fillStyle=P.text3;ctx.fillText(tail,X+sgn*(used+(s.inds.length?4:0)),by);}}
+ if(cl.length){ctx.font=font(500,32);ctx.fillStyle=P.text2;let cy=bot+(legH?legH+14:0)+16+32;for(const l of cl){ctx.fillText(l,X,cy);cy+=42;}}
  /* pied : comme l'image d'un pari */
- ctx.strokeStyle='rgba(255,255,255,.14)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(M_,FY-40);ctx.lineTo(W-M_,FY-40);ctx.stroke();
- const r=myRank();ctx.font=font(600,34);ctx.fillStyle='#fff';ctx.fillText(t(`\u200E@${S.me.n} · ${rankName(r.t,r.d)}`),X,FY+10);
- ctx.font=font(500,28);ctx.fillStyle='rgba(255,255,255,.7)';ctx.fillText(t(_t('Rejoins-moi avec le code {0} : {1} offerts.',[refCode(),F.usd0(REF.BONUS)])),X,FY+62);
- ctx.font=font(700,30);ctx.fillStyle='#8FA3FF';ctx.fillText('wimoro.com',X,FY+118);
+ ctx.strokeStyle=P.line;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(M_,FY-40);ctx.lineTo(W-M_,FY-40);ctx.stroke();
+ const r=myRank();ctx.font=font(600,34);ctx.fillStyle=P.text;ctx.fillText(t(`\u200E@${S.me.n} · ${rankName(r.t,r.d)}`),X,FY+10);
+ ctx.font=font(500,28);ctx.fillStyle=P.text3;ctx.fillText(t(_t('Rejoins-moi avec le code {0} : {1} offerts.',[refCode(),F.usd0(REF.BONUS)])),X,FY+62);
+ ctx.font=font(600,30);ctx.fillStyle=P.accent;ctx.fillText('wimoro.com',X,FY+118);
  return c;}
 /* Le texte qui accompagne l'image (feuille de partage du téléphone, ou bouton « Copier ») */
 function proShareText(s,cm){const m=MK[s.m],q=plain(m?m.q:(s.q||s.short)),px=plain(proSidePx(s)||pivLong(s.iv)),join=_t('Rejoins-moi sur Wimoro avec le code {0}, {1} offerts : {2}',[refCode(),plain(F.usd0(REF.BONUS)),refLink()]);
@@ -210,6 +209,6 @@ const DEMO_RK_SUB=()=>_t('Un clic sur un rang et ton compte démo y passe tout d
 function demoRankH(){if(!isDemoAcc())return '';return `<section class="pn pad demo-rk"><div class="h2">${demoB()} ${_t('Changer de rang')}</div><div class="sub">${DEMO_RK_SUB()}</div>${demoRankListH()}</section>`;}
 function demoRankModal(){if(!isDemoAcc())return;openModal(`<div class="md demo-rk"><div class="md-h"><div><h3>${_t('Changer de rang')}</h3><p>${DEMO_RK_SUB()}</p></div><button class="x" data-a="close" aria-label="${esc(_t('Fermer'))}">${ic('x')}</button></div>${demoRankListH()}</div>`,'wide');}
 /* entrée du menu du compte et de « Mon compte » (compte démo seulement) */
-const demoRankItemH=()=>isDemoAcc()?`<button class="ui" data-a="demo-rank-open">${ic('trophy',16)} ${_t('Changer de rang')}${demoB()}</button>`:'';
+const demoRankItemH=()=>isDemoAcc()?`<button class="ui" data-a="demo-rank-open">${ic('layers',16)} ${_t('Changer de rang')}${demoB()}</button>`:'';
 Object.assign(ACT,{'demo-rank':a=>demoRankSet(+a.dataset.t),'demo-rank-reset':()=>demoRankReset(),'demo-rank-open':()=>{const u=$('#umenu');if(u)u.remove();demoRankModal();}});
 

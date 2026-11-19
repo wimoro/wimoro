@@ -28,8 +28,9 @@ test('rejoindre un clan ouvert puis le quitter : appartenance tenue par le serve
   await page.reload(); await expect(page.locator('#view > *').first()).toBeAttached();
   expect(await monClan(page)).toEqual({ id: 'c1', role: 'membre' });                              // tout vient du serveur
   await page.evaluate(() => { const b = document.createElement('button'); b.dataset.a = 'cl-war'; document.body.appendChild(b); b.click(); b.remove(); });
-  await expect(toast(page, 'Your role in the clan doesn’t allow this.')).toBeVisible();           // déclarer la guerre : le chef seulement, refusé par le serveur
-  await page.locator('[data-a="cl-leave"]').first().click();
+  await expect(toast(page, 'Your role in the clan doesn’t allow this')).toBeVisible();           // déclarer la guerre : le chef seulement, refusé par le serveur
+  await page.locator('[data-a="cl-ctab"][data-v="infos"]').click();                               // « Quitter le clan » est rangé dans l'onglet Infos, à toutes les largeurs
+  await page.locator('[data-a="cl-leave"]').locator('visible=true').first().click();
   await page.locator('[data-a="cl-leave-do"]').click();
   await expect(toast(page, 'You left')).toBeVisible();
   expect(await monClan(page)).toBeNull();

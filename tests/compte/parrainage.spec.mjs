@@ -12,7 +12,7 @@ test('la page Parrainage montre le code, le lien et les filleuls du serveur ; co
   await expect(page.locator('.refcode')).toHaveText('LEAB-7K3');
   await expect(page.locator('.reflink')).toContainText('?r=LEAB-7K3');
   const kpis = await page.locator('.cp-kpis b').allTextContents();
-  expect(kpis.map(x => x.replace(/\s/g, ''))).toEqual(['2', '1', '$10']);
+  expect(kpis.map(x => x.replace(/\s/g, ''))).toEqual(['2', '1', '$10.00']);                     // un gain s'écrit au centime (règle 17 du système de design)
   await expect(page.locator('#view')).toContainText('noa');
   await expect(page.locator('#view')).toContainText('max');
   await expect(page.locator('#view')).toContainText('You were referred with the code MAXB-A1B');

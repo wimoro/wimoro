@@ -5,45 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
 <title>Wimoro — administration</title>
-<style>
-:root{--bg:#F3F4F6;--w:#fff;--ink:#14161B;--g2:#4A505C;--g3:#7A808C;--rule:#E3E6EB;--soft:#F1F3F5;--bleu:#2448FF;--bleuS:#EBEEFF;--vert:#0B8247;--vertS:#E7F5EE;--rouge:#D92D20;--rougeS:#FDECEA;--or:#9A5B00;--orS:#FFF2DE}
-@media (prefers-color-scheme:dark){:root{--bg:#0F1115;--w:#181B21;--ink:#F2F4F7;--g2:#C2C7D0;--g3:#8D93A0;--rule:#2A2E37;--soft:#20242C;--bleuS:#1B2450;--vertS:#12301F;--rougeS:#3A1815;--orS:#3A2A0C}}
-*{box-sizing:border-box}
-[hidden]{display:none!important}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,'Segoe UI',sans-serif}
-header{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;padding:14px 16px;background:var(--w);border-bottom:1px solid var(--rule)}
-header b{font-size:18px}header .qui{color:var(--g3);margin-inline-start:auto}header a{color:var(--bleu)}
-nav{display:flex;gap:6px;overflow-x:auto;padding:10px 16px;background:var(--w);border-bottom:1px solid var(--rule)}
-nav button{white-space:nowrap}
-main{max-width:1000px;margin:0 auto;padding:16px}
-h2{font-size:18px;margin:22px 0 10px}h2:first-child{margin-top:0}
-button,input,select,textarea{font:inherit;color:inherit}
-button{border:1px solid var(--rule);background:var(--w);border-radius:8px;padding:8px 12px;cursor:pointer;min-height:40px}
-button[aria-current=true]{background:var(--ink);color:var(--w);border-color:var(--ink)}
-button.pr{background:var(--bleu);border-color:var(--bleu);color:#fff}
-button.danger{border-color:var(--rouge);color:var(--rouge)}
-button[data-sur]{background:var(--rouge);border-color:var(--rouge);color:#fff}
-button:disabled{opacity:.5;cursor:default}
-input,select,textarea{border:1px solid var(--rule);background:var(--w);border-radius:8px;padding:8px 10px;min-height:40px;max-width:100%}
-textarea{width:100%;min-height:70px}
-label{display:block;font-size:13px;color:var(--g2);margin-bottom:4px}
-.carte{background:var(--w);border:1px solid var(--rule);border-radius:12px;padding:14px;margin-bottom:12px}
-.grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
-.chiffre{background:var(--w);border:1px solid var(--rule);border-radius:12px;padding:12px}
-.chiffre b{display:block;font-size:22px}.chiffre span{color:var(--g3);font-size:13px}
-.ligne{display:flex;flex-wrap:wrap;gap:8px;align-items:end;margin:8px 0}
-.ligne>div{flex:1 1 140px}.ligne>div.court{flex:0 1 110px}
-.rang{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--rule)}
-.rang:first-child{border-top:0}.rang small{color:var(--g3);display:block}
-.actions{display:flex;flex-wrap:wrap;gap:6px}
-.puce{display:inline-block;border-radius:99px;padding:1px 9px;font-size:12px;background:var(--soft);color:var(--g2)}
-.puce.ok{background:var(--vertS);color:var(--vert)}.puce.ko{background:var(--rougeS);color:var(--rouge)}.puce.att{background:var(--orS);color:var(--or)}
-.vide{color:var(--g3);padding:10px 0}
-#adm-msg{position:fixed;inset-inline:12px;bottom:12px;max-width:520px;margin:0 auto;padding:12px 14px;border-radius:10px;color:#fff;z-index:9}
-#adm-msg.ok{background:var(--vert)}#adm-msg.ko{background:var(--rouge)}
-table{border-collapse:collapse;width:100%}td,th{text-align:start;padding:6px 8px;border-top:1px solid var(--rule);font-size:14px;vertical-align:top}th{color:var(--g3);font-weight:500;border-top:0}
-.plus{color:var(--vert)}.moins{color:var(--rouge)}
-</style>
+<link rel="stylesheet" href="css/tokens.css?v=e96aaa33">
+<link rel="stylesheet" href="css/admin.css?v=1ae860b7">
+<script>try{if(localStorage.getItem("wimoro-theme")==="dark")document.documentElement.setAttribute("data-theme","dark");}catch(e){}</script>
 </head>
 <body>
 <header><b>Wimoro</b><span>Administration</span><span class="qui" id="adm-qui"></span><a href="index.html">Retour au site</a></header>

@@ -1,0 +1,243 @@
+/* WIMORO — variables de design (les deux thèmes)
+ * Tout le reste du CSS ne contient aucune couleur, taille de texte, espacement, rayon, ombre ou durée « en dur » :
+ * il pioche ici. Changer l'apparence du site commence donc dans ce fichier. Documentation : docs/DESIGN-SYSTEM.md
+ *
+ * Règles de couleur :
+ *   - l'accent (le bleu du logo) est réservé aux actions principales et aux éléments actifs ;
+ *   - le vert et le rouge ne portent que du sens : Oui / Non, hausse / baisse, gain / perte ;
+ *   - chaque teinte existe en trois emplois : --x (texte ou trait sur une surface), --x-bg (fond plein portant du texte
+ *     blanc) et --x-soft (fond teinté discret). Tous les couples texte / fond prévus atteignent le contraste AA (4,5:1).
+ */
+:root{
+  color-scheme:light;
+
+  /* Surfaces et textes */
+  --bg:#F5F5F7;                 /* fond de page */
+  --surface:#FFFFFF;            /* cartes, barres, feuilles */
+  --fill:#F0F0F3;               /* champs, pistes, pastilles neutres */
+  --fill-2:#E6E6EB;             /* survol d'un fond --fill, éléments enfoncés */
+  --line:rgba(0,0,0,.09);       /* filets de séparation */
+  --line-2:rgba(0,0,0,.18);     /* contour d'un contrôle (case, champ au repos sur fond blanc) */
+  --text:#1D1D1F;               /* texte principal */
+  --text-2:#48484C;             /* texte secondaire */
+  --text-3:#66666B;             /* légendes, méta (AA sur --bg, --surface, --fill et --fill-2) */
+  --text-4:#A1A1A8;             /* désactivé et décor uniquement (jamais un texte à lire) */
+  --veil:rgba(0,0,0,.36);       /* voile derrière une fenêtre */
+  --bar:rgba(255,255,255,.86);  /* barres translucides (en-tête, onglets) */
+
+  /* Accent : actions principales, éléments actifs, liens */
+  --accent:#2448FF;
+  --accent-bg:#2448FF;
+  --accent-bg-hover:#1A3AE0;
+  --accent-soft:#EAEEFF;
+  --on-color:#FFFFFF;           /* texte posé sur --accent-bg, --yes-bg, --no-bg */
+
+  /* Sens : Oui, hausse, gain */
+  --yes:#0B7A3B;
+  --yes-bg:#0B7A3B;
+  --yes-bg-hover:#096A33;
+  --yes-soft:#E4F4EA;
+  /* Sens : Non, baisse, perte, erreur */
+  --no:#C4142B;
+  --no-bg:#C4142B;
+  --no-bg-hover:#A80F23;
+  --no-soft:#FCE9EB;
+
+  /* Bouton sombre (action secondaire forte) */
+  --ink-bg:#1D1D1F;
+  --ink-bg-hover:#000000;
+  --on-ink:#FFFFFF;
+
+  /* Segment actif d'un contrôle segmenté (.seg) : plus clair que sa piste (--fill-2) dans les deux thèmes */
+  --seg-on:var(--surface);
+  /* Panneau latéral de la connexion et de l'inscription : fond sombre en clair, gris foncé en sombre */
+  --side-bg:var(--ink-bg);
+  --on-side:var(--on-ink);
+  /* Pastilles de couleur et avatars à initiale : leur contour. En sombre, il s'éclaircit pour que la couleur « noir »
+     (#14161B, choisie par le joueur) se détache d'une carte (relecture ordinateur) ; en clair, rien ne change. */
+  --trait-av:var(--line-2);
+  --anneau-av:transparent;
+  /* Bouton désactivé (ordinateur) : gris neutre, texte lisible (4,5:1 au moins dans les deux thèmes) */
+  --btn-off-bg:var(--fill);
+  --btn-off-text:var(--text-3);
+
+  /* Emblèmes de rang : un ton plein par rang (couleurs des rangs, js/core.js TIERS), le signe du rang en blanc par-dessus
+     (3:1 au moins). Fer, Bronze, Argent, Or, Platine, Diamant, Ascendant, Immortel, Radiant. Mêmes tons dans les deux thèmes :
+     l'emblème est un objet, comme une médaille. */
+  --rank-0:#5B6068;
+  --rank-1:#8A5530;
+  --rank-2:#7E8896;
+  --rank-3:#C08A12;
+  --rank-4:#1A8584;
+  --rank-5:#7350E3;
+  --rank-6:#13804F;
+  --rank-7:#AE2139;
+  --rank-8:#CC8400;
+  /* Texte ou icône posé sur une couleur vive et claire choisie par un joueur (emblème de clan ambre) : l'encre, 7,6:1 */
+  --on-vif:#1D1D1F;
+
+  /* Typographie : une seule famille, la pile système. Cinq tailles, trois graisses. */
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue","Noto Sans",Arial,"Noto Sans Hebrew","Arial Hebrew",sans-serif;
+  --fs-1:12px;                  /* micro : onglets du bas, axes, pastilles */
+  --fs-2:14px;                  /* secondaire : légendes, méta, petits boutons */
+  --fs-3:16px;                  /* courant : texte, champs, boutons */
+  --fs-4:20px;                  /* titre de section, chiffre de carte */
+  --fs-5:28px;                  /* titre de page, grand chiffre */
+  --fs-titre:var(--fs-5);     /* titre de page : 28 px sur téléphone, 32 puis 36 px sur ordinateur (paliers en bas du fichier) */
+  --fs-display:40px;            /* réservé aux deux temps forts : la chance d'un marché, le pari Éclair */
+  --fw-regular:400;
+  --fw-medium:500;
+  --fw-bold:600;
+  --lh-tight:1.15;
+  --lh-snug:1.3;
+  --lh:1.45;
+  --track-title:-.015em;        /* resserrement des titres (à partir de 20 px) */
+
+  /* Espacements : grille de 4 px */
+  --sp-1:4px;
+  --sp-2:8px;
+  --sp-3:12px;
+  --sp-4:16px;
+  --sp-5:20px;
+  --sp-6:24px;
+  --sp-8:32px;
+  --sp-10:40px;
+  --sp-12:48px;
+  --sp-16:64px;
+  /* Espacements hérités des anciens écrans (3, 6 et 10 px), écrits avec ces trois jetons dans les règles communes : sur
+     téléphone, ils valent la grille (4, 8, 12 px) ; sur ordinateur, l'ancienne valeur, pour ne pas toucher la composition
+     de la partie A (palier S, plus bas). Pour aligner aussi l'ordinateur sur la grille : retirer ces trois lignes du palier S. */
+  --sp-h3:4px;
+  --sp-h6:8px;
+  --sp-h10:12px;
+
+  /* Rayons */
+  --r-xs:4px;                   /* barres, coches */
+  --r-sm:8px;                   /* pastilles, petits contrôles */
+  --r-md:12px;                  /* boutons, champs */
+  --r-lg:16px;                  /* cartes */
+  --r-xl:20px;                  /* feuilles et fenêtres */
+  --r-pill:999px;
+
+  /* Ombres : uniquement pour ce qui flotte (menus, fenêtres, notifications). Les cartes n'en ont pas. */
+  --shadow-1:0 1px 2px rgba(0,0,0,.08);
+  --shadow-2:0 8px 28px rgba(0,0,0,.12);
+  --shadow-3:0 20px 60px rgba(0,0,0,.2);
+
+  /* Animations */
+  --dur-1:150ms;                /* survol, appui, bascule */
+  --dur-2:200ms;                /* menus, onglets */
+  --dur-3:250ms;                /* feuilles, fenêtres, entrée d'écran */
+  --ease:cubic-bezier(.2,.8,.2,1);
+
+  /* Mise en page — grille des grands écrans : voir docs/DESIGN-SYSTEM.md, § 3 « La grille ». Les valeurs ci-dessous sont
+     celles du téléphone ; les trois paliers de l'ordinateur (880, 1280 et 1680 px) sont en bas de ce fichier. */
+  --page:1840px;                /* largeur maximale de la page, marges comprises : 1 760 px de contenu sur un écran de 1 920 px */
+  --gutter:clamp(16px,4vw,24px);  /* marge latérale de page : fluide sur téléphone et tablette, puis 24, 32 et 40 px */
+  --col-gap:var(--sp-4);        /* gouttière entre colonnes et entre cartes */
+  --rail:100%;                  /* largeur de la colonne latérale (sur téléphone, elle passe sous le contenu) */
+  --carte-min:100%;             /* largeur minimale d'une carte dans une grille de cartes (une par ligne sur téléphone) */
+  --fs-hero:36px;               /* titre de la présentation de l'accueil pour un visiteur (seul titre plus grand qu'un titre de page) */
+  --bar-h:56px;                 /* hauteur de l'en-tête */
+  --tab-h:56px;                 /* hauteur de la barre d'onglets du bas */
+  --tap:44px;                   /* cible tactile minimale */
+  --safe-b:env(safe-area-inset-bottom,0px);
+  --bas:var(--safe-b);          /* place prise en bas de l'écran : la zone sûre seule, ou la barre d'onglets + la zone sûre (880 px et moins) */
+  --mbar-h:71px;                /* hauteur de la barre d’achat fixe d’un marché, sur téléphone (bouton de 46 px, 12 px de marge, filet) */
+
+  /* Anciens noms, encore lus par le JavaScript (graphiques du Mode Pro, images générées, styles en ligne). */
+  --w:var(--surface);
+  --panel:var(--surface);
+  --ink:var(--text);
+  --g2:var(--text-2);
+  --g3:var(--text-3);
+  --g4:var(--text-4);
+  --rule:var(--line);
+  --soft:var(--fill);
+  --soft2:var(--fill-2);
+  --oui:var(--yes);
+  --ouiS:var(--yes-soft);
+  --non:var(--no);
+  --nonT:var(--no);
+  --nonS:var(--no-soft);
+  --gain:var(--yes);
+  --loss:var(--no);
+  --be:var(--text-3);
+  --sg:var(--font);
+  --bs:var(--font);
+}
+
+:root[data-theme="dark"]{
+  color-scheme:dark;
+
+  --bg:#0A0A0C;
+  --surface:#17171A;
+  --fill:#222226;
+  --fill-2:#2D2D32;
+  --line:rgba(255,255,255,.1);
+  --line-2:rgba(255,255,255,.22);
+  --text:#F5F5F7;
+  --text-2:#C2C2C9;
+  --text-3:#94949C;
+  --text-4:#5E5E66;
+  --veil:rgba(0,0,0,.6);
+  --bar:rgba(23,23,26,.86);
+
+  --accent:#8AA0FF;
+  --accent-bg:#4463FF;
+  --accent-bg-hover:#3654EE;
+  --accent-soft:#1A2147;
+
+  --yes:#3DD68C;
+  --yes-bg:#12803F;
+  --yes-bg-hover:#0F6F37;
+  --yes-soft:#10291C;
+  --no:#FF6B6B;
+  --no-bg:#C22A3A;
+  --no-bg-hover:#AE2433;
+  --no-soft:#331417;
+
+  --ink-bg:#F5F5F7;
+  --ink-bg-hover:#FFFFFF;
+  --on-ink:#1D1D1F;
+
+  --seg-on:#3A3A40;
+  --side-bg:var(--fill);
+  --on-side:var(--text);
+  --trait-av:rgba(255,255,255,.42);
+  --anneau-av:rgba(255,255,255,.42);
+
+  --shadow-1:0 1px 2px rgba(0,0,0,.5);
+  --shadow-2:0 0 0 1px var(--line),0 10px 32px rgba(0,0,0,.55);
+  --shadow-3:0 0 0 1px var(--line),0 24px 64px rgba(0,0,0,.7);
+}
+
+/* Hébreu : les familles système qui dessinent bien l'hébreu passent devant ; les titres ne sont pas resserrés. */
+:root[lang="he"]{
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans Hebrew","Arial Hebrew",Roboto,Arial,sans-serif;
+  --track-title:0;
+}
+
+/* Barre d'onglets du bas : présente jusqu'à 879 px de large (téléphones, tablettes en portrait). Tout ce qui se pose
+   en bas de l'écran (barre d'achat, zone de pari Éclair, combiné en cours, barre d'enregistrement) part de --bas. */
+@media (max-width:879px){
+  :root{--bas:calc(var(--tab-h) + var(--safe-b))}
+}
+
+/* La grille des grands écrans : trois paliers. La largeur sert à montrer plus de contenu (plus de colonnes, plus de
+   cartes), jamais à creuser des marges. Sur ordinateur, aucun texte utile sous 13 px ; titres de page plus grands. */
+@media (min-width:880px){      /* palier S : 880 à 1 279 px */
+  :root{--gutter:24px;--col-gap:20px;--rail:300px;--carte-min:240px;--fs-1:13px;--fs-titre:32px;--fs-hero:44px;
+    --sp-h3:3px;--sp-h6:6px;--sp-h10:10px}
+}
+@media (min-width:1280px){     /* palier M : 1 280 à 1 679 px */
+  :root{--gutter:32px;--col-gap:24px;--rail:400px;--carte-min:240px;--fs-titre:36px;--fs-hero:52px}
+}
+@media (min-width:1680px){     /* palier L : 1 680 px et plus (la page s'arrête à --page, 1 840 px) */
+  :root{--gutter:40px;--col-gap:32px;--rail:440px;--carte-min:280px;--fs-hero:56px}
+}
+
+/* « Réduire les animations » : tout devient instantané, sans rien cacher. */
+@media (prefers-reduced-motion:reduce){
+  :root{--dur-1:1ms;--dur-2:1ms;--dur-3:1ms}
+}

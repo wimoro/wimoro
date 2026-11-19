@@ -60,59 +60,59 @@ I18N_ADD("en",{
 "{0} t’a écrit.":"{0} sent you a message."
 });
 I18N_ADD("he",{
-"Connexion au serveur impossible. Vérifie ta connexion et réessaie.":"לא ניתן להתחבר לשרת. בדוק את החיבור ונסה שוב.",
-"Ta session a expiré. Reconnecte-toi.":"פג תוקף החיבור. התחבר מחדש.",
+"Connexion au serveur impossible. Vérifie ta connexion et réessaie.":"לא ניתן להתחבר לשרת. בודקים את החיבור ומנסים שוב.",
+"Ta session a expiré. Reconnecte-toi.":"פג תוקף החיבור. צריך להתחבר מחדש.",
 "Identifiant ou mot de passe incorrect.":"שם משתמש, אימייל או סיסמה שגויים.",
-"Confirme d’abord ton adresse : clique sur le lien reçu par e-mail.":"אשר קודם את הכתובת שלך: לחץ על הקישור שנשלח אליך באימייל.",
-"Trop de tentatives. Réessaie dans quelques minutes.":"יותר מדי ניסיונות. נסה שוב בעוד כמה דקות.",
+"Confirme d’abord ton adresse : clique sur le lien reçu par e-mail.":"קודם מאשרים את הכתובת: לוחצים על הקישור שנשלח אליך באימייל.",
+"Trop de tentatives. Réessaie dans quelques minutes.":"יותר מדי ניסיונות. אפשר לנסות שוב בעוד כמה דקות.",
 "Code incorrect ou expiré.":"הקוד שגוי או שפג תוקפו.",
-"Mot de passe trop faible. Utilise au moins 8 caractères.":"הסיסמה חלשה מדי. השתמש ב־8 תווים לפחות.",
+"Mot de passe trop faible. Utilise au moins 8 caractères.":"הסיסמה חלשה מדי. צריך לפחות 8 תווים.",
 "Les inscriptions sont fermées pour le moment.":"ההרשמה סגורה כרגע.",
 "Ta bio est trop longue (160 caractères au plus).":"הביו שלך ארוך מדי (עד 160 תווים).",
-"Une erreur est survenue. Réessaie.":"אירעה שגיאה. נסה שוב.",
+"Une erreur est survenue. Réessaie.":"אירעה שגיאה. אפשר לנסות שוב.",
 "Action impossible":"הפעולה נכשלה",
 "Bientôt disponible avec ton compte":"בקרוב לחשבונות",
 "Cette fonction marche déjà en mode démo. Elle arrive pour les comptes.":"התכונה הזו כבר פועלת במצב הדגמה. היא תגיע בקרוב לחשבונות.",
 "Connexion au serveur impossible":"לא ניתן להתחבר לשרת",
-"Ton compte est intact. Vérifie ta connexion, puis réessaie. Tu peux aussi explorer le mode démo en attendant.":"החשבון שלך בטוח. בדוק את החיבור ונסה שוב. בינתיים אפשר לגלות את מצב ההדגמה.",
-"Réessayer":"נסה שוב",
+"Ton compte est intact. Vérifie ta connexion, puis réessaie. Tu peux aussi explorer le mode démo en attendant.":"החשבון שמור. בודקים את החיבור ומנסים שוב. בינתיים אפשר לגלות את מצב ההדגמה.",
+"Réessayer":"לנסות שוב",
 "Passer en mode démo":"מעבר למצב הדגמה",
 "Connexion…":"מתחבר…",
 "Création du compte…":"יוצר את החשבון…",
 "Tu es connecté avec ton nouveau mot de passe.":"התחברת עם הסיסמה החדשה שלך.",
 "E-mail ou pseudo":"אימייל או שם משתמש",
 "Le compte démo reste dans ce navigateur : rien n’est envoyé, aucun argent réel.":"חשבון ההדגמה נשאר בדפדפן הזה: שום דבר לא נשלח, בלי כסף אמיתי.",
-"Entre ton e-mail ou ton pseudo.":"הזן אימייל או שם משתמש.",
-"Vérifie ta boîte mail":"בדוק את תיבת הדואר",
-"On t’a envoyé un lien de confirmation à {0}. Clique dessus pour activer ton compte, puis connecte-toi.":"שלחנו קישור אישור אל {0}. לחץ עליו כדי להפעיל את החשבון, ואז התחבר.",
-"J’ai confirmé, me connecter":"אישרתי, חבר אותי",
-"Renvoyer l’e-mail":"שלח שוב את האימייל",
+"Entre ton e-mail ou ton pseudo.":"צריך להזין אימייל או שם משתמש.",
+"Vérifie ta boîte mail":"בודקים את תיבת הדואר",
+"On t’a envoyé un lien de confirmation à {0}. Clique dessus pour activer ton compte, puis connecte-toi.":"שלחנו קישור אישור אל {0}. לוחצים עליו כדי להפעיל את החשבון, ואז מתחברים.",
+"J’ai confirmé, me connecter":"אישרתי, להתחבר",
+"Renvoyer l’e-mail":"לשלוח שוב את האימייל",
 "E-mail renvoyé":"האימייל נשלח שוב",
-"Envoi…":"שולח…",
-"Choisis un nouveau mot de passe pour ton compte.":"בחר סיסמה חדשה לחשבון שלך.",
+"Envoi…":"בשליחה…",
+"Choisis un nouveau mot de passe pour ton compte.":"בוחרים סיסמה חדשה לחשבון.",
 "Simulation : un compte de démonstration est créé dans ce navigateur.":"סימולציה: נוצר חשבון הדגמה בדפדפן הזה.",
 "Photo importée non enregistrée":"התמונה שהועלתה לא נשמרה",
 "Pour l’instant, les comptes utilisent les avatars de la galerie.":"בינתיים חשבונות משתמשים באווטארים מהגלריה.",
-"Solde insuffisant. Dépose des fonds pour continuer.":"היתרה אינה מספיקה. הפקד כסף כדי להמשיך.",
+"Solde insuffisant. Dépose des fonds pour continuer.":"היתרה אינה מספיקה. כדי להמשיך, צריך להפקיד כסף.",
 "Pas assez de liquidité sur ce marché pour ce montant.":"אין מספיק נזילות בשוק הזה לסכום הזה.",
 "Ce marché est fermé.":"השוק הזה סגור.",
 "La mise minimale est de 1 $.":"ההימור המינימלי הוא $1.",
 "Tu n’as plus cette position.":"הפוזיציה הזו כבר לא ברשותך.",
-"Tu es en pause : les paris et les dépôts sont bloqués.":"אתה בהפסקה: הימורים והפקדות חסומים.",
-"Fais d’abord le KYC pour utiliser ce moyen de paiement.":"השלם קודם את ה־KYC כדי להשתמש באמצעי התשלום הזה.",
+"Tu es en pause : les paris et les dépôts sont bloqués.":"ההפסקה פעילה: הימורים והפקדות חסומים.",
+"Fais d’abord le KYC pour utiliser ce moyen de paiement.":"כדי להשתמש באמצעי התשלום הזה, צריך קודם להשלים את ה־KYC.",
 "Montant inférieur au minimum.":"הסכום נמוך מהמינימום.",
 "Montant supérieur au maximum autorisé.":"הסכום גבוה מהמקסימום המותר.",
 "Montant invalide.":"סכום לא תקין.",
 "Adresse invalide.":"כתובת לא תקינה.",
 "Cette récompense a déjà été récupérée.":"הפרס הזה כבר נאסף.",
-"Pas si vite : attends une seconde entre deux messages.":"לא כל כך מהר: המתן שנייה בין הודעה להודעה.",
+"Pas si vite : attends une seconde entre deux messages.":"לא כל כך מהר: מחכים שנייה בין הודעה להודעה.",
 "Tu viens d’envoyer ce message.":"שלחת את ההודעה הזו זה עתה.",
-"Trop de messages d’un coup. Réessaie dans une minute.":"יותר מדי הודעות בבת אחת. נסה שוב בעוד דקה.",
+"Trop de messages d’un coup. Réessaie dans une minute.":"יותר מדי הודעות בבת אחת. אפשר לנסות שוב בעוד דקה.",
 "Message trop long (280 caractères au plus).":"ההודעה ארוכה מדי (עד 280 תווים).",
 "Ce salon n’est pas encore disponible avec ton compte.":"החדר הזה עדיין לא זמין לחשבונות.",
 "Ce joueur est introuvable.":"השחקן הזה לא נמצא.",
 "Cette demande d’ami n’existe plus.":"בקשת החברות הזו כבר לא קיימת.",
-"Trop de demandes d’ami d’un coup. Réessaie dans une heure.":"יותר מדי בקשות חברות בבת אחת. נסה שוב בעוד שעה.",
+"Trop de demandes d’ami d’un coup. Réessaie dans une heure.":"יותר מדי בקשות חברות בבת אחת. אפשר לנסות שוב בעוד שעה.",
 "Vous devez être amis pour vous écrire.":"צריך להיות חברים כדי לשלוח הודעות זה לזה.",
 "Ton rang ne permet pas encore cette action.":"הדרגה שלך עדיין לא מאפשרת את הפעולה הזו.",
 "{0} t’a écrit.":"{0} שלח לך הודעה."
@@ -179,7 +179,7 @@ I18N_ADD("en",{
 I18N_ADD("he",{
 "Certains caractères ne sont pas acceptés : chevrons, guillemets droits, accent grave, barre oblique inverse.":"חלק מהתווים אינם מתקבלים: סוגריים משולשים, מירכאות ישרות, גרש הפוך, לוכסן הפוך.",
 "Tu as déjà proposé ce pari : il est en vote.":"כבר הצעת את ההימור הזה: הוא בהצבעה.",
-"Tu as déjà envoyé 5 propositions aujourd’hui. Reviens demain.":"כבר שלחת 5 הצעות היום. חזור מחר.",
+"Tu as déjà envoyé 5 propositions aujourd’hui. Reviens demain.":"כבר שלחת 5 הצעות היום. אפשר לחזור מחר.",
 "Cette proposition n’est plus en vote.":"ההצעה הזו כבר לא בהצבעה.",
 "Tu as déjà voté pour cette proposition.":"כבר הצבעת על ההצעה הזו."
 });
@@ -190,20 +190,20 @@ I18N_ADD("en",{
 });
 I18N_ADD("he",{
 "Ce joueur ne peut pas être copié pour l’instant.":"לא ניתן להעתיק את השחקן הזה כרגע.",
-"Tu copies déjà ce joueur.":"אתה כבר מעתיק את השחקן הזה.",
+"Tu copies déjà ce joueur.":"כבר יש לך העתקה של השחקן הזה.",
 "{0} n’est plus copiable : ta copie est arrêtée, tes positions restent ouvertes.":"כבר לא ניתן להעתיק את {0}: ההעתקה שלך נעצרה, הפוזיציות שלך נשארות פתוחות."
 });
 I18N_ADD("en",{
 "Tu es maintenant le chef du clan {0}.":"You are now the chief of the clan {0}."
 });
 I18N_ADD("he",{
-"Tu es maintenant le chef du clan {0}.":"אתה עכשיו ראש הקלאן {0}."
+"Tu es maintenant le chef du clan {0}.":"קיבלת את תפקיד ראש הקלאן {0}."
 });
 I18N_ADD("en",{
 "Tu suis déjà 500 joueurs : c’est le maximum.":"You already follow 500 players: that is the maximum."
 });
 I18N_ADD("he",{
-"Tu suis déjà 500 joueurs : c’est le maximum.":"אתה כבר עוקב אחרי 500 שחקנים: זה המקסימום."
+"Tu suis déjà 500 joueurs : c’est le maximum.":"כבר יש לך 500 שחקנים במעקב: זה המקסימום."
 });
 I18N_ADD("en",{
 "Tu as déjà partagé cette mise aujourd’hui.":"You already shared this bet today.",
@@ -219,13 +219,13 @@ I18N_ADD("en",{
 });
 I18N_ADD("he",{
 "Ce message n’est plus disponible.":"ההודעה הזו כבר לא זמינה.",
-"Pas si vite : attends un peu avant de réagir encore.":"לא כל כך מהר: חכה רגע לפני שתגיב שוב."
+"Pas si vite : attends un peu avant de réagir encore.":"לא כל כך מהר: מחכים רגע לפני שמגיבים שוב."
 });
 I18N_ADD("en",{
 "Le duel de stack contre ce joueur n’est pas encore disponible : choisis un autre adversaire.":"Stack duels against this player aren’t available yet: pick another opponent."
 });
 I18N_ADD("he",{
-"Le duel de stack contre ce joueur n’est pas encore disponible : choisis un autre adversaire.":"דו־קרב סטאק מול השחקן הזה עדיין לא זמין: בחר יריב אחר."
+"Le duel de stack contre ce joueur n’est pas encore disponible : choisis un autre adversaire.":"דו־קרב סטאק מול השחקן הזה עדיין לא זמין: אפשר לבחור יריב אחר."
 });
 I18N_ADD("en",{
 "Tu as déjà invité ce joueur aujourd’hui.":"You already invited this player today.",
@@ -239,7 +239,7 @@ I18N_ADD("en",{
 I18N_ADD("he",{
 "Tu as déjà invité ce joueur aujourd’hui.":"כבר הזמנת את השחקן הזה היום.",
 "Ton rôle dans le clan ne permet pas cette action.":"התפקיד שלך בקלאן לא מאפשר את הפעולה הזו.",
-"Tu es maintenant officier du clan {0}.":"אתה עכשיו קצין בקלאן {0}.",
+"Tu es maintenant officier du clan {0}.":"קיבלת תפקיד קצין בקלאן {0}.",
 "Tu as été exclu du clan {0}.":"הורחקת מהקלאן {0}.",
 "{0} t’invite à rejoindre son clan. Code d’invitation : {1}.":"{0} מזמין אותך להצטרף לקלאן שלו. קוד הזמנה: {1}.",
 "Invitation envoyée à {0}":"ההזמנה נשלחה אל {0}",
@@ -253,7 +253,7 @@ I18N_ADD("en",{
 I18N_ADD("he",{
 "Une guerre est déjà en cours.":"כבר מתנהלת מלחמה.",
 "Aucune guerre en cours.":"אין מלחמה כרגע.",
-"Tu participes déjà à cette guerre.":"אתה כבר משתתף במלחמה הזו."
+"Tu participes déjà à cette guerre.":"כבר הצטרפת למלחמה הזו."
 });
 I18N_ADD("en",{
 "Cette analyse ne peut pas être partagée telle quelle.":"This analysis can’t be shared as it is.",
@@ -262,6 +262,6 @@ I18N_ADD("en",{
 });
 I18N_ADD("he",{
 "Cette analyse ne peut pas être partagée telle quelle.":"אי אפשר לשתף את הניתוח הזה כמו שהוא.",
-"Analyse trop lourde pour être partagée : réduis la période affichée ou le nombre d’indicateurs.":"הניתוח כבד מדי לשיתוף: הצג תקופה קצרה יותר או פחות אינדיקטורים.",
-"Tu as déjà partagé 12 analyses en 24 heures. Reviens un peu plus tard.":"כבר שיתפת 12 ניתוחים ב-24 שעות. חזור קצת מאוחר יותר."
+"Analyse trop lourde pour être partagée : réduis la période affichée ou le nombre d’indicateurs.":"הניתוח כבד מדי לשיתוף: אפשר להציג תקופה קצרה יותר או פחות אינדיקטורים.",
+"Tu as déjà partagé 12 analyses en 24 heures. Reviens un peu plus tard.":"כבר שיתפת 12 ניתוחים ב-24 שעות. אפשר לחזור קצת מאוחר יותר."
 });
