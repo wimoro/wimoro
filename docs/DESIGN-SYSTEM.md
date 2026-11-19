@@ -103,6 +103,8 @@ Les quatre feuilles se chargent dans cet ordre dans `index.html`. Après toute m
 | `--seg-on` | segment actif d'un contrôle segmenté (`.seg`), plus clair que sa piste | `--surface` | `#3A3A40` |
 | `--side-bg`, `--on-side` | panneau latéral de la connexion et de l'inscription | `--ink-bg`, `--on-ink` | `--fill`, `--text` |
 | `--rank-0` à `--rank-8` | emblème de rang : un ton plein par rang (Fer… Radiant), signe blanc par-dessus | mêmes tons dans les deux thèmes | — |
+| `--trait-av`, `--anneau-av` | contour d'une pastille de couleur (Modifier le profil) et d'un avatar à initiale : la couleur « noir » choisie par un joueur se détache d'une carte sombre | `--line-2`, transparent | blanc à 42 % (4:1 sur la carte) |
+| `--btn-off-bg`, `--btn-off-text` | bouton désactivé, sur ordinateur : gris neutre et texte lisible (plus d'opacité réduite) | `--fill`, `--text-3` | idem (5:1) |
 
 Chaque teinte a trois emplois : `--x` pour un texte ou un trait posé sur une surface, `--x-bg` pour un fond plein portant
 du texte blanc (`--on-color`), `--x-soft` pour un fond teinté. Tous ces couples atteignent le contraste AA (4,5:1) ; ils

@@ -189,6 +189,12 @@ document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;const a=docum
    (css/components.css lit --val). Au clavier comme au doigt, l'événement input la met à jour. */
 function curseurRempli(r){const mn=r.min===''?0:+r.min,mx=r.max===''?100:+r.max,v=+r.value;r.style.setProperty('--val',(mx>mn?(v-mn)/(mx-mn)*100:0)+'%');}
 document.addEventListener('input',e=>{const t=e.target;if(t&&t.matches&&t.matches('input.range'))curseurRempli(t);});
+/* Relecture des captures d'ordinateur [revue] : ces écrans ont une composition propre à l'ordinateur (bouton d'envoi dans la
+   colonne de droite, barre d'enregistrement sous l'aperçu…) ; passer le palier de 880 px les redessine. */
+const REVUE_ORDI=/^(creer|modifier|responsable|parrainage|combines|copie|inscription)$|^marche-/;
+try{matchMedia('(min-width:880px)').addEventListener('change',()=>{if(PRET&&REVUE_ORDI.test(S.ui.route||''))render(false);});}catch(e){}
+/* « Mes combinés » sur ordinateur : la colonne de droite (le combiné en cours, la règle) ne se replie plus de 880 à 1 100 px */
+{const r1=replier;replier=function(){if(GRAND()&&(S.ui.route||'')==='combines')return;r1();};}
 /* Passage téléphone ↔ ordinateur : l'accueil se recompose (la carte Éclair change de colonne). */
 try{matchMedia('(min-width:880px)').addEventListener('change',()=>{if(PRET&&(S.ui.route||'accueil')==='accueil')render(false);});}catch(e){}
 

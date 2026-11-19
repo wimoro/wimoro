@@ -47,8 +47,8 @@ adresse du compte à passer administrateur) → (3) C, A, B sur `refonte-design`
 | 2. D1 : recherche des sources (6 recherches parallèles, ~1 000 appels ; test depuis les serveurs Supabase dans 3 régions) | fait : [docs/DONNEES.md](DONNEES.md) § 1, notes détaillées dans `docs/donnees/` |
 | 3. Message au propriétaire (comptes gratuits à créer, adresse du compte à passer administrateur) | fait (19 nov., 15 h 40) ; correctif envoyé : API-Sports indispensable (ESPN refuse les robots), AcesAPI conseillé (tennis) |
 | 4. Partie C | fait (commit `b52824f`) |
-| 5. Partie A (ordinateur) | en cours : grille commune (3 paliers, `tokens.css`, `base.css`, DESIGN-SYSTEM § 3) et accueil faits (commit `8b5327c`) ; fiche marché et ticket faits ici. En parallèle, trois agents travaillent chacun dans un worktree, sur une branche à fusionner dans `refonte-design` : `refonte-a-jeux` (Éclair, Blitz, Série, Duels), `refonte-a-argent` (portefeuille, dépôt, retrait, profil, rang, connexion, inscription), `refonte-a-communaute` (entrée, chat, clans, classement, amis, copies, joueur). Chacun écrit son CSS et ses traductions entre ses repères (`[jeux]`, `[argent]`, `[communaute]`) dans `screens.css` et `i18n-5.js`. Fusionnés : `refonte-a-jeux` (`42843ff`), `refonte-a-argent` (`02dc554`), 396 tests verts après chaque fusion |
-| 6. Partie B (téléphone) | faite sur la branche `refonte-b-telephone` (partie de `5cd1f9c`), à fusionner dans `refonte-design` : voir « Partie B » ci-dessous |
+| 5. Partie A (ordinateur) | en cours : grille commune (3 paliers, `tokens.css`, `base.css`, DESIGN-SYSTEM § 3) et accueil faits (commit `8b5327c`) ; fiche marché et ticket faits ici. En parallèle, trois agents travaillent chacun dans un worktree, sur une branche à fusionner dans `refonte-design` : `refonte-a-jeux` (Éclair, Blitz, Série, Duels), `refonte-a-argent` (portefeuille, dépôt, retrait, profil, rang, connexion, inscription), `refonte-a-communaute` (entrée, chat, clans, classement, amis, copies, joueur). Chacun écrit son CSS et ses traductions entre ses repères (`[jeux]`, `[argent]`, `[communaute]`) dans `screens.css` et `i18n-5.js`. Fusionnés : `refonte-a-jeux` (`42843ff`), `refonte-a-argent` (`02dc554`), `refonte-a-communaute` (`5cd1f9c`), 396 tests verts après chaque fusion. Partie A faite, sauf corrections de la relecture indépendante |
+| 6. Partie B (téléphone) | faite sur la branche `refonte-b-telephone` (partie de `5cd1f9c`), fusionnée avec la relecture de l’ordinateur (`53a58d8`), à fusionner dans `refonte-design` : voir « Partie B » ci-dessous |
 | 7. Partie D (branche `marches-et-admin`) | à faire (branche créée depuis `f9cc269`) |
 | 8. Partie E (panel) | en cours côté serveur : un agent (worktree, branche `marches-et-admin`) fait les lots 0 à 3b et 5 du plan (`architecture-d-e.md`) : sauvegarde `backup_20261119`, réglages `wm.reglages`, équipe et rôles, journal en ajout seul, porte `api_equipe`, blocages, frais lus dans les réglages, sujet temps réel `site` |
 | 9. Vérification, revues, bilan | à faire |
@@ -61,6 +61,10 @@ images) ; `architecture-d-e.md` (plan technique des parties D et E, agent ECC `a
 (captures à plusieurs tailles), `outils/passe2.mjs` (mesure responsive) ; captures « avant » dans `captures/avant/`
 (serveur du commit `cb382a6` : worktree `../wimoro-avant`, port 4176). Faits marquants : ESPN refuse les robots (écarté),
 API-Sports indispensable ; BTC à ~63 700 $ le 19/11 ; GTA VI sorti le 19/11 ; succession en cours chez Nvidia.
+**Comptes administrateurs demandés** (réponse du propriétaire, 19/11 vers 17 h) : le compte principal et un compte personnel
+pour chacun des quatre associés. Aucun n'existait encore sur le site : rien n'est créé ; ils seront ajoutés depuis la page
+Administrateurs du panel après leur inscription (adresses dans la conversation, volontairement absentes du dépôt public).
+Seul administrateur actuel : le compte WimoroAdmin. Les clés d'API seront rangées plus tard par le propriétaire.
 
 ### Partie B (téléphone, 320 à 879 px)
 
